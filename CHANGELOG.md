@@ -15,6 +15,670 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ## [Unreleased]
 
+### Added
+- A "Support Dev" button in Settings → Help & About opens the developer's Buy Me a Coffee page.
+- Snoozing or rescheduling tasks can be undone: an Undo snackbar puts back the previous date,
+  time and postponement count, while keeping any other edits made in the meantime.
+- Snooze and reschedule choices show the exact date and time they'll move a task to, including
+  which day "Next business day" lands on after weekends and holidays.
+- Bulk reschedule can keep each task's own time, so only the date moves.
+- The repeat editor previews the next three dates a rule produces, or says when the series ends.
+
+### Fixed
+- "Tonight" can no longer be picked once tonight's snooze time has passed, which used to leave
+  the task already overdue.
+- Editing a task's repeat rule from its detail screen now starts from the task's due date rather
+  than today.
+- Restoring or syncing a backup with more than about 1,000 tasks no longer fails on Android 11
+  and older, which cap how many items a single database lookup can name.
+
+### Changed
+- Saving, completing or deleting a task no longer stalls the UI on disk writes, and large task
+  lists stay smoother after each change: task data is now prepared off the main thread, the app
+  no longer loads everything twice at launch, and changing one setting no longer makes every
+  screen recompute.
+- Typing in the new-task box is noticeably lighter: smart-add recognition does about an eighth of
+  the work it used to on each keystroke.
+- Snooze, bulk edits and duplicate act on just the selected tasks instead of reloading the whole
+  task list first, and restoring or syncing a large backup runs far fewer database lookups.
+
+## [0.95.1] - 2026-09-14
+
+`versionCode 28`. Upgrades in place over 0.95.
+
+### Fixed
+- Welcome tour and setup copy is now translated in every supported app language instead of falling
+  back to English.
+
+## [0.95] - 2026-09-07
+
+`versionCode 27`. Upgrades in place over 0.94.5.
+
+### Fixed
+- Welcome tour Skip now sits above the bottom action instead of near the status bar, and back
+  navigation pop transitions now use a shorter duration so returning to the previous screen feels
+  more immediate.
+
+### Changed
+- Welcome tour is shorter and less dense, with setup details folded into the selected preset card
+  and onboarding copy moved into translatable resources.
+- New Project, Person, Tag, and List editors are cleaner and more Material 3 aligned: secondary
+  choices now sit behind compact expandable rows with previews instead of filling each sheet all at
+  once.
+
+## [0.94.5] - 2026-09-01
+
+`versionCode 26`. Upgrades in place over 0.94.4.
+
+### Changed
+- New tasks created manually, from bulk paste, from voice entry, from the Quick Add widget, or from
+  Tasker now capitalize the first letter of the task sentence while preserving the rest of the
+  title as typed.
+- Task cards are calmer: countdowns use a subtler, more readable chip treatment; redundant
+  "Due today" badges are hidden on Today and Upcoming's Today section; always-visible add-comment
+  and edit-title actions were removed from the card surface; and empty entity progress rings and
+  unstarred row stars are quieter.
+- New Task's metadata chips are grouped under Schedule and Organize headings, with assignees and
+  tags kept on their own labeled lines for easier scanning.
+- Task Detail now uses the same subtle countdown treatment as task cards, de-emphasizes default
+  values such as "None" and "Does not repeat", and places Tags above Estimate.
+
+### Fixed
+- GitHub sync/recovery is more defensive around remote state, local recovery, and rollback paths,
+  and remote-backup setup now requires a passphrase before it can be saved.
+- PIN-only app lock settings no longer expose password/biometric options that do not apply to that
+  mode, and lock-screen launch behavior is hardened around app start and resume.
+
+## [0.94.4] - 2026-08-30
+
+`versionCode 25`. Upgrades in place over 0.94.2.
+
+### Added
+- An info button beside the New Task headline opens a "Typing shortcuts" reference listing every
+  symbol the title field understands — `#` tag, `@` person, `+` project, `=` list, `!1`/`!2`/`!3`
+  priority and the backslash escape — plus a note that dates, times and repeats need no symbol
+  at all. Task detail carries the same button beside its flag icon, since its title field takes
+  the same syntax. Only four of these were named anywhere before, in the title field's hint,
+  and the escape was named nowhere.
+- The multiselect toolbar (Today, Upcoming, Search, and Project/List/Tag/Person detail) now has
+  Flag and Set priority bulk actions alongside the existing complete/tag/assign/move/reschedule/
+  duplicate/delete — flag applies immediately to every selected task, priority opens a picker.
+- Monthly recurrence can now repeat on a weekday position ("2nd Tuesday", "last Friday") instead
+  of only a fixed day-of-month, for meetings and bills that don't land on the same date every
+  month. Set from the same Repeat sheet as a Date/Weekday toggle; carried through backups, GitHub
+  sync, and shared task links.
+- Added a "Quiet hours" toggle (Settings → Notifications, off by default). When on, a task
+  reminder that would otherwise fire inside the configured window (e.g. 22:00-07:00) waits until
+  the window ends instead; the daily overdue-escalation digest skips its run entirely if it lands
+  inside the window, since its next check-in is a day away rather than a few hours.
+- Task cards and the task detail screen now show a live countdown ("in 2h 15m", "Overdue by 1d")
+  for any task with a due date set, ticking each minute rather than freezing at whatever was true
+  when the row first appeared. A task with a time counts down to the minute; one without counts
+  whole days, since an untimed task has no hour attached to it. On a task card the countdown is
+  carried by the existing Overdue badge rather than sitting beside it as a second copy of the same
+  word. Controlled by a "Due date countdown" toggle in Settings → Task Defaults, on by default.
+- In the new-task title field, Tab now accepts the top-ranked `#`/`@`/`+`/`=` mention suggestion
+  without leaving the keyboard to tap the dropdown row.
+- The Quick Add widget's popup now has the same `#`/`@`/`+`/`=` mention autocomplete as New Task
+  and Task Detail — tag/person/project/list can be picked from a dropdown while typing instead of
+  relying on the name matching blind on submit, including creating a new tag/person inline.
+
+### Changed
+- Bulk paste now reads lines more reliably: it splits on every line terminator (a spreadsheet or
+  rich-text paste separated by carriage returns or Unicode line separators used to arrive as one
+  very long single task), and strips leading list markers — "1.", "2)", "*", bullets — when most
+  lines carry one, so a roster copied out of a numbered list no longer keeps the numbering in
+  every title. Previously "-" was stripped but "1.", "*" and bullets were not, so the same paste
+  came out differently depending on the source. A line whose only numeral is content ("1.
+  Introduction" among unnumbered lines), an initial ("P A Francis") and a decimal ("1.5x review")
+  are all left alone.
+- The bulk preview now says when the parsed dates differ between lines instead of hiding the date
+  chip. A paste meant to share one date is exactly where an extra date means a line was misread —
+  a person named "Sunday" or "May" whose name got taken for a day — and showing nothing removed
+  the only clue.
+
+- Project, list, tag and person names are now treated as case-insensitive when creating or
+  renaming one, matching how every lookup in the app already compared them. Previously two
+  projects or lists could both be created as "Work" and "work" — indistinguishable to natural
+  language parsing, the `#`/`@`/`+`/`=` autocomplete, shared-link import and the Tasker plugin,
+  all of which match without regard to case, so whichever was found first won and the other
+  became unreachable by name. Tags and people already blocked this when creating, but greyed the
+  button out with no explanation, and allowed it outright when renaming; both now say why.
+
+- Pasting multiple lines into New Task (which creates one task per line, each parsed on its own)
+  now previews what the whole paste will apply — the shared due date, and every `#tag`, `+project`,
+  `=list` and `@person` it found — instead of only reporting how many lines it counted. A name that
+  matches nothing existing is flagged rather than silently dropped, with a "Create missing items"
+  button that makes the tags and projects in one go. Mixed-case references to one name
+  (`#ITR` and `#itr` in the same paste) count as a single missing entity rather than creating a
+  duplicate for each spelling, and a paste beyond 500 lines is capped with a visible warning
+  instead of blocking the app while it parses and inserts.
+- New Task's and Task Detail's smart-add preview chip for a `+project`/`=list` (and now `#tag`/
+  `@person`) mention shows the entity it actually matched instead of the raw typed text, and
+  renders in an error tint when nothing matched — previously a typo and a successful match
+  rendered an identical chip, with no way to tell a silent no-op from a real attach.
+- Mention autocomplete (`#`/`@`/`+`/`=`) now ranks exact and prefix matches ahead of plain
+  substring matches instead of sorting purely alphabetically, so a strong match while still typing
+  is less likely to be pushed out of the 5-row list by an unrelated earlier match.
+- New Task's natural-language project/list matching now excludes archived projects/lists, matching
+  the behavior the `+`/`=` mention autocomplete and quick-add's own resolver already had.
+
+### Fixed
+- Typing a name or email on the welcome tour's profile step no longer moves the cursor back a
+  character on each keystroke, dropping and reordering letters as you type. Those two fields
+  were bound directly to the saved preference they write to, so every character made a round
+  trip through storage and the field was briefly re-rendered with the previous text.
+- The backslash escape, which keeps the next word out of the parser (`\tomorrow` stays in the
+  title instead of setting a due date), now also covers the `#`/`@`/`+`/`=` mention triggers:
+  `\#urgent`, `\@Sam`, `\+Acme` and `\=Inbox` stay literal. Previously the escape only matched a
+  word character, so escaping a mention did nothing at all — the tag, person, project or list
+  was still attached and the orphaned backslash was left sitting in the title. Escaping is
+  also Unicode-aware now, so a non-Latin name is protected in full rather than one letter
+  deep, and it is documented under Help > Quick Add, where nothing previously mentioned it.
+- Typing `project <name>`/`list <name>`/`assign to <name>` immediately followed by a date word
+  from a language the entity parser's own keyword list didn't cover (e.g. German "morgen") made
+  the project/list/assignee vanish from detection entirely rather than just mis-capturing it — the
+  date word was still recognized and claimed correctly, but the entity's capture had no boundary
+  keyword to stop at, ran into that claim, and was discarded outright. It now truncates to the
+  claim instead of giving up.
+- On devices whose locale writes the AM/PM marker in lowercase (en-IN among others), roughly half
+  of all stored task times could not be read back: times are written by two paths that disagree on
+  case ("3:00 pm" from the time picker, "3:00 PM" from natural-language parsing) and the parser was
+  case-sensitive. Nothing looked wrong, because times are displayed by echoing the stored text
+  verbatim — but everything that needed the actual parsed value, such as the reminder-offset
+  checks that decide whether a reminder is still in the future, silently took its "no time set"
+  branch. Times are now parsed case-insensitively, with a fallback that also accepts the canonical
+  English form so a time written on one device survives being restored or shared onto another.
+
+## [0.94.2] - 2026-08-23
+
+`versionCode 23`. Upgrades in place over 0.94.
+
+### Added
+- Added a "Postponement warning threshold" slider (1–10) in Settings → Task Defaults for controlling
+  how many times a task can be postponed before showing a warning snackbar. The configured value
+  applies to normal-priority tasks; medium priority tasks warn 2 postponements earlier, and high
+  priority tasks warn 4 earlier (with high priority reduced to 0 when medium is 1).
+- Added a "Strict certificate verification" toggle for FTPS backups (Remote sync → FTP), for
+  servers with a certificate whose name matches the configured host — off by default so an existing
+  self-signed/mismatched-certificate setup keeps working exactly as it did before.
+- Task content and the app's screens are now hidden from the recents/Overview thumbnail and blocked
+  from screenshots whenever app lock is enabled — previously the PIN/biometric gate protected
+  nothing once you left the app, since the same content sat visible in Overview.
+- Added a "Holidays" screen, reached from Settings → Task Defaults, combining weekend-day
+  configuration (which weekdays count as a weekend, defaulting to Saturday/Sunday) with a
+  tap-a-date calendar for custom holidays. Tap a date to add or edit a holiday (name + a "Repeats
+  every year" toggle for fixed-date ones like Independence Day, so they never need re-adding)
+  instead of typing an ISO date; marked days show a dot, recurring ones a distinct color.
+  Rescheduling a task onto either a configured weekend day or a holiday shows a warning naming it;
+  turning off every weekend day disables that half of the warning. No holiday data is bundled or
+  fetched — add the dates yourself, and re-add movable ones (Diwali, Easter) each year since
+  they're left non-recurring. The list below the calendar is split into "Yearly" and "One-time"
+  sections rather than one wrapped row of chips — a recurring holiday's stored date is just an
+  arbitrary anchor year, so its section shows month and day only, while one-time entries show the
+  real date since the year is the point there.
+- The due-date calendar (New Task and task detail) now greys out weekend/holiday days — still
+  tappable — and warns immediately with a titled, icon-led confirm dialog ("Non-working day" / "Use
+  it anyway?") the moment you tap one, instead of only after saving via a snackbar. Start date,
+  follow-up, and recurrence-end pickers are unchanged.
+- The "Next weekday" quick-snooze preset (task detail, Today swipe actions) is now genuinely "Next
+  business day" — it already skipped Saturday/Sunday, but hardcoded, ignoring your configured
+  weekend days; it now also skips your custom holidays, recurring and one-off alike. Renamed to
+  "Next business day" to match, in every locale that hadn't already translated "weekday" as
+  "working day" on its own.
+- Added an "Observe non-working days" toggle (Settings → Task Defaults → Holidays, off by
+  default). When on, a recurring task whose due date lands on a weekend or holiday is treated as
+  due the previous working day everywhere the app decides if it's due or overdue — Today's list,
+  overdue badges and counts on task rows and every project/list/tag/person detail screen, Search's
+  Overdue/Due Today/Focus/Morning Review/At Risk filters, Analytics (including the per-person/tag
+  breakdowns, aging report, and capacity forecast), the People/Staff analytics screens, the daily
+  agenda digest, the overdue escalation notification, and the Team Overdue/Upcoming/Progress
+  home-screen widgets — without changing the task's actual stored due date anywhere. A one-off
+  (non-recurring) task is never shifted, even with the setting on.
+
+### Changed
+- Tasker integration (Settings → Data Management) is now off by default rather than on. Any app on
+  the device can trigger the plugin's "Create Task" action with no permission check — that's how
+  the Tasker/Locale plugin API works everywhere, not specific to Yata — so this now requires an
+  explicit, informed opt-in instead of being exposed to every install by default.
+- Duplicating a task now automatically appends "Duplicate" to the cloned task's title and immediately
+  opens the new task in the task edit screen.
+- Smoothed the Today FAB stack: the voice-capture and "new" buttons now scale and fade in step
+  with each other instead of fade finishing while the pop was still settling, and the button's
+  label no longer visibly fights its own width change when switching tabs.
+- A number of smaller in-app transitions (task flag icon, section task counts, stepper values,
+  voice overlay chip, sync history and task detail expand/collapse) now animate consistently with
+  the rest of the app and respect Reduce Motion, instead of using Compose's untouched defaults.
+- On task detail, the "Add a comment" field now sits below the existing comments instead of above
+  them, so newest comments appear next to where you're typing.
+- Every three-dot/overflow menu across the app (task rows, task/project/list/tag/person detail,
+  sort menus, Settings pickers) now shares one rounded, shadow-lifted menu style with rounded
+  individual items, instead of the sharp-cornered flat default.
+- Comment cards are more compact — the delete control is now a small tonal circle centred against
+  the comment text, removing the empty space that the oversized touch target left below each card.
+- The app starts faster. Cryptography support needed only by SFTP backup was being loaded on the
+  main thread at every launch, whether or not SFTP was ever configured; it is now loaded on the
+  first SFTP connection instead. The same change also hands encryption of backups back to the
+  device's hardware-accelerated implementation, so encrypted backup and restore are quicker.
+
+### Fixed
+- A recurring task's "repeats weekly on..." summary (task detail, new task sheet, recurring task
+  list, archive, task rows) now says "on weekends"/"on weekdays" based on your configured weekend
+  days instead of always assuming Saturday/Sunday.
+- A device restored from an Android backup (or a fresh reinstall that later signs back into the
+  same account) could look "already synced" to a self-hosted/GitHub sync — showing no local tasks
+  while its last known sync state still remembered data — and syncing in that state used to
+  silently delete every task from the remote copy, with no warning and no recovery backup, since
+  nothing appeared to change locally. Syncing now recognizes that shape and asks first: restore the
+  remote copy onto this device, or confirm the wipe was intentional and continue anyway. The sync
+  baseline and app preferences (including the app-lock PIN) are also no longer included in Android's
+  automatic device backup, so a restored device reaches this new prompt instead of the old silent
+  failure in the first place.
+- The bottom navigation bar and the tablet/foldable navigation rail — Today, Projects, People, Tags,
+  Upcoming — were hardcoded in English and never actually localized, on every screen, in every
+  language, despite the translations for those exact labels already existing and being used
+  correctly everywhere else in the app. They now follow the app's language like everything else.
+- Fixed a batch of Spanish, French, and Portuguese strings that were left partially or fully
+  untranslated — mostly settings, diagnostics, widget configuration, and recurrence text — plus
+  smaller gaps in Filipino, German, Indonesian, and nine other languages (mainly a stray
+  untranslated "owner/repo" placeholder in the GitHub sync screen).
+- The Analytics screen's overview card (overdue/due-soon counts, workload effort line, "all
+  clear"/"needs attention"/"on deck" status, and the three action chips) was showing in English
+  regardless of app language — those 17 strings were never propagated to any of the 24 locales when
+  the feature was added. Now translated the same as the rest of the screen.
+- Custom holidays: adding a recurring holiday from a different visible year than an existing one on
+  the same month-day (e.g. re-confirming "Independence Day" from a later year's calendar view) could
+  create a second entry that independently matched every year, instead of updating the original —
+  both would then show in the chip list and could double up the reschedule warning. A holiday label
+  is also now capped at 120 characters and a malformed/corrupted stored date is dropped instead of
+  crashing the calendar or silently never matching.
+
+## [0.94] - 2026-08-18
+
+`versionCode 22`. Upgrades in place over 0.93.1.
+
+### Added
+- Project, List, Tag, and Person detail screens' overflow menu now has a "View archived" item that
+  shows that entity's archived tasks in their own section below Completed; toggles to "Hide
+  archive" while shown.
+- Image/PDF task exports now include a single YATA import link in the share text: tapping it adds
+  the shared task(s) to Inbox, creating any missing list/project/tag names only when the
+  sender chose to include them (privacy mode omits structure from the link entirely, rather than
+  just hiding it). Links are compact — a single-task share now fits well under 100 characters.
+  Links shared before this change keep importing correctly.
+- Tags now support an optional description in the create/edit sheet, and tag image/PDF exports show
+  it as subtext below the tag name.
+- Task/list/project/tag/person image and PDF exports have a new "Include import link" toggle
+  (on by default), for sharing a snapshot with someone who isn't expected to import it.
+- Settings > About now shows a task-link diagnostic card so you can see whether Android currently
+  verifies `ranjithj.in/yata/i` links for YATA and jump straight to the system link settings.
+- New compressed task import links no longer spend payload space carrying sender-side people
+  records that the receiver deliberately never imports or assigns.
+- Task import link failures now use typed internal error reasons, so the app can show the right
+  message for incomplete, oversized, unsupported, or too-large task links without fragile text
+  matching.
+
+### Changed
+- Shared task links now open the app from a chat instead of arriving as text nobody can tap, and
+  they carry the task's due date, start date, time, estimate and repeat rule so a shared task
+  arrives with its schedule intact. Personal details deliberately stay behind: the sender's
+  reminder, their section, and whether they had already completed it.
+- Tapping a single-task share link now opens it in the task editor, prefilled, instead of adding
+  it straight to Inbox — review or change anything before it's saved. If the sender's list,
+  project, or tags don't exist yet, you're asked before anything is created. Links carrying several
+  tasks now show a preview and require confirmation before the bulk import writes anything. Shared
+  tasks no longer create or reassign to the sender's people — a shared task now arrives unassigned
+  rather than to a stranger's contact.
+- Sharing a task export now warns first when the import link is long enough that some messaging
+  apps may fail to make it tappable.
+
+### Fixed
+- Inline entity autocomplete no longer pre-applies fuzzy smart-add matches while you are still
+  choosing from the dropdown, so picking one `@person`, `#tag`, `+project`, or `=list` suggestion
+  applies only the item you selected.
+- GitHub sync no longer rejects a private repo solely because GitHub's repository metadata reports
+  `push=false`; the actual upload request now decides whether the token really lacks write access,
+  avoiding a false "no write access" failure on devices using fine-grained tokens.
+- GitHub sync errors now include GitHub's own 403 reason and whether the failure happened while
+  accessing the repo, writing objects, or updating the branch.
+- GitHub sync now skips publishing a new commit when the decoded remote snapshot already matches
+  the prepared canonical snapshot, avoiding duplicate no-op commits in sync history.
+- GitHub sync now remembers the last metadata-free canonical snapshot hash with the last synced
+  GitHub head, so a device with no local changes can skip the expensive read/merge/upload path
+  after a cheap branch-head check.
+- Task import links are no longer needlessly long for non-Latin languages. Links now use whichever
+  of the two encodings is actually shorter for the text being shared, instead of guessing from the
+  task's shape — which had made a single shared task up to twice as long in Hindi, Tamil, Telugu,
+  Bengali and Malayalam. Sharing several simple tasks at once also produces a shorter, readable
+  link now, and readable links can carry notes and subtasks instead of falling back to the
+  encoded form. Links shared before this change keep importing correctly.
+- GitHub sync could fail with "local verification failed at $/tags[0]/description is missing
+  locally" against any repo with a snapshot from before tags supported descriptions — that field
+  was never added to the sync format's schema-drift normalization, unlike every other nullable
+  field added the same way over time.
+- A shared task link clipped in transit by a messaging app's linkifier could import silently
+  short (a truncated title, a dropped due date) with no indication anything was lost. The
+  compressed link form already failed loudly on truncation; the shorter, human-readable form now
+  carries a checksum so the same failure is caught there too, rather than importing partial data.
+- New share/import and app-link diagnostic text now has fallback entries in every supported locale,
+  and Vietnamese analytics trend text no longer trips Android's percent-format parser.
+
+## [0.93.1] - 2026-08-16
+
+`versionCode 21`. Upgrades in place over 0.93.
+
+### Added
+- Added an Inbox triage screen for open tasks missing a due date, estimate, owner, or project/list,
+  with quick chips for due dates, estimates, assigning yourself, and moving tasks into a home.
+- Added a Recurring Tasks screen that lists every open repeating task, shows the next due date and
+  repeat summary, and opens the task detail/edit screen from a single Edit task button.
+
+### Changed
+- The hamburger menu now offers Inbox and Recurring Tasks shortcuts in place of the previous Tags
+  and Upcoming rows.
+- Inbox and Recurring Tasks use the same rounded summary panels, animated action chips, and list
+  item motion as the rest of the app's task screens.
+- Sync History now reuses the fresh GitHub restore-point list that Remote Sync just fetched when
+  navigating into the full history view, avoiding a duplicate API call; tapping Refresh still
+  forces a current fetch.
+
+### Fixed
+- Inbox and Recurring Tasks cards no longer show the inline rename pencil or snooze clock inherited
+  from generic task rows, keeping their actions focused on triage or Edit task.
+
+## [0.93] - 2026-08-16
+
+`versionCode 20`. Upgrades in place over 0.92.2.
+
+### Added
+- Today now has a "Speak" voice-capture FAB above the regular "New task" FAB, matching its pill
+  shape and size. Tap it to speak a task straight in — due date, time, priority, tags,
+  project/list, and assignees are all recognized the same way typed quick-add understands them,
+  and the task is created directly without opening the New Task sheet first.
+- Remote sync → GitHub now shows the most recent sync (device, contents, when) with a "View all"
+  link to a new dedicated Sync History screen — one card per snapshot, tap to expand for the
+  device/task counts read from inside that snapshot, with its own Restore action. Commits not
+  written by YATA still appear, marked as unattributed. Fetching starts bounded to one GitHub API
+  page (100 commits) instead of walking the whole history for what's meant to be a quick, recent
+  view, with a "Load more" row for anyone who's synced past that.
+- Snapshots are now labelled with your device's name from Android's Settings (About phone → Device
+  name) instead of just its model, so two of the same handset are tellable apart in the sync
+  activity feed. Rename the device there and future snapshots follow; ones already pushed keep the
+  name they were pushed with, and still count as this device.
+- Search now recognizes tags, people, project/list, priority, and flag mentions in the typed query
+  the same way quick-add does (e.g. "tagged urgent assigned to me" narrows to tasks with the
+  "urgent" tag assigned to you), shown as dismissible chips alongside the existing smart filters.
+  Date/time phrases ("next week") aren't part of this yet — see the code comment on why that's a
+  separate piece of work.
+
+### Fixed
+- Backup/export files now stamp the same device label (Settings device name, when set) as GitHub
+  sync commit messages. The two had drifted onto separate code paths, so a device's own snapshot
+  payload could carry its bare model name while the commit publishing it carried the name from
+  Settings.
+- New Task: an explicit due date is no longer silently overwritten by the project's default due
+  date when both are mentioned in the same typed title (e.g. "call plumber +renovation tomorrow").
+  Picking a project used to always apply its due date a moment after quick-add applied the typed
+  one, clobbering it.
+- Quick-add title cleanup no longer leaves stray connector words ("to", "from", "at", "in", "on",
+  "by", "for") behind once the text they were connecting has been recognized and removed — either
+  stranded between two recognized mentions ("renew license #paperwork to @Jane" now cleans up to
+  "renew license") or immediately before one that doesn't need a leading word of its own to
+  trigger ("buy milk to @Jane" now cleans up to "buy milk"). Also fixed a related bug where a
+  multi-word project/list/assignee name being typed right before a bare "to"/"from" absorbed that
+  word into the extracted name itself (captured "Work to" instead of "Work").
+
+### Changed
+- Trash retention and Auto-archive (Settings → Data Management → Task Lifecycle) are now sliders
+  with more options (1/3/7/14/30/60/90/180 days, plus Forever for Trash and Off for Auto-archive)
+  instead of a 4-option dropdown.
+- Today's "Speak" FAB is now a fully-rounded chip shape instead of matching the "New task" FAB's
+  rounded-rectangle shape, so the two read as primary/secondary rather than a mismatched pairing.
+  Size stays matched between the two.
+- Settings' "Delete all data" confirmation dialog's Cancel button is now a filled chip instead of a
+  plain text button.
+- Settings → "Sound & Feedback" is now "Voice Input and Sound", and Voice input language moved
+  there (from Task Defaults); Undo window, Swipe actions, and Confetti moved the other way, into
+  Task Defaults.
+- Settings → Data Management: "Backup to File"/"Restore from File" moved to Backup & Sync (next to
+  the automatic Local Backup card); "Show welcome tour" moved to Help & About; Tasker integration
+  moved out of Navigation & Features into its own card. The remaining Data Management rows are now
+  grouped into Import & Export, Task Lifecycle, and a Danger Zone card for delete-all-data.
+- Reordered Help & About's About section: GitHub/Share/Website links now above "Other apps by dev".
+- Restyled the "Other apps by dev" card with accent-tinted icon badges per app and a bordered surface.
+- GitHub sync now refuses to connect to, or publish onto, a **public** repository - it only syncs to
+  private repos, checked both when connecting and on every sync.
+- The GitHub API base URL field now requires `https://` and a valid host, whether typed directly or
+  brought in via a GitHub config import.
+- A cancelled GitHub sync no longer blocks on the network round trip - only the final local-write
+  step stays uninterruptible, so cancelling (or the app closing) during a slow/unreachable sync no
+  longer hangs.
+- GitHub sync error messages are more specific: rate-limited (429) requests now back off and retry
+  instead of failing outright, a wrong backup passphrase reports itself instead of looking like a
+  damaged snapshot, and an oversized snapshot is rejected with a clear size before upload instead of
+  failing partway through.
+- Today, Projects, People, Tags, and Upcoming now show a loading skeleton instead of briefly
+  flashing their empty state ("No tasks yet", etc.) on cold start, before the database's first
+  query result arrives.
+- Motion mode (Settings → Appearance → Reduced/Off) now actually stops decorative looping
+  animations — the shimmer skeleton, empty-state icon pulse, sync-progress wave, and voice capture's
+  pulses/waveform previously kept animating regardless of the setting. The system-wide "Animator
+  duration scale" (Developer Options → Animation off) now has the same effect app-wide, not just on
+  the completion confetti.
+- Back-swiping out of the app on Android 14+ now shows the predictive-back preview instead of it
+  being suppressed.
+- Larger tap targets (48dp minimum) on several small icon buttons that were smaller than Android's
+  accessibility minimum: a task row's comment/rename/snooze icons, the profile avatar button, the
+  GitHub token help icon, and Search's save-filter icon.
+- Archived and unarchived tasks, and people list rows, now animate in and out like the rest of the
+  app's lists instead of appearing/disappearing abruptly.
+- Fixed the Task Detail and New Task sheet's expand/collapse animations ignoring the Motion mode
+  setting.
+- Deleting a list now offers "List only" (keep its tasks, unlinked) or "List + tasks", matching the
+  choice Project delete has always had.
+- Deleting a project or list no longer permanently destroys its tasks outright - they're soft-deleted
+  into Trash like any other task delete, recoverable until Trash's retention period clears them.
+- Archive now supports multiselect (long-press a task) with a bulk unarchive action, and its
+  unarchive-undo snackbar matches the rest of the app's undo behaviour (respects your configured
+  undo window instead of a fixed 10 seconds).
+- Trash now supports multiselect (long-press a task) with bulk restore and bulk delete-forever
+  actions. Its "Deleted today/yesterday/on <date> · N days left" labels are now localized instead of
+  always showing in English regardless of language setting.
+- Various previously English-only snackbar messages (task deleted/completed/reopened, including the
+  bulk-action counts) are now localized in all supported languages.
+- Task row density's Compact/Comfortable/Spacious labels (Settings → Appearance) are now localized
+  instead of always showing in English.
+- The Welcome tour's "Make it yours" profile step (Next/Get Started buttons, title, description,
+  email hint, "Or pick an icon") was missing translations in all 24 non-English locales since it was
+  added - it now has them.
+
+### Fixed
+- Voice capture now caps how long a session can stay open (5 minutes) and how much transcript it
+  accumulates, instead of restarting indefinitely on a dropped/forgotten overlay.
+- Quick add's smart date/time parsing now reads uppercase "PM" correctly ("3PM" was silently read as
+  3 AM - Android's autocapitalize makes this common). Also fixed: "2 weeks from today" (only "from
+  now" worked), "a partir de ahora/hoy" for Spanish relative dates, and month-unit words ("mes"/"mês")
+  in "N months from now" phrases, which were unreachable due to a copy-paste slip.
+- Fixed a freeze in quick add's smart parsing: text containing multiple "starts"/"begins"/"from"/etc
+  phrases with nothing recognizable after some of them (e.g. a shared sports schedule or repeated
+  calendar text) could take tens of seconds to minutes to parse, on the main thread, including
+  before the widget's quick-add dialog even finished opening for shared text. Also added a general
+  length cap on smart parsing - text far longer than a task title was ever meant to hold now skips
+  the pattern-matching pass entirely instead of costing time proportional to its length.
+- Voice task capture no longer looks like it abruptly stops listening every few seconds. It was
+  already auto-restarting itself in the background after each recognized phrase so a thinking
+  pause never lost anything, but the waveform and "Listening..." indicator went flat during that
+  restart, reading as the mic cutting out - they now stay active through it. Each restart also
+  plays the system's own start-listening tone, so the silence-before-restart pause is now several
+  seconds longer, keeping that tone rare instead of firing every few seconds of normal pausing.
+
+## [0.92.2] - 2026-08-13
+
+`versionCode 19`. Upgrades in place over 0.92.1.
+
+### Added
+
+- **Redesigned "Share task as image".** The image export from a task's Share sheet is now a
+  portrait card sized for chat-app previews (WhatsApp/Telegram/Instagram) instead of the old wide
+  report layout: brand header, title, status/priority pills, a due-date + list strip, assignees
+  shown with their real avatars alongside tags in an equal-billing two-column block, then optional
+  notes and up to 3 recent comments, and a footer crediting who shared it and when. Defaults to
+  the app's current light/dark theme, with a Dark theme toggle in the export sheet to override it
+  per-export (remembered for next time once changed) — handy for sharing a light card outside a
+  dark app, or vice versa. Exports as a JPEG; PDF export is unchanged. New strings translated
+  across all 24 locales.
+- **15 more locales translated.** German, Spanish, French, Italian, Portuguese, Dutch, Swedish,
+  Romanian, Turkish, Vietnamese, Indonesian, Czech, Polish, Hindi and Bengali now have translations
+  for GitHub config transfer, Share YATA, Staff Analytics, task defaults, the subtask-completion
+  setting, and start-date custom days — strings that had silently been falling back to English
+  since those features shipped.
+- **All remaining locale gaps closed.** Gujarati, Kannada, Malayalam, Marathi, Punjabi, Swahili,
+  Tamil, Telugu and Tagalog were missing the same 74 keys as above (they'd fallen behind since
+  before the previous translation pass), plus every locale — including the 15 just caught up —
+  was still missing the "Use latest GitHub snapshot" recovery strings added this session. All 24
+  locales now have zero missing keys, verified against the English source.
+
+### Fixed
+
+- **The Today badge and home-screen widgets could show yesterday's counts after midnight** if the
+  app stayed backgrounded (badge) or no task was written overnight (widgets). Widgets now also
+  refresh once a day on their own.
+- **Search could find a task in one bucket (live/Archived/Trash) but miss its otherwise-identical
+  match in another** — Archived and Trash used a different, looser match than live tasks did
+  (which also couldn't match a tag a task only had by inheriting it from its project). All three
+  now search the same way.
+
+### Added
+
+- **Tag grouping on Android now matches the grouped web workflow.** Selected tags can be moved into
+  an existing or newly-created group from the Tags tab, and grouped tag rows use localized task
+  counts and delete confirmations.
+
+- **Other apps, GitHub link, and Share on the About screen.** Settings → Help & About now lists
+  the developer's other apps (yaja, Assetrack, Ultra) linking to their Play Store pages and a link
+  to the YATA GitHub repo.
+- **Dedicated Share screen.** The About screen's Share button now opens a Share YATA screen instead
+  of firing the share sheet directly — a promo image preview (toggle it off to fall back to
+  text-only), an editable pitch message, and a read-only link that's appended automatically, before
+  sending.
+- **Person performance analytics.** Each person detail screen now has a Performance button opening
+  an in-depth staff dashboard with open/overdue load, completions for the selected period,
+  on-time rate, turnaround, planned effort, completion trend, project/list/tag breakdowns, and a
+  tappable overdue-task list.
+- **GitHub sync foundation.** Remote sync can now be configured for a private GitHub repository
+  using a pasted token and `owner/repo`, with restore history backed by commits instead of
+  rotated server files. GitHub sync uses fast-forward-only ref updates, verifies git blob hashes
+  on read/write, stores the token in encrypted preferences, keeps GitHub settings device-local,
+  and hides SFTP/FTP-only lock and retention controls when GitHub is selected.
+- **GitHub sync recovery guidance.** A first sync that would merge existing device data with an
+  existing repo snapshot now shows a summary and asks for confirmation before applying anything.
+  If GitHub history is rewritten or the branch points at a damaged snapshot, sync stops before
+  changing local data and points the user toward restore/reconnect recovery.
+- **GitHub token expiry awareness.** When GitHub reports an expiry for the token, Settings stores
+  it, shows it in the GitHub sync dialog, and warns when it is expired or close to expiry.
+- **GitHub sync diagnostics.** The sync progress pill now uses GitHub-specific labels, resolved
+  conflicts are reported in operation history, and successful GitHub sync history includes the
+  short head commit plus token-expiry detail when available.
+- **GitHub PAT help.** The GitHub sync dialog has an info button with short steps for creating a
+  fine-grained personal access token with Contents read/write access.
+- Scheduled backup no longer repeatedly retries permanent GitHub sync setup failures such as an
+  expired token, missing repo access, or a detected history rewrite; those failures are recorded
+  for the user to fix, while transient GitHub conflicts/network errors still retry.
+- **Analytics numbers are now tappable, and take you to the tasks behind them.** Project, person,
+  tag and list rows open that entity; the per-assignee and workload rows open the person; the
+  overdue count, overdue-aging rows, the high-priority row, the "open, no date" figure and the
+  overdue callout all open a filtered search. Rows with no exact destination stay as they were,
+  rather than landing you on an almost-right list.
+- **The daily chart now shows tasks created alongside tasks completed**, with a "4 more finished
+  than created" summary underneath — a run of completed tasks means something different depending
+  on how much new work arrived in the same days. The created series only appears once there are
+  tasks recorded with a creation date, so an older database shows the original completed-only
+  chart instead of a misleading row of zeroes.
+- **The overdue count and on-time rate now show which way they're moving**, as a coloured arrow
+  against where they stood one period ago — "9 overdue" reads differently when it's down from 15
+  than when it's up from 2. Shown only when the figure actually moved, and not on All Time, which
+  has no previous period to compare against.
+- **Analytics now calls out what changed, not just what is.** New callouts fire when overdue rises
+  or falls sharply, when the on-time rate shifts by 10 points or more, and when tasks are being
+  taken on faster than they're finished. Each has a materiality threshold, so an ordinary week's
+  drift doesn't produce a banner — the section stays worth reading.
+- **A Planned Effort section on Analytics**, using the time estimates on your tasks: how much work
+  is still open, how much of it is due in the next seven days, and how much is already late, in
+  hours rather than task counts. It says how many open tasks it couldn't see, so a total isn't
+  mistaken for the whole picture, and the section is hidden entirely when nothing open carries an
+  estimate rather than claiming "0h".
+- **Analytics names the weekday your work actually gets finished on**, when one clearly leads.
+  Needs a fortnight's worth of completions behind it before it will say so.
+- The on-time rate now states how many finished tasks it was measured from — the same percentage
+  means very different things over four tasks and over four hundred, and tasks completed before
+  the app recorded completion times are excluded from it with no other way to tell.
+
+### Fixed
+
+- Tag group assignments now persist through repository-level Room transactions, so creating a
+  group and assigning one or more tags cannot split into separate partial writes.
+- Typing a new group name in the tag editor and pressing the sheet's main Save/Create button now
+  creates and applies that group; you no longer have to tap the small inline checkmark first.
+- Creating a tag group from the tag editor now saves before the tag references it, so existing
+  groups appear reliably and newly-created groups are not lost when saving immediately.
+
+- The build number in Settings → Help & About now updates on every build again. Configuration
+  cache had been freezing the timestamp at whatever it was when the cache entry was first stored,
+  so every subsequent build showed the same stale minute; it's now generated fresh at build-execution
+  time instead of at Gradle configuration time.
+- The "days clean" (zero-overdue) streak no longer sits at 0 forever for anyone whose database
+  predates the completion-timestamp column. A task completed before that column existed carries no
+  timestamp, and was being counted as still-overdue on every past day; it now counts as finished,
+  which is what it is.
+
+### Changed
+
+- Tap and press feedback across the app is bouncier — buttons, checkmarks and other pressable
+  elements squish more and spring back with more energy.
+- Person-specific analytics moved out of the global Analytics screen so team performance review
+  happens from each staff member's own page.
+- Remote sync now shows `....` instead of a row of bullet dots as the placeholder for a password,
+  key passphrase, backup passphrase, or GitHub token that's already saved.
+- **Remote sync configuration is now its own screen** instead of a scrolling `AlertDialog`. Opening
+  "Configure server" from Settings → Backup & Sync navigates to a dedicated Remote sync screen with
+  the provider picker, credentials, and test/connect action; the checkmark in its top bar saves,
+  and the back button discards unsaved changes, same as before. The GitHub/SFTP/FTP provider picker
+  is now a horizontal row instead of a stacked list.
+- "Configure server" is reachable even when Cloud sync is off, so turning it on doesn't require
+  re-entering credentials. Compare/Restore/Clear sync lock stay gated behind the toggle, same as
+  before — turning Cloud sync off pauses those too, not just scheduled backups.
+- Remote sync's text fields switched from outlined to the app's filled/tonal Expressive style
+  (same look as every other input in the app), instead of the default M3 outline treatment.
+- The GitHub/SFTP/FTP provider picker is now a compact sliding-pill segmented control (same style
+  as the Password/Private-key choice below it) instead of three oversized icon cards.
+- **Backup encryption passphrase moved out of the FTP-only credentials section into its own group
+  shown for every provider.** It encrypts the backup file the same way regardless of transport, but
+  the field previously only appeared when FTP was selected — GitHub and SFTP had no way to set it
+  from this screen at all, even though both use it too.
+- **Fixed:** the FTP/SFTP password, SFTP key-passphrase, and backup encryption passphrase fields
+  were still reading as empty at rest, same root cause as the GitHub token fix -- `TextField`'s
+  placeholder only renders while focused. They now pre-fill with `....` the same way the GitHub
+  token field already did, so a saved secret is visibly there without needing to tap in, on top of
+  the "saved -- leave blank to keep it" supporting text added earlier.
+- Settings → Backup & Sync's "Self-hosted server" section is now labeled "Cloud sync" — the old
+  name predates the GitHub provider and no longer fit once GitHub joined SFTP/FTP as an option.
+- **Remote sync screen now animates provider switches and status banners** using the app's existing
+  Expressive motion tokens (respects Settings → Motion, same as everywhere else): the header and the
+  provider-specific fields crossfade/rise when you switch GitHub/SFTP/FTP, and the TLS warning,
+  host-key trust prompt, and test-connection result banner expand/fade in and out instead of
+  popping.
+- The GitHub header, "Repository access" card, and "Connect GitHub" button now use the actual
+  GitHub mark instead of a generic `</>` code icon.
+- **Every remaining outlined text field in the app switched to the filled/tonal Expressive style**
+  (profile name/email, PIN setup, date alias word, theme preset name, export filename and day
+  limit, project section names, hex color inputs, task inline-rename, global search, language
+  search, Quick Add widget title, home-screen widget label, and the Tasker "Create Task" action's
+  fields) — matching the standard already documented in `YataInputField.kt` and applied to Remote
+  sync, instead of the default M3 outline treatment mixed in throughout the rest of the app.
+- Today's sync-status badge now pops in with a slight overshoot instead of appearing instantly, and
+  the reminder validation warning in the New Task sheet now expands/fades in and out instead of
+  popping — same Expressive motion treatment as Remote sync's banners.
+
 ## [0.90.1 beta] - 2026-08-03
 
 `versionCode 13`. Upgrades in place over 0.90 beta.
@@ -561,7 +1225,15 @@ First signed release build.
 - Redesigned priority indicator (dots plus a coloured edge stripe).
 - Equal-width hero stat cards.
 
-[Unreleased]: https://github.com/rjwarrier/yata/compare/v0.90.1-beta...HEAD
+[Unreleased]: https://github.com/rjwarrier/yata/compare/v0.95.1...HEAD
+[0.95.1]: https://github.com/rjwarrier/yata/compare/v0.95...v0.95.1
+[0.95]: https://github.com/rjwarrier/yata/compare/v0.94.5...v0.95
+[0.94.5]: https://github.com/rjwarrier/yata/compare/v0.94.4...v0.94.5
+[0.94.4]: https://github.com/rjwarrier/yata/compare/v0.94.2...v0.94.4
+[0.94.2]: https://github.com/rjwarrier/yata/releases/tag/v0.94.2
+[0.93.1]: https://github.com/rjwarrier/yata/releases/tag/v0.93.1
+[0.93]: https://github.com/rjwarrier/yata/releases/tag/v0.93
+[0.92.2]: https://github.com/rjwarrier/yata/releases/tag/v0.92.2
 [0.90.1 beta]: https://github.com/rjwarrier/yata/releases/tag/v0.90.1-beta
 [0.90 beta]: https://github.com/rjwarrier/yata/releases/tag/v0.90-beta
 [0.89 beta]: https://github.com/rjwarrier/yata/releases/tag/v0.89-beta

@@ -5,6 +5,8 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.view.WindowManager
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -29,8 +31,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.lifecycle.DefaultLifecycleObserver
@@ -45,13 +49,20 @@ import com.mj.yata.domain.model.ThemeMode
 import com.mj.yata.ui.navigation.AppNavigation
 import com.mj.yata.ui.screen.lock.AppLockState
 import com.mj.yata.ui.screen.lock.LockScreen
+import com.mj.yata.ui.screen.lock.shouldDisableLockToAvoidStrandingOwner
+import com.mj.yata.ui.screen.lock.shouldLockOnAppLaunch
 import com.mj.yata.ui.theme.YataTheme
 import com.mj.yata.util.IcsExporter
 import com.mj.yata.util.JsonExporter
 import com.mj.yata.util.NaturalLanguageParser
 import com.mj.yata.util.PlainTextImporter
+import com.mj.yata.util.export.TaskTransferLinkError
+import com.mj.yata.util.export.TaskTransferLinkException
+import com.mj.yata.util.export.TaskTransferImporter
+import com.mj.yata.util.export.isTaskTransferUri
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
@@ -66,8 +77,10 @@ class MainActivity : AppCompatActivity() {
     @Inject lateinit var jsonExporter: JsonExporter
     @Inject lateinit var icsExporter: IcsExporter
     @Inject lateinit var plainTextImporter: PlainTextImporter
+    @Inject lateinit var taskTransferImporter: TaskTransferImporter
     @Inject lateinit var userPreferences: UserPreferences
     @Inject lateinit var errorBus: com.mj.yata.ui.error.AppErrorBus
+    @Inject lateinit var undoBus: com.mj.yata.ui.undo.AppUndoBus
 
     private val notificationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -228,7 +241,8 @@ class MainActivity : AppCompatActivity() {
         setIntent(intent)
         currentIntent = intent
         if (intent.action == Intent.ACTION_VIEW &&
-            intent.data?.scheme == com.mj.yata.ui.navigation.DeepLink.SCHEME
+            intent.data?.scheme == com.mj.yata.ui.navigation.DeepLink.SCHEME &&
+            !isTaskTransferUri(intent.data)
         ) {
             pendingDeepLinkIntent = intent
         }
@@ -311,9 +325,20 @@ class MainActivity : AppCompatActivity() {
             }
 
             val motionMode by userPreferences.motionModeFlow.collectAsState(initial = MotionMode.FULL)
-            val reduceMotionEnabled = motionMode != MotionMode.FULL
-            LaunchedEffect(motionMode) {
-                com.mj.yata.ui.theme.YataDur.applyMotionMode(motionMode)
+            // The system-wide animator scale (Developer Options > Animation off) overrides the
+            // in-app choice outright when it's zero, same as ConfettiOverlay already did on its
+            // own - see systemAnimatorScaleIsZero's doc for why this now governs every animation
+            // instead of just confetti. Read once per Activity creation, not on every
+            // recomposition: it only changes via a device settings toggle, which recreates the
+            // Activity's process context anyway.
+            val context = LocalContext.current
+            val systemAnimationsOff = remember(context) {
+                com.mj.yata.ui.theme.systemAnimatorScaleIsZero(context)
+            }
+            val effectiveMotionMode = if (systemAnimationsOff) MotionMode.OFF else motionMode
+            val reduceMotionEnabled = effectiveMotionMode != MotionMode.FULL
+            LaunchedEffect(effectiveMotionMode) {
+                com.mj.yata.ui.theme.YataDur.applyMotionMode(effectiveMotionMode)
             }
             val dateAliasDefinitions by userPreferences.dateAliasDefinitionsFlow.collectAsState(initial = emptySet())
             LaunchedEffect(dateAliasDefinitions) {
@@ -334,14 +359,28 @@ class MainActivity : AppCompatActivity() {
             val completionSoundEnabled by userPreferences.completionSoundEnabledFlow.collectAsState(initial = true)
             val hapticsEnabled by userPreferences.hapticsEnabledFlow.collectAsState(initial = true)
             val taskSwipeActionsEnabled by userPreferences.taskSwipeActionsEnabledFlow.collectAsState(initial = true)
+            val dueCountdownEnabled by userPreferences.dueCountdownEnabledFlow.collectAsState(initial = true)
             val taskCardBackground by userPreferences.taskCardBackgroundFlow.collectAsState(initial = false)
             val swipeRightAction by userPreferences.swipeRightActionFlow
                 .collectAsState(initial = com.mj.yata.domain.model.SwipeAction.COMPLETE)
             val swipeLeftAction by userPreferences.swipeLeftActionFlow
                 .collectAsState(initial = com.mj.yata.domain.model.SwipeAction.DELETE)
+            val quickSnoozeSettings by userPreferences.quickSnoozeSettingsFlow
+                .collectAsState(initial = com.mj.yata.domain.model.QuickSnoozeSettings())
 
             val appLockEnabledPref by userPreferences.appLockEnabledFlow.collectAsState(initial = false)
-            LaunchedEffect(appLockEnabledPref) { AppLockState.appLockEnabled = appLockEnabledPref }
+            LaunchedEffect(appLockEnabledPref) {
+                AppLockState.appLockEnabled = appLockEnabledPref
+                // Blocks screenshots and hides task content from the recents thumbnail while app
+                // lock is on — otherwise the PIN/biometric gate protects nothing, since the same
+                // content it hides behind a lock screen is sitting in the Overview switcher for
+                // anyone to see.
+                if (appLockEnabledPref) {
+                    window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
+                } else {
+                    window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                }
+            }
             val appLockTimeoutPref by userPreferences.appLockTimeoutMinutesFlow.collectAsState(initial = 0)
             LaunchedEffect(appLockTimeoutPref) { AppLockState.appLockTimeoutMinutes = appLockTimeoutPref }
             LaunchedEffect(Unit) {
@@ -349,7 +388,13 @@ class MainActivity : AppCompatActivity() {
                 // (rotation/multi-window) this same check must not re-run and spuriously relock.
                 if (!AppLockState.hasCheckedInitialLock) {
                     AppLockState.hasCheckedInitialLock = true
-                    if (userPreferences.appLockEnabledFlow.first() && canAuthenticate()) {
+                    if (
+                        shouldLockOnAppLaunch(
+                            appLockEnabled = userPreferences.appLockEnabledFlow.first(),
+                            biometricOrDeviceCredentialAvailable = canAuthenticate(),
+                            pinSet = userPreferences.appLockPinSetFlow.first()
+                        )
+                    ) {
                         AppLockState.isLocked = true
                     }
                 }
@@ -365,9 +410,11 @@ class MainActivity : AppCompatActivity() {
                 com.mj.yata.ui.theme.LocalHapticsEnabled provides hapticsEnabled,
                 com.mj.yata.ui.widgets.LocalUndoWindowSeconds provides undoWindowSeconds,
                 com.mj.yata.ui.theme.LocalTaskSwipeActionsEnabled provides taskSwipeActionsEnabled,
+                com.mj.yata.ui.theme.LocalDueCountdownEnabled provides dueCountdownEnabled,
                 com.mj.yata.ui.theme.LocalTaskCardBackground provides taskCardBackground,
                 com.mj.yata.ui.theme.LocalSwipeRightAction provides swipeRightAction,
                 com.mj.yata.ui.theme.LocalSwipeLeftAction provides swipeLeftAction,
+                com.mj.yata.ui.widgets.LocalQuickSnoozeSettings provides quickSnoozeSettings,
                 com.mj.yata.ui.theme.LocalReduceMotion provides reduceMotionEnabled
             ) {
                 YataTheme(
@@ -408,8 +455,16 @@ class MainActivity : AppCompatActivity() {
                             // recovery would be clearing app data — every task gone, to protect a
                             // lock whose own precondition has been deleted. Opening is the lesser
                             // failure, so the lock stands down instead of stranding its owner.
-                            LaunchedEffect(biometricAvailable, pinSet) {
-                                if (!biometricAvailable && !pinSet) AppLockState.isLocked = false
+                            LaunchedEffect(appLockEnabledPref, biometricAvailable, pinSet) {
+                                if (
+                                    shouldDisableLockToAvoidStrandingOwner(
+                                        appLockEnabled = appLockEnabledPref,
+                                        biometricOrDeviceCredentialAvailable = biometricAvailable,
+                                        pinSet = pinSet
+                                    )
+                                ) {
+                                    AppLockState.isLocked = false
+                                }
                             }
 
                             LockScreen(
@@ -431,6 +486,30 @@ class MainActivity : AppCompatActivity() {
                         // relevant screen if launched from a long-press launcher shortcut.
                         LaunchedEffect(currentIntent) {
                             val intent = currentIntent ?: return@LaunchedEffect
+                            val importUri = intent.data?.takeIf { isTaskTransferUri(it) }
+                            if (intent.action == Intent.ACTION_VIEW && importUri != null) {
+                                currentIntent = null
+                                // Parsing is still read-only here: it only decides whether this
+                                // really is an importable YATA task link. The shared-import screen
+                                // owns the user-facing review step for both single-task and
+                                // multi-task links before anything is written.
+                                runCatching { com.mj.yata.util.export.parseTransferLink(importUri) }
+                                    .onSuccess {
+                                        navController.navigate(
+                                            com.mj.yata.ui.navigation.Screen.SharedTaskImport.createRoute(importUri.toString())
+                                        )
+                                        return@LaunchedEffect
+                                    }
+                                    .onFailure { error ->
+                                        Log.w("MainActivity", "Task transfer link parse failed", error)
+                                        Toast.makeText(
+                                            this@MainActivity,
+                                            getString(taskTransferImportErrorMessage(error)),
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                    }
+                                return@LaunchedEffect
+                            }
                             val navigateTo = intent.getStringExtra("navigate_to")
                             val taskId = intent.getStringExtra("task_id")
                             val shortcutAction = intent.getStringExtra("shortcut_action")
@@ -456,7 +535,12 @@ class MainActivity : AppCompatActivity() {
                                 }
                             } else if (shortcutAction == "quick_add") {
                                 navController.navigate(
-                                    com.mj.yata.ui.navigation.Screen.Main.createRoute(tab = 0, quickAdd = true, quickAddListId = listId)
+                                    com.mj.yata.ui.navigation.Screen.Main.createRoute(
+                                        tab = 0,
+                                        quickAdd = true,
+                                        quickAddListId = listId,
+                                        quickCapture = listId.isNullOrEmpty()
+                                    )
                                 ) {
                                     popUpTo(com.mj.yata.ui.navigation.Screen.Main.route) { inclusive = true }
                                     launchSingleTop = true
@@ -498,15 +582,38 @@ class MainActivity : AppCompatActivity() {
                             }
                         }
 
+                        // Undo offers for snooze/reschedule (see AppUndoBus). Shown in the top
+                        // screen's own snackbar host where it has registered one, falling back to
+                        // the activity-wide host above. collectLatest: a newer offer replaces an
+                        // older one still on screen, whose window then simply lapses.
+                        val undoHosts = remember { com.mj.yata.ui.widgets.UndoSnackbarHosts() }
+                        val undoWindowSecondsState = rememberUpdatedState(
+                            com.mj.yata.ui.widgets.LocalUndoWindowSeconds.current
+                        )
+                        LaunchedEffect(Unit) {
+                            undoBus.requests.collectLatest { request ->
+                                val host = undoHosts.top ?: errorHostState
+                                val message = resources.getQuantityString(
+                                    request.messageRes, request.count, request.count
+                                )
+                                if (com.mj.yata.ui.widgets.showUndoSnackbar(host, message, undoWindowSecondsState.value)) {
+                                    request.undo()
+                                }
+                            }
+                        }
+
                         Box(modifier = Modifier.fillMaxSize()) {
-                            AppNavigation(
-                                navController      = navController,
-                                onExportRequested  = { exportLauncher.launch("yata_backup.json") },
-                                onImportRequested  = { importLauncher.launch(arrayOf("application/json")) },
-                                onImportPlainTextRequested = { plainTextImportLauncher.launch(arrayOf("text/csv", "text/comma-separated-values", "text/plain", "*/*")) },
-                                onExportCsvRequested = { exportCsvLauncher.launch("yata_tasks.csv") },
-                                onExportIcsRequested = { icsExportLauncher.launch("yata_calendar.ics") }
-                            )
+                            CompositionLocalProvider(com.mj.yata.ui.widgets.LocalUndoSnackbarHosts provides undoHosts) {
+                                AppNavigation(
+                                    navController      = navController,
+                                    onExportRequested  = { exportLauncher.launch("yata_backup.json") },
+                                    onImportRequested  = { importLauncher.launch(arrayOf("application/json")) },
+                                    onImportPlainTextRequested = { plainTextImportLauncher.launch(arrayOf("text/csv", "text/comma-separated-values", "text/plain", "*/*")) },
+                                    onExportCsvRequested = { exportCsvLauncher.launch("yata_tasks.csv") },
+                                    onExportIcsRequested = { icsExportLauncher.launch("yata_calendar.ics") },
+                                    taskTransferImporter = taskTransferImporter
+                                )
+                            }
                             SnackbarHost(
                                 hostState = errorHostState,
                                 modifier = Modifier.align(Alignment.BottomCenter)
@@ -518,3 +625,15 @@ class MainActivity : AppCompatActivity() {
         }
     }
 }
+
+private fun taskTransferImportErrorMessage(error: Throwable): Int =
+    when ((error as? TaskTransferLinkException)?.reason) {
+        TaskTransferLinkError.Incomplete -> R.string.task_transfer_import_incomplete
+        TaskTransferLinkError.TooManyTasks -> R.string.task_transfer_import_too_many_tasks
+        TaskTransferLinkError.TooLarge -> R.string.task_transfer_import_too_large
+        TaskTransferLinkError.Unsupported -> R.string.task_transfer_import_unsupported
+        TaskTransferLinkError.NotATaskLink,
+        TaskTransferLinkError.Empty,
+        TaskTransferLinkError.Malformed,
+        null -> R.string.task_transfer_import_failed
+    }

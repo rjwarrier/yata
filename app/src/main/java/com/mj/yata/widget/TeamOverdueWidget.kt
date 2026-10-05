@@ -13,6 +13,7 @@ import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.appWidgetBackground
+import com.mj.yata.R
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
 import androidx.glance.appwidget.state.getAppWidgetState
@@ -31,8 +32,10 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
+import com.mj.yata.domain.model.Holiday
 import com.mj.yata.domain.model.Person
 import com.mj.yata.domain.model.Task
+import com.mj.yata.domain.model.effectiveDue
 import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.flow.first
 import java.time.LocalDate
@@ -55,15 +58,21 @@ class TeamOverdueWidget : GlanceAppWidget() {
         val opacity = prefs[WIDGET_OPACITY_KEY] ?: 1.0f
         val accentOverrideKey = prefs[WIDGET_ACCENT_OVERRIDE_KEY]
 
-        val repository = EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java).repository()
+        val entryPoint = EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java)
+        val repository = entryPoint.repository()
+        val userPreferences = entryPoint.userPreferences()
         val tasks = repository.getTasks().first()
         val people = repository.getPeople().first().filter { !it.archived }
         val today = LocalDate.now()
+        val weekendDays = userPreferences.weekendDaysFlow.first()
+        val holidays = userPreferences.holidaysFlow.first().mapNotNull(Holiday::decode)
+        val observeNonWorkingDays = userPreferences.observeNonWorkingDaysFlow.first()
 
         val overdueByPerson = people.mapNotNull { person ->
             val count = tasks.count { task ->
                 if (task.done || person.id !in task.assigneeIds) return@count false
-                val due = task.due?.let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: return@count false
+                val due = task.effectiveDue(weekendDays, holidays, observeNonWorkingDays)
+                    ?.let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: return@count false
                 due.isBefore(today)
             }
             if (count > 0) person to count else null
@@ -101,6 +110,7 @@ private fun TeamOverdueContent(
     accentOverride: androidx.compose.ui.graphics.Color?,
     health: WidgetHealth?
 ) {
+    val context = androidx.glance.LocalContext.current
     val maxRows = if (LocalSize.current.height > 180.dp) 8 else 5
     Box(
         modifier = GlanceModifier
@@ -112,13 +122,13 @@ private fun TeamOverdueContent(
             .clickable(openAppAction())
     ) {
         Column(modifier = GlanceModifier.fillMaxSize()) {
-            WidgetSectionHeader(customLabel ?: "Team Overdue", ColorProvider(accentOverride ?: colors.error))
+            WidgetSectionHeader(customLabel ?: context.getString(R.string.team_overdue_widget_title), ColorProvider(accentOverride ?: colors.error))
             WidgetStaleBadge(health)
             Spacer(modifier = GlanceModifier.height(8.dp))
             if (overdueByPerson.isEmpty()) {
                 Box(modifier = GlanceModifier.fillMaxWidth().defaultWeight(), contentAlignment = Alignment.Center) {
                     Text(
-                        text = "Nobody's behind. 🎉",
+                        text = context.getString(R.string.team_overdue_widget_empty),
                         style = TextStyle(fontSize = 13.sp, color = GlanceTheme.colors.onSurfaceVariant)
                     )
                 }
@@ -137,7 +147,7 @@ private fun TeamOverdueContent(
                                 modifier = GlanceModifier.defaultWeight()
                             )
                             Text(
-                                text = "$count overdue",
+                                text = context.getString(R.string.people_tab_overdue_count, count),
                                 style = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Medium, color = ColorProvider(accentOverride ?: colors.error))
                             )
                         }

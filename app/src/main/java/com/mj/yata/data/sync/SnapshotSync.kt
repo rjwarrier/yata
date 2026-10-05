@@ -46,7 +46,20 @@ internal object SnapshotMerger {
 
     private object Missing
 
-    data class MergeResult(val json: JSONObject, val conflicts: Int)
+    data class ConflictRecord(
+        val path: String,
+        val collection: String?,
+        val id: String?,
+        val base: Any,
+        val local: Any,
+        val remote: Any
+    )
+
+    data class MergeResult(
+        val json: JSONObject,
+        val conflicts: Int,
+        val conflictRecords: List<ConflictRecord> = emptyList()
+    )
 
     fun merge(base: JSONObject?, local: JSONObject, remote: JSONObject?): MergeResult {
         if (remote == null) {
@@ -58,6 +71,7 @@ internal object SnapshotMerger {
 
         val merged = JSONObject()
         var conflicts = 0
+        val conflictRecords = mutableListOf<ConflictRecord>()
 
         val scalarKeys = allKeys(base, local, remote)
             .filterNot { it in keyedCollections || it == "version" || it == "syncVersion" }
@@ -69,7 +83,17 @@ internal object SnapshotMerger {
                 remote = valueAt(remote, key),
                 initialJoin = base == null
             )
-            if (decision.conflict) conflicts++
+            if (decision.conflict) {
+                conflicts++
+                conflictRecords += ConflictRecord(
+                    path = key,
+                    collection = null,
+                    id = null,
+                    base = valueAt(base, key),
+                    local = valueAt(local, key),
+                    remote = valueAt(remote, key)
+                )
+            }
             if (decision.value !== Missing) merged.put(key, deepCopyValue(decision.value))
         }
 
@@ -80,14 +104,23 @@ internal object SnapshotMerger {
             val ids = (baseRows.keys + localRows.keys + remoteRows.keys).toSortedSet()
             val out = JSONArray()
             ids.forEach { id ->
-                val decision = mergeValue(
-                    base = baseRows[id] ?: Missing,
-                    local = localRows[id] ?: Missing,
-                    remote = remoteRows[id] ?: Missing,
+                val baseRow = baseRows[id] ?: Missing
+                val localRow = localRows[id] ?: Missing
+                val remoteRow = remoteRows[id] ?: Missing
+                val rowMerge = mergeRecord(
+                    path = "$collection/$id",
+                    collection = collection,
+                    id = id,
+                    base = baseRow,
+                    local = localRow,
+                    remote = remoteRow,
                     initialJoin = base == null
                 )
-                if (decision.conflict) conflicts++
-                if (decision.value !== Missing) out.put(deepCopyValue(decision.value))
+                conflicts += rowMerge.conflicts
+                conflictRecords += rowMerge.conflictRecords
+                if (rowMerge.value !== Missing) {
+                    out.put(deepCopyValue(rowMerge.value))
+                }
             }
             merged.put(collection, out)
         }
@@ -95,7 +128,21 @@ internal object SnapshotMerger {
         merged.put("version", CURRENT_BACKUP_VERSION)
         merged.put("syncVersion", SYNC_FORMAT_VERSION)
         repairReferences(merged)
-        return MergeResult(merged, conflicts)
+        return MergeResult(merged, conflicts, conflictRecords)
+    }
+
+    fun conflictRecordsJson(records: List<ConflictRecord>): JSONArray = JSONArray().apply {
+        records.forEach { record ->
+            put(
+                JSONObject()
+                    .put("path", record.path)
+                    .put("collection", record.collection ?: JSONObject.NULL)
+                    .put("id", record.id ?: JSONObject.NULL)
+                    .put("base", conflictValueJson(record.base))
+                    .put("local", conflictValueJson(record.local))
+                    .put("remote", conflictValueJson(record.remote))
+            )
+        }
     }
 
     /** Removes settings that must remain tied to one installation/connection. */
@@ -119,17 +166,10 @@ internal object SnapshotMerger {
             for (i in 0 until settings.length()) {
                 val row = settings.optJSONObject(i)
                     ?: throw IllegalArgumentException("Setting row $i is not an object")
-                if (!isDeviceLocalSetting(row.optString("name"))) {
-                    val copy = deepCopy(row)
-                    if (copy.optString("type") == "stringSet") {
-                        copy.optJSONArray("value")?.let { values ->
-                            val sorted = (0 until values.length())
-                                .map { values.getString(it) }
-                                .sorted()
-                            copy.put("value", JSONArray(sorted))
-                        }
+                normalizedPortableSettingOrNull(row)?.let { copy ->
+                    if (!isDeviceLocalSetting(copy.getString("name"))) {
+                        portable.put(copy)
                     }
-                    portable.put(copy)
                 }
             }
             normalized.put("settings", portable)
@@ -141,9 +181,48 @@ internal object SnapshotMerger {
                 people.optJSONObject(i)?.remove("photoUri")
             }
         }
+        normalized.optJSONArray("projects")?.let { projects ->
+            for (i in 0 until projects.length()) {
+                projects.optJSONObject(i)?.let { project ->
+                    project.normalizeNullableFields(
+                        "due",
+                        "defaultReminder",
+                        "description"
+                    )
+                }
+            }
+        }
+        // Tags gained "description" in 6cea2b7 and always carry "groupId" (JsonExporter.kt) —
+        // but an older snapshot already on GitHub, published before that, has neither key at
+        // all. Without normalizing them the same way projects/tasks are below, that schema drift
+        // reads as a real difference: "$/tags[0]/description is missing locally" on every sync
+        // against a repo with any pre-description snapshot in its history, even though both sides
+        // agree the tag simply has no description.
+        normalized.optJSONArray("tags")?.let { tags ->
+            for (i in 0 until tags.length()) {
+                tags.optJSONObject(i)?.normalizeNullableFields("description", "groupId")
+            }
+        }
         normalized.optJSONArray("tasks")?.let { tasks ->
             for (i in 0 until tasks.length()) {
                 val task = tasks.optJSONObject(i) ?: continue
+                task.normalizeNullableFields(
+                    "listId",
+                    "projectId",
+                    "due",
+                    "startDate",
+                    "time",
+                    "reminder",
+                    "completedAt",
+                    "createdAt",
+                    "deletedAt",
+                    "notes",
+                    "seriesId",
+                    "recurrence",
+                    "followUpAt",
+                    "estimateMinutes"
+                )
+                if (!task.has("postponementCount")) task.put("postponementCount", 0)
                 task.optJSONArray("tagIds")?.let { ids ->
                     task.put("tagIds", JSONArray((0 until ids.length()).map { ids.getString(it) }.sorted()))
                 }
@@ -179,19 +258,197 @@ internal object SnapshotMerger {
         return normalized
     }
 
+    private fun JSONObject.normalizeNullableFields(vararg keys: String) {
+        keys.forEach { key ->
+            if (!has(key)) put(key, JSONObject.NULL)
+        }
+    }
+
     fun equivalent(left: JSONObject, right: JSONObject): Boolean =
         canonical(left) == canonical(right)
+
+    fun canonicalHash(value: Any?): String =
+        MessageDigest.getInstance("SHA-256")
+            .digest(canonical(value).toByteArray(Charsets.UTF_8))
+            .joinToString("") { "%02x".format(it) }
+
+    fun differenceSummary(left: JSONObject, right: JSONObject): String? =
+        firstDifference(left, right, "$")
+
+    /**
+     * True when [after] is missing a record (by its keyed id, in any [keyedCollections] entry)
+     * that [before] had. Used as a defense-in-depth signal alongside [equivalent]: two snapshots
+     * can already be pixel-identical to each other (nothing left to *write* locally) while still
+     * representing a merge that just deleted records relative to what this device is known to
+     * have had — [SnapshotSyncEngine.commit] forces a recovery backup on either signal, not just
+     * a content difference, so that case still gets a safety net.
+     */
+    fun removedAnyRecords(before: JSONObject, after: JSONObject): Boolean =
+        keyedCollections.any { (collection, idKey) ->
+            val beforeIds = idsOf(before.optJSONArray(collection), idKey)
+            if (beforeIds.isEmpty()) return@any false
+            val afterIds = idsOf(after.optJSONArray(collection), idKey)
+            !afterIds.containsAll(beforeIds)
+        }
+
+    private fun idsOf(array: JSONArray?, idKey: String): Set<String> {
+        if (array == null) return emptySet()
+        val ids = mutableSetOf<String>()
+        for (i in 0 until array.length()) {
+            array.optJSONObject(i)?.optString(idKey)?.takeIf { it.isNotEmpty() }?.let(ids::add)
+        }
+        return ids
+    }
 
     internal fun isDeviceLocalSetting(name: String): Boolean =
         name == "backup_interval_minutes" ||
             name == "remote_backup_protocol" ||
             name == "ftp_use_tls" ||
             name.startsWith("app_lock_") ||
+            name.startsWith("github_") ||
             name.startsWith("sftp_") ||
             name.startsWith("cloud_backup_") ||
             name.startsWith("local_backup_")
 
+    private fun normalizedPortableSettingOrNull(row: JSONObject): JSONObject? {
+        val name = row.optString("name").takeIf { it.isNotBlank() } ?: return null
+        val type = row.optString("type").takeIf { it.isNotBlank() } ?: return null
+        if (!row.has("value")) return null
+        val value = row.get("value")
+        val normalizedValue = when (type) {
+            "bool" -> (value as? Boolean) ?: return null
+            "int",
+            "long",
+            "float" -> (value as? Number) ?: return null
+            "string" -> (value as? String) ?: return null
+            "stringSet" -> {
+                val values = value as? JSONArray ?: return null
+                JSONArray((0 until values.length()).map { values.getString(it) }.sorted())
+            }
+            else -> return null
+        }
+        return JSONObject()
+            .put("name", name)
+            .put("type", type)
+            .put("value", normalizedValue)
+    }
+
     private data class Decision(val value: Any, val conflict: Boolean)
+
+    private data class RecordMerge(
+        val value: Any,
+        val conflicts: Int,
+        val conflictRecords: List<ConflictRecord>
+    )
+
+    private fun mergeRecord(
+        path: String,
+        collection: String,
+        id: String,
+        base: Any,
+        local: Any,
+        remote: Any,
+        initialJoin: Boolean
+    ): RecordMerge {
+        if (!initialJoin && base is JSONObject && local is JSONObject && remote is JSONObject) {
+            val merged = JSONObject()
+            val conflicts = mutableListOf<ConflictRecord>()
+            val idKey = if (collection == "settings") "name" else "id"
+            allKeys(base, local, remote)
+                .filterNot { it == idKey }
+                .sorted()
+                .forEach { key ->
+                    val decision = mergeFieldValue(
+                        key = key,
+                        base = valueAt(base, key),
+                        local = valueAt(local, key),
+                        remote = valueAt(remote, key),
+                        initialJoin = false
+                    )
+                    if (decision.conflict) {
+                        conflicts += ConflictRecord(
+                            path = "$path/$key",
+                            collection = collection,
+                            id = id,
+                            base = valueAt(base, key),
+                            local = valueAt(local, key),
+                            remote = valueAt(remote, key)
+                        )
+                    }
+                    if (decision.value !== Missing) merged.put(key, deepCopyValue(decision.value))
+                }
+            merged.put(idKey, id)
+            return RecordMerge(merged, conflicts.size, conflicts)
+        }
+
+        val decision = mergeValue(base, local, remote, initialJoin)
+        return RecordMerge(
+            value = decision.value,
+            conflicts = if (decision.conflict) 1 else 0,
+            conflictRecords = if (decision.conflict) {
+                listOf(
+                    ConflictRecord(
+                        path = path,
+                        collection = collection,
+                        id = id,
+                        base = base,
+                        local = local,
+                        remote = remote
+                    )
+                )
+            } else {
+                emptyList()
+            }
+        )
+    }
+
+    private fun mergeFieldValue(
+        key: String,
+        base: Any,
+        local: Any,
+        remote: Any,
+        initialJoin: Boolean
+    ): Decision {
+        if (!initialJoin && key in setLikeIdArrayFields) {
+            mergeSetLikeIdArray(base, local, remote)?.let { return it }
+        }
+        if (!initialJoin && key == "assigneeIds") {
+            mergeAssigneeIds(base, local, remote)?.let { return it }
+        }
+        return mergeValue(base, local, remote, initialJoin)
+    }
+
+    private fun mergeSetLikeIdArray(base: Any, local: Any, remote: Any): Decision? {
+        if (same(local, remote)) return Decision(local, conflict = false)
+        if (same(local, base) || same(remote, base)) return null
+        val baseIds = (base as? JSONArray)?.stringListOrNull() ?: return null
+        val localIds = (local as? JSONArray)?.stringListOrNull() ?: return null
+        val remoteIds = (remote as? JSONArray)?.stringListOrNull() ?: return null
+        val baseSet = baseIds.toSet()
+        val localSet = localIds.toSet()
+        val remoteSet = remoteIds.toSet()
+        val removed = (baseSet - localSet) + (baseSet - remoteSet)
+        val added = (localSet - baseSet) + (remoteSet - baseSet)
+        return Decision(JSONArray(((baseSet - removed) + added).sorted()), conflict = false)
+    }
+
+    private fun mergeAssigneeIds(base: Any, local: Any, remote: Any): Decision? {
+        if (same(local, remote)) return Decision(local, conflict = false)
+        if (same(local, base) || same(remote, base)) return null
+        val baseIds = (base as? JSONArray)?.stringListOrNull() ?: return null
+        val localIds = (local as? JSONArray)?.stringListOrNull() ?: return null
+        val remoteIds = (remote as? JSONArray)?.stringListOrNull() ?: return null
+        val owner = baseIds.firstOrNull()
+        if (owner == null || localIds.firstOrNull() != owner || remoteIds.firstOrNull() != owner) {
+            return null
+        }
+        val baseCollaborators = baseIds.drop(1).toSet()
+        val localCollaborators = localIds.drop(1).toSet()
+        val remoteCollaborators = remoteIds.drop(1).toSet()
+        val removed = (baseCollaborators - localCollaborators) + (baseCollaborators - remoteCollaborators)
+        val added = (localCollaborators - baseCollaborators) + (remoteCollaborators - baseCollaborators)
+        return Decision(JSONArray(listOf(owner) + ((baseCollaborators - removed) + added).sorted()), conflict = false)
+    }
 
     private fun mergeValue(base: Any, local: Any, remote: Any, initialJoin: Boolean): Decision {
         if (same(local, remote)) return Decision(local, conflict = false)
@@ -213,6 +470,55 @@ internal object SnapshotMerger {
 
     private fun valueAt(root: JSONObject?, key: String): Any =
         if (root != null && root.has(key)) root.get(key) else Missing
+
+    private fun firstDifference(left: Any, right: Any, path: String): String? {
+        if (same(left, right)) return null
+        if (left === Missing || right === Missing) {
+            return "$path is ${if (left === Missing) "missing locally" else "extra locally"}"
+        }
+        if (left is JSONObject && right is JSONObject) {
+            val keys = (left.keys().asSequence().toSet() + right.keys().asSequence().toSet()).sorted()
+            keys.forEach { key ->
+                firstDifference(valueAt(left, key), valueAt(right, key), "$path/$key")?.let { return it }
+            }
+            return null
+        }
+        if (left is JSONArray && right is JSONArray) {
+            if (left.length() != right.length()) {
+                return "$path has ${left.length()} item(s) locally, expected ${right.length()}"
+            }
+            for (i in 0 until left.length()) {
+                firstDifference(left.get(i), right.get(i), "$path[$i]")?.let { return it }
+            }
+            return null
+        }
+        return "$path changed after local apply (${left.safeJsonType()} vs ${right.safeJsonType()})"
+    }
+
+    private fun Iterator<String>.asSequence(): Sequence<String> = sequence {
+        while (hasNext()) yield(next())
+    }
+
+    private fun Any.safeJsonType(): String =
+        when (this) {
+            JSONObject.NULL -> "null"
+            is JSONObject -> "object"
+            is JSONArray -> "array"
+            is String -> "string"
+            is Boolean -> "boolean"
+            is Number -> "number"
+            else -> javaClass.simpleName.ifBlank { "value" }
+        }
+
+    private val setLikeIdArrayFields = setOf("tagIds", "commonTagIds")
+
+    private fun JSONArray.stringListOrNull(): List<String>? {
+        val out = mutableListOf<String>()
+        for (i in 0 until length()) {
+            out += (get(i) as? String) ?: return null
+        }
+        return out
+    }
 
     private fun rowsById(array: JSONArray?, idKey: String): Map<String, JSONObject> {
         if (array == null) return emptyMap()
@@ -266,6 +572,11 @@ internal object SnapshotMerger {
                 visit(parentId)
             }
             state[id] = 2
+            // The repository sanitizes subtasks by sortOrder, then rewrites sortOrder to the
+            // resulting array index. If canonical sync JSON only moves a parent before its child
+            // but leaves stale sortOrder values behind, importing and re-exporting that snapshot
+            // mutates it and post-apply verification fails even though the server publish landed.
+            row.put("sortOrder", ordered.length())
             ordered.put(row)
         }
         rows.keys
@@ -372,6 +683,13 @@ internal object SnapshotMerger {
         is JSONArray -> JSONArray(value.toString())
         else -> value
     }
+
+    private fun conflictValueJson(value: Any): Any = when (value) {
+        Missing -> JSONObject.NULL
+        is JSONObject -> deepCopy(value)
+        is JSONArray -> JSONArray(value.toString())
+        else -> value
+    }
 }
 
 internal data class PreparedSnapshotSync(
@@ -379,11 +697,120 @@ internal data class PreparedSnapshotSync(
     val localAtStart: JSONObject,
     val canonical: JSONObject,
     val conflicts: Int,
-    val remoteNeedsPublish: Boolean
+    val conflictRecords: List<SnapshotMerger.ConflictRecord>,
+    val remoteNeedsPublish: Boolean,
+    /** Whether merging dropped any record [localAtStart] had — see
+     * [SnapshotMerger.removedAnyRecords]. */
+    val recordsRemoved: Boolean = false
 ) {
     val canonicalBytes: ByteArray
         get() = canonical.toString(2).toByteArray(Charsets.UTF_8)
+
+    val canonicalHash: String
+        get() = SnapshotMerger.canonicalHash(canonical)
 }
+
+data class InitialSyncSnapshotSummary(
+    val totalTasks: Int,
+    val openTasks: Int,
+    val totalProjects: Int,
+    val totalPeople: Int
+)
+
+class InitialSyncConfirmationRequiredException(
+    val localSummary: InitialSyncSnapshotSummary,
+    val remoteSummary: InitialSyncSnapshotSummary
+) : Exception(initialSyncConfirmationMessage(localSummary, remoteSummary))
+
+private fun initialSyncConfirmationMessage(
+    local: InitialSyncSnapshotSummary,
+    remote: InitialSyncSnapshotSummary
+): String =
+    "This device and the remote sync snapshot both contain data.\n\n" +
+        "This device: ${local.totalTasks} tasks (${local.openTasks} open), " +
+        "${local.totalProjects} projects, ${local.totalPeople} people.\n" +
+        "Remote snapshot: ${remote.totalTasks} tasks (${remote.openTasks} open), " +
+        "${remote.totalProjects} projects, ${remote.totalPeople} people.\n\n" +
+        "YATA will merge them, keep a recovery backup before applying changes, and use the remote copy for any direct conflicts."
+
+/**
+ * Thrown when this device has *already* synced before (a baseline exists and it has data) but now
+ * has no local data at all, while the remote snapshot still does. That combination is what a
+ * restored/reinstalled device looks like when Android's auto-backup brought back the sync baseline
+ * and app preferences (small DataStore/file content, eligible for cloud backup) without the Room
+ * database (large SQLite file, excluded) — the device *looks* wiped to the merge even though the
+ * user never deleted anything. Merging in that state is technically correct three-way-merge
+ * behavior (local's "no records" beats an unmodified remote) but it quietly deletes every record
+ * from the remote copy too, with no conflict flagged and no recovery backup taken since nothing
+ * appeared to change locally. See [SnapshotSyncEngine.commit]'s recovery-backup guard, which this
+ * exception exists to make actually fire.
+ */
+class EmptyLocalDataConfirmationRequiredException(
+    val baselineSummary: InitialSyncSnapshotSummary,
+    val remoteSummary: InitialSyncSnapshotSummary
+) : Exception(emptyLocalDataConfirmationMessage(baselineSummary, remoteSummary))
+
+private fun emptyLocalDataConfirmationMessage(
+    baseline: InitialSyncSnapshotSummary,
+    remote: InitialSyncSnapshotSummary
+): String =
+    "This device has no tasks, but its last known sync state and the remote snapshot both contain data.\n\n" +
+        "Last known state on this device: ${baseline.totalTasks} tasks (${baseline.openTasks} open), " +
+        "${baseline.totalProjects} projects, ${baseline.totalPeople} people.\n" +
+        "Remote snapshot: ${remote.totalTasks} tasks (${remote.openTasks} open), " +
+        "${remote.totalProjects} projects, ${remote.totalPeople} people.\n\n" +
+        "This usually means a fresh install or a restored device rather than an intentional wipe. " +
+        "Restore the remote snapshot to bring that data onto this device, or continue to sync anyway " +
+        "— which will delete it from the remote copy too."
+
+/**
+ * True when [base] and [remote] both carry real data but [local] carries none — the shape of a
+ * restored/reinstalled device (see [EmptyLocalDataConfirmationRequiredException]) rather than a
+ * first-ever sync ([base] null, handled separately by [InitialSyncConfirmationRequiredException])
+ * or a device with genuinely nothing left to protect ([remote] also empty). A pure predicate over
+ * the three snapshots so it can be tested without standing up [SnapshotSyncEngine]'s Android
+ * dependencies.
+ */
+internal fun localLooksUnexpectedlyEmpty(base: JSONObject?, local: JSONObject, remote: JSONObject?): Boolean {
+    if (base == null || remote == null) return false
+    return hasUserData(base) && !hasUserData(local) && hasUserData(remote)
+}
+
+internal fun initialSyncSummary(snapshot: JSONObject): InitialSyncSnapshotSummary {
+    val tasks = snapshot.optJSONArray("tasks")
+    var openTasks = 0
+    for (i in 0 until tasks.orZero()) {
+        if (tasks?.optJSONObject(i)?.optBoolean("done", false) == false) openTasks++
+    }
+    return InitialSyncSnapshotSummary(
+        totalTasks = tasks.orZero(),
+        openTasks = openTasks,
+        totalProjects = snapshot.optJSONArray("projects").orZero(),
+        totalPeople = peopleBeyondCurrentUser(snapshot)
+    )
+}
+
+internal fun hasUserData(snapshot: JSONObject): Boolean =
+    snapshot.optJSONArray("tasks").orZero() > 0 ||
+        snapshot.optJSONArray("projects").orZero() > 0 ||
+        snapshot.optJSONArray("lists").orZero() > 0 ||
+        snapshot.optJSONArray("tags").orZero() > 0 ||
+        snapshot.optJSONArray("tagGroups").orZero() > 0 ||
+        snapshot.optJSONArray("personGroups").orZero() > 0 ||
+        snapshot.optJSONArray("comments").orZero() > 0 ||
+        peopleBeyondCurrentUser(snapshot) > 0
+
+private fun peopleBeyondCurrentUser(snapshot: JSONObject): Int {
+    val people = snapshot.optJSONArray("people") ?: return 0
+    var count = 0
+    for (i in 0 until people.length()) {
+        val person = people.optJSONObject(i) ?: continue
+        if (!person.optBoolean("isMe", false)) count++
+    }
+    return count
+}
+
+private fun JSONArray?.orZero(): Int = this?.length() ?: 0
 
 @Singleton
 class SnapshotSyncEngine @Inject constructor(
@@ -394,12 +821,16 @@ class SnapshotSyncEngine @Inject constructor(
     internal suspend fun prepare(
         remoteBytes: ByteArray?,
         scopeKey: String,
-        remoteIsRecovery: Boolean = false
+        remoteIsRecovery: Boolean = false,
+        allowInitialJoinMerge: Boolean = false,
+        allowEmptyLocalOverwrite: Boolean = false
     ): PreparedSnapshotSync =
         withContext(Dispatchers.IO) {
             val local = normalized(jsonExporter.exportToBytes())
             val observedRemote = remoteBytes?.let(::normalized)
             val base = readBaseline(scopeKey)
+            checkInitialJoinIsExplicit(base, local, observedRemote, allowInitialJoinMerge)
+            checkLocalNotUnexpectedlyEmpty(base, local, observedRemote, allowEmptyLocalOverwrite)
             // A previous/history file is necessarily older than a missing or corrupt canonical.
             // Once this device has a baseline, auto-promoting such a copy could make a newer
             // device accept a rollback. Before the first baseline exists, though, those history
@@ -415,8 +846,10 @@ class SnapshotSyncEngine @Inject constructor(
                 localAtStart = local,
                 canonical = result.json,
                 conflicts = result.conflicts,
+                conflictRecords = result.conflictRecords,
                 remoteNeedsPublish =
-                    remote == null || !SnapshotMerger.equivalent(remote, result.json)
+                    remote == null || !SnapshotMerger.equivalent(remote, result.json),
+                recordsRemoved = SnapshotMerger.removedAnyRecords(local, result.json)
             ).also {
                 // Do this before a transport publishes anything; exact apply repeats validation as
                 // defense in depth, but discovering an invalid graph after upload is too late.
@@ -430,32 +863,53 @@ class SnapshotSyncEngine @Inject constructor(
      * while the network transfer was in flight, merge that edit onto the canonical snapshot and
      * leave it pending for the next sync instead of wiping it.
      */
-    internal suspend fun commit(prepared: PreparedSnapshotSync) = withContext(Dispatchers.IO) {
+    internal suspend fun commit(prepared: PreparedSnapshotSync): Int = withContext(Dispatchers.IO) {
         val current = normalized(jsonExporter.exportToBytes())
-        val localTarget = if (SnapshotMerger.equivalent(current, prepared.localAtStart)) {
-            prepared.canonical
+        val inFlightMerge = if (SnapshotMerger.equivalent(current, prepared.localAtStart)) {
+            null
         } else {
             SnapshotMerger.merge(
                 base = prepared.localAtStart,
                 local = current,
                 remote = prepared.canonical
-            ).json
+            )
         }
-        if (!SnapshotMerger.equivalent(current, localTarget)) {
+        val localTarget = inFlightMerge?.json ?: prepared.canonical
+        val conflictRecords = prepared.conflictRecords + inFlightMerge?.conflictRecords.orEmpty()
+        val contentChanges = !SnapshotMerger.equivalent(current, localTarget)
+        // recordsRemoved can be true even when contentChanges is false: current may already equal
+        // localTarget (nothing left to *write*) while the merge that produced it still deleted
+        // records this device is on record as having had — e.g. an already-empty local export
+        // merging against a populated baseline. That combination writes nothing but is exactly the
+        // shape of an unnoticed data loss, so it still earns a recovery backup.
+        if (contentChanges || prepared.recordsRemoved) {
             recoveryBackupManager.saveCurrent("pre_sync_apply").getOrElse { e ->
                 throw IllegalStateException(
                     "Could not create a recovery backup before applying sync; local data was not changed",
                     e
                 )
             }
+            if (conflictRecords.isNotEmpty()) {
+                writeConflictArtifact(prepared.scopeKey, conflictRecords)
+            }
+        }
+        if (contentChanges) {
             check(jsonExporter.replaceBytesForSync(localTarget.toString(2).toByteArray(Charsets.UTF_8))) {
                 "The server snapshot was published, but applying it locally failed; sync again to retry"
             }
+            val applied = normalized(jsonExporter.exportToBytes())
+            SnapshotMerger.differenceSummary(applied, localTarget)?.let { difference ->
+                throw IllegalStateException(
+                    "The server snapshot was published, but local verification failed at $difference; sync again to retry"
+                )
+            }
         }
         writeBaseline(prepared.scopeKey, prepared.canonical)
-        if (prepared.conflicts > 0) {
-            Log.i(TAG, "Resolved ${prepared.conflicts} concurrent sync conflict(s) using the server copy")
+        val totalConflicts = prepared.conflicts + (inFlightMerge?.conflicts ?: 0)
+        if (totalConflicts > 0) {
+            Log.i(TAG, "Resolved $totalConflicts concurrent sync conflict(s) using the server copy")
         }
+        totalConflicts
     }
 
     /** Lets transports reject a damaged head and continue to an older recovery candidate. */
@@ -464,16 +918,64 @@ class SnapshotSyncEngine @Inject constructor(
         jsonExporter.validateBytesForSync(candidate.toString().toByteArray(Charsets.UTF_8))
     }.isSuccess
 
+    internal suspend fun localCanonicalHash(): String = withContext(Dispatchers.IO) {
+        SnapshotMerger.canonicalHash(normalized(jsonExporter.exportToBytes()))
+    }
+
     private fun normalized(bytes: ByteArray): JSONObject =
         SnapshotMerger.normalizeForSync(JSONObject(String(bytes, Charsets.UTF_8)))
+
+    private fun checkInitialJoinIsExplicit(
+        base: JSONObject?,
+        local: JSONObject,
+        remote: JSONObject?,
+        allowInitialJoinMerge: Boolean
+    ) {
+        if (base != null || remote == null || allowInitialJoinMerge) return
+        if (hasUserData(local) && hasUserData(remote)) {
+            throw InitialSyncConfirmationRequiredException(
+                localSummary = initialSyncSummary(local),
+                remoteSummary = initialSyncSummary(remote)
+            )
+        }
+    }
+
+    /**
+     * Guards against a restored/reinstalled device silently deleting the remote copy: this device
+     * has synced before ([base] has data) and the remote still has data, but local now has none.
+     * A device that never synced ([base] null) goes through [checkInitialJoinIsExplicit] instead —
+     * that path is unaffected. A device that legitimately has nothing left to protect (remote also
+     * empty) has nothing this guard needs to stop.
+     */
+    private fun checkLocalNotUnexpectedlyEmpty(
+        base: JSONObject?,
+        local: JSONObject,
+        remote: JSONObject?,
+        allowEmptyLocalOverwrite: Boolean
+    ) {
+        if (allowEmptyLocalOverwrite || !localLooksUnexpectedlyEmpty(base, local, remote)) return
+        throw EmptyLocalDataConfirmationRequiredException(
+            // Non-null: localLooksUnexpectedlyEmpty already required base and remote non-null.
+            baselineSummary = initialSyncSummary(base!!),
+            remoteSummary = initialSyncSummary(remote!!)
+        )
+    }
 
     private fun readBaseline(scopeKey: String): JSONObject? = try {
         val file = baselineFile(scopeKey)
         if (!file.exists()) null else SnapshotMerger.normalizeForSync(JSONObject(file.readText()))
     } catch (e: Exception) {
+        Log.w(TAG, "Primary sync baseline is unreadable; trying previous copy", e)
+        readPreviousBaseline(scopeKey)
+    }
+
+    private fun readPreviousBaseline(scopeKey: String): JSONObject? = try {
+        val file = previousBaselineFile(scopeKey)
+        if (!file.exists()) null else SnapshotMerger.normalizeForSync(JSONObject(file.readText()))
+    } catch (e: Exception) {
         // A baseline is only merge metadata; the canonical server copy remains the source of
-        // truth. Treat corruption as a first join rather than making sync permanently unusable.
-        Log.w(TAG, "Ignoring unreadable local sync baseline", e)
+        // truth. Treat corruption as a first join only after both baseline copies fail.
+        Log.w(TAG, "Ignoring unreadable previous sync baseline", e)
         null
     }
 
@@ -483,6 +985,7 @@ class SnapshotSyncEngine @Inject constructor(
         val temporary = File(target.parentFile, ".${target.name}.part")
         temporary.writeText(value.toString())
         try {
+            preservePreviousBaseline(target, previousBaselineFile(scopeKey))
             try {
                 Files.move(
                     temporary.toPath(),
@@ -503,12 +1006,63 @@ class SnapshotSyncEngine @Inject constructor(
         }
     }
 
+    private fun preservePreviousBaseline(target: File, previous: File) {
+        if (!target.exists()) return
+        previous.parentFile?.mkdirs()
+        Files.copy(
+            target.toPath(),
+            previous.toPath(),
+            StandardCopyOption.REPLACE_EXISTING
+        )
+    }
+
+    private fun writeConflictArtifact(
+        scopeKey: String,
+        records: List<SnapshotMerger.ConflictRecord>
+    ) {
+        val directory = File(context.filesDir, "yata-sync-conflicts")
+        directory.mkdirs()
+        val target = File(directory, "${scopeDigest(scopeKey)}-${System.currentTimeMillis()}.json")
+        val temporary = File(directory, ".${target.name}.part")
+        val payload = JSONObject()
+            .put("createdAt", System.currentTimeMillis())
+            .put("scopeKey", scopeKey)
+            .put("conflictCount", records.size)
+            .put("conflicts", SnapshotMerger.conflictRecordsJson(records))
+        temporary.writeText(payload.toString(2))
+        try {
+            try {
+                Files.move(
+                    temporary.toPath(),
+                    target.toPath(),
+                    StandardCopyOption.ATOMIC_MOVE,
+                    StandardCopyOption.REPLACE_EXISTING
+                )
+            } catch (_: AtomicMoveNotSupportedException) {
+                Files.move(
+                    temporary.toPath(),
+                    target.toPath(),
+                    StandardCopyOption.REPLACE_EXISTING
+                )
+            }
+        } catch (e: Exception) {
+            temporary.delete()
+            throw IllegalStateException("Could not save sync conflict recovery data", e)
+        }
+    }
+
     private fun baselineFile(scopeKey: String): File {
-        val digest = MessageDigest.getInstance("SHA-256")
+        return File(File(context.filesDir, "yata-sync"), "${scopeDigest(scopeKey)}.json")
+    }
+
+    private fun previousBaselineFile(scopeKey: String): File {
+        return File(File(context.filesDir, "yata-sync"), "${scopeDigest(scopeKey)}.previous.json")
+    }
+
+    private fun scopeDigest(scopeKey: String): String =
+        MessageDigest.getInstance("SHA-256")
             .digest(scopeKey.toByteArray(Charsets.UTF_8))
             .joinToString("") { "%02x".format(it) }
-        return File(File(context.filesDir, "yata-sync"), "$digest.json")
-    }
 
     private companion object {
         const val TAG = "SnapshotSyncEngine"

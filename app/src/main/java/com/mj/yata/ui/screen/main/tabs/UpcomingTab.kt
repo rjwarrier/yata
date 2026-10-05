@@ -13,8 +13,6 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -40,6 +38,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mj.yata.R
@@ -49,8 +48,10 @@ import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.yataItemFade
 import com.mj.yata.ui.theme.yataItemPlacement
 import com.mj.yata.ui.theme.YataEase
+import com.mj.yata.ui.util.rememberAdaptiveSheetMaxWidth
 import com.mj.yata.ui.widgets.PersonAvatar
 import com.mj.yata.ui.widgets.SegmentedControl
+import com.mj.yata.ui.widgets.TaskPreviewPane
 import com.mj.yata.ui.widgets.TaskRow
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -83,6 +84,7 @@ fun UpcomingTab(
     onSelectedDayChange: (LocalDate) -> Unit,
     startOfWeekSunday: Boolean = true,
     onMenuClick: () -> Unit,
+    showMenuButton: Boolean = true,
     onSearchClick: () -> Unit,
     onProfileClick: () -> Unit,
     onTaskClick: (String) -> Unit,
@@ -96,13 +98,22 @@ fun UpcomingTab(
     onBulkSetList: (List<String>, String?) -> Unit = { _, _ -> },
     onBulkDuplicate: (List<String>) -> Unit = {},
     onBulkAssignPerson: (List<String>, String) -> Unit = { _, _ -> },
-    onBulkReschedule: (List<String>, QuickSnoozePreset) -> Unit = { _, _ -> },
+    onBulkReschedule: (List<String>, QuickSnoozePreset, Boolean) -> Unit = { _, _, _ -> },
+    onBulkSetPriority: (List<String>, String) -> Unit = { _, _ -> },
+    onBulkSetFlag: (List<String>, Boolean) -> Unit = { _, _ -> },
     onRenameTask: (String, String) -> Unit = { _, _ -> },
     onAddComment: (taskId: String, body: String) -> Unit = { _, _ -> },
     peopleEnabled: Boolean = true,
     tagsEnabled: Boolean = true,
     projectsEnabled: Boolean = true,
     taskRowDensity: TaskRowDensity = TaskRowDensity.COMFORTABLE,
+    useWideLayout: Boolean = false,
+    /** See TodayTab's parameter of the same name. */
+    initialDataLoaded: Boolean = true,
+    /** See TodayTab's parameters of the same names — "observe non-working days". */
+    weekendDays: Set<String> = emptySet(),
+    holidays: List<com.mj.yata.domain.model.Holiday> = emptyList(),
+    observeNonWorkingDays: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val selectedIds = remember { mutableStateListOf<String>() }
@@ -111,8 +122,11 @@ fun UpcomingTab(
     var showBulkMoveSheet by remember { mutableStateOf(false) }
     var showBulkAssignSheet by remember { mutableStateOf(false) }
     var showBulkRescheduleSheet by remember { mutableStateOf(false) }
+    var showBulkPrioritySheet by remember { mutableStateOf(false) }
     var showBulkDeleteDialog by remember { mutableStateOf(false) }
     var pendingCommentTask by remember { mutableStateOf<Task?>(null) }
+    var previewTaskId by remember { mutableStateOf<String?>(null) }
+    val adaptiveSheetMaxWidth = rememberAdaptiveSheetMaxWidth()
 
     var viewMode by remember { mutableStateOf(ScheduleViewMode.WEEK) }
     val today = com.mj.yata.util.AppClock.today
@@ -181,6 +195,16 @@ fun UpcomingTab(
     val selectedDayTasks = remember(tasksByDate, selectedDay, selectedFilter, myId) {
         applyFilter(tasksByDate[selectedDay.toString()].orEmpty())
     }
+    val previewTask = remember(selectedDayTasks, previewTaskId) {
+        selectedDayTasks.find { it.id == previewTaskId }
+    }
+    LaunchedEffect(selectedDayTasks, useWideLayout) {
+        if (!useWideLayout) {
+            previewTaskId = null
+        } else if (previewTaskId != null && selectedDayTasks.none { it.id == previewTaskId }) {
+            previewTaskId = selectedDayTasks.firstOrNull()?.id
+        }
+    }
 
     val isSelectedToday = selectedDay == today
     val agendaLabel = remember(selectedDay) {
@@ -206,6 +230,8 @@ fun UpcomingTab(
                 onDuplicate = { onBulkDuplicate(selectedIds.toList()); selectedIds.clear() },
                 onDelete = { showBulkDeleteDialog = true },
                 onAssign = { showBulkAssignSheet = true },
+                onFlag = { onBulkSetFlag(selectedIds.toList(), true); selectedIds.clear() },
+                onSetPriority = { showBulkPrioritySheet = true },
                 tagsEnabled = tagsEnabled,
                 peopleEnabled = peopleEnabled,
                 modifier = Modifier.statusBarsPadding()
@@ -217,14 +243,16 @@ fun UpcomingTab(
                     .statusBarsPadding()
                     .padding(horizontal = 12.dp, vertical = 8.dp)
             ) {
-                com.mj.yata.ui.widgets.YataTopBarIconButton(
-                    onClick = onMenuClick,
-                    modifier = Modifier.align(Alignment.CenterStart)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Menu,
-                        contentDescription = stringResource(R.string.cd_open_drawer)
-                    )
+                if (showMenuButton) {
+                    com.mj.yata.ui.widgets.YataTopBarIconButton(
+                        onClick = onMenuClick,
+                        modifier = Modifier.align(Alignment.CenterStart)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Menu,
+                            contentDescription = stringResource(R.string.cd_open_drawer)
+                        )
+                    }
                 }
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -279,7 +307,10 @@ fun UpcomingTab(
                     val profileLabel = stringResource(R.string.cd_open_profile)
                     IconButton(
                         onClick = onProfileClick,
-                        modifier = Modifier.size(40.dp).semantics { contentDescription = profileLabel }
+                        modifier = Modifier
+                            .minimumInteractiveComponentSize()
+                            .size(40.dp)
+                            .semantics { contentDescription = profileLabel }
                     ) {
                         PersonAvatar(
                             initials = com.mj.yata.util.initialsFor(userName),
@@ -292,14 +323,66 @@ fun UpcomingTab(
             }
         }
 
-        // 2. Upcoming / Calendar segmented control
-        Box(modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp)) {
-            SegmentedControl(
-                items = listOf(ScheduleViewMode.WEEK, ScheduleViewMode.MONTH),
-                selectedItem = viewMode,
-                onItemSelected = { viewMode = it },
-                labelProvider = { if (it == ScheduleViewMode.WEEK) upcomingModeLabel else calendarModeLabel }
-            )
+        // 2. Upcoming / Calendar controls. On tablets, the mode switch and agenda filters share
+        // one row so the selected day's tasks start higher and the extra width does useful work.
+        if (useWideLayout && !selectionMode) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(18.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                SegmentedControl(
+                    items = listOf(ScheduleViewMode.WEEK, ScheduleViewMode.MONTH),
+                    selectedItem = viewMode,
+                    onItemSelected = { viewMode = it },
+                    labelProvider = { if (it == ScheduleViewMode.WEEK) upcomingModeLabel else calendarModeLabel },
+                    modifier = Modifier.weight(0.7f)
+                )
+                Row(
+                    modifier = Modifier
+                        .weight(1.3f),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    listOfNotNull(
+                        UpcomingTaskFilter.ALL,
+                        if (peopleEnabled) UpcomingTaskFilter.ASSIGNED_TO_ME else null,
+                        if (peopleEnabled) UpcomingTaskFilter.DELEGATED else null,
+                        UpcomingTaskFilter.HIGH_PRIORITY
+                    ).forEach { filter ->
+                        val isSelected = filter == selectedFilter
+                        FilterChip(
+                            selected = isSelected,
+                            onClick = { selectedFilter = filter },
+                            modifier = Modifier.weight(1f),
+                            label = {
+                                Text(
+                                    text = upcomingTaskFilterLabel(filter),
+                                    modifier = Modifier.fillMaxWidth(),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    textAlign = TextAlign.Center
+                                )
+                            },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                        )
+                    }
+                }
+            }
+        } else {
+            Box(modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp)) {
+                SegmentedControl(
+                    items = listOf(ScheduleViewMode.WEEK, ScheduleViewMode.MONTH),
+                    selectedItem = viewMode,
+                    onItemSelected = { viewMode = it },
+                    labelProvider = { if (it == ScheduleViewMode.WEEK) upcomingModeLabel else calendarModeLabel }
+                )
+            }
         }
 
         // 3. Day strip (Upcoming) or month grid (Calendar) — both slide up on mode switch
@@ -436,10 +519,10 @@ fun UpcomingTab(
         )
 
         // 3.5 Filter chips — same set as Today, scoped to the agenda for the selected day
+        if (!useWideLayout || selectionMode) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .horizontalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -454,13 +537,23 @@ fun UpcomingTab(
                 FilterChip(
                     selected = isSelected,
                     onClick = { selectedFilter = filter },
-                    label = { Text(text = upcomingTaskFilterLabel(filter)) },
+                    modifier = Modifier.weight(1f),
+                    label = {
+                        Text(
+                            text = upcomingTaskFilterLabel(filter),
+                            modifier = Modifier.fillMaxWidth(),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center
+                        )
+                    },
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
                         selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer
                     )
                 )
             }
+        }
         }
 
         val peopleById = remember(people) { people.associateBy { it.id } }
@@ -469,8 +562,8 @@ fun UpcomingTab(
         AnimatedContent(
             targetState = selectedDay,
             transitionSpec = {
-                (slideInVertically(animationSpec = tween(220, easing = YataEase.emphDecel)) { it / 8 } +
-                    fadeIn(tween(220, easing = YataEase.emphDecel)))
+                (slideInVertically(animationSpec = tween(YataDur.fade, easing = YataEase.emphDecel)) { it / 8 } +
+                    fadeIn(tween(YataDur.fade, easing = YataEase.emphDecel)))
                     .togetherWith(fadeOut(tween(YataDur.fade)))
             },
             modifier = Modifier.weight(1f),
@@ -516,11 +609,16 @@ fun UpcomingTab(
                     }
                 }
 
+                Row(modifier = Modifier.weight(1f)) {
                 LazyColumn(
-                    modifier = Modifier.weight(1f),
+                    modifier = if (useWideLayout && !selectionMode) Modifier.weight(1f) else Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(bottom = 88.dp)
                 ) {
-                    if (dayTasks.isEmpty()) {
+                    if (dayTasks.isEmpty() && !initialDataLoaded) {
+                        item(key = "loading_shimmer") {
+                            com.mj.yata.ui.widgets.ListRowsShimmer(modifier = Modifier.fillMaxWidth())
+                        }
+                    } else if (dayTasks.isEmpty()) {
                         item { UpcomingEmptyState() }
                     } else {
                         items(dayTasks, key = { it.id }, contentType = { "task" }) { task ->
@@ -541,6 +639,8 @@ fun UpcomingTab(
                                 onTaskClick = {
                                     if (selectionMode) {
                                         if (selectedIds.contains(task.id)) selectedIds.remove(task.id) else selectedIds.add(task.id)
+                                    } else if (useWideLayout) {
+                                        previewTaskId = task.id
                                     } else {
                                         onTaskClick(task.id)
                                     }
@@ -554,10 +654,31 @@ fun UpcomingTab(
                                 density = taskRowDensity,
                                 onSwipeToDelete = { onSwipeToDelete(task.id) },
                                 swipeEnabled = !selectionMode,
+                                showDueTodayBadge = day != today,
+                                weekendDays = weekendDays,
+                                holidays = holidays,
+                                observeNonWorkingDays = observeNonWorkingDays,
                                 modifier = Modifier.animateItem(fadeInSpec = yataItemFade, placementSpec = yataItemPlacement, fadeOutSpec = yataItemFade)
                             )
                         }
                     }
+                }
+                if (useWideLayout && !selectionMode) {
+                    VerticalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                    TaskPreviewPane(
+                        task = previewTask,
+                        list = previewTask?.listId?.let { listsById[it] },
+                        project = previewTask?.projectId?.let { projectsById[it] },
+                        people = previewTask?.assigneeIds?.mapNotNull { peopleById[it] }.orEmpty(),
+                        tags = previewTask?.effectiveTags(projectsById, tagsById).orEmpty(),
+                        onOpenTask = onTaskClick,
+                        onToggleTask = { task -> onToggleDone(task.id) },
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .widthIn(min = 320.dp, max = 380.dp),
+                        emptySubtitle = "Preview the selected day's tasks without leaving the planner."
+                    )
+                }
                 }
             }
         }
@@ -567,7 +688,8 @@ fun UpcomingTab(
         ModalBottomSheet(
             onDismissRequest = { showBulkTagSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             com.mj.yata.ui.sheets.TaskBulkTagPickerSheet(
                 tags = tags,
@@ -581,16 +703,38 @@ fun UpcomingTab(
         }
     }
 
+    if (showBulkPrioritySheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showBulkPrioritySheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
+        ) {
+            com.mj.yata.ui.sheets.TaskBulkPrioritySheet(
+                onSelectPriority = { priority ->
+                    onBulkSetPriority(selectedIds.toList(), priority)
+                    selectedIds.clear()
+                    showBulkPrioritySheet = false
+                },
+                onDismiss = { showBulkPrioritySheet = false }
+            )
+        }
+    }
+
     if (showBulkAssignSheet) {
         ModalBottomSheet(
             onDismissRequest = { showBulkAssignSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             com.mj.yata.ui.sheets.TaskBulkAssignPersonSheet(
                 people = people,
                 tasks = tasks,
                 todayStr = com.mj.yata.util.AppClock.todayString,
+                weekendDays = weekendDays,
+                holidays = holidays,
+                observeNonWorkingDays = observeNonWorkingDays,
                 onSelectPerson = { personId ->
                     onBulkAssignPerson(selectedIds.toList(), personId)
                     selectedIds.clear()
@@ -605,7 +749,8 @@ fun UpcomingTab(
         ModalBottomSheet(
             onDismissRequest = { showBulkMoveSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             com.mj.yata.ui.sheets.TaskBulkMoveSheet(
                 projects = projects,
@@ -630,11 +775,12 @@ fun UpcomingTab(
         ModalBottomSheet(
             onDismissRequest = { showBulkRescheduleSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             com.mj.yata.ui.sheets.TaskBulkRescheduleSheet(
-                onSelectPreset = { preset ->
-                    onBulkReschedule(selectedIds.toList(), preset)
+                onSelectPreset = { preset, keepExistingTime ->
+                    onBulkReschedule(selectedIds.toList(), preset, keepExistingTime)
                     selectedIds.clear()
                     showBulkRescheduleSheet = false
                 },
@@ -689,7 +835,7 @@ private fun DayPill(
         targetValue = when {
             selected -> MaterialTheme.colorScheme.primary
             isToday -> MaterialTheme.colorScheme.primaryContainer
-            else -> Color.Transparent
+            else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.28f)
         },
         animationSpec = tween(YataDur.fade),
         label = "dayPillBg"
@@ -741,7 +887,7 @@ private fun DayPill(
     }
 }
 
-/** Fixed 38dp squircle month-grid cell. */
+/** Fixed rounded-square month-grid cell. */
 @Composable
 private fun MonthDayCell(
     day: LocalDate,
@@ -751,11 +897,16 @@ private fun MonthDayCell(
     dotColors: List<Color>,
     onClick: () -> Unit
 ) {
-    val bg = when {
-        selected -> MaterialTheme.colorScheme.primary
-        isToday -> MaterialTheme.colorScheme.primaryContainer
-        else -> Color.Transparent
-    }
+    val bg by animateColorAsState(
+        targetValue = when {
+            selected -> MaterialTheme.colorScheme.primary
+            isToday -> MaterialTheme.colorScheme.primaryContainer
+            inMonth -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.28f)
+            else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.12f)
+        },
+        animationSpec = tween(YataDur.fade),
+        label = "monthCellBg"
+    )
     val fg = when {
         selected -> MaterialTheme.colorScheme.onPrimary
         !inMonth -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f)
@@ -785,10 +936,10 @@ private fun MonthDayCell(
                         scaleX = scale
                         scaleY = scale
                         shadowElevation = if (selected) 3f else 0f
-                        shape = RoundedCornerShape(16.dp)
+                        shape = RoundedCornerShape(10.dp)
                         clip = false
                     }
-                    .clip(RoundedCornerShape(16.dp))
+                    .clip(RoundedCornerShape(10.dp))
                     .background(bg)
                     .clickable(onClick = onClick),
                 contentAlignment = Alignment.Center

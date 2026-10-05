@@ -44,23 +44,26 @@ class RoutingYataRepository @Inject constructor(
 
     override fun getTasks(): Flow<List<Task>> = routed(real.getTasks(), demo.getTasks())
     override fun getTaskById(id: String): Flow<Task?> = routed(real.getTaskById(id), demo.getTaskById(id))
+    override fun getInboxCandidateTasks(): Flow<List<Task>> = routed(real.getInboxCandidateTasks(), demo.getInboxCandidateTasks())
+    override fun getRecurringTasks(): Flow<List<Task>> = routed(real.getRecurringTasks(), demo.getRecurringTasks())
     override fun getTasksForList(listId: String): Flow<List<Task>> = routed(real.getTasksForList(listId), demo.getTasksForList(listId))
     override fun getTasksForProject(projectId: String): Flow<List<Task>> = routed(real.getTasksForProject(projectId), demo.getTasksForProject(projectId))
     override fun getTasksForPerson(personId: String): Flow<List<Task>> = routed(real.getTasksForPerson(personId), demo.getTasksForPerson(personId))
     override suspend fun getTaskStreak(taskId: String): Int = if (isDemo()) demo.getTaskStreak(taskId) else real.getTaskStreak(taskId)
+    override suspend fun getTasksByIds(ids: Collection<String>): List<Task> = if (isDemo()) demo.getTasksByIds(ids) else real.getTasksByIds(ids)
 
     override suspend fun upsertTask(task: Task, notify: Boolean, resyncReminder: Boolean) = write { real.upsertTask(task, notify, resyncReminder) }
     override suspend fun upsertTasks(
         tasks: List<Task>,
         notify: Boolean,
         resyncReminder: Boolean,
-        preserveExistingCreatedAt: Boolean
+        preserveExistingCreatedAt: Boolean,
+        trackPostponements: Boolean
     ) = write {
-        real.upsertTasks(tasks, notify, resyncReminder, preserveExistingCreatedAt)
+        real.upsertTasks(tasks, notify, resyncReminder, preserveExistingCreatedAt, trackPostponements)
     }
     override suspend fun toggleTaskDone(id: String, notify: Boolean) = write { real.toggleTaskDone(id, notify) }
     override suspend fun skipTaskOccurrence(id: String) = write { real.skipTaskOccurrence(id) }
-    override fun searchTasks(query: String): Flow<List<Task>> = routed(real.searchTasks(query), demo.searchTasks(query))
     override suspend fun setTaskFlag(id: String, flag: Boolean, notify: Boolean) = write { real.setTaskFlag(id, flag, notify) }
     override suspend fun setTaskPriority(id: String, priority: String, notify: Boolean) = write { real.setTaskPriority(id, priority, notify) }
     override suspend fun setTaskContainer(id: String, listId: String?, projectId: String?, sortOrder: Int, notify: Boolean) = write { real.setTaskContainer(id, listId, projectId, sortOrder, notify) }
@@ -98,6 +101,7 @@ class RoutingYataRepository @Inject constructor(
     override fun getListById(id: String): Flow<YataList?> = routed(real.getListById(id), demo.getListById(id))
     override suspend fun upsertList(list: YataList) = write { real.upsertList(list) }
     override suspend fun deleteList(list: YataList) = write { real.deleteList(list) }
+    override suspend fun deleteListOnly(list: YataList) = write { real.deleteListOnly(list) }
     override suspend fun setListsArchived(ids: List<String>, archived: Boolean) = write { real.setListsArchived(ids, archived) }
 
     override fun getPeople(): Flow<List<Person>> = routed(real.getPeople(), demo.getPeople())
@@ -114,6 +118,8 @@ class RoutingYataRepository @Inject constructor(
     override fun getTags(): Flow<List<Tag>> = routed(real.getTags(), demo.getTags())
     override fun getTagById(id: String): Flow<Tag?> = routed(real.getTagById(id), demo.getTagById(id))
     override suspend fun upsertTag(tag: Tag) = write { real.upsertTag(tag) }
+    override suspend fun upsertTags(tags: List<Tag>, pendingGroup: TagGroup?) = write { real.upsertTags(tags, pendingGroup) }
+    override suspend fun setTagsGroup(tagIds: List<String>, groupId: String?, pendingGroup: TagGroup?) = write { real.setTagsGroup(tagIds, groupId, pendingGroup) }
     override suspend fun deleteTag(tag: Tag) = write { real.deleteTag(tag) }
 
     override fun getTagGroups(): Flow<List<TagGroup>> = routed(real.getTagGroups(), demo.getTagGroups())

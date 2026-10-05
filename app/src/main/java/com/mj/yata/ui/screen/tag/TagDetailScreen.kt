@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -32,9 +33,12 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mj.yata.ui.widgets.showUndoSnackbar
+import com.mj.yata.ui.widgets.YataDropdownMenu
+import com.mj.yata.ui.widgets.YataDropdownMenuItem
 import com.mj.yata.ui.widgets.showSuccess
 import com.mj.yata.ui.widgets.showError
 import com.mj.yata.R
@@ -54,6 +58,8 @@ import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.yataItemFade
 import com.mj.yata.ui.theme.yataItemPlacement
 import com.mj.yata.ui.theme.YataEase
+import com.mj.yata.ui.util.AdaptiveContentBox
+import com.mj.yata.ui.util.rememberAdaptiveSheetMaxWidth
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -74,6 +80,10 @@ fun TagDetailScreen(
     val people by viewModel.people.collectAsStateWithLifecycle()
     val tagGroups by viewModel.tagGroups.collectAsStateWithLifecycle()
     val taskRowDensity by viewModel.taskRowDensity.collectAsStateWithLifecycle()
+    val weekendDays by viewModel.weekendDays.collectAsStateWithLifecycle()
+    val holidaysRaw by viewModel.holidays.collectAsStateWithLifecycle()
+    val holidays = remember(holidaysRaw) { holidaysRaw.mapNotNull(Holiday::decode) }
+    val observeNonWorkingDays by viewModel.observeNonWorkingDays.collectAsStateWithLifecycle()
 
     val tag = remember(tags, tagId) { tags.find { it.id == tagId } }
     val accents = LocalYataAccents.current
@@ -91,7 +101,10 @@ fun TagDetailScreen(
     val exportContext = androidx.compose.ui.platform.LocalContext.current
     var exportFormatPending by remember { mutableStateOf<com.mj.yata.util.export.ExportFormat?>(null) }
     var exportInProgress by remember { mutableStateOf(false) }
+    val longTaskLinkWarningGate = com.mj.yata.util.export.rememberLongTaskLinkWarningGate()
     val snackbarHostState = remember { SnackbarHostState() }
+    // Snooze and bulk-reschedule Undo offers (AppUndoBus) land here while this screen is on top.
+    com.mj.yata.ui.widgets.RegisterUndoSnackbarHost(snackbarHostState)
     val projectsById = remember(projects) { projects.associateBy { it.id } }
     val listsById = remember(lists) { lists.associateBy { it.id } }
     val tagsById = remember(tags) { tags.associateBy { it.id } }
@@ -119,7 +132,7 @@ fun TagDetailScreen(
 
     fun deleteTaskWithUndo(task: Task) {
         scope.launch {
-            val result = showUndoSnackbar(snackbarHostState, "Task deleted", undoWindowSeconds)
+            val result = showUndoSnackbar(snackbarHostState, exportContext.getString(R.string.task_deleted), undoWindowSeconds)
             if (!result) {
                 viewModel.deleteTask(task)
             }
@@ -138,6 +151,9 @@ fun TagDetailScreen(
         }
         return
     }
+    val tagDescription = remember(tag.description) {
+        tag.description?.trim()?.takeIf { it.isNotEmpty() }
+    }
 
     val tagColor = if (tag.color == "error") {
         MaterialTheme.colorScheme.error
@@ -154,10 +170,14 @@ fun TagDetailScreen(
     val doneTasks = allTaggedTasks.count { it.done }
     val openTasks = allTaggedTasks.size - doneTasks
     val progress = if (allTaggedTasks.isNotEmpty()) doneTasks.toFloat() / allTaggedTasks.size else 0f
-    val overdueCount = remember(allTaggedTasks) { com.mj.yata.util.AnalyticsUtils.overdueCount(allTaggedTasks) }
+    val overdueCount = remember(allTaggedTasks, weekendDays, holidays, observeNonWorkingDays) {
+        com.mj.yata.util.AnalyticsUtils.overdueCount(allTaggedTasks, weekendDays = weekendDays, holidays = holidays, observeNonWorkingDays = observeNonWorkingDays)
+    }
     val highPriorityCount = remember(allTaggedTasks) { allTaggedTasks.count { !it.done && it.priority == "high" } }
     val todayStr = com.mj.yata.util.AppClock.todayString
-    val dueTodayCount = remember(allTaggedTasks, todayStr) { allTaggedTasks.count { !it.done && it.due == todayStr } }
+    val dueTodayCount = remember(allTaggedTasks, todayStr, weekendDays, holidays, observeNonWorkingDays) {
+        allTaggedTasks.count { !it.done && it.effectiveDue(weekendDays, holidays, observeNonWorkingDays) == todayStr }
+    }
 
     var hideCompleted by remember(tag.id) { mutableStateOf(tag.hideCompletedByDefault) }
     val sortMode by viewModel.sortModeTagDetail.collectAsStateWithLifecycle()
@@ -166,12 +186,17 @@ fun TagDetailScreen(
     val pendingTaggedTasks = remember(allTaggedTasks, searchQuery, sortMode) {
         allTaggedTasks.filter { !it.done && taskMatchesQuery(it, searchQuery) }.sortedByMode(sortMode)
     }
-    val displayedPendingTaggedTasks = remember(pendingTaggedTasks, activeStatFilter, heroToday) {
+    val displayedPendingTaggedTasks = remember(pendingTaggedTasks, activeStatFilter, heroToday, weekendDays, holidays, observeNonWorkingDays) {
         val statFilter = activeStatFilter
-        pendingTaggedTasks.filter { statFilter == null || statFilter.matches(it, heroToday) }
+        pendingTaggedTasks.filter { statFilter == null || statFilter.matches(it, heroToday, weekendDays, holidays, observeNonWorkingDays) }
     }
     val completedTaggedTasks = remember(allTaggedTasks, hideCompleted, searchQuery) {
         if (hideCompleted) emptyList() else allTaggedTasks.filter { it.done && taskMatchesQuery(it, searchQuery) }
+    }
+    var showArchived by remember { mutableStateOf(false) }
+    val archivedTasksAll by viewModel.archivedTasks.collectAsStateWithLifecycle()
+    val archivedTaggedTasks = remember(archivedTasksAll, projectsById, tag.id) {
+        archivedTasksAll.filter { it.effectiveTagIds(projectsById).contains(tag.id) }
     }
 
     val todayBadgeCount by viewModel.todayRemainingCount.collectAsStateWithLifecycle()
@@ -187,14 +212,16 @@ fun TagDetailScreen(
     var showBulkMoveSheet by remember { mutableStateOf(false) }
     var showBulkAssignSheet by remember { mutableStateOf(false) }
     var showBulkRescheduleSheet by remember { mutableStateOf(false) }
+    var showBulkPrioritySheet by remember { mutableStateOf(false) }
     var showBulkDeleteDialog by remember { mutableStateOf(false) }
+    val adaptiveSheetMaxWidth = rememberAdaptiveSheetMaxWidth()
 
     Scaffold(
         snackbarHost = {
             SnackbarHost(snackbarHostState) { data -> com.mj.yata.ui.widgets.YataSnackbar(data) }
         },
         bottomBar = {
-            com.mj.yata.ui.screen.main.CustomBottomNav(
+            com.mj.yata.ui.screen.main.AdaptiveBottomNav(
                 selectedTab = 3,
                 todayBadgeCount = todayBadgeCount,
                 peopleEnabled = peopleFeatureEnabled,
@@ -234,9 +261,11 @@ fun TagDetailScreen(
                     onAddTag = { showBulkTagSheet = true },
                     onMove = { showBulkMoveSheet = true },
                     onReschedule = { showBulkRescheduleSheet = true },
-                    onDuplicate = { viewModel.bulkDuplicateTasks(selectedIds.toList()); selectedIds.clear() },
+                    onDuplicate = { viewModel.bulkDuplicateTasks(selectedIds.toList()) { single -> onNavigateToTaskDetail(single.id) }; selectedIds.clear() },
                     onDelete = { showBulkDeleteDialog = true },
                     onAssign = { showBulkAssignSheet = true },
+                    onFlag = { viewModel.bulkSetFlag(selectedIds.toList(), true); selectedIds.clear() },
+                    onSetPriority = { showBulkPrioritySheet = true },
                     tagsEnabled = tagsFeatureEnabled,
                     peopleEnabled = peopleFeatureEnabled,
                     modifier = Modifier.statusBarsPadding()
@@ -323,11 +352,11 @@ fun TagDetailScreen(
                         com.mj.yata.ui.widgets.YataTopBarIconButton(onClick = { showMenu = true }) {
                             Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.cd_more_options))
                         }
-                        DropdownMenu(
+                        YataDropdownMenu(
                             expanded = showMenu,
                             onDismissRequest = { showMenu = false }
                         ) {
-                            DropdownMenuItem(
+                            YataDropdownMenuItem(
                                 text = { Text(stringResource(R.string.tag_detail_edit_tag)) },
                                 onClick = {
                                     showMenu = false
@@ -335,7 +364,7 @@ fun TagDetailScreen(
                                 },
                                 leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) }
                             )
-                            DropdownMenuItem(
+                            YataDropdownMenuItem(
                                 text = { Text(stringResource(R.string.action_export_as_markdown)) },
                                 onClick = {
                                     showMenu = false
@@ -343,7 +372,7 @@ fun TagDetailScreen(
                                 },
                                 leadingIcon = { Icon(Icons.Default.IosShare, contentDescription = null) }
                             )
-                            DropdownMenuItem(
+                            YataDropdownMenuItem(
                                 text = { Text(stringResource(R.string.action_export_as_image)) },
                                 onClick = {
                                     showMenu = false
@@ -351,7 +380,7 @@ fun TagDetailScreen(
                                 },
                                 leadingIcon = { Icon(Icons.Default.Image, contentDescription = null) }
                             )
-                            DropdownMenuItem(
+                            YataDropdownMenuItem(
                                 text = { Text(stringResource(R.string.action_export_as_pdf)) },
                                 onClick = {
                                     showMenu = false
@@ -359,7 +388,21 @@ fun TagDetailScreen(
                                 },
                                 leadingIcon = { Icon(Icons.Default.PictureAsPdf, contentDescription = null) }
                             )
-                            DropdownMenuItem(
+                            YataDropdownMenuItem(
+                                text = {
+                                    Text(
+                                        stringResource(
+                                            if (showArchived) R.string.action_hide_archive else R.string.action_view_archived
+                                        )
+                                    )
+                                },
+                                onClick = {
+                                    showMenu = false
+                                    showArchived = !showArchived
+                                },
+                                leadingIcon = { Icon(Icons.Default.Archive, contentDescription = null) }
+                            )
+                            YataDropdownMenuItem(
                                 text = { Text(stringResource(R.string.tag_detail_delete_tag)) },
                                 onClick = {
                                     showMenu = false
@@ -379,11 +422,14 @@ fun TagDetailScreen(
             }
         }
     ) { innerPadding ->
-        LazyColumn(
+        AdaptiveContentBox(
             modifier = modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
-                .padding(innerPadding),
+                .padding(innerPadding)
+        ) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(bottom = 32.dp)
         ) {
             // 1. Hero section — icon tile, progress ring, and overdue/high-priority/due-today
@@ -393,6 +439,17 @@ fun TagDetailScreen(
                     accentColor = tagColor,
                     progress = progress,
                     primaryText = "$openTasks open · $doneTasks completed",
+                    secondaryContent = tagDescription?.let { description ->
+                        {
+                            Text(
+                                text = description,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 3,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    },
                     overdueCount = overdueCount,
                     highPriorityCount = highPriorityCount,
                     dueTodayCount = dueTodayCount,
@@ -419,7 +476,9 @@ fun TagDetailScreen(
             }
 
             // 2. Tasks list — split into Pending/Completed; headers vanish while hiding completed.
-            if (pendingTaggedTasks.isEmpty() && completedTaggedTasks.isEmpty()) {
+            if (pendingTaggedTasks.isEmpty() && completedTaggedTasks.isEmpty() &&
+                !(showArchived && archivedTaggedTasks.isNotEmpty())
+            ) {
                 item {
                     Box(
                         modifier = Modifier
@@ -466,7 +525,10 @@ fun TagDetailScreen(
                         density = taskRowDensity,
                         onSwipeToDelete = { if (!selectionMode) deleteTaskWithUndo(task) },
                         swipeEnabled = !selectionMode,
-                        showDueDate = true
+                        showDueDate = true,
+                        weekendDays = weekendDays,
+                        holidays = holidays,
+                        observeNonWorkingDays = observeNonWorkingDays
                     )
                 }
 
@@ -504,7 +566,14 @@ fun TagDetailScreen(
                         )
                     }
                 }
+                if (showArchived && archivedTaggedTasks.isNotEmpty()) {
+                    item(key = "archived_header") { TaskSectionHeader("ARCHIVED", archivedTaggedTasks.size) }
+                    items(archivedTaggedTasks, key = { "archived_" + it.id }, contentType = { "task" }) { task ->
+                        taskRowFor(task = task)
+                    }
+                }
             }
+        }
         }
     }
 
@@ -517,6 +586,7 @@ fun TagDetailScreen(
             )
         ) {
             NewTaskSheet(
+                dueDatePickerContext = com.mj.yata.ui.widgets.rememberDueDatePickerContext(viewModel),
                 lists = lists,
                 projects = projects,
                 people = people,
@@ -532,6 +602,9 @@ fun TagDetailScreen(
                     onNavigateToTaskDetail(id)
                 },
                 autoAssignToMe = autoAssignToMe,
+                onCreateProject = { id, name, color ->
+                    viewModel.upsertProject(com.mj.yata.domain.model.Project(id = id, name = name, color = color, icon = "layers"))
+                },
                 onCreateTag = { id, name, color ->
                     viewModel.upsertTag(Tag(id = id, name = name, color = color))
                 },
@@ -539,6 +612,7 @@ fun TagDetailScreen(
                     viewModel.upsertPerson(Person(id = id, name = name, initials = initialsFor(name), color = color, isMe = false))
                 },
                 onDismiss = { isNewTaskSheetOpen = false },
+                modifier = Modifier.widthIn(max = 720.dp),
                 projectsEnabled = projectsFeatureEnabled,
                 tagsEnabled = tagsFeatureEnabled,
                 peopleEnabled = peopleFeatureEnabled,
@@ -552,16 +626,28 @@ fun TagDetailScreen(
         ModalBottomSheet(
             onDismissRequest = { isEditSheetOpen = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             TagEditorSheet(
                 initialName = tag.name,
+                existingNames = tags.map { it.name },
                 initialColor = tag.color,
                 initialGroupId = tag.groupId,
                 initialHideCompletedByDefault = tag.hideCompletedByDefault,
+                initialDescription = tag.description,
                 groups = tagGroups,
-                onSave = { newName, newColor, newGroupId, newHideCompletedByDefault ->
-                    viewModel.upsertTag(tag.copy(name = newName.lowercase().trim(), color = newColor, groupId = newGroupId, hideCompletedByDefault = newHideCompletedByDefault))
+                onSave = { newName, newColor, newGroupId, newHideCompletedByDefault, newDescription, pendingGroup ->
+                    viewModel.upsertTag(
+                        tag.copy(
+                            name = newName.trim(),
+                            color = newColor,
+                            groupId = newGroupId,
+                            hideCompletedByDefault = newHideCompletedByDefault,
+                            description = newDescription
+                        ),
+                        pendingGroup
+                    )
                     isEditSheetOpen = false
                 },
                 onCreateGroup = { id, name, color ->
@@ -611,7 +697,8 @@ fun TagDetailScreen(
         ModalBottomSheet(
             onDismissRequest = { showBulkTagSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             TaskBulkTagPickerSheet(
                 tags = tags,
@@ -625,16 +712,38 @@ fun TagDetailScreen(
         }
     }
 
+    if (showBulkPrioritySheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showBulkPrioritySheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
+        ) {
+            TaskBulkPrioritySheet(
+                onSelectPriority = { priority ->
+                    viewModel.bulkSetPriority(selectedIds.toList(), priority)
+                    selectedIds.clear()
+                    showBulkPrioritySheet = false
+                },
+                onDismiss = { showBulkPrioritySheet = false }
+            )
+        }
+    }
+
     if (showBulkAssignSheet) {
         ModalBottomSheet(
             onDismissRequest = { showBulkAssignSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             TaskBulkAssignPersonSheet(
                 people = people,
                 tasks = tasks,
                 todayStr = com.mj.yata.util.AppClock.todayString,
+                weekendDays = weekendDays,
+                holidays = holidays,
+                observeNonWorkingDays = observeNonWorkingDays,
                 onSelectPerson = { personId ->
                     viewModel.bulkAssignPerson(selectedIds.toList(), personId)
                     selectedIds.clear()
@@ -649,7 +758,8 @@ fun TagDetailScreen(
         ModalBottomSheet(
             onDismissRequest = { showBulkMoveSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             TaskBulkMoveSheet(
                 projects = projects,
@@ -674,11 +784,12 @@ fun TagDetailScreen(
         ModalBottomSheet(
             onDismissRequest = { showBulkRescheduleSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             TaskBulkRescheduleSheet(
-                onSelectPreset = { preset ->
-                    viewModel.bulkRescheduleTasks(selectedIds.toList(), preset)
+                onSelectPreset = { preset, keepExistingTime ->
+                    viewModel.bulkRescheduleTasks(selectedIds.toList(), preset, keepExistingTime)
                     selectedIds.clear()
                     showBulkRescheduleSheet = false
                 },
@@ -714,7 +825,6 @@ fun TagDetailScreen(
             itemPreviews = allTaggedTasks.map { com.mj.yata.util.export.ExportItemPreview(it.done, it.completedAt) },
             onDismiss = { exportFormatPending = null },
             onConfirm = { options ->
-                exportFormatPending = null
                 val cutoffMillis = options.excludeCompletedOlderThanDays?.takeIf { it > 0 }?.let {
                     System.currentTimeMillis() - it.toLong() * 24 * 60 * 60 * 1000
                 }
@@ -723,7 +833,22 @@ fun TagDetailScreen(
                     if (!options.includeCompleted) return@filter false
                     cutoffMillis == null || (task.completedAt != null && task.completedAt >= cutoffMillis)
                 }
-                scope.launch {
+                val transferLink = exportTasks.takeIf { it.isNotEmpty() && options.includeImportLink }?.let { sharedTasks ->
+                    com.mj.yata.util.export.buildTaskTransferLink(
+                        title = tag.name,
+                        tasks = sharedTasks,
+                        listsById = listsById,
+                        projectsById = projectsById,
+                        tagsById = tagsById,
+                        peopleById = peopleById,
+                        includeStructure = !options.privacyMode,
+                        includeNotes = !options.privacyMode
+                    )
+                }
+
+                fun startExport() {
+                    exportFormatPending = null
+                    scope.launch {
                     exportInProgress = true
                     val exportResult = runCatching {
                         com.mj.yata.util.export.exportEntityReport(
@@ -731,10 +856,11 @@ fun TagDetailScreen(
                             format = format,
                             entityKind = "Tag",
                             entityName = tag.name,
+                            entitySubtitle = tag.description,
                             accentColor = tagColor,
                             doneCount = exportTasks.count { it.done },
                             totalCount = exportTasks.size,
-                            overdueCount = com.mj.yata.util.AnalyticsUtils.overdueCount(exportTasks),
+                            overdueCount = com.mj.yata.util.AnalyticsUtils.overdueCount(exportTasks, weekendDays = weekendDays, holidays = holidays, observeNonWorkingDays = observeNonWorkingDays),
                             tasks = exportTasks.map { task ->
                                 task.toExportRow(
                                     exportGroupLabel(task),
@@ -750,7 +876,8 @@ fun TagDetailScreen(
                             destination = options.destination,
                             fileNameBase = options.fileNameBase,
                             pdfPageSize = options.pdfPageSize,
-                            imageScale = options.imageScale
+                            imageScale = options.imageScale,
+                            transferText = transferLink?.asShareText(tag.name, exportTasks.size)
                         )
                     }
                     exportInProgress = false
@@ -760,10 +887,18 @@ fun TagDetailScreen(
                         snackbarHostState.showError(error.message ?: exportContext.getString(R.string.export_failed))
                     }
                 }
+                }
+
+                if (options.destination == com.mj.yata.util.export.ExportDestination.SHARE) {
+                    longTaskLinkWarningGate.runOrConfirm(transferLink, exportTasks.size, ::startExport)
+                } else {
+                    startExport()
+                }
             }
         )
     }
     if (exportInProgress) {
         com.mj.yata.util.export.ExportProgressDialog()
     }
+    com.mj.yata.util.export.LongTaskLinkWarningDialog(longTaskLinkWarningGate)
 }

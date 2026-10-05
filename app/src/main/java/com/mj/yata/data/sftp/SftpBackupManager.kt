@@ -8,6 +8,11 @@ import com.mj.yata.data.local.datastore.UserPreferences
 import com.mj.yata.data.sync.SnapshotSyncEngine
 import com.mj.yata.domain.model.SyncLockBusyException
 import com.mj.yata.domain.model.SyncLockInfo
+import com.mj.yata.domain.sync.LockableSyncTransport
+import com.mj.yata.domain.sync.RestorePoint
+import com.mj.yata.domain.sync.SyncRunOptions
+import com.mj.yata.domain.sync.SyncRunReport
+import com.mj.yata.domain.sync.restorePointFromHistoryName
 import com.mj.yata.util.BackupCrypto
 import com.mj.yata.util.JsonExporter
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -67,7 +72,7 @@ class SftpBackupManager @Inject constructor(
     private val credentialsStore: RemoteBackupCredentialsStore,
     private val snapshotSyncEngine: SnapshotSyncEngine,
     private val recoveryBackupManager: RecoveryBackupManager
-) {
+) : LockableSyncTransport {
     companion object {
         private const val TAG = "SftpBackupManager"
         private const val FILENAME_PREFIX = "yata_backup_"
@@ -90,7 +95,7 @@ class SftpBackupManager @Inject constructor(
         userPreferences.setSftpHostKeyFingerprint(fingerprint)
     }
 
-    suspend fun clearSyncLock(): Result<Unit> = sessionMutex.withLock {
+    override suspend fun clearSyncLock(): Result<Unit> = sessionMutex.withLock {
         withContext(Dispatchers.IO) {
             try {
                 val remoteDir = userPreferences.sftpRemoteDirFlow.first()
@@ -129,10 +134,9 @@ class SftpBackupManager @Inject constructor(
                 val keepCount = userPreferences.sftpKeepCountFlow.first()
                 val (primaryJson, _) = jsonExporter.buildSplitBackupJson(archiveMonths = 0)
                 val bytes = encodePayload(primaryJson.toString(2).toByteArray(Charsets.UTF_8))
-                val encrypted = credentialsStore.backupPassphrase != null
                 val filename = FILENAME_PREFIX +
                     SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date()) +
-                    (if (encrypted) ENCRYPTED_SUFFIX else FILENAME_SUFFIX)
+                    ENCRYPTED_SUFFIX
 
                 val tempFile = File.createTempFile("sftp_upload", ".json", context.cacheDir)
                 try {
@@ -178,9 +182,13 @@ class SftpBackupManager @Inject constructor(
      * result while holding a cross-device lease. Timestamped backups remain recovery points; the
      * fixed canonical file is the only input devices normally synchronize against.
      */
-    suspend fun syncNow(progress: (Int, String) -> Unit = { _, _ -> }): Result<Unit> = sessionMutex.withLock {
+    override suspend fun syncNow(
+        progress: (Int, String) -> Unit,
+        options: SyncRunOptions
+    ): Result<SyncRunReport> = sessionMutex.withLock {
         withContext(Dispatchers.IO) {
             try {
+                var conflictsResolved = 0
                 val remoteDir = userPreferences.sftpRemoteDirFlow.first()
                 val keepCount = userPreferences.sftpKeepCountFlow.first()
                 val host = userPreferences.sftpHostFlow.first()
@@ -208,7 +216,9 @@ class SftpBackupManager @Inject constructor(
                                     remoteBytes = remote.jsonBytes,
                                     scopeKey = scopeKey,
                                     remoteIsRecovery =
-                                        remote.jsonBytes != null && !remote.canonicalHeadValid
+                                        remote.jsonBytes != null && !remote.canonicalHeadValid,
+                                    allowInitialJoinMerge = options.allowInitialJoinMerge,
+                                    allowEmptyLocalOverwrite = options.allowEmptyLocalOverwrite
                                 )
                                 val publish = prepared.remoteNeedsPublish || !remote.canonicalHeadValid
                                 val canonicalBytes = if (publish) {
@@ -229,7 +239,7 @@ class SftpBackupManager @Inject constructor(
                                     progress(76, "Already up to date")
                                 }
                                 progress(86, "Applying updates")
-                                snapshotSyncEngine.commit(prepared)
+                                conflictsResolved = snapshotSyncEngine.commit(prepared)
                                 if (canonicalBytes != null) {
                                     progress(92, "Saving backup copy")
                                     writeTimestampedBackup(sftp, remoteDir, canonicalBytes)
@@ -243,7 +253,7 @@ class SftpBackupManager @Inject constructor(
                 }
 
                 userPreferences.setSftpLastBackupAt(System.currentTimeMillis())
-                Result.success(Unit)
+                Result.success(SyncRunReport(conflictsResolved = conflictsResolved))
             } catch (e: Exception) {
                 Log.w(TAG, "syncNow failed", e)
                 Result.failure(e)
@@ -272,6 +282,11 @@ class SftpBackupManager @Inject constructor(
         }
     }
 
+    // The rotated history file list is already small (retention-bounded), so limit is a
+    // client-side trim rather than something worth threading into the directory listing itself.
+    override suspend fun listRestorePoints(limit: Int): Result<List<RestorePoint>> =
+        listBackups().map { names -> names.take(limit).map(::restorePointFromHistoryName) }
+
     suspend fun restoreBackup(filename: String): Result<Unit> = sessionMutex.withLock {
         withContext(Dispatchers.IO) {
             try {
@@ -295,6 +310,8 @@ class SftpBackupManager @Inject constructor(
         }
     }
 
+    override suspend fun restore(id: String): Result<Unit> = restoreBackup(id)
+
     /** Counterpart to [com.mj.yata.data.ftp.FtpBackupManager.inspectBackup] — see it for why the
      * confirm dialog reads a backup's contents before restoring it. */
     suspend fun inspectBackup(filename: String): Result<com.mj.yata.domain.model.BackupSummary> = withContext(Dispatchers.IO) {
@@ -306,6 +323,9 @@ class SftpBackupManager @Inject constructor(
         }
     }
 
+    override suspend fun inspect(id: String): Result<com.mj.yata.domain.model.BackupSummary> =
+        inspectBackup(id)
+
     /** Read-only access for comparing a server backup with current local data. */
     suspend fun readBackupJson(filename: String): Result<ByteArray> = withContext(Dispatchers.IO) {
         try {
@@ -316,7 +336,14 @@ class SftpBackupManager @Inject constructor(
         }
     }
 
+    override suspend fun readSnapshot(id: String): Result<ByteArray> = readBackupJson(id)
+
+    override suspend fun isConfigured(): Boolean =
+        userPreferences.sftpHostFlow.first().isNotBlank() &&
+            !credentialsStore.backupPassphrase.isNullOrBlank()
+
     private suspend fun download(filename: String): ByteArray {
+        requireRestoreFilename(filename)
         val remoteDir = userPreferences.sftpRemoteDirFlow.first()
         buildClient().use { ssh ->
             ssh.newSFTPClient().use { sftp ->
@@ -346,7 +373,8 @@ class SftpBackupManager @Inject constructor(
 
     private fun encodePayload(jsonBytes: ByteArray): ByteArray {
         val passphrase = credentialsStore.backupPassphrase
-        return if (passphrase == null) jsonBytes else BackupCrypto.encrypt(jsonBytes, passphrase)
+            ?: throw IllegalStateException("Set a backup passphrase before publishing SFTP backup or sync data")
+        return BackupCrypto.encrypt(jsonBytes, passphrase)
     }
 
     private fun decodePayload(bytes: ByteArray): ByteArray {
@@ -402,8 +430,8 @@ class SftpBackupManager @Inject constructor(
             .map { remotePath(remoteDir, it.name) }
             .sortedDescending()
             .toList()
-        val recoveryCandidates = historyPaths.asSequence() +
-            sequenceOf(remotePath(remoteDir, SYNC_PREVIOUS_FILENAME))
+        val recoveryCandidates = sequenceOf(remotePath(remoteDir, SYNC_PREVIOUS_FILENAME)) +
+            historyPaths.asSequence()
 
         for (candidate in recoveryCandidates) {
             val bytes = try {
@@ -483,10 +511,9 @@ class SftpBackupManager @Inject constructor(
     }
 
     private fun writeTimestampedBackup(sftp: SFTPClient, remoteDir: String, bytes: ByteArray) {
-        val encrypted = credentialsStore.backupPassphrase != null
         val filename = FILENAME_PREFIX +
             SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date()) +
-            (if (encrypted) ENCRYPTED_SUFFIX else FILENAME_SUFFIX)
+            ENCRYPTED_SUFFIX
         val finalPath = remotePath(remoteDir, filename)
         val temporaryPath = remotePath(remoteDir, ".$filename.${UUID.randomUUID()}.part")
         try {
@@ -523,7 +550,7 @@ class SftpBackupManager @Inject constructor(
             }
 
             val lockAttributes = sftp.statExistence(lockPath) ?: throw mkdirFailure
-            val leaseInfo = readSyncLeaseInfo(sftp, leasePath)
+            val leaseInfo = readSyncLeaseInfoOrEmpty(sftp, leasePath)
             val observedAt = leaseInfo.lockedAt ?: lockAttributes.mtime * 1000L
             val ageMillis = System.currentTimeMillis() - observedAt
             if (ageMillis < SYNC_LOCK_STALE_MILLIS) {
@@ -625,6 +652,14 @@ class SftpBackupManager @Inject constructor(
             ?.let(::parseLeaseInfo)
             ?: RemoteLeaseInfo()
 
+    private fun readSyncLeaseInfoOrEmpty(sftp: SFTPClient, leasePath: String): RemoteLeaseInfo =
+        try {
+            readSyncLeaseInfo(sftp, leasePath)
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not read SFTP sync lease; falling back to lock directory age", e)
+            RemoteLeaseInfo()
+        }
+
     private data class RemoteLeaseInfo(
         val lockedAt: Long? = null,
         val token: String? = null,
@@ -665,6 +700,12 @@ class SftpBackupManager @Inject constructor(
         name.startsWith(FILENAME_PREFIX) &&
             (name.endsWith(FILENAME_SUFFIX) || name.endsWith(ENCRYPTED_SUFFIX))
 
+    private fun requireRestoreFilename(name: String) {
+        require(name == name.substringAfterLast('/')) { "Invalid backup filename" }
+        require('\\' !in name && ".." !in name) { "Invalid backup filename" }
+        require(isHistoryBackupName(name)) { "Unsupported backup filename" }
+    }
+
     private suspend fun buildClient(
         allowUnpinnedProbe: Boolean = false,
         onHostKeyObserved: (String) -> Unit = {}
@@ -683,6 +724,11 @@ class SftpBackupManager @Inject constructor(
                 "SFTP server is not trusted yet — test the connection and confirm its host key"
             )
         }
+
+        // Every sshj entry point in this class is downstream of here, so this is the one place
+        // that has to guarantee the provider is up. Deliberately not done at app startup — see
+        // BouncyCastleSupport.
+        BouncyCastleSupport.ensureRegistered()
 
         val ssh = SSHClient()
         ssh.connectTimeout = CONNECT_TIMEOUT_MS

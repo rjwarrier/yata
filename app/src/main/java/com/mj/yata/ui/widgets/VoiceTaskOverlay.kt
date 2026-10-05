@@ -78,6 +78,7 @@ import androidx.core.content.ContextCompat
 import com.mj.yata.R
 import com.mj.yata.data.voice.OnDeviceVoiceRecognizer
 import com.mj.yata.data.voice.VoiceState
+import com.mj.yata.ui.util.rememberAdaptiveSheetMaxWidth
 import com.mj.yata.util.NaturalLanguageParser
 import com.mj.yata.util.ParsedQuickAdd
 import kotlin.math.PI
@@ -102,6 +103,16 @@ fun VoiceTaskOverlay(
     val voiceRecognizer = remember(context) { OnDeviceVoiceRecognizer(context) }
     val voiceState by voiceRecognizer.state.collectAsStateWithLifecycle()
     val rmsDb by voiceRecognizer.rmsDb.collectAsStateWithLifecycle()
+    var manualText by remember { mutableStateOf("") }
+
+    // The recognizer restarts itself automatically after every recognized segment (see
+    // OnDeviceVoiceRecognizer's ~450ms restart) so the user never has to re-tap to keep talking.
+    // FinalResult is that transient "between segments" state, not a real stop — treating it as
+    // not-listening made the waveform/caption flatline on every few-second thinking pause, which
+    // read as the mic abruptly cutting out even though it silently picked back up moments later.
+    val isActivelyListening = voiceState is VoiceState.Listening ||
+        voiceState is VoiceState.Speaking ||
+        voiceState is VoiceState.FinalResult
 
     var hasMicPermission by remember {
         mutableStateOf(
@@ -109,19 +120,24 @@ fun VoiceTaskOverlay(
         )
     }
 
+    fun restartInAppVoice() {
+        manualText = ""
+        voiceRecognizer.startListening(language = voiceLanguage)
+    }
+
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { granted ->
         hasMicPermission = granted
         if (granted) {
-            voiceRecognizer.startListening(language = voiceLanguage)
+            restartInAppVoice()
         }
     }
 
     LaunchedEffect(isOpen) {
         if (isOpen) {
             if (hasMicPermission) {
-                voiceRecognizer.startListening(language = voiceLanguage)
+                restartInAppVoice()
             } else {
                 permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
             }
@@ -144,6 +160,7 @@ fun VoiceTaskOverlay(
         sheetState = sheetState,
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        sheetMaxWidth = rememberAdaptiveSheetMaxWidth(),
         modifier = modifier
     ) {
         Column(
@@ -159,8 +176,7 @@ fun VoiceTaskOverlay(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    val infinitePulse = rememberInfiniteTransition(label = "headerPulse")
-                    val pulseScale by infinitePulse.animateFloat(
+                    val pulseScale by com.mj.yata.ui.theme.rememberMotionAwareInfiniteFloat(
                         initialValue = 1f,
                         targetValue = 1.7f,
                         animationSpec = infiniteRepeatable(
@@ -169,7 +185,7 @@ fun VoiceTaskOverlay(
                         ),
                         label = "pulseScale"
                     )
-                    val pulseAlpha by infinitePulse.animateFloat(
+                    val pulseAlpha by com.mj.yata.ui.theme.rememberMotionAwareInfiniteFloat(
                         initialValue = 0.8f,
                         targetValue = 0.15f,
                         animationSpec = infiniteRepeatable(
@@ -180,7 +196,7 @@ fun VoiceTaskOverlay(
                     )
 
                     Box(contentAlignment = Alignment.Center) {
-                        if (voiceState is VoiceState.Listening || voiceState is VoiceState.Speaking) {
+                        if (isActivelyListening) {
                             Box(
                                 modifier = Modifier
                                     .size(14.dp)
@@ -194,7 +210,7 @@ fun VoiceTaskOverlay(
                                 .size(10.dp)
                                 .clip(CircleShape)
                                 .background(
-                                    if (voiceState is VoiceState.Listening || voiceState is VoiceState.Speaking)
+                                    if (isActivelyListening)
                                         MaterialTheme.colorScheme.primary
                                     else
                                         MaterialTheme.colorScheme.outline
@@ -203,7 +219,7 @@ fun VoiceTaskOverlay(
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "ON-DEVICE VOICE INPUT",
+                        text = stringResource(R.string.voice_task_overlay_heading),
                         style = MaterialTheme.typography.labelMedium.copy(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.sp
@@ -231,7 +247,7 @@ fun VoiceTaskOverlay(
             // Audio Waveform Animation Canvas
             AudioWaveformCanvas(
                 amplitude = rmsDb,
-                isListening = voiceState is VoiceState.Listening || voiceState is VoiceState.Speaking,
+                isListening = isActivelyListening,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(64.dp)
@@ -239,32 +255,9 @@ fun VoiceTaskOverlay(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-    var manualText by remember { mutableStateOf("") }
-    val speechLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == android.app.Activity.RESULT_OK) {
-            val matches = result.data?.getStringArrayListExtra(android.speech.RecognizerIntent.EXTRA_RESULTS)
-            val spoken = matches?.firstOrNull() ?: ""
-            if (spoken.isNotBlank()) {
-                manualText = spoken
-            }
-        }
-    }
-
-    val launchSystemDictation = {
-        val intent = android.content.Intent(android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-            putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE_MODEL, android.speech.RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            putExtra(android.speech.RecognizerIntent.EXTRA_PROMPT, "Speak your task")
-        }
-        try {
-            speechLauncher.launch(intent)
-        } catch (_: Exception) {}
-    }
-
     if (!hasMicPermission) {
         Text(
-            text = "Microphone permission required for voice task creation.",
+            text = stringResource(R.string.voice_task_overlay_mic_permission_required),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.error,
             textAlign = TextAlign.Center,
@@ -273,7 +266,7 @@ fun VoiceTaskOverlay(
     } else when (val state = voiceState) {
         is VoiceState.Listening -> {
             Text(
-                text = "Listening... Speak your task naturally\n(e.g., 'Buy groceries tomorrow at 5pm')",
+                text = stringResource(R.string.voice_task_overlay_listening),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
@@ -289,8 +282,8 @@ fun VoiceTaskOverlay(
                     textAlign = TextAlign.Center
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                androidx.compose.material3.TextButton(onClick = { launchSystemDictation() }) {
-                    Text(stringResource(R.string.voice_task_overlay_tap_to_use_system_voice_dialog))
+                androidx.compose.material3.TextButton(onClick = { restartInAppVoice() }) {
+                    Text(stringResource(R.string.voice_task_overlay_speak_again))
                 }
             }
         }
@@ -337,43 +330,46 @@ fun VoiceTaskOverlay(
                             ) {
                                 parsedInfo.due?.let { dueDate ->
                                     VoiceChip(
-                                        label = "Due: ${dueDate}${parsedInfo.time?.let { " $it" } ?: ""}",
+                                        label = stringResource(
+                                            R.string.voice_task_overlay_due_chip,
+                                            "${dueDate}${parsedInfo.time?.let { " $it" } ?: ""}"
+                                        ),
                                         color = MaterialTheme.colorScheme.primary
                                     )
                                 }
                                 parsedInfo.priority?.let { priority ->
                                     VoiceChip(
-                                        label = "Priority: ${priority.uppercase()}",
+                                        label = stringResource(R.string.voice_task_overlay_priority_chip, priority.uppercase()),
                                         color = MaterialTheme.colorScheme.tertiary
                                     )
                                 }
                                 if (parsedInfo.flag) {
                                     VoiceChip(
-                                        label = "Flagged",
+                                        label = stringResource(R.string.quick_add_preview_flagged),
                                         color = MaterialTheme.colorScheme.error
                                     )
                                 }
                                 parsedInfo.projectName?.let { proj ->
                                     VoiceChip(
-                                        label = "Project: $proj",
+                                        label = stringResource(R.string.voice_task_overlay_project_chip, proj),
                                         color = MaterialTheme.colorScheme.secondary
                                     )
                                 }
                                 parsedInfo.listName?.let { list ->
                                     VoiceChip(
-                                        label = "List: $list",
+                                        label = stringResource(R.string.voice_task_overlay_list_chip, list),
                                         color = MaterialTheme.colorScheme.secondary
                                     )
                                 }
                                 parsedInfo.tagNames.forEach { tag ->
                                     VoiceChip(
-                                        label = "#$tag",
+                                        label = stringResource(R.string.voice_task_overlay_tag_chip, tag),
                                         color = MaterialTheme.colorScheme.primary
                                     )
                                 }
                                 parsedInfo.assigneeNames.forEach { assignee ->
                                     VoiceChip(
-                                        label = "@$assignee",
+                                        label = stringResource(R.string.voice_task_overlay_assignee_chip, assignee),
                                         color = MaterialTheme.colorScheme.tertiary
                                     )
                                 }
@@ -392,7 +388,7 @@ fun VoiceTaskOverlay(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(
-                    onClick = { launchSystemDictation() },
+                    onClick = { restartInAppVoice() },
                     modifier = Modifier
                         .size(48.dp)
                         .clip(CircleShape)
@@ -438,7 +434,7 @@ fun VoiceTaskOverlay(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Create Task",
+                                text = stringResource(R.string.voice_task_overlay_create_task),
                                 style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
                                 color = buttonContentColor
                             )
@@ -456,8 +452,10 @@ fun VoiceTaskOverlay(
 private fun VoiceChip(label: String, color: Color) {
     AnimatedVisibility(
         visible = true,
-        enter = scaleIn(animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium)) + fadeIn(),
-        exit = scaleOut() + fadeOut()
+        enter = scaleIn(animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium)) +
+            fadeIn(animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium)),
+        exit = scaleOut(animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium)) +
+            fadeOut(animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium))
     ) {
         Surface(
             color = color.copy(alpha = 0.15f),
@@ -489,8 +487,7 @@ private fun AudioWaveformCanvas(
     val secondaryColor = MaterialTheme.colorScheme.tertiary
     val auraColor = MaterialTheme.colorScheme.secondary
 
-    val infiniteTransition = rememberInfiniteTransition(label = "waveformWave")
-    val phase by infiniteTransition.animateFloat(
+    val phase by com.mj.yata.ui.theme.rememberMotionAwareInfiniteFloat(
         initialValue = 0f,
         targetValue = (2 * PI).toFloat(),
         animationSpec = infiniteRepeatable(

@@ -11,6 +11,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Analytics
+import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ExpandMore
@@ -37,6 +39,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mj.yata.ui.widgets.showUndoSnackbar
+import com.mj.yata.ui.widgets.YataDropdownMenu
+import com.mj.yata.ui.widgets.YataDropdownMenuItem
 import com.mj.yata.ui.widgets.showSuccess
 import com.mj.yata.ui.widgets.showError
 import com.mj.yata.R
@@ -56,6 +60,8 @@ import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.yataItemFade
 import com.mj.yata.ui.theme.yataItemPlacement
 import com.mj.yata.ui.theme.YataEase
+import com.mj.yata.ui.util.AdaptiveContentBox
+import com.mj.yata.ui.util.rememberAdaptiveSheetMaxWidth
 import androidx.compose.ui.draw.rotate
 import androidx.compose.animation.core.animateFloatAsState
 import kotlinx.coroutines.launch
@@ -67,6 +73,7 @@ fun PersonDetailScreen(
     personId: String,
     onNavigateBack: () -> Unit,
     onNavigateToTaskDetail: (String) -> Unit,
+    onNavigateToPersonAnalytics: () -> Unit,
     onNavigateToTab: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -79,6 +86,10 @@ fun PersonDetailScreen(
     val tags by viewModel.tags.collectAsStateWithLifecycle()
     val personGroups by viewModel.personGroups.collectAsStateWithLifecycle()
     val taskRowDensity by viewModel.taskRowDensity.collectAsStateWithLifecycle()
+    val weekendDays by viewModel.weekendDays.collectAsStateWithLifecycle()
+    val holidaysRaw by viewModel.holidays.collectAsStateWithLifecycle()
+    val holidays = remember(holidaysRaw) { holidaysRaw.mapNotNull(Holiday::decode) }
+    val observeNonWorkingDays by viewModel.observeNonWorkingDays.collectAsStateWithLifecycle()
 
     val person = remember(people, personId) { people.find { it.id == personId } }
     val accents = LocalYataAccents.current
@@ -89,6 +100,11 @@ fun PersonDetailScreen(
     var isNewTaskSheetOpen by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     val hideCompleted by viewModel.hideCompletedPerson.collectAsStateWithLifecycle()
+    var showArchived by remember { mutableStateOf(false) }
+    val archivedTasksAll by viewModel.archivedTasks.collectAsStateWithLifecycle()
+    val archivedPersonTasks = remember(archivedTasksAll, personId) {
+        archivedTasksAll.filter { it.assigneeIds.contains(personId) }
+    }
     var pendingCommentTask by remember { mutableStateOf<Task?>(null) }
     var searchActive by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
@@ -99,7 +115,10 @@ fun PersonDetailScreen(
     val exportContext = androidx.compose.ui.platform.LocalContext.current
     var exportFormatPending by remember { mutableStateOf<com.mj.yata.util.export.ExportFormat?>(null) }
     var exportInProgress by remember { mutableStateOf(false) }
+    val longTaskLinkWarningGate = com.mj.yata.util.export.rememberLongTaskLinkWarningGate()
     val snackbarHostState = remember { SnackbarHostState() }
+    // Snooze and bulk-reschedule Undo offers (AppUndoBus) land here while this screen is on top.
+    com.mj.yata.ui.widgets.RegisterUndoSnackbarHost(snackbarHostState)
     val projectsById = remember(projects) { projects.associateBy { it.id } }
     val listsById = remember(lists) { lists.associateBy { it.id } }
     val tagsById = remember(tags) { tags.associateBy { it.id } }
@@ -127,7 +146,7 @@ fun PersonDetailScreen(
 
     fun deleteTaskWithUndo(task: Task) {
         scope.launch {
-            val result = showUndoSnackbar(snackbarHostState, "Task deleted", undoWindowSeconds)
+            val result = showUndoSnackbar(snackbarHostState, exportContext.getString(R.string.task_deleted), undoWindowSeconds)
             if (!result) {
                 viewModel.deleteTask(task)
             }
@@ -170,8 +189,8 @@ fun PersonDetailScreen(
     val openTasks = remember(assignedTasks, searchQuery, sortMode) {
         assignedTasks.filter { !it.done && taskMatchesQuery(it, searchQuery) }.sortedByMode(sortMode)
     }
-    val displayedOpenTasks = remember(openTasks, activeStatFilter) {
-        openTasks.filter { activeStatFilter == null || activeStatFilter!!.matches(it, today) }
+    val displayedOpenTasks = remember(openTasks, activeStatFilter, today, weekendDays, holidays, observeNonWorkingDays) {
+        openTasks.filter { activeStatFilter == null || activeStatFilter!!.matches(it, today, weekendDays, holidays, observeNonWorkingDays) }
     }
     val completedTasks = remember(assignedTasks, searchQuery) { assignedTasks.filter { it.done && taskMatchesQuery(it, searchQuery) } }
 
@@ -188,14 +207,16 @@ fun PersonDetailScreen(
     var showBulkMoveSheet by remember { mutableStateOf(false) }
     var showBulkAssignSheet by remember { mutableStateOf(false) }
     var showBulkRescheduleSheet by remember { mutableStateOf(false) }
+    var showBulkPrioritySheet by remember { mutableStateOf(false) }
     var showBulkDeleteDialog by remember { mutableStateOf(false) }
+    val adaptiveSheetMaxWidth = rememberAdaptiveSheetMaxWidth()
 
     Scaffold(
         snackbarHost = {
             SnackbarHost(snackbarHostState) { data -> com.mj.yata.ui.widgets.YataSnackbar(data) }
         },
         bottomBar = {
-            com.mj.yata.ui.screen.main.CustomBottomNav(
+            com.mj.yata.ui.screen.main.AdaptiveBottomNav(
                 selectedTab = 2,
                 todayBadgeCount = todayBadgeCount,
                 peopleEnabled = peopleFeatureEnabled,
@@ -215,9 +236,11 @@ fun PersonDetailScreen(
                     onAddTag = { showBulkTagSheet = true },
                     onMove = { showBulkMoveSheet = true },
                     onReschedule = { showBulkRescheduleSheet = true },
-                    onDuplicate = { viewModel.bulkDuplicateTasks(selectedIds.toList()); selectedIds.clear() },
+                    onDuplicate = { viewModel.bulkDuplicateTasks(selectedIds.toList()) { single -> onNavigateToTaskDetail(single.id) }; selectedIds.clear() },
                     onDelete = { showBulkDeleteDialog = true },
                     onAssign = { showBulkAssignSheet = true },
+                    onFlag = { viewModel.bulkSetFlag(selectedIds.toList(), true); selectedIds.clear() },
+                    onSetPriority = { showBulkPrioritySheet = true },
                     tagsEnabled = tagsFeatureEnabled,
                     peopleEnabled = peopleFeatureEnabled,
                     modifier = Modifier.statusBarsPadding()
@@ -282,6 +305,9 @@ fun PersonDetailScreen(
                         com.mj.yata.ui.widgets.YataTopBarIconButton(onClick = { searchActive = true }) {
                             Icon(Icons.Default.Search, contentDescription = stringResource(R.string.person_detail_search_this_person_s_tasks))
                         }
+                        com.mj.yata.ui.widgets.YataTopBarIconButton(onClick = onNavigateToPersonAnalytics) {
+                            Icon(Icons.Default.Analytics, contentDescription = stringResource(R.string.person_analytics_title))
+                        }
                         com.mj.yata.ui.widgets.TaskSortMenuButton(
                             current = sortMode,
                             onSelect = { viewModel.setSortModePerson(it) },
@@ -301,11 +327,11 @@ fun PersonDetailScreen(
                         com.mj.yata.ui.widgets.YataTopBarIconButton(onClick = { showMenu = true }) {
                             Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.cd_more_options))
                         }
-                        DropdownMenu(
+                        YataDropdownMenu(
                             expanded = showMenu,
                             onDismissRequest = { showMenu = false }
                         ) {
-                            DropdownMenuItem(
+                            YataDropdownMenuItem(
                                 text = { Text(stringResource(R.string.person_detail_edit_person)) },
                                 onClick = {
                                     showMenu = false
@@ -313,7 +339,7 @@ fun PersonDetailScreen(
                                 },
                                 leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) }
                             )
-                            DropdownMenuItem(
+                            YataDropdownMenuItem(
                                 text = { Text(stringResource(R.string.action_export_as_markdown)) },
                                 onClick = {
                                     showMenu = false
@@ -321,7 +347,7 @@ fun PersonDetailScreen(
                                 },
                                 leadingIcon = { Icon(Icons.Default.IosShare, contentDescription = null) }
                             )
-                            DropdownMenuItem(
+                            YataDropdownMenuItem(
                                 text = { Text(stringResource(R.string.action_export_as_image)) },
                                 onClick = {
                                     showMenu = false
@@ -329,7 +355,7 @@ fun PersonDetailScreen(
                                 },
                                 leadingIcon = { Icon(Icons.Default.Image, contentDescription = null) }
                             )
-                            DropdownMenuItem(
+                            YataDropdownMenuItem(
                                 text = { Text(stringResource(R.string.action_export_as_pdf)) },
                                 onClick = {
                                     showMenu = false
@@ -337,8 +363,22 @@ fun PersonDetailScreen(
                                 },
                                 leadingIcon = { Icon(Icons.Default.PictureAsPdf, contentDescription = null) }
                             )
+                            YataDropdownMenuItem(
+                                text = {
+                                    Text(
+                                        stringResource(
+                                            if (showArchived) R.string.action_hide_archive else R.string.action_view_archived
+                                        )
+                                    )
+                                },
+                                onClick = {
+                                    showMenu = false
+                                    showArchived = !showArchived
+                                },
+                                leadingIcon = { Icon(Icons.Default.Archive, contentDescription = null) }
+                            )
                             if (!person.isMe) {
-                                DropdownMenuItem(
+                                YataDropdownMenuItem(
                                     text = { Text(if (person.archived) "Unarchive person" else "Archive person") },
                                     onClick = {
                                         showMenu = false
@@ -381,11 +421,14 @@ fun PersonDetailScreen(
             }
         }
     ) { innerPadding ->
-        LazyColumn(
+        AdaptiveContentBox(
             modifier = modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
-                .padding(innerPadding),
+                .padding(innerPadding)
+        ) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(bottom = 32.dp)
         ) {
             // 1. Hero section — bigger avatar + progress ring, plus overdue/high-priority/due-today
@@ -393,15 +436,15 @@ fun PersonDetailScreen(
             // search-filtered, unlike openTasks/completedTasks below) so these always reflect the
             // person's real workload regardless of an active search query.
             item {
-                val overdueCount = remember(assignedTasks) {
-                    com.mj.yata.util.AnalyticsUtils.overdueCount(assignedTasks)
+                val overdueCount = remember(assignedTasks, weekendDays, holidays, observeNonWorkingDays) {
+                    com.mj.yata.util.AnalyticsUtils.overdueCount(assignedTasks, weekendDays = weekendDays, holidays = holidays, observeNonWorkingDays = observeNonWorkingDays)
                 }
                 val highPriorityCount = remember(assignedTasks) {
                     assignedTasks.count { !it.done && it.priority == "high" }
                 }
                 val todayStr = com.mj.yata.util.AppClock.todayString
-                val dueTodayCount = remember(assignedTasks, todayStr) {
-                    assignedTasks.count { !it.done && it.due == todayStr }
+                val dueTodayCount = remember(assignedTasks, todayStr, weekendDays, holidays, observeNonWorkingDays) {
+                    assignedTasks.count { !it.done && it.effectiveDue(weekendDays, holidays, observeNonWorkingDays) == todayStr }
                 }
                 val totalCount = assignedTasks.size
                 val doneCount = assignedTasks.count { it.done }
@@ -431,12 +474,13 @@ fun PersonDetailScreen(
             // days, so a manager can see whether this person's backlog is growing or shrinking,
             // not just the live snapshot above.
             item {
-                val trend = remember(assignedTasks) {
+                val trend = remember(assignedTasks, weekendDays, holidays, observeNonWorkingDays) {
                     val today = java.time.LocalDate.now()
                     (6 downTo 0).map { offset ->
                         val day = today.minusDays(offset.toLong())
                         val overdueCount = assignedTasks.count { task ->
-                            val due = task.due?.let { runCatching { java.time.LocalDate.parse(it) }.getOrNull() } ?: return@count false
+                            val due = task.effectiveDue(weekendDays, holidays, observeNonWorkingDays)
+                                ?.let { runCatching { java.time.LocalDate.parse(it) }.getOrNull() } ?: return@count false
                             val completedDay = task.completedAt?.let {
                                 java.time.Instant.ofEpochMilli(it).atZone(java.time.ZoneId.systemDefault()).toLocalDate()
                             }
@@ -452,7 +496,7 @@ fun PersonDetailScreen(
                         .padding(horizontal = 20.dp, vertical = 12.dp)
                 ) {
                     Text(
-                        text = "OVERDUE TREND (7 DAYS)",
+                        text = stringResource(R.string.person_detail_overdue_trend),
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -494,7 +538,7 @@ fun PersonDetailScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Text(
-                            text = "Pending",
+                            text = stringResource(R.string.person_detail_pending),
                             style = MaterialTheme.typography.titleMedium
                         )
                         Surface(
@@ -537,7 +581,7 @@ fun PersonDetailScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "No open tasks assigned.",
+                                text = stringResource(R.string.person_detail_no_open_tasks),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                             )
@@ -577,7 +621,10 @@ fun PersonDetailScreen(
                             density = taskRowDensity,
                             onSwipeToDelete = { if (!selectionMode) deleteTaskWithUndo(task) },
                             swipeEnabled = !selectionMode,
-                            showDueDate = true
+                            showDueDate = true,
+                            weekendDays = weekendDays,
+                            holidays = holidays,
+                            observeNonWorkingDays = observeNonWorkingDays
                         )
                     }
                 }
@@ -603,7 +650,7 @@ fun PersonDetailScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Text(
-                            text = "Completed Tasks",
+                            text = stringResource(R.string.person_detail_completed_tasks),
                             style = MaterialTheme.typography.titleMedium
                         )
                         Surface(
@@ -637,7 +684,7 @@ fun PersonDetailScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "No completed tasks.",
+                                text = stringResource(R.string.person_detail_no_completed_tasks),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                             )
@@ -677,12 +724,59 @@ fun PersonDetailScreen(
                             density = taskRowDensity,
                             onSwipeToDelete = { if (!selectionMode) deleteTaskWithUndo(task) },
                             swipeEnabled = !selectionMode,
-                            showDueDate = true
+                            showDueDate = true,
+                            weekendDays = weekendDays,
+                            holidays = holidays,
+                            observeNonWorkingDays = observeNonWorkingDays
                         )
                     }
                 }
             }
+
+            if (showArchived && archivedPersonTasks.isNotEmpty()) {
+                item(key = "archived_header") {
+                    com.mj.yata.ui.widgets.TaskSectionHeader("ARCHIVED", archivedPersonTasks.size)
+                }
+                items(archivedPersonTasks, key = { "archived_" + it.id }, contentType = { "task" }) { task ->
+                    val taskList = remember(task.listId, listsById) { listsById[task.listId] }
+                    val taskAssignees = remember(task.assigneeIds, peopleById) {
+                        task.assigneeIds.mapNotNull { pid -> peopleById[pid] }
+                    }
+                    val taskTags = remember(task, projectsById, tagsById, tagsFeatureEnabled) {
+                        if (tagsFeatureEnabled) task.effectiveTags(projectsById, tagsById) else emptyList()
+                    }
+
+                    TaskRow(
+                        task = task,
+                        list = taskList,
+                        assignees = taskAssignees,
+                        tags = taskTags,
+                        onToggleDone = { viewModel.toggleTaskDone(task.id) {} },
+                        onTaskClick = {
+                            if (selectionMode) {
+                                if (selectedIds.contains(task.id)) selectedIds.remove(task.id) else selectedIds.add(task.id)
+                            } else {
+                                onNavigateToTaskDetail(task.id)
+                            }
+                        },
+                        selectionMode = selectionMode,
+                        selected = selectedIds.contains(task.id),
+                        onLongClick = { if (!selectedIds.contains(task.id)) selectedIds.add(task.id) },
+                        onCommentClick = { pendingCommentTask = task },
+                        onQuickSnooze = { viewModel.quickSnoozeTask(task.id, it) },
+                        onRenameTask = { viewModel.renameTask(task.id, it) },
+                        density = taskRowDensity,
+                        onSwipeToDelete = { if (!selectionMode) deleteTaskWithUndo(task) },
+                        swipeEnabled = !selectionMode,
+                        showDueDate = true,
+                        weekendDays = weekendDays,
+                        holidays = holidays,
+                        observeNonWorkingDays = observeNonWorkingDays
+                    )
+                }
+            }
             } // !hideCompleted
+        }
         }
     }
 
@@ -695,6 +789,7 @@ fun PersonDetailScreen(
             )
         ) {
             NewTaskSheet(
+                dueDatePickerContext = com.mj.yata.ui.widgets.rememberDueDatePickerContext(viewModel),
                 lists = lists,
                 projects = projects,
                 people = people,
@@ -710,6 +805,9 @@ fun PersonDetailScreen(
                     onNavigateToTaskDetail(id)
                 },
                 autoAssignToMe = autoAssignToMe,
+                onCreateProject = { id, name, color ->
+                    viewModel.upsertProject(com.mj.yata.domain.model.Project(id = id, name = name, color = color, icon = "layers"))
+                },
                 onCreateTag = { id, name, color ->
                     viewModel.upsertTag(Tag(id = id, name = name, color = color))
                 },
@@ -717,6 +815,7 @@ fun PersonDetailScreen(
                     viewModel.upsertPerson(Person(id = id, name = name, initials = initialsFor(name), color = color, isMe = false))
                 },
                 onDismiss = { isNewTaskSheetOpen = false },
+                modifier = Modifier.widthIn(max = 720.dp),
                 projectsEnabled = projectsFeatureEnabled,
                 tagsEnabled = tagsFeatureEnabled,
                 peopleEnabled = peopleFeatureEnabled,
@@ -730,10 +829,12 @@ fun PersonDetailScreen(
         ModalBottomSheet(
             onDismissRequest = { isEditSheetOpen = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             PersonEditorSheet(
                 initialName = person.name,
+                existingNames = people.map { it.name },
                 initialColor = person.color,
                 initialGroupId = person.groupId,
                 initialPhotoUri = person.photoUri,
@@ -795,7 +896,8 @@ fun PersonDetailScreen(
         ModalBottomSheet(
             onDismissRequest = { showBulkTagSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             TaskBulkTagPickerSheet(
                 tags = tags,
@@ -809,16 +911,38 @@ fun PersonDetailScreen(
         }
     }
 
+    if (showBulkPrioritySheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showBulkPrioritySheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
+        ) {
+            TaskBulkPrioritySheet(
+                onSelectPriority = { priority ->
+                    viewModel.bulkSetPriority(selectedIds.toList(), priority)
+                    selectedIds.clear()
+                    showBulkPrioritySheet = false
+                },
+                onDismiss = { showBulkPrioritySheet = false }
+            )
+        }
+    }
+
     if (showBulkAssignSheet) {
         ModalBottomSheet(
             onDismissRequest = { showBulkAssignSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             TaskBulkAssignPersonSheet(
                 people = people,
                 tasks = allTasks,
                 todayStr = com.mj.yata.util.AppClock.todayString,
+                weekendDays = weekendDays,
+                holidays = holidays,
+                observeNonWorkingDays = observeNonWorkingDays,
                 onSelectPerson = { targetPersonId ->
                     viewModel.bulkAssignPerson(selectedIds.toList(), targetPersonId)
                     selectedIds.clear()
@@ -833,7 +957,8 @@ fun PersonDetailScreen(
         ModalBottomSheet(
             onDismissRequest = { showBulkMoveSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             TaskBulkMoveSheet(
                 projects = projects,
@@ -858,11 +983,12 @@ fun PersonDetailScreen(
         ModalBottomSheet(
             onDismissRequest = { showBulkRescheduleSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             TaskBulkRescheduleSheet(
-                onSelectPreset = { preset ->
-                    viewModel.bulkRescheduleTasks(selectedIds.toList(), preset)
+                onSelectPreset = { preset, keepExistingTime ->
+                    viewModel.bulkRescheduleTasks(selectedIds.toList(), preset, keepExistingTime)
                     selectedIds.clear()
                     showBulkRescheduleSheet = false
                 },
@@ -898,7 +1024,6 @@ fun PersonDetailScreen(
             itemPreviews = assignedTasks.map { com.mj.yata.util.export.ExportItemPreview(it.done, it.completedAt) },
             onDismiss = { exportFormatPending = null },
             onConfirm = { options ->
-                exportFormatPending = null
                 val cutoffMillis = options.excludeCompletedOlderThanDays?.takeIf { it > 0 }?.let {
                     System.currentTimeMillis() - it.toLong() * 24 * 60 * 60 * 1000
                 }
@@ -907,7 +1032,22 @@ fun PersonDetailScreen(
                     if (!options.includeCompleted) return@filter false
                     cutoffMillis == null || (task.completedAt != null && task.completedAt >= cutoffMillis)
                 }
-                scope.launch {
+                val transferLink = exportTasks.takeIf { it.isNotEmpty() && options.includeImportLink }?.let { sharedTasks ->
+                    com.mj.yata.util.export.buildTaskTransferLink(
+                        title = person.name,
+                        tasks = sharedTasks,
+                        listsById = listsById,
+                        projectsById = projectsById,
+                        tagsById = tagsById,
+                        peopleById = peopleById,
+                        includeStructure = !options.privacyMode,
+                        includeNotes = !options.privacyMode
+                    )
+                }
+
+                fun startExport() {
+                    exportFormatPending = null
+                    scope.launch {
                     exportInProgress = true
                     val exportResult = runCatching {
                         com.mj.yata.util.export.exportEntityReport(
@@ -918,7 +1058,7 @@ fun PersonDetailScreen(
                             accentColor = personColor,
                             doneCount = exportTasks.count { it.done },
                             totalCount = exportTasks.size,
-                            overdueCount = com.mj.yata.util.AnalyticsUtils.overdueCount(exportTasks),
+                            overdueCount = com.mj.yata.util.AnalyticsUtils.overdueCount(exportTasks, weekendDays = weekendDays, holidays = holidays, observeNonWorkingDays = observeNonWorkingDays),
                             tasks = exportTasks.map { task ->
                                 task.toExportRow(
                                     exportGroupLabel(task),
@@ -934,7 +1074,8 @@ fun PersonDetailScreen(
                             destination = options.destination,
                             fileNameBase = options.fileNameBase,
                             pdfPageSize = options.pdfPageSize,
-                            imageScale = options.imageScale
+                            imageScale = options.imageScale,
+                            transferText = transferLink?.asShareText(person.name, exportTasks.size)
                         )
                     }
                     exportInProgress = false
@@ -944,10 +1085,18 @@ fun PersonDetailScreen(
                         snackbarHostState.showError(error.message ?: exportContext.getString(R.string.export_failed))
                     }
                 }
+                }
+
+                if (options.destination == com.mj.yata.util.export.ExportDestination.SHARE) {
+                    longTaskLinkWarningGate.runOrConfirm(transferLink, exportTasks.size, ::startExport)
+                } else {
+                    startExport()
+                }
             }
         )
     }
     if (exportInProgress) {
         com.mj.yata.util.export.ExportProgressDialog()
     }
+    com.mj.yata.util.export.LongTaskLinkWarningDialog(longTaskLinkWarningGate)
 }

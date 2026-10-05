@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import java.time.LocalDateTime
+import com.mj.yata.R
 import com.mj.yata.util.localized
 
 private fun cardWidth(scale: ExportImageScale) = scale.widthDp.dp
@@ -19,6 +20,7 @@ suspend fun exportEntityReport(
     format: ExportFormat,
     entityKind: String,
     entityName: String,
+    entitySubtitle: String? = null,
     accentColor: Color,
     doneCount: Int,
     totalCount: Int,
@@ -32,7 +34,8 @@ suspend fun exportEntityReport(
     destination: ExportDestination = ExportDestination.SHARE,
     fileNameBase: String = "yata_${sanitizeExportFileName(entityName)}",
     pdfPageSize: ExportPdfPageSize = ExportPdfPageSize.A4,
-    imageScale: ExportImageScale = ExportImageScale.STANDARD
+    imageScale: ExportImageScale = ExportImageScale.STANDARD,
+    transferText: String? = null
 ): ExportOutcome {
     val displayDensity = context.resources.displayMetrics.density
     val widthPx = (cardWidth(imageScale).value * displayDensity).toInt()
@@ -45,6 +48,7 @@ suspend fun exportEntityReport(
         BrandedExportCard(
             entityKind = entityKind,
             entityName = entityName,
+            entitySubtitle = entitySubtitle,
             accentColor = accentColor,
             doneCount = doneCount,
             totalCount = totalCount,
@@ -65,18 +69,18 @@ suspend fun exportEntityReport(
     when (format) {
         ExportFormat.IMAGE -> {
             val file = saveBitmapAsPng(context, bitmap, "$baseName.png")
-            return deliverExportedFile(context, file, "image/png", "Share $entityName", destination)
+            return deliverExportedFile(context, file, "image/png", "Share $entityName", destination, transferText)
         }
         ExportFormat.PDF -> {
             val file = saveBitmapAsPdf(context, bitmap, "$baseName.pdf", rowBreaks, pdfPageSize)
             applyPdfMetadata(
                 context = context,
                 file = file,
-                title = "$entityName — YATA $entityKind Report",
+                title = context.getString(R.string.entity_report_pdf_title, entityName, entityKind),
                 subject = "$entityKind task report for $entityName ($doneCount/$totalCount done)",
                 keywords = "YATA, $entityKind, $entityName, tasks, report"
             )
-            return deliverExportedFile(context, file, "application/pdf", "Share $entityName", destination)
+            return deliverExportedFile(context, file, "application/pdf", "Share $entityName", destination, transferText)
         }
     }
 }

@@ -34,7 +34,13 @@ data class EntityExportOptions(
     val destination: ExportDestination,
     val fileNameBase: String,
     val pdfPageSize: ExportPdfPageSize,
-    val imageScale: ExportImageScale
+    val imageScale: ExportImageScale,
+    // Whether the share text accompanying the exported image/PDF carries a YATA import link.
+    // Independent of privacyMode: privacy mode controls what the link itself carries if it's
+    // included at all (structure/notes), not whether it appears in the first place — someone
+    // exporting purely as a shareable snapshot, with no expectation the recipient has YATA, may
+    // want the file with no link attached.
+    val includeImportLink: Boolean = true
 )
 
 data class TaskExportOptions(
@@ -47,7 +53,9 @@ data class TaskExportOptions(
     val destination: ExportDestination,
     val fileNameBase: String,
     val pdfPageSize: ExportPdfPageSize,
-    val imageScale: ExportImageScale
+    val imageScale: ExportImageScale,
+    val imageDarkTheme: Boolean = false,
+    val includeImportLink: Boolean = true
 )
 
 data class ExportOutcome(
@@ -81,6 +89,9 @@ private object ExportPrefKeys {
     const val TASK_INCLUDE_COMMENTS = "task_include_comments"
     const val TASK_INCLUDE_SUBTASKS = "task_include_subtasks"
     const val TASK_INCLUDE_SCHEDULE = "task_include_schedule"
+    const val TASK_IMAGE_DARK_THEME = "task_image_dark_theme"
+    const val TASK_IMAGE_DARK_THEME_SET = "task_image_dark_theme_set"
+    const val INCLUDE_IMPORT_LINK = "include_import_link"
 }
 
 internal fun defaultEntityExportOptions(context: Context, entityName: String): EntityExportOptions {
@@ -98,16 +109,29 @@ internal fun defaultEntityExportOptions(context: Context, entityName: String): E
         destination = enumValueOrDefault(prefs.getString(ExportPrefKeys.DESTINATION, null), ExportDestination.SHARE),
         fileNameBase = "yata_${sanitizeExportFileName(entityName)}",
         pdfPageSize = enumValueOrDefault(prefs.getString(ExportPrefKeys.PDF_PAGE_SIZE, null), ExportPdfPageSize.A4),
-        imageScale = enumValueOrDefault(prefs.getString(ExportPrefKeys.IMAGE_SCALE, null), ExportImageScale.STANDARD)
+        imageScale = enumValueOrDefault(prefs.getString(ExportPrefKeys.IMAGE_SCALE, null), ExportImageScale.STANDARD),
+        includeImportLink = prefs.getBoolean(ExportPrefKeys.INCLUDE_IMPORT_LINK, false)
     )
 }
 
-internal fun defaultTaskExportOptions(context: Context, title: String): TaskExportOptions {
+/**
+ * [systemDarkTheme] is the exporting screen's own currently-resolved theme (light/dark/AMOLED,
+ * whichever the user is actually looking at). It's only the *default* for [TaskExportOptions.imageDarkTheme]
+ * — once the user explicitly flips the dialog's toggle that explicit choice is remembered instead
+ * (via [ExportPrefKeys.TASK_IMAGE_DARK_THEME_SET]), so it doesn't silently flip back the next time
+ * they export from a screen in the other theme.
+ */
+internal fun defaultTaskExportOptions(context: Context, title: String, systemDarkTheme: Boolean): TaskExportOptions {
     val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     val privacy = prefs.getBoolean(ExportPrefKeys.PRIVACY, false)
+    val imageDarkTheme = if (prefs.getBoolean(ExportPrefKeys.TASK_IMAGE_DARK_THEME_SET, false)) {
+        prefs.getBoolean(ExportPrefKeys.TASK_IMAGE_DARK_THEME, systemDarkTheme)
+    } else {
+        systemDarkTheme
+    }
     return TaskExportOptions(
-        includeNotes = !privacy && prefs.getBoolean(ExportPrefKeys.TASK_INCLUDE_NOTES, true),
-        includeComments = !privacy && prefs.getBoolean(ExportPrefKeys.TASK_INCLUDE_COMMENTS, true),
+        includeNotes = !privacy && prefs.getBoolean(ExportPrefKeys.TASK_INCLUDE_NOTES, false),
+        includeComments = !privacy && prefs.getBoolean(ExportPrefKeys.TASK_INCLUDE_COMMENTS, false),
         includeSubtasks = prefs.getBoolean(ExportPrefKeys.TASK_INCLUDE_SUBTASKS, true),
         includeScheduleDetails = prefs.getBoolean(ExportPrefKeys.TASK_INCLUDE_SCHEDULE, true),
         showMadeWithFooter = prefs.getBoolean(ExportPrefKeys.SHOW_FOOTER, true),
@@ -115,7 +139,9 @@ internal fun defaultTaskExportOptions(context: Context, title: String): TaskExpo
         destination = enumValueOrDefault(prefs.getString(ExportPrefKeys.DESTINATION, null), ExportDestination.SHARE),
         fileNameBase = "yata_${sanitizeExportFileName(title)}",
         pdfPageSize = enumValueOrDefault(prefs.getString(ExportPrefKeys.PDF_PAGE_SIZE, null), ExportPdfPageSize.A4),
-        imageScale = enumValueOrDefault(prefs.getString(ExportPrefKeys.IMAGE_SCALE, null), ExportImageScale.STANDARD)
+        imageScale = enumValueOrDefault(prefs.getString(ExportPrefKeys.IMAGE_SCALE, null), ExportImageScale.STANDARD),
+        imageDarkTheme = imageDarkTheme,
+        includeImportLink = prefs.getBoolean(ExportPrefKeys.INCLUDE_IMPORT_LINK, false)
     )
 }
 
@@ -132,6 +158,7 @@ internal fun rememberEntityExportOptions(context: Context, options: EntityExport
         .putString(ExportPrefKeys.DESTINATION, options.destination.name)
         .putString(ExportPrefKeys.PDF_PAGE_SIZE, options.pdfPageSize.name)
         .putString(ExportPrefKeys.IMAGE_SCALE, options.imageScale.name)
+        .putBoolean(ExportPrefKeys.INCLUDE_IMPORT_LINK, options.includeImportLink)
         .apply()
 }
 
@@ -146,6 +173,9 @@ internal fun rememberTaskExportOptions(context: Context, options: TaskExportOpti
         .putString(ExportPrefKeys.DESTINATION, options.destination.name)
         .putString(ExportPrefKeys.PDF_PAGE_SIZE, options.pdfPageSize.name)
         .putString(ExportPrefKeys.IMAGE_SCALE, options.imageScale.name)
+        .putBoolean(ExportPrefKeys.TASK_IMAGE_DARK_THEME, options.imageDarkTheme)
+        .putBoolean(ExportPrefKeys.TASK_IMAGE_DARK_THEME_SET, true)
+        .putBoolean(ExportPrefKeys.INCLUDE_IMPORT_LINK, options.includeImportLink)
         .apply()
 }
 

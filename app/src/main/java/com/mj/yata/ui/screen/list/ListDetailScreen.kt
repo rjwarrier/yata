@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Delete
@@ -37,6 +38,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mj.yata.R
 import com.mj.yata.ui.widgets.showSuccess
+import com.mj.yata.ui.widgets.YataDropdownMenu
+import com.mj.yata.ui.widgets.YataDropdownMenuItem
 import com.mj.yata.ui.widgets.showError
 import com.mj.yata.domain.model.*
 import com.mj.yata.ui.screen.main.MainViewModel
@@ -56,6 +59,10 @@ import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.yataItemFade
 import com.mj.yata.ui.theme.yataItemPlacement
 import com.mj.yata.ui.theme.YataEase
+import com.mj.yata.ui.util.AdaptiveContentBox
+import com.mj.yata.ui.util.rememberAdaptiveLayoutInfo
+import com.mj.yata.ui.util.rememberAdaptiveSheetMaxWidth
+import com.mj.yata.ui.widgets.TaskPreviewPane
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -75,10 +82,15 @@ fun ListDetailScreen(
     val people by viewModel.people.collectAsStateWithLifecycle()
     val tags by viewModel.tags.collectAsStateWithLifecycle()
     val taskRowDensity by viewModel.taskRowDensity.collectAsStateWithLifecycle()
+    val weekendDays by viewModel.weekendDays.collectAsStateWithLifecycle()
+    val holidaysRaw by viewModel.holidays.collectAsStateWithLifecycle()
+    val holidays = remember(holidaysRaw) { holidaysRaw.mapNotNull(Holiday::decode) }
+    val observeNonWorkingDays by viewModel.observeNonWorkingDays.collectAsStateWithLifecycle()
 
     val list = remember(lists, listId) { lists.find { it.id == listId } }
     val accents = LocalYataAccents.current
     val scope = rememberCoroutineScope()
+    val listsById = remember(lists) { lists.associateBy { it.id } }
     val projectsById = remember(projects) { projects.associateBy { it.id } }
     val tagsById = remember(tags) { tags.associateBy { it.id } }
     val peopleById = remember(people) { people.associateBy { it.id } }
@@ -87,7 +99,10 @@ fun ListDetailScreen(
     val exportContext = androidx.compose.ui.platform.LocalContext.current
     var exportFormatPending by remember { mutableStateOf<com.mj.yata.util.export.ExportFormat?>(null) }
     var exportInProgress by remember { mutableStateOf(false) }
+    val longTaskLinkWarningGate = com.mj.yata.util.export.rememberLongTaskLinkWarningGate()
     val snackbarHostState = remember { SnackbarHostState() }
+    // Snooze and bulk-reschedule Undo offers (AppUndoBus) land here while this screen is on top.
+    com.mj.yata.ui.widgets.RegisterUndoSnackbarHost(snackbarHostState)
 
     // A list's tasks are already scoped to this one list, so the export's subheading groups
     // by project instead (a list name heading would be redundant on every group here) —
@@ -113,6 +128,11 @@ fun ListDetailScreen(
     val hideCompleted by viewModel.hideCompletedList.collectAsStateWithLifecycle()
     var searchActive by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
+    var showArchived by remember { mutableStateOf(false) }
+    val archivedTasksAll by viewModel.archivedTasks.collectAsStateWithLifecycle()
+    val archivedListTasks = remember(archivedTasksAll, listId) {
+        archivedTasksAll.filter { it.listId == listId }
+    }
 
     val showMissingList = com.mj.yata.ui.widgets.rememberMissingContentVisible(listId, list == null)
     if (list == null) {
@@ -147,9 +167,9 @@ fun ListDetailScreen(
     }
     var activeStatFilter by remember { mutableStateOf<com.mj.yata.ui.widgets.HeroStatKind?>(null) }
     val heroToday = com.mj.yata.util.AppClock.today
-    val statFilteredTasks = remember(listTasks, activeStatFilter, heroToday) {
+    val statFilteredTasks = remember(listTasks, activeStatFilter, heroToday, weekendDays, holidays, observeNonWorkingDays) {
         val filter = activeStatFilter ?: return@remember emptyList()
-        listTasks.filter { filter.matches(it, heroToday) }
+        listTasks.filter { filter.matches(it, heroToday, weekendDays, holidays, observeNonWorkingDays) }
     }
 
     // Not keyed on pendingListTasks — see ProjectDetailScreen for why: any task write anywhere
@@ -168,7 +188,36 @@ fun ListDetailScreen(
     var showBulkMoveSheet by remember { mutableStateOf(false) }
     var showBulkAssignSheet by remember { mutableStateOf(false) }
     var showBulkRescheduleSheet by remember { mutableStateOf(false) }
+    var showBulkPrioritySheet by remember { mutableStateOf(false) }
     var showBulkDeleteDialog by remember { mutableStateOf(false) }
+    val adaptiveSheetMaxWidth = rememberAdaptiveSheetMaxWidth()
+    val useWideDetail = rememberAdaptiveLayoutInfo().isWide
+    var previewTaskId by remember { mutableStateOf<String?>(null) }
+    val previewTasks = remember(
+        pendingListTasks,
+        completedListTasks,
+        searchFilteredTasks,
+        statFilteredTasks,
+        searchActive,
+        searchQuery,
+        activeStatFilter
+    ) {
+        when {
+            searchActive && searchQuery.isNotBlank() -> searchFilteredTasks
+            activeStatFilter != null -> statFilteredTasks
+            else -> pendingListTasks + completedListTasks
+        }
+    }
+    val previewTask = remember(previewTasks, previewTaskId) {
+        previewTasks.find { it.id == previewTaskId }
+    }
+    LaunchedEffect(previewTasks, useWideDetail) {
+        if (!useWideDetail) {
+            previewTaskId = null
+        } else if (previewTaskId != null && previewTasks.none { it.id == previewTaskId }) {
+            previewTaskId = previewTasks.firstOrNull()?.id
+        }
+    }
 
     val todayBadgeCount by viewModel.todayRemainingCount.collectAsStateWithLifecycle()
     val peopleFeatureEnabled by viewModel.peopleFeatureEnabled.collectAsStateWithLifecycle()
@@ -180,7 +229,7 @@ fun ListDetailScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) { data -> com.mj.yata.ui.widgets.YataSnackbar(data) } },
         bottomBar = {
-            com.mj.yata.ui.screen.main.CustomBottomNav(
+            com.mj.yata.ui.screen.main.AdaptiveBottomNav(
                 selectedTab = -1,
                 todayBadgeCount = todayBadgeCount,
                 peopleEnabled = peopleFeatureEnabled,
@@ -200,9 +249,11 @@ fun ListDetailScreen(
                     onAddTag = { showBulkTagSheet = true },
                     onMove = { showBulkMoveSheet = true },
                     onReschedule = { showBulkRescheduleSheet = true },
-                    onDuplicate = { viewModel.bulkDuplicateTasks(selectedIds.toList()); selectedIds.clear() },
+                    onDuplicate = { viewModel.bulkDuplicateTasks(selectedIds.toList()) { single -> onNavigateToTaskDetail(single.id) }; selectedIds.clear() },
                     onDelete = { showBulkDeleteDialog = true },
                     onAssign = { showBulkAssignSheet = true },
+                    onFlag = { viewModel.bulkSetFlag(selectedIds.toList(), true); selectedIds.clear() },
+                    onSetPriority = { showBulkPrioritySheet = true },
                     tagsEnabled = tagsFeatureEnabled,
                     peopleEnabled = peopleFeatureEnabled,
                     modifier = Modifier.statusBarsPadding()
@@ -290,11 +341,11 @@ fun ListDetailScreen(
                         com.mj.yata.ui.widgets.YataTopBarIconButton(onClick = { showMenu = true }) {
                             Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.cd_more_options))
                         }
-                        DropdownMenu(
+                        YataDropdownMenu(
                             expanded = showMenu,
                             onDismissRequest = { showMenu = false }
                         ) {
-                            DropdownMenuItem(
+                            YataDropdownMenuItem(
                                 text = { Text(stringResource(R.string.list_detail_edit_list)) },
                                 onClick = {
                                     showMenu = false
@@ -302,7 +353,7 @@ fun ListDetailScreen(
                                 },
                                 leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) }
                             )
-                            DropdownMenuItem(
+                            YataDropdownMenuItem(
                                 text = { Text(stringResource(R.string.action_export_as_image)) },
                                 onClick = {
                                     showMenu = false
@@ -310,7 +361,7 @@ fun ListDetailScreen(
                                 },
                                 leadingIcon = { Icon(Icons.Default.Image, contentDescription = null) }
                             )
-                            DropdownMenuItem(
+                            YataDropdownMenuItem(
                                 text = { Text(stringResource(R.string.action_export_as_pdf)) },
                                 onClick = {
                                     showMenu = false
@@ -318,7 +369,21 @@ fun ListDetailScreen(
                                 },
                                 leadingIcon = { Icon(Icons.Default.PictureAsPdf, contentDescription = null) }
                             )
-                            DropdownMenuItem(
+                            YataDropdownMenuItem(
+                                text = {
+                                    Text(
+                                        stringResource(
+                                            if (showArchived) R.string.action_hide_archive else R.string.action_view_archived
+                                        )
+                                    )
+                                },
+                                onClick = {
+                                    showMenu = false
+                                    showArchived = !showArchived
+                                },
+                                leadingIcon = { Icon(Icons.Default.Archive, contentDescription = null) }
+                            )
+                            YataDropdownMenuItem(
                                 text = { Text(stringResource(R.string.list_detail_delete_list)) },
                                 onClick = {
                                     showMenu = false
@@ -359,16 +424,23 @@ fun ListDetailScreen(
         }
     ) { innerPadding ->
         val progress = if (listTasks.isNotEmpty()) doneTasks.toFloat() / listTasks.size else 0f
-        val overdueCount = remember(listTasks) { com.mj.yata.util.AnalyticsUtils.overdueCount(listTasks) }
+        val overdueCount = remember(listTasks, weekendDays, holidays, observeNonWorkingDays) {
+            com.mj.yata.util.AnalyticsUtils.overdueCount(listTasks, weekendDays = weekendDays, holidays = holidays, observeNonWorkingDays = observeNonWorkingDays)
+        }
         val highPriorityCount = remember(listTasks) { listTasks.count { !it.done && it.priority == "high" } }
         val todayStr = com.mj.yata.util.AppClock.todayString
-        val dueTodayCount = remember(listTasks, todayStr) { listTasks.count { !it.done && it.due == todayStr } }
+        val dueTodayCount = remember(listTasks, todayStr, weekendDays, holidays, observeNonWorkingDays) {
+            listTasks.count { !it.done && it.effectiveDue(weekendDays, holidays, observeNonWorkingDays) == todayStr }
+        }
 
-        Column(
+        AdaptiveContentBox(
             modifier = modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
                 .padding(innerPadding)
+        ) {
+        Column(
+            modifier = Modifier.fillMaxSize()
         ) {
             // 1. Hero header — icon tile, list name, progress ring, plus overdue/high-priority/
             // due-today stats (per handoff's List Detail, extended to match Person/Project/Tag).
@@ -423,6 +495,8 @@ fun ListDetailScreen(
                     onTaskClick = {
                         if (selectionMode) {
                             if (selectedIds.contains(task.id)) selectedIds.remove(task.id) else selectedIds.add(task.id)
+                        } else if (useWideDetail) {
+                            previewTaskId = task.id
                         } else {
                             onNavigateToTaskDetail(task.id)
                         }
@@ -436,7 +510,10 @@ fun ListDetailScreen(
                     onQuickSnooze = { viewModel.quickSnoozeTask(task.id, it) },
                     onRenameTask = { viewModel.renameTask(task.id, it) },
                     density = taskRowDensity,
-                    showDueDate = true
+                    showDueDate = true,
+                    weekendDays = weekendDays,
+                    holidays = holidays,
+                    observeNonWorkingDays = observeNonWorkingDays
                 )
             }
 
@@ -447,6 +524,8 @@ fun ListDetailScreen(
                 )
             }
 
+            Row(modifier = Modifier.weight(1f)) {
+            Column(modifier = Modifier.weight(1f)) {
             if (selectionMode) {
                 // See ProjectDetailScreen for why selection mode falls back to a flat,
                 // non-draggable list instead of DragDropReorderableColumn.
@@ -470,7 +549,7 @@ fun ListDetailScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "Type to search tasks in this list.",
+                            text = stringResource(R.string.detail_search_prompt_list),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                         )
@@ -481,7 +560,7 @@ fun ListDetailScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "No matching tasks.",
+                            text = stringResource(R.string.detail_search_no_matches),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                         )
@@ -514,7 +593,9 @@ fun ListDetailScreen(
                         items(statFilteredTasks, key = { it.id }) { task -> taskRowFor(task) }
                     }
                 }
-            } else if (pendingListTasks.isEmpty() && completedListTasks.isEmpty()) {
+            } else if (pendingListTasks.isEmpty() && completedListTasks.isEmpty() &&
+                !(showArchived && archivedListTasks.isNotEmpty())
+            ) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -556,9 +637,35 @@ fun ListDetailScreen(
                                 )
                             }
                         }
+                        if (showArchived && archivedListTasks.isNotEmpty()) {
+                            item(key = "archived_header") { TaskSectionHeader("ARCHIVED", archivedListTasks.size) }
+                            items(archivedListTasks, key = { "archived_" + it.id }) { task -> taskRowFor(task) }
+                        }
                     }
                 ) { task -> taskRowFor(task) }
             }
+            }
+            if (useWideDetail && !selectionMode) {
+                VerticalDivider(
+                    modifier = Modifier.fillMaxHeight(),
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                )
+                TaskPreviewPane(
+                    task = previewTask,
+                    list = list,
+                    project = previewTask?.projectId?.let { projectsById[it] },
+                    people = previewTask?.assigneeIds?.mapNotNull { peopleById[it] }.orEmpty(),
+                    tags = previewTask?.effectiveTags(projectsById, tagsById).orEmpty(),
+                    onOpenTask = onNavigateToTaskDetail,
+                    onToggleTask = { task -> viewModel.toggleTaskDone(task.id) {} },
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .widthIn(min = 320.dp, max = 380.dp),
+                    emptySubtitle = "Preview list tasks without leaving this list."
+                )
+            }
+            }
+        }
         }
     }
 
@@ -566,7 +673,8 @@ fun ListDetailScreen(
         ModalBottomSheet(
             onDismissRequest = { pendingMoveTask = null },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             TaskMoveToPickerSheet(
                 lists = lists.filter { it.id != list.id },
@@ -598,7 +706,8 @@ fun ListDetailScreen(
         ModalBottomSheet(
             onDismissRequest = { showBulkTagSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             TaskBulkTagPickerSheet(
                 tags = tags,
@@ -612,16 +721,38 @@ fun ListDetailScreen(
         }
     }
 
+    if (showBulkPrioritySheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showBulkPrioritySheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
+        ) {
+            TaskBulkPrioritySheet(
+                onSelectPriority = { priority ->
+                    viewModel.bulkSetPriority(selectedIds.toList(), priority)
+                    selectedIds.clear()
+                    showBulkPrioritySheet = false
+                },
+                onDismiss = { showBulkPrioritySheet = false }
+            )
+        }
+    }
+
     if (showBulkAssignSheet) {
         ModalBottomSheet(
             onDismissRequest = { showBulkAssignSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             TaskBulkAssignPersonSheet(
                 people = people,
                 tasks = allTasks,
                 todayStr = com.mj.yata.util.AppClock.todayString,
+                weekendDays = weekendDays,
+                holidays = holidays,
+                observeNonWorkingDays = observeNonWorkingDays,
                 onSelectPerson = { personId ->
                     viewModel.bulkAssignPerson(selectedIds.toList(), personId)
                     selectedIds.clear()
@@ -636,7 +767,8 @@ fun ListDetailScreen(
         ModalBottomSheet(
             onDismissRequest = { showBulkMoveSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             TaskBulkMoveSheet(
                 projects = projects,
@@ -661,11 +793,12 @@ fun ListDetailScreen(
         ModalBottomSheet(
             onDismissRequest = { showBulkRescheduleSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             TaskBulkRescheduleSheet(
-                onSelectPreset = { preset ->
-                    viewModel.bulkRescheduleTasks(selectedIds.toList(), preset)
+                onSelectPreset = { preset, keepExistingTime ->
+                    viewModel.bulkRescheduleTasks(selectedIds.toList(), preset, keepExistingTime)
                     selectedIds.clear()
                     showBulkRescheduleSheet = false
                 },
@@ -698,9 +831,11 @@ fun ListDetailScreen(
         ModalBottomSheet(
             onDismissRequest = { isNewTaskSheetOpen = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             NewTaskSheet(
+                dueDatePickerContext = com.mj.yata.ui.widgets.rememberDueDatePickerContext(viewModel),
                 lists = listOf(list), // Force this list
                 projects = projects,
                 people = people,
@@ -716,6 +851,9 @@ fun ListDetailScreen(
                     onNavigateToTaskDetail(id)
                 },
                 autoAssignToMe = autoAssignToMe,
+                onCreateProject = { id, name, color ->
+                    viewModel.upsertProject(com.mj.yata.domain.model.Project(id = id, name = name, color = color, icon = "layers"))
+                },
                 onCreateTag = { id, name, color ->
                     viewModel.upsertTag(com.mj.yata.domain.model.Tag(id = id, name = name, color = color))
                 },
@@ -738,10 +876,12 @@ fun ListDetailScreen(
         ModalBottomSheet(
             onDismissRequest = { isEditSheetOpen = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             ListEditorSheet(
                 initialName = list.name,
+                existingNames = lists.map { it.name },
                 initialColor = list.color,
                 initialIcon = list.icon,
                 initialExcludeFromToday = list.excludeFromToday,
@@ -758,16 +898,27 @@ fun ListDetailScreen(
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
             title = { Text(stringResource(R.string.list_detail_delete_list_2)) },
-            text = { Text(stringResource(R.string.list_detail_all_tasks_inside_this_list_will_be_permane)) },
+            text = { Text(stringResource(R.string.list_detail_delete_only_the_list_to_keep_its_tasks)) },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        showDeleteDialog = false
-                        viewModel.deleteList(list)
-                        onNavigateBack()
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextButton(
+                        onClick = {
+                            showDeleteDialog = false
+                            viewModel.deleteListOnly(list)
+                            onNavigateBack()
+                        }
+                    ) {
+                        Text(stringResource(R.string.list_detail_list_only))
                     }
-                ) {
-                    Text(stringResource(R.string.cd_delete), color = MaterialTheme.colorScheme.error)
+                    TextButton(
+                        onClick = {
+                            showDeleteDialog = false
+                            viewModel.deleteList(list)
+                            onNavigateBack()
+                        }
+                    ) {
+                        Text(stringResource(R.string.list_detail_list_tasks), color = MaterialTheme.colorScheme.error)
+                    }
                 }
             },
             dismissButton = {
@@ -785,7 +936,6 @@ fun ListDetailScreen(
             itemPreviews = listTasks.map { com.mj.yata.util.export.ExportItemPreview(it.done, it.completedAt) },
             onDismiss = { exportFormatPending = null },
             onConfirm = { options ->
-                exportFormatPending = null
                 val cutoffMillis = options.excludeCompletedOlderThanDays?.takeIf { it > 0 }?.let {
                     System.currentTimeMillis() - it.toLong() * 24 * 60 * 60 * 1000
                 }
@@ -794,7 +944,22 @@ fun ListDetailScreen(
                     if (!options.includeCompleted) return@filter false
                     cutoffMillis == null || (task.completedAt != null && task.completedAt >= cutoffMillis)
                 }
-                scope.launch {
+                val transferLink = exportTasks.takeIf { it.isNotEmpty() && options.includeImportLink }?.let { sharedTasks ->
+                    com.mj.yata.util.export.buildTaskTransferLink(
+                        title = list.name,
+                        tasks = sharedTasks,
+                        listsById = listsById,
+                        projectsById = projectsById,
+                        tagsById = tagsById,
+                        peopleById = peopleById,
+                        includeStructure = !options.privacyMode,
+                        includeNotes = !options.privacyMode
+                    )
+                }
+
+                fun startExport() {
+                    exportFormatPending = null
+                    scope.launch {
                     exportInProgress = true
                     val exportResult = runCatching {
                         com.mj.yata.util.export.exportEntityReport(
@@ -805,7 +970,7 @@ fun ListDetailScreen(
                             accentColor = listColor,
                             doneCount = exportTasks.count { it.done },
                             totalCount = exportTasks.size,
-                            overdueCount = com.mj.yata.util.AnalyticsUtils.overdueCount(exportTasks),
+                            overdueCount = com.mj.yata.util.AnalyticsUtils.overdueCount(exportTasks, weekendDays = weekendDays, holidays = holidays, observeNonWorkingDays = observeNonWorkingDays),
                             tasks = exportTasks.map { task ->
                                 task.toExportRow(
                                     exportGroupLabel(task),
@@ -821,7 +986,8 @@ fun ListDetailScreen(
                             destination = options.destination,
                             fileNameBase = options.fileNameBase,
                             pdfPageSize = options.pdfPageSize,
-                            imageScale = options.imageScale
+                            imageScale = options.imageScale,
+                            transferText = transferLink?.asShareText(list.name, exportTasks.size)
                         )
                     }
                     exportInProgress = false
@@ -831,12 +997,19 @@ fun ListDetailScreen(
                         snackbarHostState.showError(error.message ?: exportContext.getString(R.string.export_failed))
                     }
                 }
+                }
+
+                if (options.destination == com.mj.yata.util.export.ExportDestination.SHARE) {
+                    longTaskLinkWarningGate.runOrConfirm(transferLink, exportTasks.size, ::startExport)
+                } else {
+                    startExport()
+                }
             }
         )
     }
     if (exportInProgress) {
         com.mj.yata.util.export.ExportProgressDialog()
     }
+    com.mj.yata.util.export.LongTaskLinkWarningDialog(longTaskLinkWarningGate)
 }
-
 

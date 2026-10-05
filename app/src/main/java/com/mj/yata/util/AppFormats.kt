@@ -10,6 +10,7 @@ import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatterBuilder
 import java.time.format.FormatStyle
 import java.util.Locale
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * The date/time display settings, readable from anywhere.
@@ -69,12 +70,17 @@ object AppFormats {
      * pattern could never give us — it localizes the names, not the running order.
      */
     private fun localeIsDayFirst(): Boolean {
+        val locale = Locale.getDefault()
+        return dayFirstByLocale.getOrPut(locale) { computeLocaleIsDayFirst(locale) }
+    }
+
+    private fun computeLocaleIsDayFirst(locale: Locale): Boolean {
         val pattern = runCatching {
             DateTimeFormatterBuilder.getLocalizedDateTimePattern(
                 FormatStyle.MEDIUM,
                 null,
                 IsoChronology.INSTANCE,
-                Locale.getDefault()
+                locale
             )
         }.getOrNull() ?: return false
         val dayAt = pattern.indexOf('d')
@@ -83,50 +89,56 @@ object AppFormats {
         return dayAt < monthAt
     }
 
-    // Patterns are rebuilt per call rather than cached, because the setting they depend on can
-    // change at runtime and DateTimeFormatter construction is cheap next to the recomposition
-    // that's already happening around it.
+    // Formatters are cached by (pattern, locale) rather than stored as fields, because the setting
+    // that picks the pattern can change at runtime — the key simply changes with it. They used to
+    // be rebuilt on every call, which parsed the pattern string afresh for every date and time on
+    // every visible TaskRow, each recomposition. DateTimeFormatter is immutable and thread-safe, so
+    // widgets and workers can share the same instances. The setting is still read on every call,
+    // which is what keeps the Compose snapshot read (and so the live re-render) intact.
+    private val formatterCache = ConcurrentHashMap<Pair<String, Locale>, DateTimeFormatter>()
+    private val dayFirstByLocale = ConcurrentHashMap<Locale, Boolean>()
+
+    private fun cachedFormatter(pattern: String): DateTimeFormatter {
+        val locale = Locale.getDefault()
+        return formatterCache.getOrPut(pattern to locale) { DateTimeFormatter.ofPattern(pattern, locale) }
+    }
 
     fun timeFormatter(): DateTimeFormatter =
-        DateTimeFormatter.ofPattern(if (uses24Hour()) "HH:mm" else "h:mm a", Locale.getDefault())
+        cachedFormatter(if (uses24Hour()) "HH:mm" else "h:mm a")
 
     /** Weekday plus day and month, e.g. "Sat, 4 Jul" or "Sat, Jul 4". */
-    fun shortDateFormatter(): DateTimeFormatter = DateTimeFormatter.ofPattern(
+    fun shortDateFormatter(): DateTimeFormatter = cachedFormatter(
         when (resolvedDateFormat()) {
             DateFormat.DAY_FIRST -> "EEE, d MMM"
             DateFormat.ISO -> "EEE, MM-dd"
             else -> "EEE, MMM d"
-        },
-        Locale.getDefault()
+        }
     )
 
     /** Day, month and year, e.g. "4 Jul 2026" or "Jul 4, 2026". */
-    fun longDateFormatter(): DateTimeFormatter = DateTimeFormatter.ofPattern(
+    fun longDateFormatter(): DateTimeFormatter = cachedFormatter(
         when (resolvedDateFormat()) {
             DateFormat.DAY_FIRST -> "d MMM yyyy"
             DateFormat.ISO -> "yyyy-MM-dd"
             else -> "MMM d, yyyy"
-        },
-        Locale.getDefault()
+        }
     )
 
     /** Full weekday and date, for screen headers, e.g. "Saturday, 4 July". */
-    fun headerDateFormatter(): DateTimeFormatter = DateTimeFormatter.ofPattern(
+    fun headerDateFormatter(): DateTimeFormatter = cachedFormatter(
         when (resolvedDateFormat()) {
             DateFormat.DAY_FIRST -> "EEEE, d MMMM"
             DateFormat.ISO -> "EEEE, MM-dd"
             else -> "EEEE, MMMM d"
-        },
-        Locale.getDefault()
+        }
     )
 
     /** Day and month only, no weekday, e.g. "4 Jul". */
-    fun dayMonthFormatter(): DateTimeFormatter = DateTimeFormatter.ofPattern(
+    fun dayMonthFormatter(): DateTimeFormatter = cachedFormatter(
         when (resolvedDateFormat()) {
             DateFormat.DAY_FIRST -> "d MMM"
             DateFormat.ISO -> "MM-dd"
             else -> "MMM d"
-        },
-        Locale.getDefault()
+        }
     )
 }

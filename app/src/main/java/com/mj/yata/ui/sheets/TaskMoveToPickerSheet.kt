@@ -11,9 +11,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mj.yata.R
 import com.mj.yata.domain.model.Project
 import com.mj.yata.domain.model.YataList
 import com.mj.yata.domain.model.activeProjects
@@ -43,14 +45,14 @@ fun TaskMoveToPickerSheet(
         verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
         Text(
-            text = "Move task to...",
+            text = stringResource(R.string.task_move_to_picker_title),
             style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp)
         )
 
         if (lists.isNotEmpty()) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    text = "LISTS",
+                    text = stringResource(R.string.drawer_lists),
                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -73,7 +75,7 @@ fun TaskMoveToPickerSheet(
         if (activeProjects.isNotEmpty()) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    text = "PROJECTS",
+                    text = stringResource(R.string.task_move_to_picker_projects),
                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

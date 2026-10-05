@@ -30,18 +30,8 @@ android {
         applicationId = "com.mj.yata"
         minSdk = 26
         targetSdk = 35
-        versionCode = 16
-        versionName = "0.91.2 beta"
-
-        // Stamped fresh into every build (not just release) so Help & About's "Build N.DDMMYYYYHHmm"
-        // line reflects exactly when this particular APK was assembled, not just the day — the
-        // minute resolution is what actually tells apart two same-versionCode debug builds from
-        // the same dev loop. HHmm is 24-hour (SimpleDateFormat's H, not h).
-        buildConfigField(
-            "String",
-            "BUILD_DATE",
-            "\"" + SimpleDateFormat("ddMMyyyyHHmm").format(Date()) + "\""
-        )
+        versionCode = 28
+        versionName = "0.95.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -197,6 +187,59 @@ tasks.register("lintHardcodedStrings") {
     }
 }
 
+/**
+ * Fails the build when a string/plural key in the source `values/strings.xml` is missing from one
+ * of the 24 translated `values-<code>/` locales. Unlike [lintHardcodedStrings] this isn't
+ * incremental progress that can sit unfinished — CLAUDE.md's rule is that a new string is added to
+ * all 24 locale files in the same change, and lint's own `MissingTranslation` check exists but is
+ * silenced (`abortOnError = false`) so it doesn't block anything on its own. A key present in
+ * `values/` and absent everywhere else usually means a locale file was missed while adding a
+ * feature, not a translation still pending — those fall back to English silently, so nothing else
+ * catches it.
+ *
+ * Wired into [releaseGate] now that the locale set is at parity. Translation quality still needs
+ * human review, but missing keys are no longer allowed to slip through silently.
+ */
+tasks.register("lintLocaleParity") {
+    group = "verification"
+    description = "Fails if a strings.xml/plurals key is missing from any translated values-<code> locale."
+    val valuesDir = file("src/main/res")
+    doLast {
+        val nameAttr = Regex("""<(?:string|plurals)\s+name="([^"]+)"""")
+        fun keysIn(f: java.io.File): Set<String> =
+            if (f.exists()) nameAttr.findAll(f.readText()).map { it.groupValues[1] }.toSet() else emptySet()
+
+        val sourceFile = valuesDir.resolve("values/strings.xml")
+        val sourceKeys = keysIn(sourceFile)
+        check(sourceKeys.isNotEmpty()) { "No keys found in ${sourceFile.path} — check the file exists." }
+
+        // "values-v" alone would also match values-vi (Vietnamese) - API-level qualifiers are
+        // always values-v followed by a digit (v21, v31, ...), so require that digit to avoid
+        // silently dropping a real locale whose code happens to start with "v".
+        val apiQualifier = Regex("""^values-v\d""")
+        val localeDirs = valuesDir.listFiles { f ->
+            f.isDirectory && f.name.startsWith("values-") && !f.name.startsWith("values-night") && !apiQualifier.containsMatchIn(f.name)
+        }.orEmpty().sortedBy { it.name }
+
+        val missingByLocale = sortedMapOf<String, Set<String>>()
+        localeDirs.forEach { dir ->
+            val localeKeys = keysIn(dir.resolve("strings.xml"))
+            val missing = sourceKeys - localeKeys
+            if (missing.isNotEmpty()) missingByLocale[dir.name] = missing
+        }
+
+        if (missingByLocale.isEmpty()) {
+            logger.lifecycle("All ${sourceKeys.size} keys present across ${localeDirs.size} locale(s).")
+        } else {
+            val report = missingByLocale.entries.joinToString("\n") { (locale, missing) ->
+                "  $locale: ${missing.size} missing — ${missing.sorted().take(10).joinToString(", ")}" +
+                    if (missing.size > 10) ", …" else ""
+            }
+            throw GradleException("Locale parity check failed:\n$report")
+        }
+    }
+}
+
 tasks.register("releaseGate") {
     group = "verification"
     description = "Runs the local pre-release stability gate: compile, JVM tests, Android test compile, lint, and hardcoded-string audit."
@@ -205,6 +248,7 @@ tasks.register("releaseGate") {
         "testDebugUnitTest",
         "compileDebugAndroidTestKotlin",
         "lintDebug",
+        "lintLocaleParity",
         "lintHardcodedStrings"
     )
 }
@@ -227,6 +271,42 @@ ksp {
  *
  *   ./gradlew :app:connectedDebugAndroidTest -PdisposableDevice
  */
+// Stamped fresh into every build (not just release) so Help & About's "Build N.DDMMYYYYHHmm" line
+// reflects exactly when this particular APK was assembled, not just the day. This has to be a
+// task's doLast, not a value computed in the `android {}` block above: with configuration cache
+// enabled, configuration-time code runs once when the cache entry is stored and is skipped on
+// every reused build, freezing whatever Date() returned at that moment. Task actions still run
+// every build regardless of the config cache, so the timestamp is generated as source here instead
+// of via buildConfigField. HHmm is 24-hour (SimpleDateFormat's H, not h).
+val generatedBuildInfoDir = layout.buildDirectory.dir("generated/buildInfo/main/kotlin")
+val generateBuildInfo by tasks.registering {
+    // `outputDir` is captured from this task-local val, not the outer script-level
+    // `generatedBuildInfoDir` — referencing the latter from inside doLast would pull the whole
+    // build-script object into configuration-cache serialization, which Gradle rejects.
+    val outputDir = layout.buildDirectory.dir("generated/buildInfo/main/kotlin")
+    outputs.dir(outputDir)
+    outputs.upToDateWhen { false }
+    doLast {
+        val timestamp = SimpleDateFormat("ddMMyyyyHHmm").format(Date())
+        val packageDir = outputDir.get().asFile.resolve("com/mj/yata")
+        packageDir.mkdirs()
+        packageDir.resolve("BuildInfo.kt").writeText(
+            """
+            package com.mj.yata
+
+            internal object BuildInfo {
+                const val BUILD_DATE = "$timestamp"
+            }
+
+            """.trimIndent()
+        )
+    }
+}
+android.sourceSets.getByName("main").kotlin.srcDir(generatedBuildInfoDir)
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+    dependsOn(generateBuildInfo)
+}
+
 // Both values are read here, at configuration time. Touching `project` from inside doFirst is an
 // error under the configuration cache, which this build has enabled.
 val deviceIsDisposable = project.hasProperty("disposableDevice")
@@ -329,6 +409,9 @@ dependencies {
     // org.json ships in android.jar as method stubs that throw at runtime, so anything touching
     // JSONObject is untestable on the JVM without a real implementation on the test classpath.
     testImplementation(libs.org.json)
+    // android.net.Uri is a method-stub-only class on the JVM too; Robolectric provides a real
+    // implementation for tests that build/parse yata:// links (e.g. TaskTransferLinkTest).
+    testImplementation(libs.robolectric)
     androidTestImplementation(libs.room.testing)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

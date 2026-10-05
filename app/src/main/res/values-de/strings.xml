@@ -1,0 +1,1788 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">yata</string>
+    <string name="share_to_task_label">Zu Yata hinzufügen</string>
+    <string name="qs_tile_quick_add_label">Aufgabe schnell hinzufügen</string>
+
+    <!-- Tasker "Create Task" plugin field labels -->
+    <string name="tasker_field_title">Titel</string>
+    <string name="tasker_field_project">Projekt (Name)</string>
+    <string name="tasker_field_list">Liste (Name)</string>
+    <string name="tasker_field_tags">Tags (kommagetrennt)</string>
+    <string name="tasker_field_assignees">Zuweisen an (kommagetrennte Namen)</string>
+    <string name="tasker_field_due">Fälligkeitsdatum (z. B. 2026-07-10, morgen, nächsten Montag)</string>
+    <string name="tasker_field_time">Uhrzeit (z. B. 15:00, abends)</string>
+    <string name="tasker_field_reminder">Erinnerung (z. B. 15 Min. vorher, 1 Tag vorher)</string>
+    <string name="tasker_field_priority">Priorität (keine, niedrig, mittel, hoch)</string>
+    <string name="tasker_field_section">Abschnitt (optional)</string>
+    <string name="tasker_field_repeat">Wiederholung (z. B. täglich, jeden Montag, alle 2 Wochen)</string>
+    <string name="tasker_field_notes">Notizen</string>
+
+    <!-- Launcher icon long-press shortcuts -->
+    <string name="shortcut_quick_add_short">Schnell hinzufügen</string>
+    <string name="shortcut_quick_add_long">Neue Aufgabe hinzufügen</string>
+    <string name="shortcut_today_short">Heute</string>
+    <string name="shortcut_today_long">Heute öffnen</string>
+
+    <!-- Phrases Assistant matches to the quick_add shortcut's App Actions capability -->
+    <string-array name="quick_add_synonyms">
+        <item>schnell hinzufügen</item>
+        <item>aufgabe hinzufügen</item>
+        <item>neue aufgabe</item>
+    </string-array>
+
+    <!-- Home-screen widget names/descriptions, shown in the system widget picker -->
+    <string name="widget_today_label">YATA: Heutige Aufgaben</string>
+    <string name="widget_today_description">Offene Aufgaben mit Fälligkeit heute, mit schnellem Abhaken und Fortschrittsring.</string>
+    <string name="widget_quick_add_label">YATA: Schnell hinzufügen</string>
+    <string name="widget_quick_add_description">Eine Aufgabe hinzufügen, ohne die App zu öffnen.</string>
+    <string name="widget_progress_label">YATA: Fortschritt</string>
+    <string name="widget_progress_description">Der heutige Fortschrittsring, gesamt oder nach Liste aufgeschlüsselt.</string>
+    <string name="widget_single_list_label">YATA: Liste/Projekt/Tag</string>
+    <string name="widget_single_list_description">Eine Liste, ein Projekt oder einen Tag auf dem Startbildschirm anheften — Auswahl beim Hinzufügen.</string>
+    <string name="widget_upcoming_label">YATA: Demnächst</string>
+    <string name="widget_upcoming_description">Was heute, morgen und danach fällig ist.</string>
+    <string name="widget_team_overdue_label">YATA: Team überfällig</string>
+    <string name="widget_team_overdue_description">Überfällige Aufgaben pro Person, auf einen Blick.</string>
+
+    <!--
+        UI strings below follow three prefixes:
+          action_*  button and menu labels
+          cd_*      contentDescription, spoken by TalkBack but never displayed
+          <screen>_* everything specific to one screen
+
+        Reuse the shared action_*/cd_* entries rather than adding a second copy of a word like
+        "Cancel" per screen — a translator should render it once, and a screen-specific duplicate
+        will drift. Anything with a count takes a <plurals>, never string concatenation, because
+        other languages have more than two plural forms.
+    -->
+
+    <!-- Theme mode picker. AMOLED replaced a "Scheduled" option that switched on a clock. -->
+    <string name="theme_mode_system">System</string>
+    <string name="theme_mode_light">Hell</string>
+    <string name="theme_mode_dark">Dunkel</string>
+    <string name="theme_mode_amoled">AMOLED</string>
+    <string name="theme_mode_amoled_hint">Reines Schwarz, das OLED-Pixel vollständig abschaltet, um Strom zu sparen.</string>
+    <string name="settings_font">Schriftart</string>
+
+    <!-- Settings section headings, in screen order. -->
+    <string name="settings_section_profile">Profil</string>
+    <string name="settings_section_appearance_display">Erscheinungsbild &amp; Anzeige</string>
+    <string name="settings_section_appearance">Erscheinungsbild</string>
+    <string name="settings_section_display">Anzeige</string>
+    <string name="settings_section_navigation_features">Navigation &amp; Funktionen</string>
+    <string name="settings_section_notifications">Benachrichtigungen</string>
+    <string name="settings_section_features">Funktionen</string>
+    <string name="settings_section_manage">Verwalten</string>
+    <string name="settings_section_privacy">Datenschutz &amp; Sicherheit</string>
+    <string name="settings_section_data_management">Datenverwaltung</string>
+    <string name="settings_section_backup">Backup &amp; Daten</string>
+    <string name="settings_section_backup_sync">Backup &amp; Synchronisierung</string>
+    <string name="settings_section_cloud_backup">Remote-Backup</string>
+    <string name="settings_section_local_backup">Lokales Backup</string>
+    <string name="settings_section_help_about">Hilfe &amp; Über</string>
+    <string name="settings_section_navigation">Navigation</string>
+    <!-- Startup tab -->
+    <string name="settings_startup_tab">Start auf</string>
+    <string name="settings_startup_tab_desc">Auf welchem Tab die App startet. Ein in Funktionen deaktivierter Tab fällt zurück auf Heute.</string>
+    <string name="settings_startup_last_used">Zuletzt verwendet</string>
+    <!-- Tab names. Used by the tab headers themselves and by the startup-tab picker. -->
+    <string name="tab_today">Heute</string>
+    <string name="tab_projects">Projekte</string>
+    <string name="tab_people">Personen</string>
+    <string name="tab_tags">Tags</string>
+    <string name="tab_upcoming">Demnächst</string>
+    <!-- Drawer section headers -->
+    <string name="drawer_custom_views">EIGENE ANSICHTEN</string>
+    <string name="drawer_starred">MARKIERT</string>
+    <string name="drawer_lists">LISTEN</string>
+    <!-- Empty states -->
+    <string name="people_empty_title">Noch keine Personen</string>
+    <string name="people_empty_subtitle">Personen hinzufügen, um Aufgaben zuzuweisen und zu verfolgen, wer was macht.</string>
+    <string name="people_ungrouped">Ohne Gruppe</string>
+    <string name="people_archived">Archiviert</string>
+    <string name="people_you_badge">DU</string>
+    <plurals name="people_add_to_group_title">
+        <item quantity="one">%1$d Person zur Gruppe hinzufügen</item>
+        <item quantity="other">%1$d Personen zur Gruppe hinzufügen</item>
+    </plurals>
+    <plurals name="tags_add_to_group_title">
+        <item quantity="one">%1$d Tag zur Gruppe hinzufügen</item>
+        <item quantity="other">%1$d Tags zur Gruppe hinzufügen</item>
+    </plurals>
+    <plurals name="tags_open_task_count">
+        <item quantity="one">%1$d offene Aufgabe</item>
+        <item quantity="other">%1$d offene Aufgaben</item>
+    </plurals>
+    <string name="projects_empty_title">Noch keine Projekte</string>
+    <string name="projects_empty_subtitle">Verwandte Aufgaben in einem Projekt bündeln, um den Fortschritt gemeinsam zu verfolgen.</string>
+    <string name="projects_new_project">Neues Projekt</string>
+    <string name="projects_archived_header">ARCHIVIERT</string>
+    <string name="tags_empty_title">Noch keine Tags</string>
+    <string name="tags_empty_subtitle">Aufgaben mit Tags nach Thema, Kunde oder was du möchtest gruppieren.</string>
+    <string name="today_stat_overdue">Überfällig</string>
+    <string name="today_stat_high_priority">Hohe Priorität</string>
+    <string name="today_stat_due_today">Heute fällig</string>
+    <string name="today_all_caught_up">Alles erledigt</string>
+    <string name="upcoming_clear_day">Tag leeren</string>
+    <string name="upcoming_nothing_scheduled">Nichts geplant.</string>
+    <string name="search_prompt_empty">Etwas eingeben, um zu suchen, oder oben einen Filter wählen.</string>
+    <string name="search_prompt_empty_subtitle">Text, intelligente Filter oder gespeicherte Ansichten nutzen, um Aufgaben einzugrenzen.</string>
+    <string name="search_no_matches">Keine Treffer</string>
+    <string name="search_no_matches_subtitle">Eine andere Suche versuchen oder die aktiven Filter lockern.</string>
+    <string name="search_clear">Suche löschen</string>
+    <string name="search_filters">Filter</string>
+    <string name="search_filter_hint">Auf einen Chip tippen, um eine gezielte Ansicht zu erstellen.</string>
+    <string name="search_filter_hint_compact">Zum Filtern tippen</string>
+    <string name="search_saved_views">Gespeicherte Ansichten</string>
+    <string name="search_filter_focus">Fokusmodus</string>
+    <string name="search_filter_morning_review">Morgenüberblick</string>
+    <string name="search_filter_evening_review">Abendüberblick</string>
+    <string name="search_filter_stale_tasks">Erinnerungen an alte Aufgaben</string>
+    <string name="search_filter_at_risk">Gefährdet</string>
+    <string name="search_filter_assigned_to_me">Mir zugewiesen</string>
+    <string name="search_filter_overdue">Überfällig</string>
+    <string name="search_filter_high_priority">Hohe Priorität</string>
+    <string name="search_filter_flagged">Markiert</string>
+    <string name="search_filter_due_today">Heute fällig</string>
+    <string name="search_filter_no_due_date">Kein Fälligkeitsdatum</string>
+    <string name="search_filter_saved_view">Gespeicherte Ansicht</string>
+    <string name="search_filter_archived">Archiviert</string>
+    <string name="search_filter_trash">Papierkorb</string>
+    <string name="search_badge_in_trash">Im Papierkorb</string>
+    <string name="search_badge_archived">Archiviert</string>
+    <string name="search_badge_archived_project">Archiviertes Projekt</string>
+    <plurals name="search_active_filters_count">
+        <item quantity="one">%d aktiver Filter</item>
+        <item quantity="other">%d aktive Filter</item>
+    </plurals>
+    <plurals name="search_results_count">
+        <item quantity="one">%d Ergebnis</item>
+        <item quantity="other">%d Ergebnisse</item>
+    </plurals>
+    <!-- Swipe actions -->
+    <string name="settings_swipe_right_action">Nach rechts wischen macht</string>
+    <string name="settings_swipe_left_action">Nach links wischen macht</string>
+    <string name="settings_swipe_action_none">Nichts</string>
+    <string name="settings_swipe_action_complete">Erledigen</string>
+    <string name="settings_swipe_action_delete">Löschen</string>
+    <string name="settings_swipe_action_snooze">Auf morgen verschieben</string>
+    <string name="settings_theme_presets">Themenvorlagen</string>
+    <string name="settings_theme_presets_summary">Diese Kombination aus Farbe, Schrift und Thema speichern.</string>
+    <string name="cd_remove_preset">%1$s entfernen</string>
+    <string name="settings_motion_mode">Bewegungsmodus</string>
+    <string name="settings_motion_mode_summary">App-Animationen steuern, ohne andere visuelle Einstellungen zu ändern.</string>
+    <string name="motion_mode_full">Voll</string>
+    <string name="motion_mode_reduced">Reduziert</string>
+    <string name="motion_mode_off">Aus</string>
+    <string name="settings_tasker_integration">Tasker-Integration</string>
+    <string name="settings_tasker_integration_summary">Tasker-Profilen erlauben, über das YATA-Plugin Aufgaben zu erstellen.</string>
+    <string name="settings_date_aliases">Datumsalias</string>
+    <string name="settings_date_aliases_summary">Eigene Kurzwörter, die beim Erstellen von Aufgaben erkannt werden, um das Fälligkeitsdatum automatisch festzulegen (z. B. „tmrw“ für Morgen).</string>
+    <string name="settings_date_alias_word_label">Wort</string>
+    <string name="settings_add_alias">Alias hinzufügen</string>
+    <string name="settings_date_alias_mapping">%1$s -&gt; %2$s</string>
+    <string name="cd_remove_alias">%1$s entfernen</string>
+    <string name="settings_edit_profile">Profil bearbeiten</string>
+    <string name="settings_profile_name_label">Name</string>
+    <string name="settings_profile_email_label">E-Mail</string>
+    <string name="settings_profile_avatar_label">Avatar</string>
+    <string name="settings_save_theme_preset">Themenvorlage speichern</string>
+    <string name="settings_theme_preset_name_label">Name</string>
+    <string name="settings_about_tagline">noch eine To-do-App</string>
+    <string name="settings_about_version">v%1$s  ·  Build %2$s</string>
+    <string name="settings_about_credit">From the Labs of RJ | Vibe Coded</string>
+    <string name="settings_about_made_in">Made in 🇮🇳</string>
+    <string name="settings_swipe_action_edit">Titel bearbeiten</string>
+    <!-- Confetti -->
+    <string name="settings_confetti">Konfetti</string>
+    <string name="settings_confetti_desc">Die letzte Aufgabe des Tages feiern.</string>
+    <!-- Date and time formats -->
+    <string name="settings_time_format">Zeitformat</string>
+    <string name="settings_time_format_system">System folgen</string>
+    <string name="settings_time_format_12h">12-Stunden (5:00 PM)</string>
+    <string name="settings_time_format_24h">24-Stunden (17:00)</string>
+    <string name="settings_date_format">Datumsformat</string>
+    <string name="settings_date_format_system">Sprache folgen</string>
+    <string name="settings_date_format_day_first">Tag zuerst (4. Jul)</string>
+    <string name="settings_date_format_month_first">Monat zuerst (Jul 4)</string>
+    <string name="settings_date_format_iso">ISO (2026-07-04)</string>
+    <string name="settings_date_format_desc">Bestimmt auch, wie ein eingegebenes Datum wie 3/4 beim Hinzufügen einer Aufgabe gelesen wird.</string>
+    <!-- System notification settings -->
+    <string name="settings_system_notifications">Ton &amp; Vibration</string>
+    <string name="settings_system_notifications_desc">Öffnet die eigenen Benachrichtigungseinstellungen von Android für YATA.</string>
+    <string name="settings_section_sound_feedback">Spracheingabe und Ton</string>
+    <string name="settings_section_task_defaults">Aufgabenstandards</string>
+
+    <string name="settings_floating_bottom_panel">Schwebendes unteres Panel verwenden</string>
+    <string name="settings_floating_bottom_panel_desc">Die untere Navigationsleiste als schwebendes, vom Bildschirmrand gelöstes Panel anzeigen.</string>
+    <string name="settings_bottom_nav_labels">Beschriftungen der unteren Navigation anzeigen</string>
+    <string name="settings_bottom_nav_labels_desc">Textbeschriftungen unter den Symbolen der unteren Navigationsleiste anzeigen.</string>
+    <string name="settings_quick_add_position">Position der Schnellerfassungs-Schaltfläche</string>
+    <string name="settings_fab_left">Links</string>
+    <string name="settings_fab_right">Rechts</string>
+    <string name="settings_fab_hidden">Ausgeblendet</string>
+
+    <string name="settings_completion_sound">Ton beim Abschluss abspielen</string>
+    <string name="settings_completion_sound_desc">Einen klaren Klingelton abspielen, wenn eine Aufgabe als erledigt markiert wird.</string>
+    <string name="settings_haptic_feedback">Haptisches Feedback</string>
+    <string name="settings_haptic_feedback_desc">Bei Kontrollkästchen-, Wisch- und Ziehaktionen vibrieren.</string>
+    <string name="settings_swipe_actions">Wischaktionen</string>
+    <string name="settings_swipe_actions_desc">Zeilen wischen, um Aufgaben zu erledigen oder zu löschen.</string>
+
+    <string name="settings_default_list">Standardliste für neue Aufgaben</string>
+    <string name="settings_default_reminder_time">Standard-Erinnerungszeit</string>
+    <string name="settings_start_week_sunday">Woche mit Sonntag beginnen</string>
+    <string name="settings_start_week_sunday_desc">App-Agenden beginnen mit Sonntag statt mit Montag.</string>
+    <string name="settings_voice_input_language">Sprache für Spracheingabe</string>
+    <string name="settings_voice_system_default">Systemstandard (Auto)</string>
+    <string name="settings_none">Keine</string>
+
+    <!-- New-task defaults -->
+    <string name="settings_auto_assign">Neue Aufgaben automatisch dir zuweisen</string>
+    <string name="settings_auto_assign_desc">Neue Aufgaben werden dir zugewiesen. Deaktiviere dies, damit sie unzugewiesen starten — du kannst jederzeit für jede Aufgabe eine Person auswählen.</string>
+    <string name="settings_default_due_date">Standard-Fälligkeitsdatum</string>
+    <string name="settings_default_due_date_desc">Wann eine neue Aufgabe fällig ist, wenn du selbst kein Datum wählst.</string>
+    <string name="settings_due_today">Heute</string>
+    <string name="settings_due_tomorrow">Morgen</string>
+    <string name="settings_due_none">Kein Datum</string>
+    <string name="settings_default_priority">Standardpriorität</string>
+    <string name="settings_priority_none">Keine</string>
+    <string name="settings_priority_low">Niedrig</string>
+    <string name="settings_priority_med">Mittel</string>
+    <string name="settings_priority_high">Hoch</string>
+
+    <!-- Undo window -->
+    <string name="settings_undo_window">Rückgängig-Fenster</string>
+    <string name="settings_undo_window_desc">Wie lange du Zeit hast, ein Löschen rückgängig zu machen, bevor es ausgeführt wird.</string>
+    <plurals name="settings_undo_window_value">
+        <item quantity="one">%1$ds</item>
+        <item quantity="other">%1$ds</item>
+    </plurals>
+
+    <!-- Notification controls -->
+    <string name="settings_daily_agenda">Tagesagenda</string>
+    <string name="settings_daily_agenda_desc">Eine morgendliche Übersicht dessen, was heute fällig ist.</string>
+    <string name="settings_daily_agenda_time">Agenda-Uhrzeit</string>
+    <string name="settings_overdue_nudges">Erinnerungen an Überfälliges</string>
+    <string name="settings_overdue_nudges_desc">Follow-up-Benachrichtigungen für überfällig gebliebene Aufgaben.</string>
+    <string name="settings_quiet_hours">Ruhezeiten</string>
+    <string name="settings_quiet_hours_desc">Erinnerungen, die in diesem Zeitfenster ausgelöst würden, warten stattdessen bis zu dessen Ende.</string>
+    <string name="settings_quiet_hours_start">Beginn</string>
+    <string name="settings_quiet_hours_end">Ende</string>
+
+    <!-- App language (Android 13+ per-app language picker) -->
+    <string name="settings_app_language">App-Sprache</string>
+    <string name="settings_app_language_desc">Wähle die Sprache, in der YATA angezeigt wird.</string>
+    <string name="settings_language_system_default">Systemstandard</string>
+    <string name="settings_language_picker_title">Sprache wählen</string>
+    <string name="settings_language_picker_subtitle">YATA sofort wechseln. „System“ folgt der Gerätesprache.</string>
+    <string name="settings_language_search_placeholder">Sprachen suchen</string>
+    <string name="settings_language_selected">Ausgewählt</string>
+
+    <!-- Archive -->
+    <string name="settings_import_export_group">Import &amp; Export</string>
+    <string name="settings_danger_zone_group">Gefahrenzone</string>
+    <string name="settings_task_lifecycle">Aufgaben-Lebenszyklus</string>
+    <string name="settings_task_lifecycle_desc">Der Papierkorb löscht Aufgaben nach einer Aufbewahrungsfrist; Archiv blendet Aufgaben nur aus und behält sie unangetastet.</string>
+    <string name="settings_archive_desc">Aufgaben ablegen, ohne sie zu löschen. Archivierte Aufgaben werden aus Listen ausgeblendet, unbegrenzt aufbewahrt und können wiederhergestellt werden.</string>
+    <string name="settings_auto_archive">Erledigte automatisch archivieren nach</string>
+    <string name="settings_auto_archive_off">Aus</string>
+    <plurals name="settings_auto_archive_value">
+        <item quantity="one">%1$d Tag</item>
+        <item quantity="other">%1$d Tagen</item>
+    </plurals>
+
+    <!-- Trash retention -->
+    <string name="settings_trash_retention">Gelöschte Aufgaben aufbewahren für</string>
+    <string name="settings_trash_forever">Für immer</string>
+    <string name="settings_trash_kept_forever">Gelöschte Aufgaben werden hier aufbewahrt, bis du sie entfernst.</string>
+    <plurals name="settings_trash_kept_days">
+        <item quantity="one">Gelöschte Aufgaben werden hier %1$d Tag lang aufbewahrt.</item>
+        <item quantity="other">Gelöschte Aufgaben werden hier %1$d Tage lang aufbewahrt.</item>
+    </plurals>
+    <plurals name="settings_trash_days_value">
+        <item quantity="one">%1$d Tag</item>
+        <item quantity="other">%1$d Tage</item>
+    </plurals>
+
+    <!-- Shared actions -->
+    <string name="action_cancel">Abbrechen</string>
+    <string name="action_save">Speichern</string>
+    <string name="action_none_remove_from_project">Keins (aus Projekt entfernen)</string>
+    <string name="action_none_remove_from_list">Keine (aus Liste entfernen)</string>
+    <string name="press_back_again_to_exit">Zurück erneut drücken, um zu beenden</string>
+
+    <!-- Shared content descriptions -->
+    <string name="cd_back">Zurück</string>
+    <string name="cd_delete">Löschen</string>
+    <string name="cd_duplicate">Duplizieren</string>
+
+    <!-- Trash -->
+    <string name="trash_title">Papierkorb</string>
+    <string name="trash_empty_state">Der Papierkorb ist leer. Gelöschte Aufgaben erscheinen hier, bevor sie endgültig entfernt werden.</string>
+    <string name="trash_retention_notice_forever">Gelöschte Aufgaben bleiben im Papierkorb, bis du sie wiederherstellst oder endgültig löschst.</string>
+    <plurals name="trash_retention_notice_days">
+        <item quantity="one">Gelöschte Aufgaben bleiben %1$d Tag im Papierkorb und werden dann endgültig entfernt.</item>
+        <item quantity="other">Gelöschte Aufgaben bleiben %1$d Tage im Papierkorb und werden dann endgültig entfernt.</item>
+    </plurals>
+    <string name="trash_empty_confirm_title">Papierkorb leeren?</string>
+    <string name="trash_empty_confirm_action">Papierkorb leeren</string>
+    <plurals name="trash_empty_confirm_body">
+        <item quantity="one">Löscht die %1$d Aufgabe im Papierkorb endgültig. Das kann nicht rückgängig gemacht werden.</item>
+        <item quantity="other">Löscht alle %1$d Aufgaben im Papierkorb endgültig. Das kann nicht rückgängig gemacht werden.</item>
+    </plurals>
+    <string name="trash_delete_forever_title">Endgültig löschen?</string>
+    <string name="trash_delete_forever_action">Endgültig löschen</string>
+    <string name="trash_delete_forever_body">„%1$s“ wird endgültig gelöscht. Das kann nicht rückgängig gemacht werden.</string>
+    <string name="cd_trash_empty">Papierkorb leeren</string>
+    <string name="cd_trash_restore">Wiederherstellen</string>
+    <string name="cd_trash_delete_forever">Endgültig löschen</string>
+    <string name="trash_deleted_today">Heute gelöscht</string>
+    <string name="trash_deleted_yesterday">Gestern gelöscht</string>
+    <string name="trash_deleted_on">Gelöscht am %1$s</string>
+    <string name="trash_kept_forever_suffix">aufbewahrt, bis du sie entfernst</string>
+    <plurals name="trash_days_left">
+        <item quantity="one">noch %1$d Tag</item>
+        <item quantity="other">noch %1$d Tage</item>
+    </plurals>
+    <string name="trash_restored_snackbar">„%1$s“ wiederhergestellt</string>
+    <plurals name="trash_tasks_restored">
+        <item quantity="one">%1$d Aufgabe wiederhergestellt</item>
+        <item quantity="other">%1$d Aufgaben wiederhergestellt</item>
+    </plurals>
+    <string name="action_view">Anzeigen</string>
+
+    <!-- Archive -->
+    <string name="archive_title">Archiv</string>
+    <string name="archive_empty_state">Keine abgelegten Aufgaben im Archiv.</string>
+    <string name="archive_empty_state_desc">Archivierte Aufgaben erscheinen hier. Nutze Archiv, um eine Aufgabe auszublenden, ohne sie zu löschen.</string>
+    <string name="archive_empty_state_action">Zu Heute</string>
+    <string name="archive_notice">Archiv legt Aufgaben ab, ohne sie zu löschen. Sie bleiben aus normalen Listen ausgeblendet, verfallen nie und können jederzeit wiederhergestellt werden.</string>
+    <string name="archive_section_shelved_active">Aktiv</string>
+    <string name="archive_section_shelved_completed">Erledigt</string>
+    <string name="archive_unarchived_snackbar">„%1$s“ aus dem Archiv geholt</string>
+    <string name="cd_archive_unarchive">Aufgabe wiederherstellen</string>
+
+    <!-- Bulk selection toolbar -->
+        <string name="cd_bulk_select">Auswählen</string>
+    <string name="cd_bulk_cancel_selection">Auswahl abbrechen</string>
+    <string name="cd_bulk_mark_done">Als erledigt markieren</string>
+    <string name="cd_bulk_flag">Markieren</string>
+    <string name="cd_bulk_set_priority">Priorität festlegen</string>
+    <string name="cd_bulk_add_tag">Tag hinzufügen</string>
+    <string name="cd_bulk_assign_person">Person zuweisen</string>
+    <string name="cd_bulk_move">Zu Liste oder Projekt verschieben</string>
+    <string name="cd_bulk_reschedule">Neu planen</string>
+
+    <!-- Task row -->
+    <string name="task_row_edit_title">Aufgabe bearbeiten</string>
+    <!-- Read out for a tag's monogram tile, e.g. "Tag: urgent". -->
+    <string name="cd_tag_named">Tag: %1$s</string>
+    <string name="cd_task_selected">Ausgewählt</string>
+    <string name="cd_task_flagged">Markiert</string>
+    <string name="cd_task_add_comment">Kommentar hinzufügen</string>
+    <string name="cd_task_edit_title">Titel bearbeiten</string>
+    <string name="cd_task_snooze">Verschieben</string>
+
+    <!--
+        Strings taking a value. Counted ones are <plurals> rather than "N task(s)" — the
+        parenthesised-s trick only reads acceptably in English and is untranslatable into
+        languages with dual/few/many forms. Names use positional args so translators can reorder.
+    -->
+    <plurals name="confirm_delete_tasks_title">
+        <item quantity="one">%1$d Aufgabe löschen?</item>
+        <item quantity="other">%1$d Aufgaben löschen?</item>
+    </plurals>
+    <plurals name="tasks_deleted">
+        <item quantity="one">@string/task_deleted</item>
+        <item quantity="other">%1$d Aufgaben gelöscht</item>
+    </plurals>
+    <plurals name="tasks_completed_count">
+        <item quantity="one">@string/task_completed</item>
+        <item quantity="other">%1$d Aufgaben erledigt</item>
+    </plurals>
+    <plurals name="archive_tasks_unarchived">
+        <item quantity="one">%1$d Aufgabe aus dem Archiv geholt</item>
+        <item quantity="other">%1$d Aufgaben aus dem Archiv geholt</item>
+    </plurals>
+    <plurals name="confirm_archive_projects_title">
+        <item quantity="one">%1$d Projekt archivieren?</item>
+        <item quantity="other">%1$d Projekte archivieren?</item>
+    </plurals>
+    <plurals name="confirm_delete_tags_title">
+        <item quantity="one">%1$d Tag löschen?</item>
+        <item quantity="other">%1$d Tags löschen?</item>
+    </plurals>
+    <plurals name="project_rollover_body">
+        <item quantity="one">Dupliziert %1$d offene Aufgabe mit dem Fälligkeitsdatum einen Monat später. Wiederkehrende Aufgaben werden übersprungen, da sie sich bereits selbst weiterschalten.</item>
+        <item quantity="other">Dupliziert %1$d offene Aufgaben mit den Fälligkeitsdaten einen Monat später. Wiederkehrende Aufgaben werden übersprungen, da sie sich bereits selbst weiterschalten.</item>
+    </plurals>
+    <plurals name="project_rollover_overdue_body">
+        <item quantity="one">Dupliziert %1$d überfällige offene Aufgabe und verschiebt das Fälligkeitsdatum monatsweise nach vorn, bis es in der Zukunft liegt. Wiederkehrende Aufgaben werden übersprungen.</item>
+        <item quantity="other">Dupliziert %1$d überfällige offene Aufgaben und verschiebt jedes Fälligkeitsdatum monatsweise nach vorn, bis es in der Zukunft liegt. Wiederkehrende Aufgaben werden übersprungen.</item>
+    </plurals>
+
+    <string name="search_in_list">In %1$s suchen</string>
+    <string name="search_in_project">In %1$s suchen</string>
+    <string name="search_in_tag">In #%1$s suchen</string>
+    <string name="search_person_tasks">Aufgaben von %1$s suchen</string>
+    <string name="cd_add_task_for_person">Aufgabe für %1$s hinzufügen</string>
+    <string name="cd_add_task_tagged">Aufgabe mit Tag #%1$s hinzufügen</string>
+    <string name="cd_remove_person">%1$s entfernen</string>
+    <string name="editor_char_counter">%1$d/%2$d</string>
+    <string name="snackbar_undo_countdown">RÜCKGÄNGIG (%1$ds)</string>
+    <string name="group_delete_confirm_title">Gruppe „%1$s“ löschen?</string>
+    <string name="group_delete_confirm_body">%1$s bleiben erhalten, sie sind nur nicht mehr gruppiert.</string>
+    <string name="settings_backup_diff_summary">%1$s ausstehende, %2$s erledigte Aufgaben</string>
+    <string name="settings_backup_now_counts">Jetzt: %1$d ausstehend, %2$d erledigt</string>
+    <string name="settings_backup_backup_counts">Backup: %1$d ausstehend, %2$d erledigt</string>
+    <string name="settings_restore_merge_body">Dies führt das Backup von %1$s mit deinen aktuellen Daten zusammen — Aufgaben, Listen, Tags und Personen daraus werden hinzugefügt oder aktualisiert. Nichts, was aktuell auf diesem Gerät ist, wird gelöscht.</string>
+    <!-- Takes the timestamp as an argument rather than being concatenated onto it: languages
+         differ in where a trailing value belongs, and a translator cannot move a Kotlin `+`. -->
+    <string name="settings_last_backup_at">Letztes Backup: %1$s</string>
+    <string name="duplicate_task_match_body">„%1$s“ scheint zu dem zu passen, was du gerade erstellst.</string>
+    <string name="export_page_of">Seite %1$d von %2$d</string>
+    <plurals name="next_days_title">
+        <item quantity="one">Nächster %1$d Tag</item>
+        <item quantity="other">Nächste %1$d Tage</item>
+    </plurals>
+    <!--
+        settings_backup_now_counts / _backup_counts carry two independent counts, so neither can
+        be a <plurals> — a plural selects on exactly one quantity. Lint's PluralsCandidate flags
+        them anyway; splitting each into two separately-pluralised halves would force a sentence
+        structure onto translators, which is worse than leaving one string they can rearrange.
+    -->
+    <string name="widget_config_radius_dp">%1$d dp</string>
+    <!-- %% is a literal percent sign; a single % would be read as a format specifier. -->
+    <string name="widget_config_opacity_percent">%1$d%%</string>
+
+    <!-- Extracted UI strings (see naming conventions above). -->
+    <string name="action_add">Hinzufügen</string>
+    <string name="action_add_a_subtask">Unteraufgabe hinzufügen…</string>
+    <string name="action_close">Schließen</string>
+    <string name="action_confirm_pin">PIN bestätigen</string>
+    <string name="action_custom_color">Eigene Farbe</string>
+    <string name="action_done">Fertig</string>
+    <string name="action_export">Exportieren</string>
+    <string name="action_export_as_image">Als Bild exportieren</string>
+    <string name="action_refresh">Aktualisieren</string>
+    <string name="action_export_as_pdf">Als PDF exportieren</string>
+    <string name="action_view_archived">Archiv anzeigen</string>
+    <string name="action_hide_archive">Archiv ausblenden</string>
+    <string name="action_go_to_existing_task">Zur bestehenden Aufgabe gehen</string>
+    <string name="action_ignore_and_create">Ignorieren und erstellen</string>
+    <string name="action_select_tags">Tags auswählen</string>
+    <string name="action_similar_task_already_exists">Ähnliche Aufgabe existiert bereits</string>
+    <string name="action_this_can_t_be_undone">Das kann nicht rückgängig gemacht werden.</string>
+    <string name="analytics_analytics">Analysen</string>
+    <string name="analytics_has_overdue_tasks">Hat überfällige Aufgaben</string>
+    <string name="analytics_action_high_priority">Hohe Priorität</string>
+    <string name="analytics_action_open_overdue">Überfällige öffnen</string>
+    <string name="analytics_action_review_postponed">Verschobene prüfen</string>
+    <string name="analytics_overview_all_clear">Alles erledigt</string>
+    <string name="analytics_overview_all_clear_detail">Keine überfälligen Aufgaben. Deine nächste Arbeit siehst du unten.</string>
+    <string name="analytics_overview_effort_line">%1$s diese Woche fällig von insgesamt %2$s noch offen</string>
+    <string name="analytics_overview_estimates_complete">Alle offenen Aufgaben mit geplantem Aufwand haben eine Schätzung.</string>
+    <string name="analytics_overview_needs_attention">Erfordert Aufmerksamkeit</string>
+    <string name="analytics_overview_next_30">nächste 30 Tage</string>
+    <string name="analytics_overview_next_7">nächste 7 Tage</string>
+    <string name="analytics_overview_no_estimates">Füge Aufgabenschätzungen hinzu, um Arbeitslastprognosen nützlicher zu machen.</string>
+    <string name="analytics_overview_on_deck">Steht an</string>
+    <string name="analytics_overview_on_time">pünktlich</string>
+    <string name="analytics_overview_overdue">überfällig</string>
+    <plurals name="analytics_overview_due_soon_detail">
+        <item quantity="one">%d Aufgabe ist in den nächsten 7 Tagen fällig. Prüfe den Aufwand, bevor die Woche voll wird.</item>
+        <item quantity="other">%d Aufgaben sind in den nächsten 7 Tagen fällig. Prüfe den Aufwand, bevor die Woche voll wird.</item>
+    </plurals>
+    <plurals name="analytics_overview_overdue_detail">
+        <item quantity="one">%d Aufgabe ist bereits überfällig. Fang hier an, bevor du den Rest des Berichts liest.</item>
+        <item quantity="other">%d Aufgaben sind bereits überfällig. Fang hier an, bevor du den Rest des Berichts liest.</item>
+    </plurals>
+    <plurals name="analytics_overview_unestimated_count">
+        <item quantity="one">%d offene Aufgabe hat keine Schätzung, daher sind die Arbeitslast-Summen unvollständig.</item>
+        <item quantity="other">%d offene Aufgaben haben keine Schätzung, daher sind die Arbeitslast-Summen unvollständig.</item>
+    </plurals>
+    <string name="analytics_share_analytics">Analysen teilen</string>
+    <string name="analytics_day_streak">Tage in Folge</string>
+    <string name="analytics_days_clean">Tage ohne Rückstand</string>
+    <string name="analytics_on_time_rate">Pünktlichkeitsrate</string>
+    <string name="analytics_due_in_7_days">fällig in 7 Tagen</string>
+    <string name="analytics_due_in_30_days">fällig in 30 Tagen</string>
+    <string name="analytics_planned_effort">GEPLANTER AUFWAND</string>
+    <string name="analytics_still_open">noch offen</string>
+    <string name="analytics_already_late">bereits verspätet</string>
+    <string name="analytics_every_open_task_estimated">Jede offene Aufgabe ist geschätzt</string>
+    <string name="analytics_daily_activity">TÄGLICHE AKTIVITÄT</string>
+    <string name="analytics_by_priority">NACH PRIORITÄT</string>
+    <string name="analytics_overdue_aging">ALTER DER ÜBERFÄLLIGEN</string>
+    <string name="analytics_delegation">DELEGATION</string>
+    <string name="analytics_delegated">delegiert</string>
+    <string name="analytics_yours">deine</string>
+    <string name="analytics_unassigned">nicht zugewiesen</string>
+    <string name="analytics_median_turnaround">mittlere Durchlaufzeit</string>
+    <string name="analytics_oldest_open">älteste offene</string>
+    <string name="analytics_open_no_date">offen, ohne Datum</string>
+    <string name="analytics_per_assignee">PRO PERSON</string>
+    <string name="analytics_workload_share">ARBEITSLASTVERTEILUNG</string>
+    <string name="analytics_by_project">Nach Projekt</string>
+    <string name="analytics_by_person">Nach Person</string>
+    <string name="analytics_by_tag">Nach Tag</string>
+    <string name="analytics_by_list">Nach Liste</string>
+    <string name="analytics_nothing_in_period">Nichts in diesem Zeitraum.</string>
+    <string name="analytics_no_tasks_due_in_period">Keine fälligen Aufgaben in diesem Zeitraum.</string>
+    <string name="analytics_tasks_completed_by_day">Erledigte Aufgaben, nach Tag</string>
+    <string name="analytics_tasks_completed_vs_created_by_day">Erledigt vs. erstellt, nach Tag</string>
+    <string name="analytics_as_much_finished_as_came_in">Genauso viel erledigt wie hinzugekommen</string>
+    <string name="analytics_priority_high">Hoch</string>
+    <string name="analytics_priority_medium">Mittel</string>
+    <string name="analytics_priority_low">Niedrig</string>
+    <string name="analytics_priority_none">Keine Priorität</string>
+    <string name="analytics_done_of_total">%1$d von %2$d erledigt</string>
+    <string name="analytics_delta_pp_vs_previous">%1$s Pp. ggü. vorherigem Zeitraum</string>
+    <string name="analytics_more_finished_than_created">%1$d mehr erledigt als erstellt</string>
+    <string name="analytics_more_created_than_finished">%1$d mehr erstellt als erledigt</string>
+    <string name="analytics_completed_count">%1$d erledigt</string>
+    <string name="analytics_created_count">%1$d erstellt</string>
+    <string name="analytics_ratio">%1$d/%2$d</string>
+    <string name="analytics_count_percent">%1$d (%2$d%%)</string>
+    <string name="analytics_count_still_open">%1$d noch offen</string>
+    <string name="analytics_count_late">%1$d verspätet</string>
+    <string name="analytics_overdue_count">%1$d überfällig</string>
+    <string name="analytics_on_time_percent">%1$d%% pünktlich</string>
+    <string name="remote_sync_title">Remote-Sync</string>
+    <string name="remote_sync_provider">Anbieter</string>
+    <string name="remote_sync_repository_access">Repository-Zugriff</string>
+    <string name="remote_sync_repository_access_summary">Das Token auf dieses private Sync-Repository beschränken.</string>
+    <string name="remote_sync_token_label">Token</string>
+    <string name="cd_remote_sync_token_help">So erstellst du ein GitHub-Token</string>
+    <string name="remote_sync_repo_label">Repo</string>
+    <string name="remote_sync_repo_placeholder">Besitzer/Repo</string>
+    <string name="remote_sync_branch_label">Branch</string>
+    <string name="remote_sync_api_base_label">API-Basis-URL</string>
+    <string name="remote_sync_token_scope_hint">Fein abgestuftes Token: Inhalte lesen/schreiben. Wird verschlüsselt auf diesem Gerät gespeichert.</string>
+    <string name="remote_sync_server_location">Serverstandort</string>
+    <string name="remote_sync_server_location_summary_ftp">YATA auf einen FTP- oder FTPS-Ordner verweisen.</string>
+    <string name="remote_sync_server_location_summary_sftp">YATA auf einen SSH-/SFTP-Ordner verweisen.</string>
+    <string name="remote_sync_credentials">Anmeldedaten</string>
+    <string name="remote_sync_credentials_summary_encrypted">Gespeicherte Geheimnisse werden auf diesem Gerät verschlüsselt aufbewahrt.</string>
+    <string name="remote_sync_credentials_summary_password_or_key">Passwort oder privaten Schlüssel für diesen SFTP-Server verwenden.</string>
+    <string name="remote_sync_password_saved_hint">Passwort gespeichert -- leer lassen, um es zu behalten</string>
+    <string name="remote_sync_passphrase_saved_hint">Passphrase gespeichert -- leer lassen, um sie zu behalten</string>
+    <string name="remote_sync_backup_encryption">Backup-Verschlüsselung</string>
+    <string name="remote_sync_backup_encryption_summary">Erforderliche Passphrase, mit der jedes Remote-Backup verschlüsselt wird, unabhängig vom Anbieter.</string>
+    <string name="remote_sync_backup_passphrase_required">Lege eine Backup-Verschlüsselungspassphrase fest, bevor du Remote-Sync speicherst.</string>
+    <string name="remote_sync_github_title">GitHub-Sync</string>
+    <string name="remote_sync_github_body">Über ein privates Repository mit Commit-Verlauf als Wiederherstellungspunkte synchronisieren.</string>
+    <string name="remote_sync_ftp_title">FTP-/FTPS-Sync</string>
+    <string name="remote_sync_ftp_body">Eigenen Server-Ordner mit rotierten Backup-Dateien verwenden.</string>
+    <string name="remote_sync_sftp_title">SFTP-Sync</string>
+    <string name="remote_sync_sftp_body">SSH-basierten Speicher mit Host-Key-Vertrauen und rotierten Backups verwenden.</string>
+    <string name="remote_sync_provider_github">GitHub</string>
+    <string name="remote_sync_provider_sftp">SFTP</string>
+    <string name="remote_sync_provider_ftp">FTP/FTPS</string>
+    <string name="remote_sync_pat_help_title">GitHub-Token erstellen</string>
+    <string name="remote_sync_pat_help_intro">Ein fein abgestuftes Personal Access Token für das Sync-Repository erstellen.</string>
+    <string name="remote_sync_pat_help_step1">1. GitHub &gt; Einstellungen &gt; Developer settings &gt; Personal access tokens &gt; Fine-grained tokens öffnen.</string>
+    <string name="remote_sync_pat_help_step2">2. Auf „Generate new token“ tippen und es YATA sync nennen.</string>
+    <string name="remote_sync_pat_help_step3">3. Unter „Repository access“ nur dein YATA-Sync-Repository auswählen.</string>
+    <string name="remote_sync_pat_help_step4">4. Unter „Repository permissions“ Contents auf „Read and write“ setzen.</string>
+    <string name="remote_sync_pat_help_step5">5. Das Token erstellen, kopieren und hier einfügen.</string>
+    <plurals name="analytics_overdue_tasks_label">
+        <item quantity="one">überfällige Aufgabe</item>
+        <item quantity="other">überfällige Aufgaben</item>
+    </plurals>
+    <plurals name="analytics_finished_with_due_date">
+        <item quantity="one">Pünktlichkeitsrate aus %d erledigter Aufgabe mit Fälligkeitsdatum</item>
+        <item quantity="other">Pünktlichkeitsrate aus %d erledigten Aufgaben mit Fälligkeitsdatum</item>
+    </plurals>
+    <plurals name="analytics_estimated_tasks">
+        <item quantity="one">Aus %d geschätzter Aufgabe</item>
+        <item quantity="other">Aus %d geschätzten Aufgaben</item>
+    </plurals>
+    <plurals name="analytics_unestimated_tasks">
+        <item quantity="one">%d offene Aufgabe hat keine Schätzung</item>
+        <item quantity="other">%d offene Aufgaben haben keine Schätzung</item>
+    </plurals>
+    <string name="cd_add_subtask">Unteraufgabe hinzufügen</string>
+    <string name="cd_add_task">Aufgabe hinzufügen</string>
+    <string name="cd_add_task_by_voice">Aufgabe per Sprache hinzufügen</string>
+    <string name="cd_clear_search">Suche löschen</string>
+    <string name="cd_delete_group">Gruppe löschen</string>
+    <string name="cd_more_options">Weitere Optionen</string>
+    <string name="cd_open_drawer">Menü öffnen</string>
+    <string name="cd_open_menu">Menü öffnen</string>
+    <string name="cd_search">Suchen</string>
+    <string name="circular_image_cropper_use_photo">Foto verwenden</string>
+    <string name="circular_image_cropper_select_new_image">Neues Bild auswählen</string>
+    <string name="circular_image_cropper_transparent_png_hint">Tipp: Ein transparentes PNG mit weißer Form wird automatisch zum Material-You-Symbol</string>
+
+    <!-- Self-hosted (SFTP) backup -->
+    <string name="settings_section_sftp_backup">Selbst gehosteter Sync &amp; Backup</string>
+    <string name="settings_sftp_backup">Cloud-Sync</string>
+    <string name="settings_sftp_backup_summary">Über GitHub oder deinen eigenen Server geräteübergreifend synchronisieren und versionierte Backups behalten. Auf jedem Gerät denselben Anbieter, dieselben Anmeldedaten und Verschlüsselungs-Passphrase verwenden.</string>
+    <string name="settings_sftp_configure_server">Server</string>
+    <string name="settings_sftp_not_configured">Nicht konfiguriert</string>
+    <!-- %1$s is a formatted relative time, e.g. "2 hours ago". -->
+    <string name="settings_last_sftp_backup">Letzter Sync/Backup: %1$s</string>
+    <string name="settings_sftp_server_trusted">Server verifiziert</string>
+    <string name="settings_sftp_server_not_yet_trusted">Server noch nicht verifiziert — öffne Server, um die Verbindung zu testen</string>
+    <string name="settings_sftp_backup_started">Sync gestartet</string>
+    <string name="settings_restore_sftp_backup">Vom Server wiederherstellen…</string>
+    <string name="settings_sftp_config_title">Selbst gehosteter Server</string>
+    <string name="settings_sftp_protocol_sftp">SFTP</string>
+    <string name="settings_sftp_protocol_ftp">FTP</string>
+    <string name="settings_ftp_use_tls">Sichere Verbindung verwenden (FTPS)</string>
+    <string name="settings_ftp_plain_warning">Reines FTP sendet Passwort und Dateien unverschlüsselt. Nur in einem vertrauenswürdigen Netzwerk verwenden.</string>
+    <string name="settings_ftp_strict_tls">Strenge Zertifikatsprüfung</string>
+    <string name="settings_ftp_strict_tls_caption">Prüft zusätzlich, ob das Serverzertifikat zu diesem Hostnamen passt. Aktiviere dies, außer dein Server verwendet ein selbstsigniertes oder nicht passendes Zertifikat — in diesem Fall lass es deaktiviert, sonst schlägt die Verbindung fehl.</string>
+    <string name="settings_sftp_backups_to_keep_summary">Die letzten %1$d Backups auf dem Server behalten — ältere werden automatisch bereinigt.</string>
+    <string name="settings_backup_dest_local">dieses Gerät</string>
+    <string name="settings_backup_dest_self_hosted">Remote-Sync</string>
+    <string name="settings_backup_none_configured">Keine Backup-Ziele sind aktiviert.</string>
+    <string name="settings_backup_all_failed">Backup fehlgeschlagen — %1$s</string>
+    <string name="settings_backup_partial">%1$d gesichert, aber fehlgeschlagen für %2$s</string>
+    <string name="settings_initial_sync_merge_title">Ersten Sync prüfen</string>
+    <string name="settings_initial_sync_merge_body">Dieses Gerät und der Remote-Sync-Snapshot enthalten beide Daten. YATA führt sie zusammen, erstellt vorher ein Wiederherstellungs-Backup und verwendet bei direkten Konflikten die Remote-Kopie.</string>
+    <string name="settings_initial_sync_merge_action">Jetzt zusammenführen</string>
+    <string name="settings_empty_local_sync_title">Dieses Gerät wirkt leer</string>
+    <string name="settings_empty_local_sync_body">Dieses Gerät hat keine Aufgaben, aber sein letzter Sync-Stand und der Remote-Snapshot enthalten beide Daten. Das deutet meist auf eine Neuinstallation oder ein wiederhergestelltes Gerät hin, nicht auf ein absichtliches Löschen. Stelle den Remote-Snapshot wieder her, oder synchronisiere trotzdem weiter — dadurch werden die Daten auch aus der Remote-Kopie gelöscht.</string>
+    <string name="settings_empty_local_sync_restore_action">Von Remote wiederherstellen</string>
+    <string name="settings_empty_local_sync_overwrite_action">Trotzdem synchronisieren</string>
+    <string name="settings_remote_restore_success">Der neueste Remote-Snapshot wurde wiederhergestellt.</string>
+    <string name="settings_remote_restore_failed">Wiederherstellung fehlgeschlagen: %1$s</string>
+    <string name="settings_backup_interval">Backup-Häufigkeit</string>
+    <string name="settings_backup_interval_summary">Jedes konfigurierte Ziel wird nach diesem Zeitplan gesichert.</string>
+    <plurals name="settings_backup_all_ok">
+        <item quantity="one">In %1$d Ziel gesichert</item>
+        <item quantity="other">In %1$d Zielen gesichert</item>
+    </plurals>
+    <string name="settings_backup_summary_loading">Backup wird gelesen…</string>
+    <string name="settings_backup_summary_tasks">Aufgaben: %1$d</string>
+    <string name="settings_backup_summary_open">Offene Aufgaben: %1$d</string>
+    <string name="settings_backup_summary_projects">Projekte: %1$d</string>
+    <string name="settings_backup_summary_device">Erstellt am: %1$s</string>
+    <string name="settings_backup_summary_device_unknown">Unbekanntes Gerät</string>
+    <string name="settings_backup_summary_failed">Dieses Backup konnte nicht gelesen werden: %1$s</string>
+    <string name="settings_backup_passphrase">Backup-Verschlüsselungspassphrase</string>
+    <string name="settings_backup_passphrase_set">Es ist bereits eine Passphrase festgelegt. Leer lassen, um sie zu behalten, oder eine neue eingeben, um sie zu ersetzen.</string>
+    <string name="settings_backup_passphrase_hint">Verschlüsselt die Backup-Datei selbst, bevor sie dein Gerät verlässt, sodass sie auch auf einem Server, den du nicht vollständig kontrollierst, privat bleibt. Bewahre eine Kopie sicher auf — ohne diese Passphrase kann das Backup weder auf diesem noch auf einem anderen Gerät wiederhergestellt werden.</string>
+    <string name="settings_sftp_host">Host</string>
+    <string name="settings_sftp_port">Port</string>
+    <string name="settings_sftp_username">Benutzername</string>
+    <string name="settings_sftp_remote_dir">Remote-Ordner</string>
+    <string name="settings_sftp_auth_password">Passwort</string>
+    <string name="settings_sftp_auth_key">Privater Schlüssel</string>
+    <string name="settings_sftp_password">Passwort</string>
+    <string name="settings_sftp_private_key">Privater Schlüssel (PEM)</string>
+    <string name="settings_sftp_private_key_placeholder">Den privaten Schlüssel einfügen, einschließlich der -----BEGIN/END-----Zeilen</string>
+    <string name="settings_sftp_passphrase">Schlüssel-Passphrase (optional)</string>
+    <string name="settings_sftp_test_connection">Verbindung testen</string>
+    <string name="settings_sftp_testing_connection">Verbindung wird getestet…</string>
+    <string name="settings_sftp_connection_ok">Erfolgreich verbunden.</string>
+    <string name="settings_clear_sync_lock">Sync-Sperre löschen</string>
+    <string name="settings_clear_sync_lock_summary">Verwenden, wenn Sync meldet, dass ein anderes Gerät synchronisiert, obwohl keins aktiv ist.</string>
+    <string name="settings_clear_sync_lock_title">Veraltete Sync-Sperre löschen?</string>
+    <string name="settings_clear_sync_lock_confirm">Nur fortfahren, wenn gerade kein anderes YATA-Gerät mit diesem Server synchronisiert. Dies entfernt den Remote-Ordner .yata_sync_v1.lock und lässt Backups unangetastet.</string>
+    <string name="settings_clear_sync_lock_confirm_with_owner">Sync ist derzeit gesperrt durch %1$s. Sperrdauer: %2$s.\n\nNur fortfahren, wenn dieses Gerät gerade nicht synchronisiert. Dies entfernt den Remote-Ordner .yata_sync_v1.lock und lässt Backups unangetastet.</string>
+    <string name="settings_clear_sync_lock_confirm_with_age">Sync ist derzeit gesperrt. Sperrdauer: %1$s.\n\nNur fortfahren, wenn gerade kein anderes YATA-Gerät mit diesem Server synchronisiert. Dies entfernt den Remote-Ordner .yata_sync_v1.lock und lässt Backups unangetastet.</string>
+    <string name="settings_clear_sync_lock_action">Sperre löschen</string>
+    <string name="settings_clear_sync_lock_success">Sync-Sperre gelöscht.</string>
+    <string name="settings_clear_sync_lock_failed">Die Sync-Sperre konnte nicht gelöscht werden.</string>
+    <!-- %1$s is the server's host key fingerprint, e.g. "SHA256:AbCdEf…". -->
+    <string name="settings_sftp_trust_prompt">Erste Verbindung zu diesem Server. Sein Schlüssel-Fingerabdruck lautet:\n\n%1$s\n\nVertraue diesem nur, wenn du ihn erkennst.</string>
+    <string name="settings_sftp_trust_and_save">Vertrauen und speichern</string>
+    <!-- %1$s is the new, unrecognized fingerprint the server just presented. -->
+    <string name="settings_sftp_host_key_changed">Der Schlüssel-Fingerabdruck des Servers hat sich geändert, seit ihm vertraut wurde:\n\n%1$s\n\nDies kann nach einem legitimen Server-Neuaufbau passieren — oder bedeuten, dass jemand die Verbindung abfängt. Nur fortfahren, wenn du dir sicher bist.</string>
+    <string name="settings_sftp_trust_new_key">Neuem Schlüssel trotzdem vertrauen</string>
+    <string name="settings_sftp_no_backups_found">Noch keine Backups auf dem Server gefunden.</string>
+    <string name="settings_sftp_restore_title">Vom Server wiederherstellen</string>
+    <string name="settings_sftp_restore_confirm_title">Dieses Backup wiederherstellen?</string>
+    <string name="settings_sftp_restore_confirm_body">Dies ersetzt alles, was aktuell in der App ist, durch den Inhalt dieses Backups. Das kann nicht rückgängig gemacht werden.</string>
+    <string name="color_picker_rrggbb">#RRGGBB</string>
+    <string name="color_picker_use_color">Farbe verwenden</string>
+    <string name="create_task_config_create_task">Aufgabe erstellen</string>
+    <string name="custom_color_picker_apply">Anwenden</string>
+    <string name="custom_color_picker_hex">Hex</string>
+    <string name="entity_editors_create_group">Gruppe erstellen</string>
+    <string name="entity_editors_description">Beschreibung</string>
+    <string name="entity_editors_e_g_personal">z. B. Privat</string>
+    <string name="entity_editors_e_g_work_list">z. B. Arbeitsliste</string>
+    <string name="entity_editors_group_name">Gruppenname</string>
+    <string name="entity_editors_list_name">Listenname</string>
+    <string name="entity_editors_new_group">Neue Gruppe</string>
+    <string name="mention_hint_tag">Tippen, um einen Tag zu suchen oder zu erstellen</string>
+    <string name="mention_hint_person">Tippen, um eine Person zu suchen oder zu erstellen</string>
+    <string name="mention_create_tag">Tag „%1$s“ erstellen</string>
+    <string name="mention_create_person">Person „%1$s“ erstellen</string>
+    <string name="mention_you">Du</string>
+    <string name="entity_editors_exclude_from_today">Von Heute ausschließen</string>
+    <string name="entity_editors_exclude_from_today_summary">Aufgaben hier erscheinen nie auf dem Heute-Bildschirm, auch nicht überfällig — für einen Rückstand, den du später planst.</string>
+    <string name="entity_editors_project_due_date">Projekt-Fälligkeitsdatum</string>
+    <string name="entity_editors_pick_date">Datum wählen…</string>
+    <string name="entity_editors_default_reminder">Standarderinnerung</string>
+    <string name="entity_editors_default_reminder_summary">Füllt die Erinnerung bei neuen Aufgaben in diesem Projekt vor.</string>
+    <string name="entity_editors_common_tags">Gemeinsame Tags</string>
+    <string name="entity_editors_common_tags_summary">Jede Aufgabe in diesem Projekt trägt immer diese Tags, live synchronisiert.</string>
+    <string name="entity_editors_project_color">Projektfarbe</string>
+    <string name="entity_editors_group_label">Gruppe</string>
+    <string name="entity_editors_hide_completed_by_default">Erledigte standardmäßig ausblenden</string>
+    <string name="entity_editors_hide_completed_by_default_summary">Der Detailbildschirm dieses Tags öffnet mit ausgeblendeten erledigten Aufgaben.</string>
+    <string name="entity_editors_list_color">Listenfarbe</string>
+    <string name="entity_editors_list_icon">Listensymbol</string>
+    <string name="entity_editors_person_s_name">Name der Person</string>
+    <string name="entity_name_taken">Dieser Name ist bereits vergeben. Groß- und Kleinschreibung wird ignoriert.</string>
+    <string name="entity_editors_project_name">Projektname</string>
+    <string name="entity_editors_remove_photo">Foto entfernen</string>
+    <string name="entity_editors_separate_multiple_names_with_commas_to_add">Mehrere Namen durch Kommas trennen, um mehrere auf einmal hinzuzufügen.</string>
+    <string name="entity_editors_separate_multiple_tags_with_commas_to_crea">Mehrere Tags durch Kommas trennen, um mehrere auf einmal zu erstellen.</string>
+    <string name="entity_editors_tag_label">Tag-Bezeichnung</string>
+    <string name="entity_editors_what_s_this_project_about">Worum geht es in diesem Projekt?</string>
+    <string name="export_options_no_limit">Kein Limit</string>
+    <string name="help_about_help_about">Hilfe</string>
+    <string name="help_about_heading">HILFE</string>
+    <string name="help_about_upcoming_calendar">Demnächst &amp; Kalender</string>
+    <string name="help_about_quick_add">Schnellerfassung</string>
+    <string name="help_about_search_saved_views">Suche &amp; gespeicherte Ansichten</string>
+    <string name="help_about_projects_lists">Projekte &amp; Listen</string>
+    <string name="help_about_reminders">Erinnerungen</string>
+    <string name="help_about_widgets">Widgets</string>
+    <string name="help_about_backup_sync">Backup &amp; Synchronisierung</string>
+    <string name="help_about_trash">Papierkorb</string>
+    <string name="list_detail_all_tasks_inside_this_list_will_be_permane">Alle Aufgaben in dieser Liste werden endgültig gelöscht.</string>
+    <string name="list_detail_delete_list">Liste löschen</string>
+    <string name="list_detail_delete_list_2">Liste löschen?</string>
+    <string name="list_detail_delete_only_the_list_to_keep_its_tasks">Nur die Liste löschen, um ihre Aufgaben ohne Liste zu behalten, oder die Liste und alle darin enthaltenen Aufgaben löschen.</string>
+    <string name="list_detail_list_only">Nur Liste</string>
+    <string name="list_detail_list_tasks">Liste + Aufgaben</string>
+    <string name="list_detail_edit_list">Liste bearbeiten</string>
+    <string name="list_detail_search_in_list">In Liste suchen</string>
+    <string name="lock_backspace">Rücktaste</string>
+    <string name="lock_unlock">Entsperren</string>
+    <string name="lock_use_biometric_instead">Stattdessen biometrisch verwenden</string>
+    <string name="lock_use_pin_instead">Stattdessen PIN verwenden</string>
+    <string name="lock_title">YATA ist gesperrt</string>
+    <string name="lock_enter_pin">PIN eingeben</string>
+    <string name="lock_incorrect_pin">Falsche PIN. Erneut versuchen.</string>
+    <!-- Cooldown after repeated wrong PINs. %1$d is the whole seconds left. -->
+    <string name="lock_too_many_attempts">Zu viele Versuche. Erneut in %1$ds.</string>
+    <!-- Biometric prompt -->
+    <string name="lock_biometric_title">YATA entsperren</string>
+    <string name="lock_biometric_subtitle">Bestätige, dass du es bist, um deine Aufgaben zu öffnen.</string>
+    <string name="lock_biometric_negative">PIN verwenden</string>
+    <string name="main_command_palette">Befehlspalette</string>
+    <string name="main_new_list">Neue Liste</string>
+    <string name="main_search_actions_or_tasks">Aktionen oder Aufgaben suchen</string>
+    <string name="main_palette_new_task_subtitle">Aufgabe erstellen</string>
+    <string name="main_palette_search_subtitle">Aufgaben und gespeicherte Filter finden</string>
+    <string name="main_palette_today_subtitle">Heutige Aufgaben öffnen</string>
+    <string name="main_palette_projects_subtitle">Projekte öffnen</string>
+    <string name="main_palette_people_subtitle">Personen öffnen</string>
+    <string name="main_palette_tags_subtitle">Tags öffnen</string>
+    <string name="main_palette_upcoming_subtitle">Kalender und Agenda öffnen</string>
+    <string name="main_palette_inbox_subtitle">Erfasste Aufgaben aufräumen</string>
+    <string name="main_palette_recurring_subtitle">Wiederholende Aufgaben prüfen</string>
+    <string name="main_palette_next_days_subtitle">Die fokussierte Datumsliste öffnen</string>
+    <string name="main_palette_my_work">Meine Arbeit</string>
+    <string name="main_palette_my_work_subtitle">Dir zugewiesene Aufgaben</string>
+    <string name="main_palette_focus_subtitle">Hochprioritäre und markierte Arbeit</string>
+    <string name="main_palette_morning_review_subtitle">Planen, was heute fällig ist</string>
+    <string name="main_palette_evening_review_subtitle">Abschließen und neu planen</string>
+    <string name="main_palette_stale_tasks_subtitle">Länger unangetastete Aufgaben</string>
+    <string name="main_palette_task_health">Aufgabenzustand</string>
+    <string name="main_palette_task_health_subtitle">Überfällige und gefährdete Aufgaben</string>
+    <string name="main_palette_analytics_subtitle">Produktivitätseinblicke öffnen</string>
+    <string name="main_palette_settings_subtitle">Einstellungen öffnen</string>
+    <string name="new_task_add_notes">Notizen hinzufügen…</string>
+    <string name="new_task_ignore_detected_date_time">Erkanntes Datum/Uhrzeit ignorieren</string>
+    <string name="new_task_remove_subtask">Unteraufgabe entfernen</string>
+    <string name="new_task_treat_as_a_single_task_instead">Stattdessen als einzelne Aufgabe behandeln</string>
+    <string name="notification_helper_this_task_is_due">Diese Aufgabe ist fällig</string>
+    <string name="inbox_title">Eingang</string>
+    <string name="inbox_notice">Sortiere Aufgaben, denen Datum, Schätzung, Besitzer oder Ablage fehlen.</string>
+    <string name="inbox_empty_title">Eingang leer</string>
+    <string name="inbox_empty_body">Jede offene Aufgabe hat genug Details, um dort zu erscheinen, wo sie hingehört.</string>
+    <string name="inbox_empty_action">Zurück zu Heute</string>
+    <string name="inbox_due_today">Heute</string>
+    <string name="inbox_due_tomorrow">Morgen</string>
+    <string name="inbox_due_next_week">Nächste Woche</string>
+    <string name="inbox_estimate_15m">15m</string>
+    <string name="inbox_estimate_30m">30m</string>
+    <string name="inbox_estimate_1h">1h</string>
+    <string name="inbox_move">Verschieben</string>
+    <string name="inbox_assign_me">Mir zuweisen</string>
+    <string name="inbox_ready">Bereit</string>
+    <string name="people_add_person">Person hinzufügen</string>
+    <string name="people_add_to_group">Zur Gruppe hinzufügen</string>
+    <string name="people_details">Details</string>
+    <string name="people_select_people">Personen auswählen</string>
+    <string name="people_sort_people">Personen sortieren</string>
+    <string name="person_detail_archive_person">Person archivieren?</string>
+    <string name="person_detail_edit_person">Person bearbeiten</string>
+    <string name="person_detail_expand">Erweitern</string>
+    <string name="person_detail_overdue_trend">ÜBERFÄLLIGKEITSTREND (7 TAGE)</string>
+    <string name="person_detail_pending">Ausstehend</string>
+    <string name="person_detail_no_open_tasks">Keine offenen zugewiesenen Aufgaben.</string>
+    <string name="person_detail_completed_tasks">Erledigte Aufgaben</string>
+    <string name="person_detail_no_completed_tasks">Keine erledigten Aufgaben.</string>
+    <string name="person_detail_search_this_person_s_tasks">Aufgaben dieser Person suchen</string>
+    <string name="person_analytics_title">Leistung</string>
+    <string name="person_analytics_summary">LEISTUNGSÜBERSICHT</string>
+    <string name="person_analytics_completed_period">im Zeitraum erledigt</string>
+    <string name="person_analytics_on_time_sample">Pünktlichkeitsrate von %1$d erledigten Aufgaben mit Fälligkeitsdatum</string>
+    <string name="person_analytics_planned_open">geplant offen</string>
+    <string name="person_analytics_unestimated">ohne Schätzung</string>
+    <string name="person_analytics_activity">ERLEDIGUNGEN</string>
+    <string name="person_analytics_breakdown">AUFSCHLÜSSELUNG</string>
+    <string name="person_analytics_no_breakdown">Keine Aufgaben in dieser Gruppe.</string>
+    <string name="person_analytics_overdue_tasks">ÜBERFÄLLIGE AUFGABEN</string>
+    <string name="person_analytics_no_tasks">Noch keine Aufgaben zugewiesen.</string>
+    <string name="person_analytics_open_overdue">%1$d offen · %2$d überfällig</string>
+    <string name="person_analytics_done_total">%1$d/%2$d erledigt</string>
+    <string name="person_detail_their_past_assigned_tasks_and_stats_stay_t">Ihre früher zugewiesenen Aufgaben und Statistiken bleiben erhalten. Sie werden im Tab „Personen“ ausgeblendet — du kannst sie jederzeit über dasselbe Menü wiederherstellen.</string>
+    <string name="project_detail_archive_project">Projekt archivieren</string>
+    <string name="project_detail_archive_project_2">Projekt archivieren?</string>
+    <string name="project_detail_delete_archived_project">Archiviertes Projekt löschen?</string>
+    <string name="project_detail_delete_only_the_project_to_keep_its_tasks">Nur das Projekt löschen, um seine Aufgaben ohne Projekt zu behalten, oder das Projekt und alle darin enthaltenen Aufgaben löschen.</string>
+    <string name="project_detail_delete_project">Projekt löschen</string>
+    <string name="project_detail_edit_project">Projekt bearbeiten</string>
+    <!-- Markdown export, shared by the project, tag and person screens. -->
+    <string name="action_export_as_markdown">Als Markdown exportieren</string>
+    <string name="export_pending_tasks">Ausstehende Aufgaben</string>
+    <!-- Share-sheet title. %1$s is the project, tag or person's name. -->
+    <string name="export_share_tasks_title">Aufgaben von %1$s teilen</string>
+    <string name="project_detail_project_only">Nur Projekt</string>
+    <string name="project_detail_project_tasks">Projekt + Aufgaben</string>
+    <string name="project_detail_restore_project">Projekt wiederherstellen</string>
+    <string name="project_detail_roll_forward">Vorwärts übertragen</string>
+    <string name="project_detail_roll_over">Übertragen</string>
+    <string name="project_detail_roll_over_open_tasks">Offene Aufgaben übertragen</string>
+    <string name="project_detail_roll_over_open_tasks_2">Offene Aufgaben übertragen?</string>
+    <string name="project_detail_roll_overdue_forward">Überfällige vorwärts übertragen</string>
+    <string name="project_detail_roll_overdue_tasks_forward">Überfällige Aufgaben vorwärts übertragen?</string>
+    <string name="project_detail_search_in_project">In Projekt suchen</string>
+    <string name="project_detail_tasks_inside_stay_linked_the_project_is_hi">Enthaltene Aufgaben bleiben verknüpft. Das Projekt wird aus aktiven Projektansichten ausgeblendet, bis du es wiederherstellst.</string>
+    <string name="projects_add_project">Projekt hinzufügen</string>
+    <string name="projects_archive_selected">Ausgewählte archivieren</string>
+    <string name="projects_project_icon">Projektsymbol</string>
+    <string name="projects_select_projects">Projekte auswählen</string>
+    <string name="projects_tasks_inside_stay_linked_and_the_projects">Enthaltene Aufgaben bleiben verknüpft, und die Projekte werden aus aktiven Projektansichten ausgeblendet, bis du sie wiederherstellst.</string>
+    <string name="quick_add_dialog_quick_add">Schnell hinzufügen</string>
+    <string name="quick_add_dialog_what_needs_doing">Was ist zu tun?</string>
+    <string name="quick_comment_write_a_comment">Kommentar schreiben…</string>
+    <string name="recurrence_badge_repeats">Wiederholt sich</string>
+    <string name="search_remove_saved_filter">Gespeicherten Filter entfernen</string>
+    <string name="search_search_or_try_overdue_flagged">Suchen oder „überfällig“, „markiert“ probieren…</string>
+    <string name="settings_back_up_now">Jetzt sichern</string>
+    <string name="settings_sync_and_backup_now">Jetzt synchronisieren &amp; sichern</string>
+    <string name="settings_backup_frequency">Backup-Häufigkeit</string>
+    <string name="settings_change_profile_photo">Profilfoto ändern</string>
+    <string name="settings_compare_with_backup">Mit Backup vergleichen</string>
+    <string name="settings_compare_with_backup_2">Mit Backup vergleichen</string>
+    <string name="settings_delete_all_data">Alle Daten löschen</string>
+    <string name="settings_delete_all_data_2">Alle Daten löschen?</string>
+    <string name="settings_dismiss">Verwerfen</string>
+    <string name="settings_edit">Bearbeiten</string>
+    <string name="settings_every">Alle</string>
+    <string name="settings_export_csv">CSV exportieren</string>
+    <string name="settings_export_data">Daten exportieren</string>
+    <string name="settings_export_to_calendar">In Kalender exportieren</string>
+    <string name="settings_help_and_about">Hilfe und Über</string>
+    <string name="settings_import_csv_or_text">CSV oder Text importieren</string>
+    <string name="settings_import_data">Daten importieren</string>
+    <string name="settings_new_pin_4_8_digits">Neue PIN (4–8 Ziffern)</string>
+    <string name="settings_remove">Entfernen</string>
+    <string name="settings_restore_from_local_backup">Aus lokalem Backup wiederherstellen?</string>
+    <string name="settings_restore_this_backup">Dieses Backup wiederherstellen?</string>
+    <string name="settings_save_email">E-Mail speichern</string>
+    <string name="settings_save_name">Name speichern</string>
+    <!-- Stand-ins shown when the profile fields are still empty. Without them the row renders as
+         a zero-height Text, which is also its own tap-to-edit target — invisible and untappable,
+         so an unset name could never be set. -->
+    <string name="profile_add_name">Deinen Namen hinzufügen</string>
+    <string name="main_drawer_version">yata %1$s</string>
+    <string name="entity_hero_showing_filter">Zeigt: %1$s</string>
+    <string name="entity_hero_clear_filter">Löschen ✕</string>
+    <string name="today_progress_cd">%1$s, %2$d Prozent</string>
+    <string name="today_progress_percent">%1$d%%</string>
+    <string name="profile_add_email">Deine E-Mail hinzufügen</string>
+
+    <!-- Multi-select bars. One plural shared by every tab and the bulk task action bar — the
+         count was previously built by concatenation ("$n selected") in four separate places. -->
+    <plurals name="selection_count">
+        <item quantity="one">%1$d ausgewählt</item>
+        <item quantity="other">%1$d ausgewählt</item>
+    </plurals>
+    <string name="bulk_move_title">Ausgewählte Aufgaben verschieben</string>
+    <string name="bulk_section_project">PROJEKT</string>
+    <string name="bulk_section_list">LISTE</string>
+    <string name="bulk_add_tag_title">Tag zu ausgewählten Aufgaben hinzufügen</string>
+    <string name="bulk_no_tags">Noch keine Tags - erstelle zuerst einen im Tab „Tags“.</string>
+    <string name="bulk_assign_title">Ausgewählte Aufgaben zuweisen an</string>
+    <string name="bulk_set_priority_title">Priorität für ausgewählte Aufgaben festlegen</string>
+    <string name="bulk_no_people">Noch keine Personen - füge zuerst eine im Tab „Personen“ hinzu.</string>
+
+    <!-- Today top bar -->
+    <string name="today_show_completed">Erledigte Aufgaben anzeigen</string>
+    <string name="today_hide_completed">Erledigte Aufgaben ausblenden</string>
+    <string name="cd_open_profile">Profil und Einstellungen öffnen</string>
+
+    <!-- Manual server sync from the Today top bar -->
+    <string name="cd_sync_now">Jetzt synchronisieren</string>
+    <string name="sync_in_progress">Synchronisierung läuft…</string>
+    <string name="sync_toast_started">Sync gestartet</string>
+    <string name="sync_toast_finished">Sync abgeschlossen</string>
+    <string name="sync_toast_failed">Sync fehlgeschlagen</string>
+    <string name="sync_status_finished">Letzter Sync abgeschlossen</string>
+    <string name="sync_status_failed">Letzter Sync fehlgeschlagen</string>
+
+    <!-- Crash logs -->
+    <string name="diagnostics_title">Diagnose</string>
+    <string name="diagnostics_operation_history">Vorgangsverlauf</string>
+    <string name="diagnostics_operation_history_empty">Noch kein Hintergrundvorgangsverlauf.</string>
+    <string name="diagnostics_crash_reports">Absturzberichte</string>
+    <string name="diagnostics_crash_clusters">Wiederholte Fehlergruppen</string>
+    <string name="diagnostics_crash_cluster_count">%1$d Mal</string>
+    <string name="diagnostics_first_seen">Erstmals gesehen</string>
+    <string name="diagnostics_last_seen">Zuletzt gesehen</string>
+    <string name="crash_log_title">Absturzprotokolle</string>
+    <string name="settings_crash_logs">Diagnose</string>
+    <string name="settings_crash_logs_summary">Letzte Backup-, Sync-, Erinnerungs-, Widget- und Absturzaktivität.</string>
+    <string name="operation_status_never_run">Nie ausgeführt</string>
+    <string name="operation_status_running">Läuft</string>
+    <string name="operation_status_success">Erfolg</string>
+    <string name="operation_status_failure">Fehlschlag</string>
+    <string name="operation_status_skipped">Übersprungen</string>
+    <string name="operation_history_reason">Grund: %1$s</string>
+    <string name="operation_history_last_run">Letzte Ausführung</string>
+    <string name="operation_history_last_success">Letzter Erfolg</string>
+    <string name="operation_history_last_failure">Letzter Fehlschlag</string>
+    <string name="operation_history_retry_count">Wiederholungsanzahl</string>
+    <string name="operation_history_never">Nie</string>
+    <string name="crash_log_empty_title">Keine Absturzberichte</string>
+    <string name="crash_log_empty_body">Seit dem letzten Löschen ist nichts schiefgegangen. Berichte erscheinen hier von selbst — es gibt nichts zu aktivieren.</string>
+    <string name="crash_log_fatal">Absturz</string>
+    <string name="crash_log_handled">Abgefangen</string>
+    <string name="crash_log_clear_all">Alle löschen</string>
+    <string name="crash_log_clear_confirm_title">Alle Berichte löschen?</string>
+    <string name="crash_log_clear_confirm_body">Löscht jeden gespeicherten Bericht. Das kann nicht rückgängig gemacht werden, und Berichte werden nicht gesichert.</string>
+    <string name="crash_log_copy">Kopieren</string>
+    <string name="crash_log_share">Teilen</string>
+    <string name="crash_log_copied">Bericht kopiert</string>
+    <string name="crash_log_share_subject">YATA-Absturzbericht</string>
+    <string name="cd_delete_crash_log">Diesen Bericht löschen</string>
+    <plurals name="crash_log_count">
+        <item quantity="one">%1$d Bericht</item>
+        <item quantity="other">%1$d Berichte</item>
+    </plurals>
+
+    <!-- Start date ("not actionable before"). %1$s is an already-formatted date. -->
+    <string name="task_starts_on">Beginnt %1$s</string>
+    <string name="task_start_date">Startdatum</string>
+    <string name="task_start_date_none">Kein Startdatum</string>
+    <string name="cd_pick_start_date">Startdatum wählen</string>
+    <string name="cd_clear_start_date">Startdatum löschen</string>
+    <string name="task_start_date_hint">Bis zu diesem Datum vor Heute verborgen</string>
+    <string name="smart_add_starts">Beginnt %1$s</string>
+    <string name="smart_add_due">Fällig %1$s</string>
+    <string name="new_task_bulk_mixed_dates">Daten unterscheiden sich je Zeile</string>
+    <string name="new_task_bulk_more_detected">+%1$d weitere</string>
+    <string name="new_task_bulk_truncated">Nur die ersten %1$d Zeilen werden hinzugefügt — %2$d weitere wurden ignoriert.</string>
+    <!-- %1$s is a detected field label, e.g. "Due Tomorrow". -->
+    <string name="new_task_ignore_field">%1$s ignorieren</string>
+    <string name="settings_set_pin">PIN festlegen</string>
+    <string name="settings_settings">Einstellungen</string>
+    <string name="settings_show_welcome_tour">Einführungstour anzeigen</string>
+    <string name="settings_sign_in">Anmelden</string>
+    <string name="settings_this_backs_up_everything_to_your_downloads">Dies sichert zuerst alles in deinem Downloads-Ordner und löscht dann dauerhaft </string>
+    <string name="settings_this_overwrites_your_current_lists_tasks_a">Dies überschreibt deine aktuellen Listen, Aufgaben und Einstellungen mit deinem letzten </string>
+    <string name="settings_up_to_date_no_changes_since_last_backup">Aktuell — keine Änderungen seit dem letzten Backup.</string>
+    <string name="springy_check_check">Prüfen</string>
+    <string name="tag_chip_remove_tag">Tag entfernen</string>
+    <string name="tag_detail_delete_tag">Tag löschen</string>
+    <string name="tag_detail_delete_tag_2">Tag löschen?</string>
+    <string name="tag_detail_edit_tag">Tag bearbeiten</string>
+    <string name="tag_detail_search_in_tag">In Tag suchen</string>
+    <string name="tag_detail_this_tag_will_be_removed_from_all_tasks">Dieser Tag wird von allen Aufgaben entfernt.</string>
+    <string name="tags_delete_selected">Ausgewählte löschen</string>
+    <string name="tags_new_tag">Neuer Tag</string>
+    <string name="tags_sort_tags">Tags sortieren</string>
+    <string name="tags_section_open">Offen</string>
+    <string name="tags_section_closed">Geschlossen</string>
+    <!-- Section title followed by how many tags it holds, e.g. "Closed · 12". -->
+    <string name="tags_section_header_count">%1$s · %2$d</string>
+    <string name="tags_tag">Tag</string>
+    <string name="tags_tasks_keep_their_other_tags_this_can_t_be">Aufgaben behalten ihre anderen Tags. Das kann nicht rückgängig gemacht werden.</string>
+    <string name="task_detail_add_a_comment">Kommentar hinzufügen…</string>
+    <string name="task_detail_add_a_sub_item">Unterpunkt hinzufügen…</string>
+    <string name="task_detail_add_sub_item">Unterpunkt hinzufügen</string>
+    <string name="task_detail_assign">Zuweisen…</string>
+    <string name="task_detail_assign_people">Personen zuweisen</string>
+    <string name="task_detail_copy_link_to_task">Link zur Aufgabe kopieren</string>
+    <string name="task_detail_delete_comment">Kommentar löschen</string>
+    <string name="task_detail_delete_sub_item">Unterpunkt löschen</string>
+    <string name="task_detail_delete_subtask">Unteraufgabe löschen</string>
+    <string name="task_detail_delete_task">Aufgabe löschen</string>
+    <string name="task_detail_due_date_and_time">Fälligkeitsdatum und -uhrzeit</string>
+    <string name="task_detail_duplicate_task">Aufgabe duplizieren</string>
+    <string name="task_detail_export_task">Aufgabe exportieren</string>
+    <string name="task_detail_flag">Markieren</string>
+    <string name="task_detail_post_comment">Kommentar posten</string>
+    <string name="task_detail_reminder">Erinnerung</string>
+    <string name="task_detail_due_date">Fälligkeitsdatum</string>
+    <string name="task_detail_carry_forward">Auf nächsten Tag übertragen</string>
+    <string name="task_detail_repeats">Wiederholt sich</string>
+    <string name="task_detail_streak_days">🔥 %1$d Tage in Folge</string>
+    <string name="task_detail_recurring_history">Verlauf der Wiederholungen</string>
+    <string name="task_detail_none">Keine</string>
+    <string name="task_detail_tags_sync_hint">Tags ohne ✕ stammen aus dem Projekt dieser Aufgabe und bleiben automatisch synchron.</string>
+    <string name="task_detail_subtasks_progress">%1$d/%2$d erledigt</string>
+    <string name="task_detail_comments">Kommentare</string>
+    <string name="task_detail_select_list">Liste auswählen</string>
+    <string name="task_detail_select_project">Projekt auswählen</string>
+    <string name="task_detail_skip_this_occurrence">Dieses Vorkommen überspringen</string>
+    <string name="task_detail_tag">Tag…</string>
+    <string name="task_detail_tap_to_add_notes_supports_markdown">Tippen, um Notizen hinzuzufügen… (unterstützt Markdown)</string>
+    <!-- The markdown hint belongs in the field's supportingText slot, not crammed into the
+         placeholder: a placeholder disappears the moment you start typing, which is exactly when
+         knowing markdown is accepted becomes useful. -->
+    <string name="task_detail_notes_placeholder">Notizen hinzufügen…</string>
+    <string name="task_detail_notes_supporting">Unterstützt Markdown</string>
+    <string name="task_sort_menu_button_sort_tasks">Aufgaben sortieren</string>
+    <string name="sort_most_open_tasks">Meiste offene Aufgaben</string>
+    <string name="sort_name_asc">Name (A–Z)</string>
+    <string name="sort_name_desc">Name (Z–A)</string>
+    <string name="sort_most_tasks">Meiste Aufgaben</string>
+    <string name="sort_fewest_tasks">Wenigste Aufgaben</string>
+    <string name="sort_starred_first">Markierte zuerst</string>
+    <string name="today_next_10_days">Nächste 10 Tage</string>
+    <string name="today_search_tasks">Aufgaben suchen</string>
+    <string name="today_voice_fab_label">Sprechen</string>
+    <string name="upcoming_next_month">Nächster Monat</string>
+    <string name="upcoming_previous_month">Vorheriger Monat</string>
+    <string name="voice_task_overlay_speak_again">Erneut sprechen</string>
+    <string name="voice_task_overlay_heading">SPRACHEINGABE AUF DEM GERÄT</string>
+    <string name="voice_task_overlay_mic_permission_required">Für die Sprach-Aufgabenerstellung ist die Mikrofonberechtigung erforderlich.</string>
+    <string name="voice_task_overlay_listening">Hört zu… Sprich deine Aufgabe natürlich aus\n(z. B. „Lebensmittel morgen um 17 Uhr kaufen“)</string>
+    <string name="voice_task_overlay_due_chip">Fällig: %1$s</string>
+    <string name="voice_task_overlay_priority_chip">Priorität: %1$s</string>
+    <string name="voice_task_overlay_project_chip">Projekt: %1$s</string>
+    <string name="voice_task_overlay_list_chip">Liste: %1$s</string>
+    <string name="voice_task_overlay_tag_chip">#%1$s</string>
+    <string name="voice_task_overlay_assignee_chip">@%1$s</string>
+    <string name="voice_task_overlay_create_task">Aufgabe erstellen</string>
+    <string name="voice_task_overlay_tap_to_use_system_voice_dialog">Tippen, um den Sprachdialog des Systems zu verwenden</string>
+    <string name="welcome_skip">Überspringen</string>
+    <string name="welcome_next">Weiter</string>
+    <string name="welcome_get_started">Los geht\'s</string>
+    <string name="welcome_title_intro">Willkommen bei YATA</string>
+    <string name="welcome_intro_description">Erfasse Aufgaben schnell, organisiere sie auf deine Weise und halte deinen Tag fokussiert. Schnell hinzufügen mit natürlicher Sprache, Widgets und selbst gehostete Synchronisierung sind bereit, wenn du sie brauchst.</string>
+    <string name="welcome_title_organize">Organisiere deine Arbeit</string>
+    <string name="welcome_organize_description">Nutze Projekte für Ergebnisse, Listen für einfache Bereiche, Tags für übergreifenden Kontext und Personen, wenn Arbeit jemandem gehört.</string>
+    <string name="welcome_title_review">Prüfen und anpassen</string>
+    <string name="welcome_review_description">Heute, Demnächst und Analytics zeigen dir, was jetzt Aufmerksamkeit braucht, was als Nächstes kommt und wo Arbeit stecken bleibt.</string>
+    <string name="welcome_setup_title">Wähle deine Startkonfiguration</string>
+    <string name="welcome_setup_description">Wähle eine Vorlage, um eine Startstruktur zu erstellen und die Funktionen einzuschalten, die zu deiner Nutzung von YATA passen.</string>
+    <string name="welcome_setup_simple_title">Einfache Liste</string>
+    <string name="welcome_setup_simple_description">Eine schlanke Konfiguration für persönliche Aufgaben ohne Teams, Tags oder Projektplanung.</string>
+    <string name="welcome_setup_personal_title">Persönliche Produktivität</string>
+    <string name="welcome_setup_personal_description">Ein fokussierter persönlicher Arbeitsbereich mit Projekten, Tags, Schätzungen und sanften täglichen Hinweisen.</string>
+    <string name="welcome_setup_team_title">Teamprojekte</string>
+    <string name="welcome_setup_team_description">Ein projektorientierter Arbeitsbereich zum Zuweisen von Arbeit und Planen, bevor Aufgaben in Heute erscheinen.</string>
+    <string name="welcome_setup_change_personal_list">Persönliche Liste</string>
+    <string name="welcome_setup_change_today_upcoming">Heute + Demnächst</string>
+    <string name="welcome_setup_change_due_today">Neue Aufgaben heute fällig</string>
+    <string name="welcome_setup_change_today_someday">Listen Heute und Irgendwann</string>
+    <string name="welcome_setup_change_goals_project">Projekt Ziele</string>
+    <string name="welcome_setup_change_estimate">30 Min. Standardschätzung</string>
+    <string name="welcome_setup_change_nudges">Agenda + Überfällig-Hinweise</string>
+    <string name="welcome_setup_change_work_list">Arbeitsliste</string>
+    <string name="welcome_setup_change_launch_backlog">Projekte Start + Backlog</string>
+    <string name="welcome_setup_change_people_enabled">Personen aktiviert</string>
+    <string name="welcome_setup_change_auto_assign">Automatisch dir zuweisen</string>
+    <string name="welcome_setup_apply">Diese Konfiguration anwenden</string>
+    <string name="welcome_setup_applied">Konfiguration angewendet</string>
+    <string name="welcome_summary_ready_title">Dein Arbeitsbereich ist bereit</string>
+    <string name="welcome_summary_apply_title">Wende eine Konfiguration an, wenn du bereit bist</string>
+    <string name="welcome_summary_applied_description">%1$s wurde angewendet. Du kannst später jede Liste, jedes Projekt, jede Person und jede Einstellung in der App ändern.</string>
+    <string name="welcome_summary_unapplied_description">Du kannst ohne Vorlage starten oder jetzt %1$s anwenden, um vor dem Fortfahren den Startarbeitsbereich zu erstellen.</string>
+    <string name="welcome_summary_apply_preset">%1$s anwenden</string>
+    <string name="welcome_title_projects_lists">Projekte &amp; Listen</string>
+    <string name="welcome_title_people_delegation">Personen &amp; Delegation</string>
+    <string name="welcome_title_tags">Tags</string>
+    <string name="welcome_title_today_upcoming">Heute &amp; Demnächst</string>
+    <string name="welcome_title_profile">Mach es zu deinem</string>
+    <string name="welcome_profile_description">Füge deinen Namen und ein Bild hinzu — so erscheinst du als Zuständige(r) bei deinen eigenen Aufgaben und in geteilten Exporten.</string>
+    <string name="welcome_profile_email_hint">Nur zur Anzeige — wird nicht zum Anmelden oder Synchronisieren verwendet.</string>
+    <string name="welcome_profile_avatar_or_icon">Oder wähle ein Symbol</string>
+    <string name="welcome_title_analytics">Analysen</string>
+    <string name="widget_config_widget_customizer">Widget-Anpassung</string>
+    <string name="widget_config_corner_radius">Eckenradius</string>
+    <string name="widget_config_custom_header_label">Eigene Kopfzeilenbeschriftung</string>
+    <string name="widget_config_e_g_work_today_quick_add">z. B. Arbeit, Heute, Schnell hinzufügen</string>
+    <string name="widget_config_use_material_3_colors">Material-3-Farben verwenden</string>
+    <string name="widget_config_themes_widget_using_standard_system_m3_col">Gestaltet das Widget mit den standardmäßigen System-/M3-Farben</string>
+    <string name="widget_config_opacity">Deckkraft</string>
+    <string name="widget_config_widget_accent_color">Widget-Akzentfarbe</string>
+    <string name="widget_config_overrides_the_app_s_default_accent_for_thi">Überschreibt den Standardakzent der App nur für dieses Widget.</string>
+    <string name="widget_config_app_default">App-Standard</string>
+    <string name="widget_config_clear_preset">Vorlage löschen</string>
+    <string name="widget_config_no_items_available_in_this_category">Keine Elemente in dieser Kategorie verfügbar.</string>
+    <string name="widget_config_save_changes">Änderungen speichern</string>
+    <string name="content_not_found_title">%1$s nicht gefunden</string>
+    <string name="content_not_found_body">Es wurde möglicherweise gelöscht, archiviert oder auf einem anderen Gerät entfernt.</string>
+    <string name="action_go_back">Zurückgehen</string>
+    <string name="entity_task">Aufgabe</string>
+    <string name="entity_list">Liste</string>
+    <string name="entity_project">Projekt</string>
+    <string name="entity_person">Person</string>
+    <string name="entity_tag">Tag</string>
+    <string name="discard_task_draft_title">Aufgabenentwurf verwerfen?</string>
+    <string name="discard_task_draft_body">Titel, Zeitplan, Notizen, Unteraufgaben und Auswahl gehen verloren.</string>
+    <string name="action_discard">Verwerfen</string>
+    <string name="action_keep_editing">Weiter bearbeiten</string>
+    <string name="settings_search_label">Einstellungen durchsuchen</string>
+    <string name="settings_search_placeholder">Probiere „Erinnerungen“, „Thema“ oder „Backup“</string>
+    <string name="settings_search_no_results">Keine passenden Einstellungen</string>
+    <string name="settings_search_profile_summary">Name, E-Mail und Profilfoto</string>
+    <string name="settings_search_appearance_display_summary">Thema, Farbe, Schrift, Skalierung und Dichte</string>
+    <string name="settings_search_appearance_summary">Thema, Farbe, Schrift und Bewegung</string>
+    <string name="settings_search_display_summary">Oberflächenskalierung, Textgröße und Aufgabendichte</string>
+    <string name="settings_search_navigation_features_summary">Untere Navigation, Schnellerfassung, App-Bereiche und Verwaltung</string>
+    <string name="settings_search_navigation_summary">Untere Navigation und Platzierung der Schnellerfassung</string>
+    <string name="settings_search_feedback_summary">Ton, Haptik, Wischaktionen und Rückgängig</string>
+    <string name="settings_search_defaults_summary">Standards für neue Aufgaben und Spracheingabe</string>
+    <string name="settings_search_notifications_summary">Erinnerungszustellung, Agenda, Erinnerungen und Verschieben</string>
+    <string name="settings_search_features_summary">Große App-Bereiche aktivieren oder ausblenden</string>
+    <string name="settings_search_manage_summary">Projekte, Personen und Tags verwalten</string>
+    <string name="settings_search_privacy_summary">App-Sperre, PIN und Sperrzeitüberschreitung</string>
+    <string name="settings_search_data_summary">Import, Export, Archiv, Papierkorb und Löschen</string>
+    <string name="settings_search_backup_sync_summary">Remote- und lokaler Backup-Zeitplan, Vergleich und Wiederherstellung</string>
+    <string name="settings_search_cloud_summary">Server-Sync-Zeitplan, Status, Vergleich und Wiederherstellung</string>
+    <string name="settings_search_local_summary">Lokaler Backup-Zeitplan und Wiederherstellung</string>
+    <string name="settings_search_sftp_summary">Selbst gehosteter Gerätesync, Backup und Wiederherstellung</string>
+
+    <!-- Today tab: peek at tomorrow/day-after tasks when today itself is empty. -->
+    <string name="today_show_upcoming_tasks">Anstehende Aufgaben anzeigen</string>
+    <string name="today_tomorrow_header">MORGEN</string>
+    <string name="today_day_after_tomorrow_header">ÜBERMORGEN</string>
+    <string name="settings_today_show_upcoming_when_empty">Anstehende Aufgaben anzeigen, wenn Heute leer ist</string>
+    <string name="settings_today_show_upcoming_when_empty_summary">Automatisch eine Vorschau der Aufgaben von morgen und übermorgen (abgeblendet) anzeigen, statt einer Schaltfläche „Anstehende Aufgaben anzeigen“.</string>
+    <string name="countdown_in">in %1$s</string>
+    <string name="countdown_overdue_by">%1$s überfällig</string>
+    <string name="settings_due_countdown">Fälligkeits-Countdown</string>
+    <string name="settings_due_countdown_desc">Zeigt die verbleibende Zeit bis zum Fälligkeitsdatum/-zeit einer Aufgabe auf ihrer Karte und im Detailbildschirm an.</string>
+    <string name="settings_search_help_summary">Funktionsleitfaden, Version und App-Informationen</string>
+    <string name="settings_reset_settings">App-Einstellungen zurücksetzen</string>
+    <string name="settings_reset_dialog_title">App-Einstellungen zurücksetzen?</string>
+    <string name="settings_reset_dialog_body">Erscheinungsbild, Navigation, Feedback, Aufgabenstandards und Benachrichtigungseinstellungen werden auf ihre Standardwerte zurückgesetzt. Dein Profil, Backups, Sicherheits-PIN, gespeicherte Suchen und Aufgaben bleiben unangetastet.</string>
+    <string name="settings_reset_action">Einstellungen zurücksetzen</string>
+    <string name="settings_reset_success">App-Einstellungen zurückgesetzt</string>
+    <string name="settings_reminder_health_ready">Erinnerungszustellung ist bereit</string>
+    <string name="settings_reminder_health_attention">Erinnerungszustellung braucht Aufmerksamkeit</string>
+    <string name="settings_reminder_health_explanation">Falls eine Erinnerung verpasst wurde oder zu spät kam, prüfe jeden Zustellungsstatus unten.</string>
+    <string name="settings_notification_access">Benachrichtigungszugriff</string>
+    <string name="settings_notification_access_granted">YATA darf Erinnerungen anzeigen.</string>
+    <string name="settings_notification_access_denied">Benachrichtigungen sind blockiert — zum Aktivieren tippen.</string>
+    <string name="settings_exact_alarm_timing">Exaktes Alarm-Timing</string>
+    <string name="settings_exact_alarm_granted">Erinnerungen erscheinen zur geplanten Zeit.</string>
+    <string name="settings_exact_alarm_denied">Erinnerungen können verspätet ankommen — zum Beheben tippen.</string>
+    <string name="settings_background_delivery">Hintergrundzustellung</string>
+    <string name="settings_background_delivery_granted">Die Akku-Optimierung blockiert Erinnerungen nicht.</string>
+    <string name="settings_background_delivery_denied">Die Akku-Optimierung kann Erinnerungen verzögern — zum Beheben tippen.</string>
+    <string name="settings_quick_snooze_times">Schnelle Verschiebezeiten</string>
+    <string name="settings_quick_snooze_times_desc">Wird von Verschiebe-Aktionen in Aufgabenzeilen und Benachrichtigungen verwendet.</string>
+    <string name="settings_snooze_tonight">Heute Abend</string>
+    <string name="settings_snooze_tomorrow">Morgen früh</string>
+    <string name="task_occurrence_skipped">Vorkommen übersprungen</string>
+    <string name="task_duplicated">Aufgabe dupliziert</string>
+    <string name="task_archived">Aufgabe archiviert</string>
+    <string name="task_unarchived">Aufgabe wiederhergestellt</string>
+    <string name="task_archive_action">Aufgabe archivieren</string>
+    <string name="task_unarchive_action">Aufgabe wiederherstellen</string>
+    <string name="task_link_copied">Aufgaben-Link kopiert</string>
+    <string name="task_deleted">Aufgabe gelöscht</string>
+    <string name="task_marked_open">Aufgabe als offen markiert</string>
+    <string name="task_completed">Aufgabe erledigt</string>
+    <plurals name="task_transfer_imported">
+        <item quantity="one">%1$d geteilte Aufgabe zum Eingang hinzugefügt</item>
+        <item quantity="other">%1$d geteilte Aufgaben zum Eingang hinzugefügt</item>
+    </plurals>
+    <string name="task_transfer_import_failed">Dieser YATA-Aufgabenlink konnte nicht importiert werden.</string>
+    <string name="shared_task_import_title">Geteilte Aufgabe</string>
+    <string name="shared_task_import_create_missing_title">Fehlende Elemente erstellen?</string>
+    <string name="shared_task_import_create_missing_message">%1$s gibt es in deinem Arbeitsbereich noch nicht. Erstellen und diese Aufgabe hinzufügen?</string>
+    <string name="shared_task_import_create_and_add">Erstellen &amp; hinzufügen</string>
+    <string name="shared_task_import_skip">Überspringen</string>
+    <string name="export_failed">Export fehlgeschlagen.</string>
+    <string name="reminder_before_due_error">Die Erinnerung muss vor der Fälligkeitszeit liegen.</string>
+    <string name="reminder_in_past_error">Diese Erinnerungszeit ist heute bereits verstrichen.</string>
+    <string name="export_entity_title">%1$s exportieren</string>
+    <string name="export_task_title">Aufgabe exportieren</string>
+    <string name="export_section_file">Datei</string>
+    <string name="export_filename">Dateiname</string>
+    <string name="action_share">Teilen</string>
+    <string name="export_section_completed_tasks">Erledigte Aufgaben</string>
+    <string name="export_include_completed">Erledigte Aufgaben einbeziehen</string>
+    <string name="export_exclude_completed_older_than">Erledigte Aufgaben ausschließen, die vor mehr als so vielen Tagen erledigt wurden</string>
+    <string name="export_strike_completed">Erledigte Aufgaben durchstreichen</string>
+    <string name="export_section_display">Anzeige</string>
+    <string name="export_privacy_mode">Datenschutzmodus</string>
+    <string name="export_show_tags">Tags anzeigen</string>
+    <string name="export_show_assignees">Zugewiesen an anzeigen</string>
+    <string name="export_show_footer">„Erstellt mit YATA“-Fußzeile anzeigen</string>
+    <string name="export_include_import_link">Import-Link einschließen</string>
+    <string name="export_section_format">Format</string>
+    <string name="export_density_relaxed">Entspannt</string>
+    <string name="export_density_compact">Kompakt</string>
+    <string name="export_section_content">Inhalt</string>
+    <string name="export_include_schedule">Zeitplandetails einbeziehen</string>
+    <string name="export_include_subtasks">Unteraufgaben einbeziehen</string>
+    <string name="export_include_notes">Notizen einbeziehen</string>
+    <string name="export_include_comments">Kommentare einbeziehen</string>
+    <string name="export_yata_wordmark">YATA</string>
+    <string name="export_made_with_yata">Erstellt mit YATA</string>
+    <string name="export_generated_on">Erstellt am %1$s</string>
+    <string name="export_overdue_badge">ÜBERFÄLLIG</string>
+    <string name="export_task_badge">AUFGABE</string>
+    <string name="export_done_badge">ERLEDIGT</string>
+    <string name="export_open_badge">OFFEN</string>
+    <string name="export_priority_badge">%1$s PRIORITÄT</string>
+    <string name="export_flagged_badge">MARKIERT</string>
+    <string name="export_hidden_count">+%1$d</string>
+    <string name="export_labeled_pills_colon">%1$s:</string>
+    <string name="export_project_label">Projekt</string>
+    <string name="export_list_label">Liste</string>
+    <string name="export_assigned_to_label">Zugewiesen an</string>
+    <string name="export_assignee_pill">@%1$s</string>
+    <string name="export_tags_label">Tags</string>
+    <string name="export_schedule_label">Zeitplan</string>
+    <string name="export_reminder_pill">Erinnerung: %1$s</string>
+    <string name="export_subtasks_heading">UNTERAUFGABEN (%1$d/%2$d)</string>
+    <string name="export_notes_heading">NOTIZEN</string>
+    <string name="export_comments_heading">KOMMENTARE (%1$d)</string>
+    <string name="export_total_label">Gesamt</string>
+    <string name="export_done_label">Erledigt</string>
+    <string name="export_overdue_label">Überfällig</string>
+    <string name="export_progress_label">Fortschritt</string>
+    <string name="export_percent_complete">%1$d %% abgeschlossen</string>
+    <string name="export_no_tasks">Keine Aufgaben.</string>
+    <string name="export_rows_count">(%1$d)</string>
+    <string name="export_completed_at">Erledigt %1$s</string>
+    <string name="task_export_due_label">Fällig %1$s</string>
+    <string name="export_due_label">Fällig</string>
+    <string name="export_share_tagline">Lokal-first Aufgabenmanager</string>
+    <string name="export_shared_on">Geteilt %1$s</string>
+    <string name="export_more_count">+%1$d weitere</string>
+    <string name="export_dark_theme_toggle">Dunkles Design</string>
+    <string name="notification_reminder_title">Erinnerung: %1$s</string>
+    <string name="notification_action_complete">Erledigen</string>
+    <string name="notification_action_snooze_15m">15 Min. verschieben</string>
+    <string name="notification_action_snooze_1h">1 Stunde verschieben</string>
+    <string name="notification_action_snooze_tomorrow">Auf morgen verschieben</string>
+    <string name="snooze_next_weekday">Nächster Werktag</string>
+    <string name="bulk_reschedule_selected">Ausgewählte Aufgaben neu planen</string>
+    <string name="new_task_title">Neue Aufgabe</string>
+    <!-- The four mention triggers. Kept terse because it sits inside the input field. -->
+    <string name="syntax_dialog_title">Tipp-Kürzel</string>
+    <string name="syntax_tag">Tag hinzufügen, z. B. #urgent</string>
+    <string name="syntax_person">Person zuweisen, z. B. @Sam</string>
+    <string name="syntax_project">In ein Projekt legen, z. B. +Acme</string>
+    <string name="syntax_list">In eine Liste legen, z. B. =Groceries</string>
+    <string name="syntax_priority">Priorität: hoch, mittel, niedrig. p1, p2 und p3 gehen auch.</string>
+    <string name="syntax_escape">Hält das nächste Wort aus alledem heraus, z. B. \\tomorrow oder \\@Sam bleibt im Titel. Praktisch, wenn ein Name zugleich ein Tag oder Monat ist.</string>
+    <string name="syntax_plain_words">Daten, Zeiten und Wiederholungen brauchen kein Symbol — einfach schreiben: „tomorrow 3pm“, „every monday“, „Aug 31“.</string>
+    <string name="new_task_title_hint">Was ist zu tun? Probiere # Tag, @ Person, + Projekt, = Liste</string>
+    <string name="new_task_smart_add_summary">Die Schnellerfassung hat diese Aufgabe so verstanden:</string>
+    <string name="new_task_detected_title">Titel: %1$s</string>
+    <string name="new_task_heads_up">Achtung</string>
+    <string name="new_task_priority">Priorität</string>
+    <string name="new_task_repeat">Wiederholung</string>
+    <string name="new_task_time">Uhrzeit</string>
+    <string name="new_task_assigned_to">Zugewiesen an</string>
+    <string name="new_task_assign">Zuweisen</string>
+    <string name="new_task_tags">Tags</string>
+    <string name="new_task_tag">Tag</string>
+    <string name="new_task_notes">Notizen</string>
+    <string name="new_task_subtasks">Unteraufgaben</string>
+    <string name="new_task_create_another">Weitere erstellen</string>
+    <string name="new_task_keep_open">Diesen Bildschirm nach dem Speichern offen halten.</string>
+    <string name="new_task_no_container">Kein Projekt oder Liste</string>
+    <string name="new_task_create_task">Aufgabe erstellen</string>
+    <string name="new_task_similar_open_task">Ähnliche offene Aufgabe: %1$s</string>
+    <plurals name="new_task_create_tasks">
+        <item quantity="one">%1$d Aufgabe erstellen</item>
+        <item quantity="other">%1$d Aufgaben erstellen</item>
+    </plurals>
+    <plurals name="new_task_bulk_create_missing">
+        <item quantity="one">%1$d fehlendes Element erstellen</item>
+        <item quantity="other">%1$d fehlende Elemente erstellen</item>
+    </plurals>
+    <plurals name="new_task_bulk_lines_detected">
+        <item quantity="one">%1$d Aufgabe erkannt — jede Zeile wird zu einer eigenen, separat geparsten Aufgabe</item>
+        <item quantity="other">%1$d Aufgaben erkannt — jede Zeile wird zu einer eigenen, separat geparsten Aufgabe</item>
+    </plurals>
+    <plurals name="new_task_schedule_conflict">
+        <item quantity="one">%1$d offene Aufgabe ist bereits für %2$s geplant</item>
+        <item quantity="other">%1$d offene Aufgaben sind bereits für %2$s geplant</item>
+    </plurals>
+    <string name="date_today">Heute</string>
+    <string name="date_tomorrow">Morgen</string>
+    <string name="date_next_week">Nächste Woche</string>
+    <string name="date_next_month">Nächster Monat</string>
+    <string name="date_no_due">Kein Fälligkeitsdatum</string>
+    <string name="date_pick">Datum wählen</string>
+    <string name="time_requires_due_date">Zuerst ein Fälligkeitsdatum hinzufügen, damit die Uhrzeit etwas hat, woran sie sich anhängen kann.</string>
+    <string name="time_custom">Eigene Uhrzeit</string>
+    <string name="action_clear">Löschen</string>
+    <string name="reminder_requires_due_date">Vor dem Festlegen einer Erinnerung ein Fälligkeitsdatum wählen.</string>
+    <string name="new_task_no_lists">Noch keine Listen — erstelle eine über das Menü.</string>
+    <string name="new_task_no_projects">Noch keine Projekte — erstelle eines über den Tab „Projekte“.</string>
+    <string name="person_you">Du</string>
+    <string name="recurrence_daily">Täglich</string>
+    <string name="recurrence_weekdays">Werktage</string>
+    <string name="recurrence_weekly">Wöchentlich</string>
+    <string name="recurrence_monthly">Monatlich</string>
+    <string name="recurrence_yearly">Jährlich</string>
+    <string name="recurrence_custom">Benutzerdefiniert…</string>
+    <string name="recurrence_custom_help">Benutzerdefinierte Regeln unterstützen Intervalle, Wochentage, Monatsdaten, jährliche Wiederholungen und Enddaten.</string>
+    <string name="recurrence_repeat_task">Aufgabe wiederholen</string>
+    <string name="recurrence_frequency">Häufigkeit</string>
+    <string name="recurrence_every">Alle</string>
+    <string name="recurrence_on_days">An Tagen</string>
+    <string name="recurrence_day_of_month">Tag des Monats</string>
+    <string name="recurrence_last_day_of_month">Letzter Tag des Monats</string>
+    <string name="recurrence_monthly_mode_date">Datum</string>
+    <string name="recurrence_monthly_mode_weekday">Wochentag</string>
+    <string name="recurrence_monthly_position_last">Letzter</string>
+    <string name="recurrence_repeat_from">Wiederholen ab</string>
+    <string name="recurrence_when_you_finish_it">Wenn du sie erledigst</string>
+    <string name="recurrence_fixed_schedule">Fester Zeitplan</string>
+    <string name="recurrence_completion_based_hint">Das nächste Fälligkeitsdatum zählt ab dem Tag, an dem du sie als erledigt markierst</string>
+    <string name="recurrence_fixed_schedule_hint">Das nächste Fälligkeitsdatum folgt immer demselben Zeitplan, erledigt oder nicht</string>
+    <string name="recurrence_ends">Endet</string>
+    <string name="recurrence_never_ends">Endet nie</string>
+    <string name="recurrence_ends_after">Endet nach</string>
+    <string name="recurrence_ends_on_date">Endet am Datum</string>
+    <string name="settings_local_backup_started">Lokales Backup gestartet</string>
+    <string name="settings_theme_mode">Themenmodus</string>
+    <string name="settings_color_intensity">Farbintensität</string>
+    <string name="settings_color_intensity_desc">Wie gesättigt die Akzentfarben der App sind.</string>
+    <string name="settings_intensity_minimal">Minimal</string>
+    <string name="settings_intensity_muted">Gedämpft</string>
+    <string name="settings_intensity_soft">Sanft</string>
+    <string name="settings_intensity_normal">Normal</string>
+    <string name="settings_intensity_bright">Hell</string>
+    <string name="settings_intensity_vivid">Lebendig</string>
+    <string name="settings_intensity_bold">Kräftig</string>
+    <string name="settings_intensity_pop">Knallig</string>
+    <string name="settings_intensity_electric">Elektrisch</string>
+    <string name="settings_background_tint">Hintergrundfärbung</string>
+    <string name="settings_background_tint_desc">Wie stark die Themenfarbe in Seiten- und Kartenhintergründe übergeht.</string>
+    <!-- Background tint stops, in slider order from neutral grey to fully saturated. -->
+    <string name="settings_tint_clean">Klar</string>
+    <string name="settings_tint_pale">Blass</string>
+    <string name="settings_tint_soft">Sanft</string>
+    <string name="settings_tint_mild">Mild</string>
+    <string name="settings_tint_medium">Mittel</string>
+    <string name="settings_tint_rich">Satt</string>
+    <string name="settings_tint_full">Voll</string>
+    <string name="settings_tint_deep">Tief</string>
+    <string name="settings_tint_bold">Kräftig</string>
+    <string name="settings_tint_max">Maximal</string>
+    <string name="settings_material_you_colors">Material-You-Farben</string>
+    <string name="settings_material_you_colors_desc">Die App anhand deiner Hintergrundbildfarben gestalten statt mit dem festen Akzent-Thema.</string>
+    <string name="settings_enhanced_theming">Erweitertes M3-Theming aktivieren</string>
+    <string name="settings_enhanced_theming_desc">Durchscheinende Navigation, erweiterte Federphysik, dynamische Glanzakzente und reaktionsfähige Erhebung.</string>
+    <string name="settings_ui_size">UI-Größe</string>
+    <string name="settings_ui_size_desc">Skaliert Text und Elemente in der gesamten App.</string>
+    <string name="settings_text_size">Textgröße</string>
+    <string name="settings_text_size_desc">Skaliert Text unabhängig von der gesamten UI-Größe.</string>
+    <string name="settings_reduce_motion">Bewegung reduzieren</string>
+    <string name="settings_reduce_motion_desc">Verkürzt Navigations-, Sheet- und Überblendanimationen.</string>
+    <string name="settings_task_row_density">Dichte der Aufgabenzeilen</string>
+    <string name="task_row_density_compact">Kompakt</string>
+    <string name="task_row_density_comfortable">Komfortabel</string>
+    <string name="task_row_density_spacious">Geräumig</string>
+    <string name="settings_task_cards">Aufgabenkarten</string>
+    <string name="settings_task_cards_desc">Jeder Aufgabe eine eigene Karte statt einer flachen Zeile geben.</string>
+    <string name="settings_today_tab">Tab „Heute“</string>
+    <string name="settings_upcoming_tab">Tab „Demnächst“</string>
+    <string name="settings_projects">Projekte</string>
+    <string name="settings_people">Personen</string>
+    <string name="settings_tags">Tags</string>
+    <string name="help_demo_mode_on">Demomodus an - zeigt Beispieldaten für Screenshots</string>
+    <string name="help_demo_mode_off">Demomodus aus - zeigt deine echten Daten</string>
+    <string name="help_demo_mode_active">DEMOMODUS - zum Zurückwechseln auf das Logo tippen</string>
+
+    <!-- Shown when a save or update fails at the database layer. Deliberately vague: the
+         underlying causes (disk full, failing storage, a row deleted concurrently) are not
+         things the user can act on differently, and what matters is that the change did not
+         stick and can be retried. -->
+    <string name="error_action_failed">Etwas ist schiefgelaufen - deine Änderung wurde nicht gespeichert</string>
+
+    <!-- Settings: Privacy -->
+    <string name="settings_app_lock">App-Sperre</string>
+    <string name="settings_pin_code">PIN-Code</string>
+    <string name="settings_auto_lock">Automatische Sperre</string>
+
+    <!-- Settings: Backup &amp; Data -->
+    <string name="settings_backup_to_file">YATA in Datei sichern</string>
+    <string name="settings_backup_to_file_summary">Exportiert alle Aufgaben, Listen und Einstellungen in eine JSON-Datei.</string>
+    <string name="settings_restore_from_file">YATA aus Datei wiederherstellen</string>
+    <string name="settings_restore_from_file_summary">Aufgaben und Konfiguration aus einer früheren Backup-Datei wiederherstellen.</string>
+    <string name="settings_import_csv">CSV/Text importieren</string>
+    <string name="settings_import_csv_summary">Aufgaben aus einer CSV-Datei (Titel,fällig,Priorität,Liste,Notizen) oder einer reinen Textliste hinzufügen, ein Titel pro Zeile.</string>
+    <string name="settings_export_csv_summary">Speichert alle Aufgaben in einer CSV-Datei (Titel,fällig,Priorität,Liste,Notizen) - eine von Menschen bearbeitbare Tabelle, kein vollständiges Backup.</string>
+    <string name="settings_export_calendar">In Kalender exportieren</string>
+    <string name="settings_export_calendar_summary">Speichert eine .ics-Datei mit fälligen Aufgaben für jede Kalender-App.</string>
+    <string name="settings_show_welcome_tour_summary">Die Einführung zu den Begriffen und Funktionen von YATA erneut ansehen.</string>
+    <string name="settings_delete_all_data_summary">Sichert automatisch in Downloads und löscht dann alles auf diesem Gerät.</string>
+    <string name="settings_data_kept_when_hidden">Deine Daten bleiben auch beim Ausblenden erhalten.</string>
+
+    <!-- Settings: Self-hosted sync and backup -->
+    <string name="settings_cloud_backup">Selbst gehosteter Sync &amp; Backup</string>
+    <string name="settings_cloud_backup_summary">Geräte synchronisieren und versionierte Backups auf deinem eigenen Server behalten.</string>
+    <string name="settings_last_local_backup">Letztes lokales Backup: %1$s</string>
+
+    <!-- Settings: Local backup -->
+    <string name="settings_local_backup">Verschlüsseltes lokales Backup</string>
+    <string name="settings_local_backup_summary">Automatisch verschlüsselt auf diesem Gerät sichern, kein Konto nötig.</string>
+    <string name="settings_restore_local_backup">Neuestes lokales Backup wiederherstellen</string>
+
+    <!-- Settings: Help, Appearance -->
+    <string name="settings_help_about_title">Hilfe</string>
+    <string name="settings_help_about_summary">Funktionsleitfaden, Sync-Tipps und App-Grundlagen.</string>
+    <string name="settings_theme_color">App-Themenfarbe</string>
+    <string name="settings_theme_color_summary">Wähle eine Grundfarbe für das App-Thema - wird verwendet, solange Material You aus ist.</string>
+    <string name="settings_seed_default">Standard</string>
+    <string name="settings_seed_custom">Benutzerdefiniert</string>
+    <!-- Font-size preview swatch. Translatable on purpose: a script with no Latin letters wants
+         its own two-character sample rather than "Aa". -->
+    <string name="settings_font_sample">Aa</string>
+
+    <!-- Backup diff summary. %1$s is a category label, %2$d the number of items in it. -->
+    <string name="settings_diff_category">%1$s (%2$d)</string>
+    <string name="settings_diff_item">• %1$s</string>
+    <string name="settings_diff_more">+%1$d weitere</string>
+
+    <!-- Server backup retention. %1$d is how many backups are kept before the oldest is pruned. -->
+    <string name="settings_backups_to_keep">Aufzubewahrende Backups</string>
+    <string name="settings_remote_backups_to_keep_summary">Die letzten %1$d Backups auf dem Server behalten — ältere werden automatisch bereinigt.</string>
+    <!-- Shown above the backup-frequency choices, so the schedule isn't mistaken for the only
+         time a backup happens. -->
+    <string name="settings_backup_frequency_explainer">Gilt für jedes von dir aktivierte Ziel. Ein Server-Sync läuft außerdem einige Minuten nach jeder Aufgabenänderung; dies steuert das periodische Sicherheitsnetz darunter.</string>
+    <string name="settings_sync_after_change">Direkt nach jeder Änderung an einer Aufgabe</string>
+    <!-- %1$d is a whole number of minutes (30, 60, 120). -->
+    <string name="settings_sync_every_minutes">Alle %1$d Minuten</string>
+
+    <!-- Task detail: "waiting on" follow-up, shown only for work owned by someone else. -->
+    <string name="task_waiting_on">Wartet auf</string>
+    <string name="task_waiting_on_none">Kein Follow-up</string>
+    <string name="task_waiting_on_set_hint">Bis zu diesem Datum vor Heute verborgen, da sie bei jemand anderem liegt.</string>
+    <string name="task_waiting_on_unset_hint">Delegierte Aufgabe — lege ein Datum fest, um sie bis dahin vor Heute zu verbergen.</string>
+    <!-- Marks the first assignee as the task owner. %1$s is the person's name. -->
+    <string name="task_assignee_owner">%1$s · Verantwortlich</string>
+
+    <!-- Project sections: user-defined headings tasks are grouped under. -->
+    <string name="task_section">Abschnitt</string>
+    <string name="task_section_none">Kein Abschnitt</string>
+    <string name="section_header_no_section">KEIN ABSCHNITT</string>
+    <string name="project_manage_sections">Abschnitte verwalten</string>
+    <string name="project_manage_sections_hint">Gruppiere die Aufgaben dieses Projekts unter Überschriften wie „Design“ oder „Backend“. Leer lassen, um die einfache Liste „Ausstehend/Erledigt“ zu behalten.</string>
+    <string name="project_section_new">Neuer Abschnitt</string>
+    <string name="cd_section_add">Abschnitt hinzufügen</string>
+    <string name="cd_section_remove">Abschnitt entfernen</string>
+
+    <!-- Planned effort. The durations themselves ("45m", "2h 30m") are composed in
+         EstimateUtils.format rather than here — see the note on that function. -->
+    <string name="task_estimate">Schätzung</string>
+    <string name="task_estimate_none">Keine Schätzung</string>
+    <string name="task_estimate_hint">Zählt zur geplanten Gesamtzeit auf Heute.</string>
+    <!-- %1$s is a formatted duration, e.g. "2h 30m". -->
+    <string name="today_planned">%1$s geplant</string>
+    <!-- %1$s is a formatted duration, %2$d how many open tasks carry no estimate yet. -->
+    <string name="today_planned_with_unestimated">%1$s geplant · %2$d ohne Schätzung</string>
+    <string name="cd_task_estimate">Geschätzt %1$s</string>
+
+    <!-- Quick add widget/dialog polish -->
+    <string name="quick_add_created_in">Aufgabe in %1$s mit Fälligkeitsdatum %2$s erstellt</string>
+    <string name="quick_add_created">Aufgabe mit Fälligkeitsdatum %1$s erstellt</string>
+    <string name="quick_add_voice_prompt">Sprich deine Aufgabe</string>
+    <string name="quick_add_voice_unavailable">Spracheingabe ist auf diesem Gerät nicht verfügbar.</string>
+    <string name="quick_add_adding_to">Wird zu %1$s hinzugefügt</string>
+    <string name="quick_add_preview_heading">Vorschau der Schnellerfassung</string>
+    <string name="quick_add_preview_title">Titel: %1$s</string>
+    <string name="quick_add_preview_due">Fällig %1$s</string>
+    <string name="quick_add_preview_time">Uhrzeit %1$s</string>
+    <string name="quick_add_preview_repeat">Wiederholung %1$s</string>
+    <string name="quick_add_preview_priority">Priorität %1$s</string>
+    <string name="quick_add_preview_flagged">Markiert</string>
+    <string name="quick_add_preview_target">Ziel %1$s</string>
+    <string name="quick_add_widget_header">Schnell hinzufügen</string>
+    <string name="quick_add_widget_add_to">Zu %1$s hinzufügen…</string>
+    <string name="quick_add_widget_add_task">Aufgabe hinzufügen…</string>
+    <string name="quick_add_widget_preset_deleted">Vorlage gelöscht - lange drücken, um neu zu konfigurieren</string>
+    <string name="quick_add_widget_destination">Ziel:</string>
+    <string name="widget_done_ratio">%1$d/%2$d erledigt</string>
+    <string name="widget_no_tasks_here">Keine Aufgaben hier.</string>
+    <string name="widget_more_in_app">+%1$d weitere in der App</string>
+    <string name="widget_nothing_due_today">Heute nichts fällig.</string>
+    <string name="team_overdue_widget_title">Team überfällig</string>
+    <string name="team_overdue_widget_empty">Niemand ist im Rückstand. 🎉</string>
+    <string name="tasker_create_task_hint">Felder akzeptieren Tasker-Variablen (%var). Leer lassen zum Überspringen.</string>
+    <string name="archive_section_header">%1$s - %2$d</string>
+    <string name="image_cropper_hint">Ziehen zum Verschieben, zum Zoomen kneifen</string>
+    <string name="entity_report_pdf_title">%1$s — YATA %2$s Bericht</string>
+
+    <!-- Shared task filters and empty states -->
+    <string name="task_filter_all">Alle</string>
+    <string name="task_filter_delegated">Delegiert</string>
+    <string name="task_filter_no_matches">Keine Aufgaben entsprechen diesem Filter.</string>
+    <string name="today_no_tasks">Keine Aufgaben für heute.</string>
+    <string name="today_all_caught_up_bang">Alles erledigt!</string>
+    <plurals name="today_to_go">
+        <item quantity="one">%1$d verbleibend</item>
+        <item quantity="other">%1$d verbleibend</item>
+    </plurals>
+    <string name="today_pending_header">AUSSTEHEND</string>
+    <string name="today_completed_header">ERLEDIGT</string>
+    <string name="action_show_all">Alle anzeigen</string>
+    <plurals name="task_count_lower">
+        <item quantity="one">%1$d Aufgabe</item>
+        <item quantity="other">%1$d Aufgaben</item>
+    </plurals>
+    <string name="task_move_to_picker_title">Aufgabe verschieben nach…</string>
+    <string name="task_move_to_picker_projects">PROJEKTE</string>
+    <string name="people_tab_assigned_done">%1$d zugewiesen · %2$d erledigt</string>
+    <string name="people_tab_overdue_count">%1$d überfällig</string>
+    <string name="detail_search_prompt_project">Tippen, um Aufgaben in diesem Projekt zu suchen.</string>
+    <string name="detail_search_prompt_list">Tippen, um Aufgaben in dieser Liste zu suchen.</string>
+    <string name="detail_search_no_matches">Keine passenden Aufgaben.</string>
+    <string name="next_days_all_clear">Alles frei</string>
+    <string name="next_days_nothing_due">In den nächsten %1$d Tagen nichts fällig.</string>
+    <string name="recurring_tasks_title">Wiederholende Aufgaben</string>
+    <string name="recurring_notice">Prüfe alle offenen wiederholenden Aufgaben, überspringe den nächsten Termin oder beende die Wiederholung.</string>
+    <string name="recurring_empty_title">Keine wiederholenden Aufgaben</string>
+    <string name="recurring_empty_body">Aufgaben mit Wiederholungsregeln erscheinen hier.</string>
+    <string name="recurring_empty_action">Eine erstellen</string>
+    <string name="recurring_next_due">Nächste Fälligkeit: %1$s</string>
+    <string name="recurring_skip_next">Nächste überspringen</string>
+    <string name="recurring_clear_repeat_action">Wiederholung löschen</string>
+    <string name="recurring_clear_repeat_title">Wiederholung löschen?</string>
+    <string name="recurring_clear_repeat_body">„%1$s“ bleibt als normale Aufgabe erhalten und erstellt keine zukünftigen Vorkommen mehr.</string>
+    <string name="recurring_repeat_cleared">Wiederholung gelöscht</string>
+    <string name="upcoming_view_mode_upcoming">Demnächst</string>
+    <string name="upcoming_view_mode_calendar">Kalender</string>
+
+    <!-- Diagnostics health panels -->
+    <string name="diagnostics_reminder_health">Erinnerungszustand</string>
+    <string name="diagnostics_reminder_health_ready">Erinnerungszustellung ist bereit.</string>
+    <string name="diagnostics_reminder_health_attention">Erinnerungszustellung braucht Aufmerksamkeit.</string>
+    <string name="diagnostics_send_test_reminder">Testerinnerung senden</string>
+    <string name="diagnostics_test_reminder_sent">Testerinnerung gesendet.</string>
+    <string name="diagnostics_test_reminder_failed">Die Testerinnerung konnte nicht gesendet werden.</string>
+    <string name="diagnostics_refresh_checks">Prüfungen aktualisieren</string>
+    <string name="diagnostics_backup_health">Backup-Zustand</string>
+    <string name="diagnostics_backup_health_empty">Noch kein Backup- oder Sync-Vorgang ausgeführt.</string>
+    <string name="diagnostics_latest_success">Letzter Erfolg</string>
+    <string name="diagnostics_latest_failure">Letzter Fehlschlag</string>
+    <string name="diagnostics_retrying">Wird wiederholt</string>
+    <string name="diagnostics_destinations_seen">Gesehene Ziele</string>
+    <string name="diagnostics_status_ok">OK</string>
+    <string name="diagnostics_status_attention">Achtung</string>
+    <string name="diagnostics_status_unknown">Unbekannt</string>
+    <string name="diagnostics_notification_access">Benachrichtigungszugriff</string>
+    <string name="diagnostics_exact_alarm_timing">Exaktes Alarm-Timing</string>
+    <string name="diagnostics_background_delivery">Hintergrundzustellung</string>
+    <string name="diagnostics_enabled">Aktiviert</string>
+    <string name="diagnostics_disabled_tap_to_fix">Deaktiviert - zum Beheben tippen</string>
+    <string name="diagnostics_allowed">Erlaubt</string>
+    <string name="diagnostics_not_allowed_tap_to_fix">Nicht erlaubt - zum Beheben tippen</string>
+    <string name="diagnostics_unrestricted">Uneingeschränkt</string>
+    <string name="diagnostics_optimized_tap_to_fix">Optimiert - zum Beheben tippen</string>
+
+    <!-- Widget refresh confidence -->
+    <string name="widget_config_refresh_status">Aktualisierungsstatus</string>
+    <string name="widget_config_refresh_now">Jetzt aktualisieren</string>
+    <string name="widget_config_refreshing">Wird aktualisiert…</string>
+    <string name="widget_config_last_refresh">Letzte Aktualisierung: %1$s</string>
+    <string name="widget_config_last_success">Letzter Erfolg: %1$s</string>
+    <string name="widget_config_last_failure">Letzter Fehlschlag: %1$s</string>
+    <string name="widget_config_retry_count">Wiederholungsanzahl: %1$d</string>
+    <string name="widget_config_refresh_reason">Grund: %1$s</string>
+    <string name="widget_config_never_refreshed">Es wurde noch keine Widget-Aktualisierung erfasst.</string>
+    <string name="widget_config_refresh_started">Widget wird aktualisiert…</string>
+    <string name="widget_config_refresh_succeeded">Widget aktualisiert.</string>
+    <string name="widget_config_refresh_failed">Widget-Aktualisierung fehlgeschlagen.</string>
+    <string name="widget_config_save_failed">Widget-Einstellungen konnten nicht gespeichert werden - bitte erneut versuchen</string>
+    <string name="widget_config_choose_source_to_pin">Anzuheftende Quelle wählen</string>
+    <string name="widget_config_choose_preset_destination">Vorlagenziel wählen (optional)</string>
+    <string name="widget_config_source_list">Liste</string>
+    <string name="widget_config_source_project">Projekt</string>
+    <string name="widget_config_source_tag">Tag</string>
+
+    <!-- Notification summaries -->
+    <string name="daily_agenda_unassigned_count">Nicht zugewiesen: %1$d</string>
+    <plurals name="notification_due_today_title">
+        <item quantity="one">%1$d Aufgabe heute fällig</item>
+        <item quantity="other">%1$d Aufgaben heute fällig</item>
+    </plurals>
+    <string name="diagnostics_test_reminder_title">YATA-Testerinnerung</string>
+
+    <!-- Accessibility cleanup -->
+    <string name="cd_expand_group">Gruppe erweitern</string>
+    <string name="cd_collapse_group">Gruppe einklappen</string>
+    <string name="cd_expand_section">Abschnitt erweitern</string>
+    <string name="cd_collapse_section">Abschnitt einklappen</string>
+
+    <!-- GitHub config transfer, Share YATA, Staff Analytics, task defaults, subtask
+         completion, start-date custom days -->
+    <string name="action_import">Importieren</string>
+    <string name="action_not_now">Nicht jetzt</string>
+    <string name="remote_sync_export_github_config">Konfiguration exportieren</string>
+    <string name="remote_sync_github_config_confirm_password_label">Passwort bestätigen</string>
+    <string name="remote_sync_github_config_export_missing">Speichere zuerst ein GitHub-Repo und ein Token, bevor du exportierst.</string>
+    <string name="remote_sync_github_config_export_password_title">GitHub-Konfiguration verschlüsseln</string>
+    <string name="remote_sync_github_config_exported">GitHub-Konfiguration exportiert.</string>
+    <string name="remote_sync_github_config_import_missing_file">Wähle zuerst einen GitHub-Konfigurationsexport aus.</string>
+    <string name="remote_sync_github_config_import_password_title">GitHub-Konfiguration entschlüsseln</string>
+    <string name="remote_sync_github_config_import_too_large">Diese Datei ist zu groß, um ein GitHub-Konfigurationsexport zu sein.</string>
+    <string name="remote_sync_github_config_imported">GitHub-Konfiguration für %1$s importiert.</string>
+    <string name="remote_sync_activity_title">Sync-Aktivität</string>
+    <string name="remote_sync_view_all_activity">Alle anzeigen</string>
+    <string name="remote_sync_load_more_activity">Mehr laden</string>
+    <string name="remote_sync_activity_summary">In dieses Repository hochgeladene Snapshots, neueste zuerst.</string>
+    <string name="remote_sync_activity_empty">Noch keine Snapshots hochgeladen.</string>
+    <string name="remote_sync_activity_this_device">Dieses Gerät</string>
+    <string name="remote_sync_activity_unknown_device">Nicht zugeordnet</string>
+    <string name="remote_sync_github_recovery_title">Wiederherstellung</string>
+    <string name="remote_sync_github_force_download_action">Neuesten GitHub-Snapshot verwenden</string>
+    <string name="remote_sync_github_force_download_hint">Ersetzt die Daten auf diesem Gerät durch den neuesten Snapshot aus dem konfigurierten GitHub-Branch.</string>
+    <string name="remote_sync_github_force_download_title">Neuesten GitHub-Snapshot verwenden?</string>
+    <string name="remote_sync_github_force_download_body">YATA lädt den neuesten GitHub-Snapshot herunter und ersetzt die Aufgaben, Listen, Tags, Personen, Projekte und portablen Einstellungen auf diesem Gerät. Zuvor wird ein Wiederherstellungs-Backup gespeichert.</string>
+    <string name="remote_sync_github_force_download_progress">GitHub-Snapshot wird heruntergeladen …</string>
+    <string name="remote_sync_github_force_download_confirm">Dieses Gerät ersetzen</string>
+    <string name="remote_sync_github_force_download_success">Neuesten GitHub-Snapshot wiederhergestellt: %1$s.</string>
+    <string name="remote_sync_github_config_password_hint">Verwende ein separates Übertragungspasswort. Es wird nicht von YATA gespeichert.</string>
+    <string name="remote_sync_github_config_password_label">Übertragungspasswort</string>
+    <string name="remote_sync_github_config_password_mismatch">Passwörter stimmen nicht überein.</string>
+    <string name="remote_sync_github_config_transfer_title">Konfigurationsübertragung</string>
+    <string name="remote_sync_import_github_config">Konfiguration importieren</string>
+    <string name="settings_about_github">Quellcode auf GitHub ansehen</string>
+    <string name="settings_about_other_apps">Weitere Apps der Entwickler</string>
+    <string name="settings_about_share">YATA teilen</string>
+    <string name="settings_about_share_text">YATA ist ein Material 3 Expressive Aufgabenmanager für Android — schau es dir an: https://github.com/rjwarrier/yata/releases</string>
+    <string name="settings_about_website">YATA-Website</string>
+    <string name="settings_about_support_dev">Entwickler unterstützen</string>
+    <string name="settings_custom">Benutzerdefiniert</string>
+    <string name="settings_default_estimate">Schätzung</string>
+    <string name="settings_default_estimate_custom_error">Gib 1-1440 Minuten ein.</string>
+    <string name="settings_default_estimate_custom_label">Minuten</string>
+    <string name="settings_default_estimate_custom_title">Schätzung</string>
+    <string name="settings_default_estimate_desc">Geplanter Aufwand, der standardmäßig zu neuen Aufgaben hinzugefügt wird.</string>
+    <string name="settings_default_project">Projekt</string>
+    <string name="settings_default_tags">Tags</string>
+    <string name="settings_default_tags_clear">Tags entfernen</string>
+    <string name="settings_default_tags_desc">Diese Tags automatisch auf neue Aufgaben anwenden.</string>
+    <string name="settings_default_tags_empty">Noch keine Tags.</string>
+    <string name="settings_default_tags_value_many">%1$s +%2$d</string>
+    <string name="settings_defaults_group">Standardwerte</string>
+    <string name="settings_subtask_completion_action">Wenn alle Teilaufgaben erledigt sind</string>
+    <string name="settings_subtask_completion_action_desc">Lege fest, ob die Hauptaufgabe automatisch abgeschlossen wird, zuerst nachfragt oder offen bleibt.</string>
+    <string name="settings_subtask_completion_ask">Nachfragen</string>
+    <string name="settings_subtask_completion_auto">Automatisch</string>
+    <string name="settings_subtask_completion_nothing">Nichts</string>
+    <string name="share_app_button">%1$s teilen</string>
+    <string name="share_app_default_message">YATA ist ein Material 3 Expressive Aufgabenmanager für Android — schau es dir an!</string>
+    <string name="share_app_include_image">Bild einschließen</string>
+    <string name="share_app_include_image_subtitle">Das Werbebild zusammen mit deiner Nachricht anhängen</string>
+    <string name="share_app_link_note">Dieser Link wird automatisch am Ende hinzugefügt:</string>
+    <string name="share_app_message_label">Nachricht</string>
+    <string name="share_app_title">YATA teilen</string>
+    <string name="staff_analytics_attention">ACHTUNG</string>
+    <string name="staff_analytics_heaviest_load">Höchste offene Auslastung</string>
+    <string name="staff_analytics_lowest_on_time">Niedrigste Pünktlichkeitsrate</string>
+    <string name="staff_analytics_no_staff_work">Noch keine aktive Teamarbeit.</string>
+    <string name="staff_analytics_people_with_overdue">Personen mit überfälliger Arbeit</string>
+    <string name="staff_analytics_staff">Team</string>
+    <string name="staff_analytics_staff_table">TEAMTABELLE</string>
+    <string name="staff_analytics_subtitle">Teamleistung</string>
+    <string name="staff_analytics_team_snapshot">TEAMÜBERBLICK</string>
+    <string name="staff_analytics_title">Team-Analysen</string>
+    <string name="task_detail_all_subtasks_done_body">Möchtest du \"%1$s\" auch als erledigt markieren?</string>
+    <string name="task_detail_all_subtasks_done_title">Alle Teilaufgaben erledigt?</string>
+    <string name="task_detail_mark_task_done">Aufgabe als erledigt markieren</string>
+    <string name="task_start_date_custom_days_chip">Benutzerdefinierte Tage vorher</string>
+    <string name="task_start_date_custom_days_error">Gib 1-3650 Tage ein.</string>
+    <string name="task_start_date_custom_days_label">Tage vor Fälligkeitsdatum</string>
+    <string name="task_start_date_custom_days_title">Vor Fälligkeitsdatum beginnen</string>
+    <string name="task_start_date_day_before_due">Tag vor Fälligkeit</string>
+    <plurals name="task_start_date_n_days_before_due">
+        <item quantity="one">%1$d Tag vor Fälligkeit</item>
+        <item quantity="other">%1$d Tage vor Fälligkeit</item>
+    </plurals>
+
+    <!-- English fallbacks pending translation. -->
+    <string name="task_link_long_warning_title">Langer Import-Link</string>
+    <string name="task_link_long_warning_body">Dieser Import-Link hat %1$d Zeichen für %2$d Aufgaben. Einige Apps senden ihn möglicherweise als einfachen Text.</string>
+    <string name="task_link_long_warning_share_anyway">Trotzdem teilen</string>
+    <string name="task_transfer_import_incomplete">Dieser geteilte Aufgaben-Link scheint unvollständig zu sein. Öffnen Sie ihn aus der Originalnachricht.</string>
+    <string name="task_transfer_import_too_many_tasks">Dieser geteilte Link enthält zu viele Aufgaben für einen einzelnen Import.</string>
+    <string name="task_transfer_import_too_large">Dieser geteilte Link ist zu groß für den Import.</string>
+    <string name="task_transfer_import_unsupported">Dieser Link wurde mit einer nicht unterstützten YATA-Version erstellt.</string>
+    <string name="shared_tasks_import_title">Geteilte Aufgaben</string>
+    <string name="shared_tasks_import_count">%1$d Aufgaben bereit zum Importieren</string>
+    <string name="shared_tasks_import_copy_structure">Aufgaben landen im Posteingang und erstellen fehlende Listen, Projekte und Tags.</string>
+    <string name="shared_tasks_import_inbox_only">Aufgaben landen im Posteingang, ohne die Struktur zu kopieren.</string>
+    <string name="shared_tasks_import_structure_ready">Struktur bereits vorhanden</string>
+    <string name="shared_tasks_import_more_structure">+%1$d weitere</string>
+    <string name="shared_tasks_import_action">Importieren</string>
+    <string name="app_links_diagnostic_title">Aufgaben-Links</string>
+    <string name="app_links_diagnostic_verified">Verifizierte Links öffnen sich direkt in YATA.</string>
+    <string name="app_links_diagnostic_user_selected">YATA ist auf diesem Gerät für Aufgaben-Links ausgewählt.</string>
+    <string name="app_links_diagnostic_not_verified">Android hat YATA nicht für Aufgaben-Links verifiziert.</string>
+    <string name="app_links_diagnostic_unknown">Link-Verifizierungsstatus auf diesem Gerät nicht verfügbar.</string>
+    <string name="app_links_diagnostic_host">Host</string>
+    <string name="app_links_diagnostic_resolver">Resolver</string>
+    <string name="app_links_diagnostic_open_settings">Link-Einstellungen öffnen</string>
+    <string name="analytics_postponed_tasks">verschobene Aufgaben</string>
+    <string name="analytics_most_postponed">AM HÄUFIGSTEN VERSCHOBEN</string>
+    <string name="analytics_postponed_times">%1$d Mal verschoben</string>
+    <string name="analytics_no_postponed_tasks">Noch keine verschobenen Aufgaben.</string>
+    <string name="task_postponement_warning">„%1$s“ wurde %2$d Mal verschoben.</string>
+    <string name="task_weekend_reschedule_warning">„%1$s“ ist jetzt am Wochenende (%2$s) fällig.</string>
+    <string name="task_holiday_reschedule_warning">„%1$s“ ist jetzt an einem Feiertag (%2$s) fällig.</string>
+    <plurals name="settings_postponement_threshold_value">
+        <item quantity="one">%1$d Mal</item>
+        <item quantity="other">%1$d Mal</item>
+    </plurals>
+    <string name="settings_postponement_warning_threshold">Warnschwelle für Verschiebungen</string>
+    <string name="settings_postponement_warning_threshold_desc">Anzahl der erlaubten Verschiebungen bei normaler Priorität vor einer Warnung. Mittlere Priorität warnt nach %1$d und hohe Priorität nach %2$d.</string>
+    <string name="settings_weekend_days">Wochenendtage</string>
+    <string name="settings_weekend_days_desc">Wird eine Aufgabe auf einen dieser Tage verschoben, erscheint eine Warnung. Deaktiviere alle Tage, um die Warnung auszuschalten.</string>
+    <string name="settings_holidays">Feiertage</string>
+    <string name="settings_observe_non_working_days">Arbeitsfreie Tage berücksichtigen</string>
+    <string name="settings_observe_non_working_days_desc">Wenn das Fälligkeitsdatum einer wiederkehrenden Aufgabe auf ein Wochenende oder einen Feiertag fällt, wird sie in Heute, den Überfällig-Zählern und Benachrichtigungen so behandelt, als wäre sie am vorherigen Werktag fällig. Das gespeicherte Fälligkeitsdatum der Aufgabe selbst ändert sich dabei nicht.</string>
+    <string name="settings_holidays_desc">Lege fest, welche Wochentage als Wochenende gelten, und füge eigene Feiertage (gesetzliche Feiertage, Bürostilllegungen) hinzu — das Verschieben einer Aufgabe auf einen davon zeigt eine Warnung. Es sind keine Feiertagsdaten enthalten oder werden abgerufen; füge die Termine selbst hinzu und ergänze bewegliche Feiertage (wie Diwali oder Ostern) jedes Jahr erneut.</string>
+    <string name="settings_holiday_pick_date">Datum wählen</string>
+    <string name="settings_holiday_name_label">Name</string>
+    <string name="settings_add_holiday">Feiertag hinzufügen</string>
+    <string name="settings_holiday_recurring_label">Wiederholt sich jedes Jahr</string>
+    <string name="holiday_recurring_badge">Jährlich</string>
+    <string name="holiday_one_time_section">Einmalig</string>
+    <string name="cd_remove_holiday">%1$s entfernen</string>
+    <string name="date_picker_nonworking_day_title">Arbeitsfreier Tag</string>
+    <string name="date_picker_nonworking_day_warning">Dieses Datum fällt auf %1$s. Trotzdem verwenden?</string>
+    <string name="date_picker_use_anyway">Trotzdem verwenden</string>
+    <string name="action_reopen">Wieder öffnen</string>
+    <string name="action_complete">Erledigen</string>
+    <string name="action_open">Öffnen</string>
+    <plurals name="tasks_rescheduled">
+        <item quantity="one">Aufgabe verschoben</item>
+        <item quantity="other">%1$d Aufgaben verschoben</item>
+    </plurals>
+    <string name="bulk_reschedule_keep_time">Uhrzeit jeder Aufgabe beibehalten</string>
+    <string name="recurrence_preview_next">Nächste: %1$s</string>
+    <string name="recurrence_preview_none">Wird danach nicht mehr wiederholt</string>
+</resources>

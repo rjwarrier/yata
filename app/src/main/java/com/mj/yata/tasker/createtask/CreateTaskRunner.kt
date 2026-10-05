@@ -15,6 +15,7 @@ import com.mj.yata.domain.model.YataList
 import com.mj.yata.domain.repository.YataRepository
 import com.mj.yata.util.NaturalLanguageParser
 import com.mj.yata.util.TaskScheduleUtils
+import com.mj.yata.util.capitalizeTaskSentence
 import com.mj.yata.util.findSimilarTask
 import com.mj.yata.widget.WidgetEntryPoint
 import dagger.hilt.android.EntryPointAccessors
@@ -63,7 +64,7 @@ class CreateTaskRunner : TaskerPluginRunnerActionNoOutput<CreateTaskInput>() {
                 repository.upsertTask(
                     Task(
                         id = "t_" + UUID.randomUUID().toString(),
-                        title = title,
+                        title = capitalizeTaskSentence(title),
                         listId = listId,
                         projectId = projectId,
                         section = section,
@@ -136,10 +137,9 @@ class CreateTaskRunner : TaskerPluginRunnerActionNoOutput<CreateTaskInput>() {
         val names = raw?.split(",")?.map { it.trim() }?.filter { it.isNotBlank() } ?: return emptyList()
         val existingTags = repository.getTags().first()
         return names.map { name ->
-            val normalized = name.lowercase(Locale.getDefault())
-            existingTags.find { it.name.equals(normalized, ignoreCase = true) }?.id ?: run {
+            existingTags.find { it.name.equals(name, ignoreCase = true) }?.id ?: run {
                 val id = "tag_" + UUID.randomUUID().toString()
-                repository.upsertTag(Tag(id = id, name = normalized, color = accentFor(normalized)))
+                repository.upsertTag(Tag(id = id, name = name, color = accentFor(name)))
                 id
             }
         }

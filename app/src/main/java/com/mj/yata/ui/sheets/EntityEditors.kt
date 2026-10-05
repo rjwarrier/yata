@@ -1,15 +1,30 @@
 package com.mj.yata.ui.sheets
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.ArrowDropUp
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Event
+import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.Label
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.Today
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -17,7 +32,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -40,6 +57,25 @@ private fun parseBulkNames(input: String): List<String> =
 private fun List<String>.excludingExisting(existingNames: List<String>): List<String> =
     filterNot { candidate -> existingNames.any { it.equals(candidate, ignoreCase = true) } }
 
+/**
+ * True when [candidate] collides with an existing entity name on everything but capitalisation.
+ *
+ * Every lookup in the app compares names case-insensitively — findBestEntityMatch (natural
+ * language and quick add), the #/@/+/= mention autocomplete, shared-link import, the Tasker
+ * plugin — so "Work" and "work" are not two entities the user can tell apart by name; they are
+ * one name where whichever row is found first wins and the other becomes permanently unreachable
+ * by name. Blocking the second at creation is the only point where that is still fixable.
+ *
+ * [selfName] is excluded so renaming an entity to a different capitalisation of its own name
+ * ("work" to "Work") stays allowed — that is a rename, not a collision.
+ */
+private fun nameCollides(candidate: String, existingNames: List<String>, selfName: String = ""): Boolean {
+    val trimmed = candidate.trim()
+    if (trimmed.isEmpty()) return false
+    if (trimmed.equals(selfName.trim(), ignoreCase = true)) return false
+    return existingNames.any { it.trim().equals(trimmed, ignoreCase = true) }
+}
+
 /** Cap for a single-entity name field (Project/List) — unbounded before this, unlike the
  * Project description field which already had a limit. */
 private const val NAME_LIMIT = 100
@@ -47,6 +83,7 @@ private const val NAME_LIMIT = 100
 /** Cap for Person/Tag name fields, which can hold several comma-separated names at once in
  * create mode — higher than [NAME_LIMIT] so a legitimate multi-name paste isn't truncated. */
 private const val BULK_NAME_FIELD_LIMIT = 300
+private const val TAG_DESCRIPTION_LIMIT = 160
 
 /** One-shot picker sheet: tap a group row to assign, or create a new one. Used for bulk "Add to group" actions. */
 @Composable
@@ -59,6 +96,7 @@ fun <G> GroupAssignSheet(
     onSelectGroup: (String) -> Unit,
     onCreateGroup: (id: String, name: String) -> Unit,
     onDismiss: () -> Unit,
+    newGroupIdPrefix: String = "grp_",
     modifier: Modifier = Modifier
 ) {
     val accents = com.mj.yata.ui.theme.LocalYataAccents.current
@@ -110,7 +148,7 @@ fun <G> GroupAssignSheet(
                 Spacer(modifier = Modifier.width(8.dp))
                 IconButton(onClick = {
                     if (newGroupName.isNotBlank()) {
-                        val id = "grp_" + java.util.UUID.randomUUID().toString()
+                        val id = newGroupIdPrefix + java.util.UUID.randomUUID().toString()
                         onCreateGroup(id, newGroupName.trim())
                         newGroupName = ""
                     }
@@ -147,11 +185,16 @@ fun ProjectEditorSheet(
     initialDescription: String? = null,
     initialExcludeFromToday: Boolean = false,
     tags: List<com.mj.yata.domain.model.Tag> = emptyList(),
+    /** Names of the other projects, for the case-insensitive collision check — see [nameCollides]. */
+    existingNames: List<String> = emptyList(),
     onSave: (String, String, String, String?, List<String>, String?, String?, Boolean) -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var name by remember { mutableStateOf(initialName) }
+    val nameTaken = remember(name, existingNames, initialName) {
+        nameCollides(name, existingNames, initialName)
+    }
     var selectedColor by remember { mutableStateOf(initialColor) }
     var selectedIcon by remember { mutableStateOf(initialIcon) }
     var dueDate by remember { mutableStateOf<String?>(initialDueDate) }
@@ -160,6 +203,9 @@ fun ProjectEditorSheet(
     var description by remember { mutableStateOf(initialDescription ?: "") }
     var excludeFromToday by remember { mutableStateOf(initialExcludeFromToday) }
     val selectedTagIds = remember { mutableStateListOf<String>().apply { addAll(initialCommonTagIds) } }
+    var reminderExpanded by remember { mutableStateOf(initialDefaultReminder != null) }
+    var tagsExpanded by remember { mutableStateOf(initialCommonTagIds.isNotEmpty()) }
+    var appearanceExpanded by remember { mutableStateOf(false) }
     val descriptionLimit = 100
 
     val entranceScale = remember { androidx.compose.animation.core.Animatable(0.92f) }
@@ -203,10 +249,12 @@ fun ProjectEditorSheet(
             .navigationBarsPadding()
             .verticalScroll(rememberScrollState())
             .padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp)
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         val titleText = if (initialName.isEmpty()) "New project" else "Edit project"
         val buttonText = if (initialName.isEmpty()) "Create" else "Save"
+        val accents = com.mj.yata.ui.theme.LocalYataAccents.current
+        val selectedTagNames = tags.filter { it.id in selectedTagIds }.map { it.name }
 
         Text(
             text = titleText,
@@ -221,6 +269,10 @@ fun ProjectEditorSheet(
             label = { Text(stringResource(R.string.entity_editors_project_name)) },
             placeholder = { Text(stringResource(R.string.entity_editors_e_g_work_list)) },
             singleLine = true,
+            isError = nameTaken,
+            supportingText = if (nameTaken) {
+                { Text(stringResource(R.string.entity_name_taken)) }
+            } else null,
             shape = com.mj.yata.ui.widgets.YataCompactFieldShape,
             colors = com.mj.yata.ui.widgets.yataFieldColors(),
             modifier = Modifier.fillMaxWidth()
@@ -239,77 +291,73 @@ fun ProjectEditorSheet(
             modifier = Modifier.fillMaxWidth()
         )
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { excludeFromToday = !excludeFromToday },
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = MaterialTheme.colorScheme.surfaceContainerLow,
+            shape = RoundedCornerShape(20.dp)
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = "Exclude from Today",
-                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
-                )
-                Text(
-                    text = "Tasks here never show on the Today screen, even if overdue — for a backlog you'll schedule later.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            Switch(checked = excludeFromToday, onCheckedChange = { excludeFromToday = it })
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.entity_editors_exclude_from_today)) },
+                supportingContent = { Text(stringResource(R.string.entity_editors_exclude_from_today_summary)) },
+                trailingContent = {
+                    Switch(checked = excludeFromToday, onCheckedChange = { excludeFromToday = it })
+                },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                modifier = Modifier.clickable { excludeFromToday = !excludeFromToday }
+            )
         }
 
-        // Project Due Date Section
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(
-                text = "Project Due Date",
-                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+        ProjectEditorSection(
+            title = stringResource(R.string.entity_editors_project_due_date),
+            summary = dueDate?.let { TaskScheduleUtils.formatDueDate(it) } ?: stringResource(R.string.date_no_due),
+            leadingIcon = { Icon(Icons.Default.Event, contentDescription = null) },
+            expanded = true,
+            onToggle = null
+        ) {
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 com.mj.yata.ui.widgets.YataSelectChip(
-                    label = "No due date",
+                    label = stringResource(R.string.date_no_due),
                     selected = dueDate == null,
                     onClick = { dueDate = null }
                 )
                 com.mj.yata.ui.widgets.YataSelectChip(
-                    label = "Today",
+                    label = stringResource(R.string.date_today),
                     selected = dueDate == LocalDate.now().toString(),
                     onClick = { dueDate = LocalDate.now().toString() }
                 )
                 com.mj.yata.ui.widgets.YataSelectChip(
-                    label = "Tomorrow",
+                    label = stringResource(R.string.date_tomorrow),
                     selected = dueDate == LocalDate.now().plusDays(1).toString(),
                     onClick = { dueDate = LocalDate.now().plusDays(1).toString() }
                 )
                 com.mj.yata.ui.widgets.YataSelectChip(
-                    label = if (dueDate != null && dueDate != LocalDate.now().toString() && dueDate != LocalDate.now().plusDays(1).toString()) TaskScheduleUtils.formatDueDate(dueDate) else "Pick date...",
+                    label = if (dueDate != null && dueDate != LocalDate.now().toString() && dueDate != LocalDate.now().plusDays(1).toString()) TaskScheduleUtils.formatDueDate(dueDate) else stringResource(R.string.entity_editors_pick_date),
                     selected = dueDate != null && dueDate != LocalDate.now().toString() && dueDate != LocalDate.now().plusDays(1).toString(),
                     onClick = { showDatePicker = true }
                 )
             }
         }
 
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        ProjectEditorSection(
+            title = stringResource(R.string.entity_editors_default_reminder),
+            summary = defaultReminder ?: stringResource(R.string.settings_none),
+            leadingIcon = { Icon(Icons.Default.Notifications, contentDescription = null) },
+            expanded = reminderExpanded,
+            onToggle = { reminderExpanded = !reminderExpanded }
+        ) {
             Text(
-                text = "Default reminder",
-                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = "Pre-fills the reminder on new tasks created in this project.",
+                text = stringResource(R.string.entity_editors_default_reminder_summary),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            androidx.compose.foundation.layout.FlowRow(
+            FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                com.mj.yata.ui.widgets.YataSelectChip("None", defaultReminder == null, { defaultReminder = null })
+                com.mj.yata.ui.widgets.YataSelectChip(stringResource(R.string.settings_none), defaultReminder == null, { defaultReminder = null })
                 TaskScheduleUtils.reminderOptions.forEach { option ->
                     com.mj.yata.ui.widgets.YataSelectChip(option, defaultReminder == option, { defaultReminder = option })
                 }
@@ -317,19 +365,26 @@ fun ProjectEditorSheet(
         }
 
         if (tags.isNotEmpty()) {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            ProjectEditorSection(
+                title = stringResource(R.string.entity_editors_common_tags),
+                summary = selectedTagNames.takeIf { it.isNotEmpty() }?.joinToString(limit = 2, truncated = "+${selectedTagNames.size - 2}") ?: stringResource(R.string.settings_default_tags_empty),
+                leadingIcon = { Icon(Icons.Default.Label, contentDescription = null) },
+                expanded = tagsExpanded,
+                onToggle = { tagsExpanded = !tagsExpanded },
+                preview = {
+                    CompactTagPreview(
+                        tagNames = selectedTagNames,
+                        tags = tags,
+                        selectedTagIds = selectedTagIds
+                    )
+                }
+            ) {
                 Text(
-                    text = "Common tags",
-                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = "Every task in this project always carries these tags, live-synced.",
+                    text = stringResource(R.string.entity_editors_common_tags_summary),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                val accents = com.mj.yata.ui.theme.LocalYataAccents.current
-                androidx.compose.foundation.layout.FlowRow(
+                FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
@@ -350,28 +405,45 @@ fun ProjectEditorSheet(
             }
         }
 
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(
-                text = "Project color",
-                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+        ProjectEditorSection(
+            title = stringResource(R.string.settings_section_appearance),
+            summary = stringResource(R.string.projects_project_icon),
+            leadingIcon = { Icon(Icons.Default.Palette, contentDescription = null) },
+            expanded = appearanceExpanded,
+            onToggle = { appearanceExpanded = !appearanceExpanded },
+            preview = {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(22.dp)
+                            .clip(CircleShape)
+                            .background(accents.getAccent(selectedColor))
+                    )
+                    Surface(
+                        shape = CircleShape,
+                        color = accents.getAccent(selectedColor).copy(alpha = 0.16f)
+                    ) {
+                        Icon(
+                            imageVector = com.mj.yata.ui.widgets.iconVectorFor(selectedIcon),
+                            contentDescription = null,
+                            tint = accents.getAccent(selectedColor),
+                            modifier = Modifier.padding(5.dp).size(16.dp)
+                        )
+                    }
+                }
+            }
+        ) {
+            SectionLabel(stringResource(R.string.entity_editors_project_color))
             ColorPicker(
                 selectedColorKey = selectedColor,
-                onColorSelected = { selectedColor = it }
+                onColorSelected = { selectedColor = it },
+                modifier = Modifier.padding(bottom = 8.dp)
             )
-        }
-
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(
-                text = "Project icon",
-                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            SectionLabel(stringResource(R.string.projects_project_icon))
             com.mj.yata.ui.widgets.IconPicker(
                 options = com.mj.yata.ui.widgets.FOLDER_ICON_KEYS,
                 selectedIconKey = selectedIcon,
-                accentColor = com.mj.yata.ui.theme.LocalYataAccents.current.getAccent(selectedColor),
+                accentColor = accents.getAccent(selectedColor),
                 onIconSelected = { selectedIcon = it }
             )
         }
@@ -386,8 +458,8 @@ fun ProjectEditorSheet(
             }
             Spacer(modifier = Modifier.width(8.dp))
             Button(
-                onClick = { if (name.isNotBlank()) onSave(name, selectedColor, selectedIcon, dueDate, selectedTagIds.toList(), defaultReminder, description.trim().ifBlank { null }, excludeFromToday) },
-                enabled = name.isNotBlank()
+                onClick = { if (name.isNotBlank() && !nameTaken) onSave(name, selectedColor, selectedIcon, dueDate, selectedTagIds.toList(), defaultReminder, description.trim().ifBlank { null }, excludeFromToday) },
+                enabled = name.isNotBlank() && !nameTaken
             ) {
                 Text(buttonText)
             }
@@ -406,6 +478,125 @@ fun ProjectEditorSheet(
     }
 }
 
+@Composable
+private fun ProjectEditorSection(
+    title: String,
+    summary: String,
+    leadingIcon: @Composable () -> Unit,
+    expanded: Boolean,
+    onToggle: (() -> Unit)?,
+    modifier: Modifier = Modifier,
+    preview: (@Composable RowScope.() -> Unit)? = null,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        shape = RoundedCornerShape(20.dp)
+    ) {
+        Column {
+            ListItem(
+                leadingContent = {
+                    Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh
+                    ) {
+                        Box(
+                            modifier = Modifier.padding(8.dp).size(20.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.primary) {
+                                leadingIcon()
+                            }
+                        }
+                    }
+                },
+                headlineContent = { Text(title) },
+                supportingContent = {
+                    Text(
+                        text = summary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                },
+                trailingContent = {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        preview?.invoke(this)
+                        if (onToggle != null) {
+                            Icon(
+                                imageVector = if (expanded) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
+                                contentDescription = stringResource(if (expanded) R.string.cd_collapse_section else R.string.cd_expand_section),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                modifier = if (onToggle != null) Modifier.clickable(onClick = onToggle) else Modifier
+            )
+            AnimatedVisibility(
+                visible = expanded,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut()
+            ) {
+                Column(
+                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    content = content
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SectionLabel(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+        color = MaterialTheme.colorScheme.onSurfaceVariant
+    )
+}
+
+@Composable
+private fun ColorDot(color: Color, modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .size(22.dp)
+            .clip(CircleShape)
+            .background(color)
+    )
+}
+
+@Composable
+private fun CompactTagPreview(
+    tagNames: List<String>,
+    tags: List<com.mj.yata.domain.model.Tag>,
+    selectedTagIds: List<String>
+) {
+    if (selectedTagIds.isEmpty()) return
+    val accents = com.mj.yata.ui.theme.LocalYataAccents.current
+    Row(horizontalArrangement = Arrangement.spacedBy((-6).dp)) {
+        tags.filter { it.id in selectedTagIds }.take(3).forEach { tag ->
+            val color = if (tag.color == "error") MaterialTheme.colorScheme.error else accents.getAccent(tag.color)
+            Box(
+                modifier = Modifier
+                    .size(12.dp)
+                    .clip(CircleShape)
+                    .background(color)
+            )
+        }
+        if (tagNames.size > 3) {
+            Text(
+                text = "+${tagNames.size - 3}",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 10.dp)
+            )
+        }
+    }
+}
+
 /** A single-select row of group chips + an inline "+ New group" creator. Shared by tag/person editors. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -418,6 +609,8 @@ private fun <G> GroupPickerSection(
     selectedGroupId: String?,
     onSelect: (String?) -> Unit,
     onCreateGroup: (name: String) -> Unit,
+    onNewGroupDraftChange: (String) -> Unit = {},
+    showLabel: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     val accents = com.mj.yata.ui.theme.LocalYataAccents.current
@@ -425,11 +618,13 @@ private fun <G> GroupPickerSection(
     var newGroupName by remember { mutableStateOf("") }
 
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        if (showLabel) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -449,7 +644,10 @@ private fun <G> GroupPickerSection(
             if (showNewGroupField) {
                 TextField(
                     value = newGroupName,
-                    onValueChange = { newGroupName = it },
+                    onValueChange = {
+                        newGroupName = it
+                        onNewGroupDraftChange(it)
+                    },
                     placeholder = { Text(stringResource(R.string.entity_editors_group_name)) },
                     singleLine = true,
                     shape = com.mj.yata.ui.widgets.YataCompactFieldShape,
@@ -459,6 +657,7 @@ private fun <G> GroupPickerSection(
                             if (newGroupName.isNotBlank()) {
                                 onCreateGroup(newGroupName.trim())
                                 newGroupName = ""
+                                onNewGroupDraftChange("")
                                 showNewGroupField = false
                             }
                         }) {
@@ -469,7 +668,7 @@ private fun <G> GroupPickerSection(
                 )
             } else {
                 com.mj.yata.ui.widgets.YataDashedAddChip(
-                    label = "New group",
+                    label = stringResource(R.string.entity_editors_new_group),
                     onClick = { showNewGroupField = true }
                 )
             }
@@ -494,9 +693,22 @@ fun PersonEditorSheet(
     var selectedColor by remember { mutableStateOf(initialColor) }
     var selectedGroupId by remember { mutableStateOf(initialGroupId) }
     var photoUri by remember { mutableStateOf(initialPhotoUri) }
+    var photoExpanded by remember { mutableStateOf(initialPhotoUri != null) }
+    var colorExpanded by remember { mutableStateOf(false) }
+    var groupExpanded by remember { mutableStateOf(initialGroupId != null) }
     val isCreateMode = initialName.isEmpty()
     val bulkNames = remember(name, isCreateMode, existingNames) {
         if (isCreateMode) parseBulkNames(name).excludingExisting(existingNames) else emptyList()
+    }
+    // Every typed name already exists (case-insensitively), so excludingExisting emptied the list
+    // and the Create button below is disabled. Without saying so it just greys out for no visible
+    // reason — the user typed a perfectly good name, it merely differs in case from one already
+    // there, which is exactly the case they cannot see.
+    val allNamesTaken = remember(name, isCreateMode, bulkNames, existingNames, initialName) {
+        if (isCreateMode) name.isNotBlank() && bulkNames.isEmpty()
+        // Edit mode has no bulk list to empty — renaming onto another entity's name collides just
+        // as badly, and was previously allowed outright.
+        else nameCollides(name, existingNames, initialName)
     }
     val isBulk = bulkNames.size > 1
 
@@ -558,6 +770,8 @@ fun PersonEditorSheet(
     ) {
         val titleText = if (isCreateMode) "Add person" else "Edit person"
         val buttonText = if (!isCreateMode) "Save" else if (isBulk) "Add ${bulkNames.size} people" else "Add"
+        val selectedGroupName = groups.firstOrNull { it.id == selectedGroupId }?.name
+        val accents = com.mj.yata.ui.theme.LocalYataAccents.current
 
         Text(
             text = titleText,
@@ -571,9 +785,12 @@ fun PersonEditorSheet(
             onValueChange = { if (it.length <= BULK_NAME_FIELD_LIMIT) name = it },
             label = { Text(stringResource(R.string.entity_editors_person_s_name)) },
             placeholder = { Text(if (isCreateMode) "e.g. Clara, Alex, Sam" else "e.g. Clara") },
-            supportingText = if (isCreateMode) {
-                { Text(stringResource(R.string.entity_editors_separate_multiple_names_with_commas_to_add)) }
-            } else null,
+            isError = allNamesTaken,
+            supportingText = when {
+                allNamesTaken -> { { Text(stringResource(R.string.entity_name_taken)) } }
+                isCreateMode -> { { Text(stringResource(R.string.entity_editors_separate_multiple_names_with_commas_to_add)) } }
+                else -> null
+            },
             singleLine = true,
             shape = com.mj.yata.ui.widgets.YataCompactFieldShape,
             colors = com.mj.yata.ui.widgets.yataFieldColors(),
@@ -581,17 +798,22 @@ fun PersonEditorSheet(
         )
 
         if (!isBulk) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ProjectEditorSection(
+                title = "Photo",
+                summary = if (photoUri == null) "Initials only" else "Custom photo",
+                leadingIcon = { Icon(Icons.Default.Image, contentDescription = null) },
+                expanded = photoExpanded,
+                onToggle = { photoExpanded = !photoExpanded },
+                preview = {
+                    com.mj.yata.ui.widgets.PersonAvatar(
+                        initials = initialsFor(name.ifBlank { "?" }),
+                        accentKey = selectedColor,
+                        photoUri = photoUri,
+                        size = 36.dp
+                    )
+                }
             ) {
-                com.mj.yata.ui.widgets.PersonAvatar(
-                    initials = initialsFor(name.ifBlank { "?" }),
-                    accentKey = selectedColor,
-                    photoUri = photoUri,
-                    size = 56.dp
-                )
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     TextButton(onClick = {
                         photoPickerLauncher.launch(
                             androidx.activity.result.PickVisualMediaRequest(
@@ -610,32 +832,43 @@ fun PersonEditorSheet(
             }
         }
 
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(
-                text = if (isBulk) "Theme color (applied to all)" else "Initials theme color",
-                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+        ProjectEditorSection(
+            title = if (isBulk) "Theme color" else "Initials theme color",
+            summary = if (isBulk) "Applied to all" else "Used behind initials",
+            leadingIcon = { Icon(Icons.Default.Palette, contentDescription = null) },
+            expanded = colorExpanded,
+            onToggle = { colorExpanded = !colorExpanded },
+            preview = { ColorDot(accents.getAccent(selectedColor)) }
+        ) {
             ColorPicker(
                 selectedColorKey = selectedColor,
                 onColorSelected = { selectedColor = it }
             )
         }
 
-        GroupPickerSection(
-            label = "Group",
-            groups = groups,
-            groupId = { it.id },
-            groupName = { it.name },
-            groupColorKey = { it.color },
-            selectedGroupId = selectedGroupId,
-            onSelect = { selectedGroupId = it },
-            onCreateGroup = { groupName ->
-                val id = "pg_" + java.util.UUID.randomUUID().toString()
-                onCreateGroup(id, groupName, selectedColor)
-                selectedGroupId = id
-            }
-        )
+        ProjectEditorSection(
+            title = stringResource(R.string.entity_editors_group_label),
+            summary = selectedGroupName ?: stringResource(R.string.settings_none),
+            leadingIcon = { Icon(Icons.Default.Groups, contentDescription = null) },
+            expanded = groupExpanded,
+            onToggle = { groupExpanded = !groupExpanded }
+        ) {
+            GroupPickerSection(
+                label = stringResource(R.string.entity_editors_group_label),
+                groups = groups,
+                groupId = { it.id },
+                groupName = { it.name },
+                groupColorKey = { it.color },
+                selectedGroupId = selectedGroupId,
+                onSelect = { selectedGroupId = it },
+                onCreateGroup = { groupName ->
+                    val id = "pg_" + java.util.UUID.randomUUID().toString()
+                    onCreateGroup(id, groupName, selectedColor)
+                    selectedGroupId = id
+                },
+                showLabel = false
+            )
+        }
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -654,7 +887,7 @@ fun PersonEditorSheet(
                         onSave(name, selectedColor, selectedGroupId, photoUri)
                     }
                 },
-                enabled = if (isCreateMode) bulkNames.isNotEmpty() else name.isNotBlank()
+                enabled = if (isCreateMode) bulkNames.isNotEmpty() else (name.isNotBlank() && !allNamesTaken)
             ) {
                 Text(buttonText)
             }
@@ -668,9 +901,10 @@ fun TagEditorSheet(
     initialColor: String = "accentA",
     initialGroupId: String? = null,
     initialHideCompletedByDefault: Boolean = false,
+    initialDescription: String? = null,
     groups: List<com.mj.yata.domain.model.TagGroup> = emptyList(),
     existingNames: List<String> = emptyList(),
-    onSave: (String, String, String?, Boolean) -> Unit,
+    onSave: (String, String, String?, Boolean, String?, com.mj.yata.domain.model.TagGroup?) -> Unit,
     onCreateGroup: (id: String, name: String, color: String) -> Unit = { _, _, _ -> },
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
@@ -679,9 +913,29 @@ fun TagEditorSheet(
     var selectedColor by remember { mutableStateOf(initialColor) }
     var selectedGroupId by remember { mutableStateOf(initialGroupId) }
     var hideCompletedByDefault by remember { mutableStateOf(initialHideCompletedByDefault) }
+    var description by remember { mutableStateOf(initialDescription.orEmpty()) }
+    var pendingCreatedGroup by remember { mutableStateOf<com.mj.yata.domain.model.TagGroup?>(null) }
+    var newGroupDraftName by remember { mutableStateOf("") }
+    var colorExpanded by remember { mutableStateOf(false) }
+    var groupExpanded by remember { mutableStateOf(initialGroupId != null) }
+    val visibleGroups = remember(groups, pendingCreatedGroup) {
+        (groups + listOfNotNull(pendingCreatedGroup))
+            .distinctBy { it.id }
+            .sortedBy { it.name.lowercase() }
+    }
     val isCreateMode = initialName.isEmpty()
     val bulkNames = remember(name, isCreateMode, existingNames) {
         if (isCreateMode) parseBulkNames(name).excludingExisting(existingNames) else emptyList()
+    }
+    // Every typed name already exists (case-insensitively), so excludingExisting emptied the list
+    // and the Create button below is disabled. Without saying so it just greys out for no visible
+    // reason — the user typed a perfectly good name, it merely differs in case from one already
+    // there, which is exactly the case they cannot see.
+    val allNamesTaken = remember(name, isCreateMode, bulkNames, existingNames, initialName) {
+        if (isCreateMode) name.isNotBlank() && bulkNames.isEmpty()
+        // Edit mode has no bulk list to empty — renaming onto another entity's name collides just
+        // as badly, and was previously allowed outright.
+        else nameCollides(name, existingNames, initialName)
     }
     val isBulk = bulkNames.size > 1
 
@@ -696,6 +950,8 @@ fun TagEditorSheet(
     ) {
         val titleText = if (isCreateMode) "New tag" else "Edit tag"
         val buttonText = if (!isCreateMode) "Save" else if (isBulk) "Create ${bulkNames.size} tags" else "Create"
+        val selectedGroupName = visibleGroups.firstOrNull { it.id == selectedGroupId }?.name
+        val accents = com.mj.yata.ui.theme.LocalYataAccents.current
 
         Text(
             text = titleText,
@@ -709,61 +965,94 @@ fun TagEditorSheet(
             onValueChange = { if (it.length <= BULK_NAME_FIELD_LIMIT) name = it },
             label = { Text(stringResource(R.string.entity_editors_tag_label)) },
             placeholder = { Text(if (isCreateMode) "e.g. urgent, work, personal" else "e.g. urgent") },
-            supportingText = if (isCreateMode) {
-                { Text(stringResource(R.string.entity_editors_separate_multiple_tags_with_commas_to_crea)) }
-            } else null,
+            isError = allNamesTaken,
+            supportingText = when {
+                allNamesTaken -> { { Text(stringResource(R.string.entity_name_taken)) } }
+                isCreateMode -> { { Text(stringResource(R.string.entity_editors_separate_multiple_tags_with_commas_to_crea)) } }
+                else -> null
+            },
             singleLine = true,
             shape = com.mj.yata.ui.widgets.YataCompactFieldShape,
             colors = com.mj.yata.ui.widgets.yataFieldColors(),
             modifier = Modifier.fillMaxWidth()
         )
 
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(
-                text = if (isBulk) "Color (applied to all)" else "Tag color",
-                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+        TextField(
+            value = description,
+            onValueChange = { if (it.length <= TAG_DESCRIPTION_LIMIT) description = it },
+            label = { Text(stringResource(R.string.entity_editors_description)) },
+            supportingText = { Text(stringResource(R.string.editor_char_counter, description.length, TAG_DESCRIPTION_LIMIT)) },
+            minLines = 2,
+            maxLines = 5,
+            shape = com.mj.yata.ui.widgets.YataFieldShape,
+            colors = com.mj.yata.ui.widgets.yataFieldColors(),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        ProjectEditorSection(
+            title = if (isBulk) "Color" else "Tag color",
+            summary = if (isBulk) "Applied to all" else name.ifBlank { stringResource(R.string.entity_tag) },
+            leadingIcon = { Icon(Icons.Default.Palette, contentDescription = null) },
+            expanded = colorExpanded,
+            onToggle = { colorExpanded = !colorExpanded },
+            preview = { ColorDot(accents.getAccent(selectedColor)) }
+        ) {
             ColorPicker(
                 selectedColorKey = selectedColor,
                 onColorSelected = { selectedColor = it }
             )
         }
 
-        GroupPickerSection(
-            label = "Group",
-            groups = groups,
-            groupId = { it.id },
-            groupName = { it.name },
-            groupColorKey = { it.color },
-            selectedGroupId = selectedGroupId,
-            onSelect = { selectedGroupId = it },
-            onCreateGroup = { groupName ->
-                val id = "tg_" + java.util.UUID.randomUUID().toString()
-                onCreateGroup(id, groupName, selectedColor)
-                selectedGroupId = id
-            }
-        )
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { hideCompletedByDefault = !hideCompletedByDefault },
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+        ProjectEditorSection(
+            title = stringResource(R.string.entity_editors_group_label),
+            summary = selectedGroupName ?: stringResource(R.string.settings_none),
+            leadingIcon = { Icon(Icons.Default.Groups, contentDescription = null) },
+            expanded = groupExpanded,
+            onToggle = { groupExpanded = !groupExpanded }
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = "Hide completed by default",
-                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
-                )
-                Text(
-                    text = "This tag's detail screen opens with completed tasks hidden.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            Switch(checked = hideCompletedByDefault, onCheckedChange = { hideCompletedByDefault = it })
+            GroupPickerSection(
+                label = stringResource(R.string.entity_editors_group_label),
+                groups = visibleGroups,
+                groupId = { it.id },
+                groupName = { it.name },
+                groupColorKey = { it.color },
+                selectedGroupId = selectedGroupId,
+                onSelect = { selectedGroupId = it },
+                onCreateGroup = { groupName ->
+                    val id = "tg_" + java.util.UUID.randomUUID().toString()
+                    pendingCreatedGroup = com.mj.yata.domain.model.TagGroup(id = id, name = groupName, color = selectedColor)
+                    onCreateGroup(id, groupName, selectedColor)
+                    selectedGroupId = id
+                },
+                onNewGroupDraftChange = { newGroupDraftName = it },
+                showLabel = false
+            )
+        }
+
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = MaterialTheme.colorScheme.surfaceContainerLow,
+            shape = RoundedCornerShape(20.dp)
+        ) {
+            ListItem(
+                leadingContent = {
+                    Surface(shape = CircleShape, color = MaterialTheme.colorScheme.surfaceContainerHigh) {
+                        Icon(
+                            imageVector = Icons.Default.VisibilityOff,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(8.dp).size(20.dp)
+                        )
+                    }
+                },
+                headlineContent = { Text(stringResource(R.string.entity_editors_hide_completed_by_default)) },
+                supportingContent = { Text(stringResource(R.string.entity_editors_hide_completed_by_default_summary)) },
+                trailingContent = {
+                    Switch(checked = hideCompletedByDefault, onCheckedChange = { hideCompletedByDefault = it })
+                },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                modifier = Modifier.clickable { hideCompletedByDefault = !hideCompletedByDefault }
+            )
         }
 
         Row(
@@ -777,13 +1066,27 @@ fun TagEditorSheet(
             Spacer(modifier = Modifier.width(8.dp))
             Button(
                 onClick = {
+                    val draftedName = newGroupDraftName.trim()
+                    val existingDraftGroup = visibleGroups.firstOrNull { it.name.equals(draftedName, ignoreCase = true) }
+                    val draftedGroup = if (draftedName.isNotEmpty() && existingDraftGroup == null) {
+                        com.mj.yata.domain.model.TagGroup(
+                            id = "tg_" + java.util.UUID.randomUUID().toString(),
+                            name = draftedName,
+                            color = selectedColor
+                        )
+                    } else {
+                        null
+                    }
+                    val groupIdToSave = existingDraftGroup?.id ?: draftedGroup?.id ?: selectedGroupId
+                    val selectedPendingGroup = draftedGroup ?: pendingCreatedGroup?.takeIf { it.id == groupIdToSave }
+                    val descriptionToSave = description.trim().ifBlank { null }
                     if (isCreateMode) {
-                        bulkNames.forEach { onSave(it, selectedColor, selectedGroupId, hideCompletedByDefault) }
+                        bulkNames.forEach { onSave(it, selectedColor, groupIdToSave, hideCompletedByDefault, descriptionToSave, selectedPendingGroup) }
                     } else if (name.isNotBlank()) {
-                        onSave(name, selectedColor, selectedGroupId, hideCompletedByDefault)
+                        onSave(name, selectedColor, groupIdToSave, hideCompletedByDefault, descriptionToSave, selectedPendingGroup)
                     }
                 },
-                enabled = if (isCreateMode) bulkNames.isNotEmpty() else name.isNotBlank()
+                enabled = if (isCreateMode) bulkNames.isNotEmpty() else (name.isNotBlank() && !allNamesTaken)
             ) {
                 Text(buttonText)
             }
@@ -799,12 +1102,18 @@ fun ListEditorSheet(
     initialExcludeFromToday: Boolean = false,
     onSave: (String, String, String, Boolean) -> Unit,
     onDismiss: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    /** Names of the other lists, for the case-insensitive collision check — see [nameCollides]. */
+    existingNames: List<String> = emptyList()
 ) {
     var name by remember { mutableStateOf(initialName) }
+    val nameTaken = remember(name, existingNames, initialName) {
+        nameCollides(name, existingNames, initialName)
+    }
     var selectedColor by remember { mutableStateOf(initialColor) }
     var selectedIcon by remember { mutableStateOf(initialIcon) }
     var excludeFromToday by remember { mutableStateOf(initialExcludeFromToday) }
+    var appearanceExpanded by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier
@@ -813,10 +1122,11 @@ fun ListEditorSheet(
             .navigationBarsPadding()
             .verticalScroll(rememberScrollState())
             .padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp)
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         val titleText = if (initialName.isEmpty()) "New list" else "Edit list"
         val buttonText = if (initialName.isEmpty()) "Create" else "Save"
+        val accents = com.mj.yata.ui.theme.LocalYataAccents.current
 
         Text(
             text = titleText,
@@ -831,56 +1141,67 @@ fun ListEditorSheet(
             label = { Text(stringResource(R.string.entity_editors_list_name)) },
             placeholder = { Text(stringResource(R.string.entity_editors_e_g_personal)) },
             singleLine = true,
+            isError = nameTaken,
+            supportingText = if (nameTaken) {
+                { Text(stringResource(R.string.entity_name_taken)) }
+            } else null,
             shape = com.mj.yata.ui.widgets.YataCompactFieldShape,
             colors = com.mj.yata.ui.widgets.yataFieldColors(),
             modifier = Modifier.fillMaxWidth()
         )
 
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(
-                text = "List color",
-                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+        ProjectEditorSection(
+            title = stringResource(R.string.settings_section_appearance),
+            summary = stringResource(R.string.entity_editors_list_icon),
+            leadingIcon = { Icon(Icons.Default.Palette, contentDescription = null) },
+            expanded = appearanceExpanded,
+            onToggle = { appearanceExpanded = !appearanceExpanded },
+            preview = {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    ColorDot(accents.getAccent(selectedColor))
+                    Surface(
+                        shape = CircleShape,
+                        color = accents.getAccent(selectedColor).copy(alpha = 0.16f)
+                    ) {
+                        Icon(
+                            imageVector = com.mj.yata.ui.widgets.iconVectorFor(selectedIcon),
+                            contentDescription = null,
+                            tint = accents.getAccent(selectedColor),
+                            modifier = Modifier.padding(5.dp).size(16.dp)
+                        )
+                    }
+                }
+            }
+        ) {
+            SectionLabel(stringResource(R.string.entity_editors_list_color))
             ColorPicker(
                 selectedColorKey = selectedColor,
-                onColorSelected = { selectedColor = it }
+                onColorSelected = { selectedColor = it },
+                modifier = Modifier.padding(bottom = 8.dp)
             )
-        }
-
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(
-                text = "List icon",
-                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            SectionLabel(stringResource(R.string.entity_editors_list_icon))
             com.mj.yata.ui.widgets.IconPicker(
                 options = com.mj.yata.ui.widgets.FOLDER_ICON_KEYS,
                 selectedIconKey = selectedIcon,
-                accentColor = com.mj.yata.ui.theme.LocalYataAccents.current.getAccent(selectedColor),
+                accentColor = accents.getAccent(selectedColor),
                 onIconSelected = { selectedIcon = it }
             )
         }
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { excludeFromToday = !excludeFromToday },
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = MaterialTheme.colorScheme.surfaceContainerLow,
+            shape = RoundedCornerShape(20.dp)
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = "Exclude from Today",
-                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
-                )
-                Text(
-                    text = "Tasks here never show on the Today screen, even if overdue — for a backlog you'll schedule later.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            Switch(checked = excludeFromToday, onCheckedChange = { excludeFromToday = it })
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.entity_editors_exclude_from_today)) },
+                supportingContent = { Text(stringResource(R.string.entity_editors_exclude_from_today_summary)) },
+                trailingContent = {
+                    Switch(checked = excludeFromToday, onCheckedChange = { excludeFromToday = it })
+                },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                modifier = Modifier.clickable { excludeFromToday = !excludeFromToday }
+            )
         }
 
         Row(
@@ -893,8 +1214,8 @@ fun ListEditorSheet(
             }
             Spacer(modifier = Modifier.width(8.dp))
             Button(
-                onClick = { if (name.isNotBlank()) onSave(name, selectedColor, selectedIcon, excludeFromToday) },
-                enabled = name.isNotBlank()
+                onClick = { if (name.isNotBlank() && !nameTaken) onSave(name, selectedColor, selectedIcon, excludeFromToday) },
+                enabled = name.isNotBlank() && !nameTaken
             ) {
                 Text(buttonText)
             }
@@ -949,12 +1270,14 @@ fun ManageSectionsSheet(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    OutlinedTextField(
+                    TextField(
                         value = section,
                         onValueChange = { updated ->
                             sections = sections.toMutableList().apply { set(index, updated) }
                         },
                         singleLine = true,
+                        shape = com.mj.yata.ui.widgets.YataCompactFieldShape,
+                        colors = com.mj.yata.ui.widgets.yataFieldColors(),
                         modifier = Modifier.weight(1f)
                     )
                     IconButton(onClick = { sections = sections.toMutableList().apply { removeAt(index) } }) {
@@ -968,11 +1291,13 @@ fun ManageSectionsSheet(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            OutlinedTextField(
+            TextField(
                 value = newSectionName,
                 onValueChange = { newSectionName = it },
                 singleLine = true,
                 placeholder = { Text(stringResource(R.string.project_section_new)) },
+                shape = com.mj.yata.ui.widgets.YataCompactFieldShape,
+                colors = com.mj.yata.ui.widgets.yataFieldColors(),
                 modifier = Modifier.weight(1f)
             )
             IconButton(

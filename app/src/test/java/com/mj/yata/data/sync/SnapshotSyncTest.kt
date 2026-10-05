@@ -58,6 +58,162 @@ class SnapshotSyncTest {
     }
 
     @Test
+    fun concurrentEdit_mergesIndependentFieldsWithinSameRecord() {
+        val base = snapshot(tasks = listOf(task("t1", "base").put("priority", "none").put("flag", false)))
+        val local = snapshot(tasks = listOf(task("t1", "local").put("priority", "none").put("flag", false)))
+        val remote = snapshot(tasks = listOf(task("t1", "base").put("priority", "high").put("flag", true)))
+
+        val result = SnapshotMerger.merge(base, local, remote)
+        val task = rows(result.json, "tasks").getValue("t1")
+
+        assertEquals("local", task.getString("title"))
+        assertEquals("high", task.getString("priority"))
+        assertTrue(task.getBoolean("flag"))
+        assertEquals(0, result.conflicts)
+    }
+
+    @Test
+    fun concurrentEdit_mergesIndependentTaskTagChangesAsSet() {
+        val tags = listOf(tag("base"), tag("local"), tag("remote"))
+        val base = snapshot(tags = tags, tasks = listOf(task("t1", "tagged").put("tagIds", JSONArray().put("base"))))
+        val local = snapshot(tags = tags, tasks = listOf(task("t1", "tagged").put("tagIds", JSONArray().put("base").put("local"))))
+        val remote = snapshot(tags = tags, tasks = listOf(task("t1", "tagged").put("tagIds", JSONArray().put("base").put("remote"))))
+
+        val result = SnapshotMerger.merge(base, local, remote)
+        val tagIds = rows(result.json, "tasks").getValue("t1").getJSONArray("tagIds")
+
+        assertEquals(listOf("base", "local", "remote"), (0 until tagIds.length()).map(tagIds::getString))
+        assertEquals(0, result.conflicts)
+    }
+
+    @Test
+    fun concurrentEdit_mergesCollaboratorChangesWithoutChangingOwner() {
+        val people = listOf(personMe(), person("local"), person("remote"))
+        val base = snapshot(people = people, tasks = listOf(task("t1", "assigned").put("assigneeIds", JSONArray().put("me"))))
+        val local = snapshot(people = people, tasks = listOf(task("t1", "assigned").put("assigneeIds", JSONArray().put("me").put("local"))))
+        val remote = snapshot(people = people, tasks = listOf(task("t1", "assigned").put("assigneeIds", JSONArray().put("me").put("remote"))))
+
+        val result = SnapshotMerger.merge(base, local, remote)
+        val assigneeIds = rows(result.json, "tasks").getValue("t1").getJSONArray("assigneeIds")
+
+        assertEquals(listOf("me", "local", "remote"), (0 until assigneeIds.length()).map(assigneeIds::getString))
+        assertEquals(0, result.conflicts)
+    }
+
+    @Test
+    fun concurrentEdit_recordsLosingLocalConflictData() {
+        val base = snapshot(tasks = listOf(task("t1", "base")))
+        val local = snapshot(tasks = listOf(task("t1", "local")))
+        val remote = snapshot(tasks = listOf(task("t1", "server")))
+
+        val result = SnapshotMerger.merge(base, local, remote)
+        val conflict = result.conflictRecords.single()
+        val conflictJson = SnapshotMerger.conflictRecordsJson(result.conflictRecords).getJSONObject(0)
+
+        assertEquals("tasks/t1/title", conflict.path)
+        assertEquals("tasks", conflict.collection)
+        assertEquals("t1", conflict.id)
+        assertEquals("base", conflictJson.getString("base"))
+        assertEquals("local", conflictJson.getString("local"))
+        assertEquals("server", conflictJson.getString("remote"))
+    }
+
+    @Test
+    fun threeWayMerge_preservesNameFieldsOnMergedRecords() {
+        val base = snapshot(personGroups = listOf(personGroup("grp", "Team", "accentA")))
+        val local = snapshot(personGroups = listOf(personGroup("grp", "Team", "accentB")))
+        val remote = snapshot(personGroups = listOf(personGroup("grp", "Team", "accentA")))
+
+        val group = rows(SnapshotMerger.merge(base, local, remote).json, "personGroups").getValue("grp")
+
+        assertEquals("Team", group.getString("name"))
+        assertEquals("accentB", group.getString("color"))
+    }
+
+    @Test
+    fun localLooksUnexpectedlyEmpty_trueWhenBaselineAndRemoteHaveDataButLocalDoesNot() {
+        // The restored/reinstalled-device shape: Android's auto-backup can bring back the sync
+        // baseline (small file) without the Room database (excluded from backup) — this device's
+        // last known state and the current remote both show real data, but local looks wiped.
+        val baseline = snapshot(tasks = listOf(task("t1", "one")))
+        val local = snapshot()
+        val remote = snapshot(tasks = listOf(task("t1", "one")))
+
+        assertTrue(localLooksUnexpectedlyEmpty(baseline, local, remote))
+    }
+
+    @Test
+    fun localLooksUnexpectedlyEmpty_falseWithoutABaseline() {
+        // No prior sync on this device: this is a genuine first join, handled by
+        // InitialSyncConfirmationRequiredException instead, not this guard.
+        val local = snapshot()
+        val remote = snapshot(tasks = listOf(task("t1", "one")))
+
+        assertFalse(localLooksUnexpectedlyEmpty(base = null, local = local, remote = remote))
+    }
+
+    @Test
+    fun localLooksUnexpectedlyEmpty_falseWhenRemoteIsAlsoEmpty() {
+        // Nothing left to protect: an empty remote can't be silently deleted by this merge.
+        val baseline = snapshot(tasks = listOf(task("t1", "one")))
+        val local = snapshot()
+        val remote = snapshot()
+
+        assertFalse(localLooksUnexpectedlyEmpty(baseline, local, remote))
+    }
+
+    @Test
+    fun localLooksUnexpectedlyEmpty_falseWhenLocalStillHasData() {
+        val baseline = snapshot(tasks = listOf(task("t1", "one")))
+        val local = snapshot(tasks = listOf(task("t1", "one")))
+        val remote = snapshot(tasks = listOf(task("t1", "one")))
+
+        assertFalse(localLooksUnexpectedlyEmpty(baseline, local, remote))
+    }
+
+    @Test
+    fun mergeOfUnexpectedlyEmptyLocal_wouldSilentlyDropEveryRemoteRecordIfNotIntercepted() {
+        // Demonstrates the actual data loss this guard exists to prevent: merge() on its own,
+        // given this exact shape, drops every task with zero conflicts flagged — the record-level
+        // three-way merge sees remote unchanged from base and local "deleted" it, which is correct
+        // *if* the deletion were real. SnapshotSyncEngine.checkLocalNotUnexpectedlyEmpty is what
+        // stops this shape from ever reaching merge() in production without explicit confirmation.
+        val baseline = snapshot(tasks = listOf(task("t1", "one"), task("t2", "two")))
+        val local = snapshot()
+        val remote = snapshot(tasks = listOf(task("t1", "one"), task("t2", "two")))
+
+        val result = SnapshotMerger.merge(baseline, local, remote)
+
+        assertEquals(0, result.json.getJSONArray("tasks").length())
+        assertEquals(0, result.conflicts)
+        assertTrue(SnapshotMerger.removedAnyRecords(baseline, result.json))
+    }
+
+    @Test
+    fun removedAnyRecords_trueWhenABeforeRecordIsMissingAfter() {
+        val before = snapshot(tasks = listOf(task("t1", "one"), task("t2", "two")))
+        val after = snapshot(tasks = listOf(task("t1", "one")))
+
+        assertTrue(SnapshotMerger.removedAnyRecords(before, after))
+    }
+
+    @Test
+    fun removedAnyRecords_falseWhenBeforeHadNothingToLose() {
+        val before = snapshot()
+        val after = snapshot(tasks = listOf(task("t1", "one")))
+
+        assertFalse(SnapshotMerger.removedAnyRecords(before, after))
+    }
+
+    @Test
+    fun removedAnyRecords_falseWhenEveryBeforeRecordSurvives() {
+        val before = snapshot(tasks = listOf(task("t1", "one")))
+        val after = snapshot(tasks = listOf(task("t1", "edited")))
+
+        assertFalse(SnapshotMerger.removedAnyRecords(before, after))
+    }
+
+    @Test
     fun firstJoin_unionsDevicesAndUsesEstablishedServerOnCollision() {
         val local = snapshot(tasks = listOf(task("same", "local"), task("local", "only")))
         val remote = snapshot(tasks = listOf(task("same", "server"), task("remote", "only")))
@@ -98,8 +254,12 @@ class SnapshotSyncTest {
             settings = listOf(
                 setting("theme_mode", "string", "DARK"),
                 setting("sftp_host", "string", "server"),
+                setting("github_owner", "string", "owner"),
                 setting("app_lock_enabled", "bool", true),
-                setting("saved", "stringSet", JSONArray().put("z").put("a"))
+                setting("saved", "stringSet", JSONArray().put("z").put("a")),
+                setting("weekend_days", "stringSet", JSONArray().put("SA").put("SU")),
+                setting("holidays", "stringSet", JSONArray().put("2026-01-26|Republic Day|true")),
+                setting("observe_non_working_days", "bool", true)
             )
         )
         raw.getJSONArray("people").getJSONObject(0)
@@ -108,9 +268,60 @@ class SnapshotSyncTest {
         val normalized = SnapshotMerger.normalizeForSync(raw)
         val settings = rows(normalized, "settings", idKey = "name")
 
-        assertEquals(setOf("theme_mode", "saved"), settings.keys)
+        // Weekend/holiday configuration is account-wide preference, not tied to one install, so
+        // it must survive normalization the same way "theme_mode"/"saved" do -- unlike
+        // sftp_host/github_owner/app_lock_enabled, which are genuinely per-device/per-connection.
+        assertEquals(
+            setOf("theme_mode", "saved", "weekend_days", "holidays", "observe_non_working_days"),
+            settings.keys
+        )
         assertEquals("a", settings.getValue("saved").getJSONArray("value").getString(0))
+        assertTrue(settings.getValue("observe_non_working_days").getBoolean("value"))
         assertFalse(normalized.getJSONArray("people").getJSONObject(0).has("photoUri"))
+    }
+
+    @Test
+    fun normalization_ignoresBackupMetadataDeviceNameAndTimestamp() {
+        val pixel = snapshot()
+            .put(
+                "backupMetadata",
+                JSONObject()
+                    .put("createdByDevice", "Pixel 10")
+                    .put("createdAt", 1_000L)
+            )
+        val pad = snapshot()
+            .put(
+                "backupMetadata",
+                JSONObject()
+                    .put("createdByDevice", "Sages Wisdom")
+                    .put("createdAt", 2_000L)
+            )
+
+        val normalizedPixel = SnapshotMerger.normalizeForSync(pixel)
+        val normalizedPad = SnapshotMerger.normalizeForSync(pad)
+
+        assertTrue(SnapshotMerger.equivalent(normalizedPixel, normalizedPad))
+        assertEquals(
+            SnapshotMerger.canonicalHash(normalizedPixel),
+            SnapshotMerger.canonicalHash(normalizedPad)
+        )
+    }
+
+    @Test
+    fun normalization_dropsMalformedPortableSettings() {
+        val raw = snapshot(
+            settings = listOf(
+                JSONObject().put("type", "string").put("value", "missing-name"),
+                JSONObject().put("name", "missing_type").put("value", "x"),
+                JSONObject().put("name", "bad_set").put("type", "stringSet").put("value", "not-array"),
+                setting("theme_mode", "string", "DARK")
+            )
+        )
+
+        val settings = rows(SnapshotMerger.normalizeForSync(raw), "settings", idKey = "name")
+
+        assertEquals(setOf("theme_mode"), settings.keys)
+        assertEquals("DARK", settings.getValue("theme_mode").getString("value"))
     }
 
     @Test
@@ -130,6 +341,51 @@ class SnapshotSyncTest {
             SnapshotMerger.equivalent(
                 SnapshotMerger.normalizeForSync(left),
                 SnapshotMerger.normalizeForSync(right)
+            )
+        )
+    }
+
+    @Test
+    fun normalization_treatsMissingOptionalFieldsAsNull() {
+        val missing = snapshot(
+            projects = listOf(project("p1")),
+            // A tag row shaped exactly like one published before tags had a "description" field
+            // (6cea2b7) — the real-world case that produced "$/tags[0]/description is missing
+            // locally" on every sync against a repo with any pre-description snapshot in its
+            // history, because this test's own fixture is what caught the gap: normalizeForSync
+            // handled the same drift for projects.description below but not tags.description.
+            tags = listOf(tag("tag1")),
+            tasks = listOf(task("t1", "undated"))
+        )
+        val explicitNulls = snapshot(
+            projects = listOf(
+                project("p1")
+                    .put("due", JSONObject.NULL)
+                    .put("defaultReminder", JSONObject.NULL)
+                    .put("description", JSONObject.NULL)
+            ),
+            tags = listOf(tag("tag1").put("description", JSONObject.NULL)),
+            tasks = listOf(
+                task("t1", "undated")
+                    .put("due", JSONObject.NULL)
+                    .put("startDate", JSONObject.NULL)
+                    .put("time", JSONObject.NULL)
+                    .put("reminder", JSONObject.NULL)
+                    .put("notes", JSONObject.NULL)
+                    .put("seriesId", JSONObject.NULL)
+                    .put("recurrence", JSONObject.NULL)
+                    .put("completedAt", JSONObject.NULL)
+                    .put("createdAt", JSONObject.NULL)
+                    .put("deletedAt", JSONObject.NULL)
+                    .put("followUpAt", JSONObject.NULL)
+                    .put("estimateMinutes", JSONObject.NULL)
+            )
+        )
+
+        assertTrue(
+            SnapshotMerger.equivalent(
+                SnapshotMerger.normalizeForSync(missing),
+                SnapshotMerger.normalizeForSync(explicitNulls)
             )
         )
     }
@@ -165,8 +421,8 @@ class SnapshotSyncTest {
                     "t1",
                     "nested",
                     subtasks = JSONArray()
-                        .put(subtask("child", "parent"))
-                        .put(subtask("parent"))
+                        .put(subtask("child", "parent", sortOrder = 0))
+                        .put(subtask("parent", sortOrder = 1))
                 )
             )
         )
@@ -175,6 +431,8 @@ class SnapshotSyncTest {
 
         assertEquals("parent", ordered.getJSONObject(0).getString("id"))
         assertEquals("child", ordered.getJSONObject(1).getString("id"))
+        assertEquals(0, ordered.getJSONObject(0).getInt("sortOrder"))
+        assertEquals(1, ordered.getJSONObject(1).getInt("sortOrder"))
 
         val cyclic = snapshot(
             tasks = listOf(
@@ -191,18 +449,21 @@ class SnapshotSyncTest {
     }
 
     private fun snapshot(
+        people: List<JSONObject> = listOf(personMe()),
+        personGroups: List<JSONObject> = emptyList(),
         projects: List<JSONObject> = emptyList(),
+        tags: List<JSONObject> = emptyList(),
         tasks: List<JSONObject> = emptyList(),
         comments: List<JSONObject> = emptyList(),
         settings: List<JSONObject> = emptyList()
     ): JSONObject = JSONObject().apply {
         put("version", 4)
         put("syncVersion", 1)
-        put("people", JSONArray().put(personMe()))
-        put("personGroups", JSONArray())
+        put("people", JSONArray(people))
+        put("personGroups", JSONArray(personGroups))
         put("projects", JSONArray(projects))
         put("lists", JSONArray())
-        put("tags", JSONArray())
+        put("tags", JSONArray(tags))
         put("tagGroups", JSONArray())
         put("tasks", JSONArray(tasks))
         put("comments", JSONArray(comments))
@@ -214,9 +475,22 @@ class SnapshotSyncTest {
         put("color", "accentC"); put("isMe", true); put("groupId", JSONObject.NULL)
     }
 
+    private fun person(id: String) = JSONObject().apply {
+        put("id", id); put("name", id); put("initials", id.take(1).uppercase())
+        put("color", "accentA"); put("isMe", false); put("groupId", JSONObject.NULL)
+    }
+
+    private fun personGroup(id: String, name: String, color: String) = JSONObject().apply {
+        put("id", id); put("name", name); put("color", color)
+    }
+
     private fun project(id: String) = JSONObject().apply {
         put("id", id); put("name", id); put("color", "accentA"); put("icon", "work")
         put("commonTagIds", JSONArray())
+    }
+
+    private fun tag(id: String) = JSONObject().apply {
+        put("id", id); put("name", id); put("color", "accentB"); put("groupId", JSONObject.NULL)
     }
 
     private fun task(
@@ -231,8 +505,8 @@ class SnapshotSyncTest {
         put("tagIds", JSONArray()); put("subtasks", subtasks)
     }
 
-    private fun subtask(id: String, parentId: String? = null) = JSONObject().apply {
-        put("id", id); put("title", id); put("done", false); put("sortOrder", 0)
+    private fun subtask(id: String, parentId: String? = null, sortOrder: Int = 0) = JSONObject().apply {
+        put("id", id); put("title", id); put("done", false); put("sortOrder", sortOrder)
         put("parentSubtaskId", parentId ?: JSONObject.NULL)
     }
 

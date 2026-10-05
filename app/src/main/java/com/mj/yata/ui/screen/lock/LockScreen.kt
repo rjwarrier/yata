@@ -69,6 +69,7 @@ import com.mj.yata.ui.theme.LocalHapticsEnabled
 import com.mj.yata.ui.theme.LocalReduceMotion
 import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.YataEase
+import com.mj.yata.ui.util.AdaptiveContentBox
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -124,48 +125,50 @@ fun LockScreen(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .statusBarsPadding()
-                .navigationBarsPadding()
-                .padding(horizontal = 24.dp)
-                .graphicsLayer {
-                    alpha = entrance
-                    // A short rise into place, not a slide across the screen.
-                    translationY = (1f - entrance) * 32.dp.toPx()
-                },
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            // Weighted spacers rather than a centred column: the header sits in the upper third
-            // and the keypad low enough to reach with a thumb, which is where a lock screen wants
-            // them. Centring everything left a dense block adrift in the middle of the screen.
-            Spacer(modifier = Modifier.weight(0.9f))
+        AdaptiveContentBox(contentMaxWidth = 420.dp) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .statusBarsPadding()
+                    .navigationBarsPadding()
+                    .padding(horizontal = 24.dp)
+                    .graphicsLayer {
+                        alpha = entrance
+                        // A short rise into place, not a slide across the screen.
+                        translationY = (1f - entrance) * 32.dp.toPx()
+                    },
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Weighted spacers rather than a centred column: the header sits in the upper third
+                // and the keypad low enough to reach with a thumb, which is where a lock screen wants
+                // them. Centring everything left a dense block adrift in the middle of the screen.
+                Spacer(modifier = Modifier.weight(0.9f))
 
-            LockHeader()
+                LockHeader()
 
-            Spacer(modifier = Modifier.weight(0.7f))
+                Spacer(modifier = Modifier.weight(0.7f))
 
-            if (pinAvailable) {
-                PinPad(
-                    pinLength = pinLength,
-                    lockedUntilMillis = lockedUntilMillis,
-                    biometricAvailable = biometricAvailable,
-                    onVerifyPin = onVerifyPin,
-                    onPinFailed = onPinFailed,
-                    onCorrect = onPinUnlocked,
-                    onUseBiometric = onUnlockClick
-                )
-            } else {
-                // No PIN configured, so biometrics are the only way in and the button is the whole
-                // interface. Without this the screen would be a dead end whenever the prompt was
-                // dismissed.
-                TextButton(onClick = onUnlockClick) {
-                    Text(stringResource(R.string.lock_unlock))
+                if (pinAvailable) {
+                    PinPad(
+                        pinLength = pinLength,
+                        lockedUntilMillis = lockedUntilMillis,
+                        biometricAvailable = biometricAvailable,
+                        onVerifyPin = onVerifyPin,
+                        onPinFailed = onPinFailed,
+                        onCorrect = onPinUnlocked,
+                        onUseBiometric = onUnlockClick
+                    )
+                } else {
+                    // No PIN configured, so biometrics are the only way in and the button is the whole
+                    // interface. Without this the screen would be a dead end whenever the prompt was
+                    // dismissed.
+                    TextButton(onClick = onUnlockClick) {
+                        Text(stringResource(R.string.lock_unlock))
+                    }
                 }
-            }
 
-            Spacer(modifier = Modifier.weight(0.5f))
+                Spacer(modifier = Modifier.weight(0.5f))
+            }
         }
     }
 }

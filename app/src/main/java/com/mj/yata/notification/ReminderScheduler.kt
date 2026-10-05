@@ -7,6 +7,7 @@ import android.content.Intent
 import com.mj.yata.data.local.datastore.UserPreferences
 import com.mj.yata.data.local.db.entity.TaskEntity
 import com.mj.yata.data.local.operationhistory.OperationHistoryStore
+import com.mj.yata.util.QuietHours
 import com.mj.yata.util.TaskScheduleUtils
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.first
@@ -30,7 +31,8 @@ class ReminderScheduler @Inject constructor(
                 userPreferences.defaultReminderHourFlow.first(),
                 userPreferences.defaultReminderMinuteFlow.first()
             )
-            when (scheduleReminder(task, defaultTime)) {
+            val quietHours = loadQuietHours()
+            when (scheduleReminder(task, defaultTime, quietHours)) {
                 ReminderScheduleOutcome.SCHEDULED -> operationHistoryStore.recordSuccess(
                     OperationHistoryStore.REMINDERS_TASK,
                     "Scheduled one task reminder"
@@ -60,10 +62,11 @@ class ReminderScheduler @Inject constructor(
                 userPreferences.defaultReminderHourFlow.first(),
                 userPreferences.defaultReminderMinuteFlow.first()
             )
+            val quietHours = loadQuietHours()
             var scheduled = 0
             var skipped = 0
             tasks.forEach { task ->
-                when (scheduleReminder(task, defaultTime)) {
+                when (scheduleReminder(task, defaultTime, quietHours)) {
                     ReminderScheduleOutcome.SCHEDULED -> scheduled++
                     ReminderScheduleOutcome.SKIPPED -> skipped++
                 }
@@ -85,6 +88,7 @@ class ReminderScheduler @Inject constructor(
                 userPreferences.defaultReminderHourFlow.first(),
                 userPreferences.defaultReminderMinuteFlow.first()
             )
+            val quietHours = loadQuietHours()
             var scheduled = 0
             var cancelled = 0
             var skipped = 0
@@ -93,7 +97,7 @@ class ReminderScheduler @Inject constructor(
                     cancelReminder(task)
                     cancelled++
                 } else {
-                    when (scheduleReminder(task, defaultTime)) {
+                    when (scheduleReminder(task, defaultTime, quietHours)) {
                         ReminderScheduleOutcome.SCHEDULED -> scheduled++
                         ReminderScheduleOutcome.SKIPPED -> skipped++
                     }
@@ -109,7 +113,7 @@ class ReminderScheduler @Inject constructor(
         }
     }
 
-    private fun scheduleReminder(task: TaskEntity, defaultTime: LocalTime): ReminderScheduleOutcome {
+    private fun scheduleReminder(task: TaskEntity, defaultTime: LocalTime, quietHours: QuietHoursConfig): ReminderScheduleOutcome {
         if (task.dueDate == null || task.done || task.reminder.isNullOrBlank()) return ReminderScheduleOutcome.SKIPPED
 
         val localDate = try {
@@ -125,11 +129,19 @@ class ReminderScheduler @Inject constructor(
         // of the relative-offset presets — fire at that exact time on the due date instead of
         // computing an offset from the due time.
         val customReminderTime = TaskScheduleUtils.parseTime(task.reminder)
-        val triggerAtMillis = if (customReminderTime != null) {
+        val rawTriggerAtMillis = if (customReminderTime != null) {
             localDate.atTime(customReminderTime).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
         } else {
             dueAtMillis - TaskScheduleUtils.reminderOffsetMillis(task.reminder)
         }
+        val triggerAtMillis = QuietHours.deferIfWithinQuietHours(
+            rawTriggerAtMillis,
+            quietHours.enabled,
+            quietHours.startHour,
+            quietHours.startMinute,
+            quietHours.endHour,
+            quietHours.endMinute
+        )
 
         if (triggerAtMillis <= System.currentTimeMillis()) {
             cancelReminder(task)
@@ -211,6 +223,22 @@ class ReminderScheduler @Inject constructor(
             pendingIntent.cancel()
         }
     }
+
+    private suspend fun loadQuietHours(): QuietHoursConfig = QuietHoursConfig(
+        enabled = userPreferences.quietHoursEnabledFlow.first(),
+        startHour = userPreferences.quietHoursStartHourFlow.first(),
+        startMinute = userPreferences.quietHoursStartMinuteFlow.first(),
+        endHour = userPreferences.quietHoursEndHourFlow.first(),
+        endMinute = userPreferences.quietHoursEndMinuteFlow.first()
+    )
+
+    private data class QuietHoursConfig(
+        val enabled: Boolean,
+        val startHour: Int,
+        val startMinute: Int,
+        val endHour: Int,
+        val endMinute: Int
+    )
 
     private enum class ReminderScheduleOutcome {
         SCHEDULED,

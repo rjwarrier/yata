@@ -10,7 +10,10 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.mj.yata.R
+import com.mj.yata.data.local.datastore.UserPreferences
 import com.mj.yata.data.local.operationhistory.OperationHistoryStore
+import com.mj.yata.domain.model.Holiday
+import com.mj.yata.domain.model.effectiveDue
 import com.mj.yata.domain.model.isDeferredOn
 import com.mj.yata.domain.repository.YataRepository
 import com.mj.yata.widget.resolveNotificationAccentColor
@@ -34,7 +37,8 @@ class DailyAgendaWorker @AssistedInject constructor(
     @Assisted context: Context,
     @Assisted params: WorkerParameters,
     private val repository: YataRepository,
-    private val operationHistoryStore: OperationHistoryStore
+    private val operationHistoryStore: OperationHistoryStore,
+    private val userPreferences: UserPreferences
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result = runOperationSafely(
@@ -46,12 +50,17 @@ class DailyAgendaWorker @AssistedInject constructor(
         val tasks = repository.getTasks().first()
         val people = repository.getPeople().first()
         val today = LocalDate.now().toString()
+        val weekendDays = userPreferences.weekendDaysFlow.first()
+        val holidays = userPreferences.holidaysFlow.first().mapNotNull(Holiday::decode)
+        val observeNonWorkingDays = userPreferences.observeNonWorkingDaysFlow.first()
 
         // Deferred tasks drop out — a start date in the future means it isn't actionable yet, so
         // it has no business in a "here's today" digest. Deliberately *not* filtered by
         // isWaitingOn: that rule is about your own day view, and this digest is the whole-team
         // picture, so a task you're waiting on someone for still belongs under their line.
-        val dueToday = tasks.filter { !it.done && it.due == today && !it.isDeferredOn(today) }
+        val dueToday = tasks.filter {
+            !it.done && it.effectiveDue(weekendDays, holidays, observeNonWorkingDays) == today && !it.isDeferredOn(today)
+        }
         if (dueToday.isEmpty()) {
             operationHistoryStore.recordSuccess(OperationHistoryStore.REMINDERS_DAILY_AGENDA, "No tasks due today")
             return@runOperationSafely Result.success()

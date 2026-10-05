@@ -27,7 +27,7 @@
     <string name="tasker_field_time">Time (e.g. 3:00 PM, 15:00, evening)</string>
     <string name="tasker_field_reminder">Reminder (e.g. 15 min before, 1 day before)</string>
     <string name="tasker_field_priority">Priority (none, low, med, high)</string>
-    <string name="tasker_field_section">Section (Morning or Afternoon)</string>
+    <string name="tasker_field_section">Section (optional)</string>
     <string name="tasker_field_repeat">Repeat (e.g. daily, every monday, every 2 weeks)</string>
     <string name="tasker_field_notes">Notes</string>
 
@@ -119,6 +119,14 @@
         <item quantity="one">Add %1$d person to group</item>
         <item quantity="other">Add %1$d people to group</item>
     </plurals>
+    <plurals name="tags_add_to_group_title">
+        <item quantity="one">Add %1$d tag to group</item>
+        <item quantity="other">Add %1$d tags to group</item>
+    </plurals>
+    <plurals name="tags_open_task_count">
+        <item quantity="one">%1$d open task</item>
+        <item quantity="other">%1$d open tasks</item>
+    </plurals>
     <string name="projects_empty_title">No projects yet</string>
     <string name="projects_empty_subtitle">Group related tasks into a project to track progress together.</string>
     <string name="projects_new_project">New project</string>
@@ -132,9 +140,14 @@
     <string name="upcoming_clear_day">Clear day</string>
     <string name="upcoming_nothing_scheduled">Nothing scheduled.</string>
     <string name="search_prompt_empty">Type something to search, or pick a filter above.</string>
+    <string name="search_prompt_empty_subtitle">Use text, smart filters, or saved views to narrow your tasks.</string>
     <string name="search_no_matches">No matches</string>
     <string name="search_no_matches_subtitle">Try a different query or loosen the active filters.</string>
     <string name="search_clear">Clear search</string>
+    <string name="search_filters">Filters</string>
+    <string name="search_filter_hint">Tap a chip to build a focused view.</string>
+    <string name="search_filter_hint_compact">Tap to filter</string>
+    <string name="search_saved_views">Saved views</string>
     <string name="search_filter_focus">Focus mode</string>
     <string name="search_filter_morning_review">Morning review</string>
     <string name="search_filter_evening_review">Evening review</string>
@@ -152,6 +165,14 @@
     <string name="search_badge_in_trash">In Trash</string>
     <string name="search_badge_archived">Archived</string>
     <string name="search_badge_archived_project">Archived project</string>
+    <plurals name="search_active_filters_count">
+        <item quantity="one">%d active filter</item>
+        <item quantity="other">%d active filters</item>
+    </plurals>
+    <plurals name="search_results_count">
+        <item quantity="one">%d result</item>
+        <item quantity="other">%d results</item>
+    </plurals>
     <!-- Swipe actions -->
     <string name="settings_swipe_right_action">Swipe right does</string>
     <string name="settings_swipe_left_action">Swipe left does</string>
@@ -159,6 +180,45 @@
     <string name="settings_swipe_action_complete">Complete</string>
     <string name="settings_swipe_action_delete">Delete</string>
     <string name="settings_swipe_action_snooze">Snooze to tomorrow</string>
+    <string name="settings_theme_presets">Theme presets</string>
+    <string name="settings_theme_presets_summary">Save this color, font, and theme combination.</string>
+    <string name="cd_remove_preset">Remove %1$s</string>
+    <string name="settings_motion_mode">Motion mode</string>
+    <string name="settings_motion_mode_summary">Control app animations without changing other visual settings.</string>
+    <string name="motion_mode_full">Full</string>
+    <string name="motion_mode_reduced">Reduced</string>
+    <string name="motion_mode_off">Off</string>
+    <string name="settings_tasker_integration">Tasker integration</string>
+    <string name="settings_tasker_integration_summary">Allow Tasker profiles to create tasks through the Yata plugin.</string>
+    <string name="settings_date_aliases">Date aliases</string>
+    <string name="settings_date_aliases_summary">Custom shortcut words recognized when creating tasks to automatically set due dates (e.g. "tmrw" for Tomorrow).</string>
+    <string name="settings_date_alias_word_label">Word</string>
+    <string name="settings_add_alias">Add alias</string>
+    <string name="settings_date_alias_mapping">%1$s -&gt; %2$s</string>
+    <string name="cd_remove_alias">Remove %1$s</string>
+    <string name="settings_edit_profile">Edit profile</string>
+    <string name="settings_profile_name_label">Name</string>
+    <string name="settings_profile_email_label">Email</string>
+    <string name="settings_profile_avatar_label">Avatar</string>
+    <string name="settings_save_theme_preset">Save theme preset</string>
+    <string name="settings_theme_preset_name_label">Name</string>
+    <string name="settings_about_tagline">yet another todo app</string>
+    <string name="settings_about_version">v%1$s  ·  Build %2$s</string>
+    <string name="settings_about_credit">From the Labs of RJ | Vibe Coded</string>
+    <string name="settings_about_made_in">Made in 🇮🇳</string>
+    <string name="settings_about_other_apps">Other apps by developers</string>
+    <string name="settings_about_github">View source on GitHub</string>
+    <string name="settings_about_website">Yata website</string>
+    <string name="settings_about_support_dev">Support Dev</string>
+    <string name="settings_about_share">Share YATA</string>
+    <string name="settings_about_share_text">YATA is a Material 3 Expressive task manager for Android — check it out: https://github.com/rjwarrier/yata/releases</string>
+    <string name="share_app_title">Share YATA</string>
+    <string name="share_app_default_message">YATA is a Material 3 Expressive task manager for Android — check it out!</string>
+    <string name="share_app_include_image">Include image</string>
+    <string name="share_app_include_image_subtitle">Attach the promo image along with your message</string>
+    <string name="share_app_message_label">Message</string>
+    <string name="share_app_link_note">This link is added at the end automatically:</string>
+    <string name="share_app_button">Share %1$s</string>
     <string name="settings_swipe_action_edit">Edit title</string>
     <!-- Confetti -->
     <string name="settings_confetti">Confetti</string>
@@ -177,7 +237,7 @@
     <!-- System notification settings -->
     <string name="settings_system_notifications">Sound &amp; vibration</string>
     <string name="settings_system_notifications_desc">Opens Android\'s own notification settings for YATA.</string>
-    <string name="settings_section_sound_feedback">Sound &amp; Feedback</string>
+    <string name="settings_section_sound_feedback">Voice Input and Sound</string>
     <string name="settings_section_task_defaults">Task Defaults</string>
 
     <string name="settings_floating_bottom_panel">Use floating bottom panel</string>
@@ -196,8 +256,15 @@
     <string name="settings_swipe_actions">Swipe actions</string>
     <string name="settings_swipe_actions_desc">Swipe rows to complete or delete tasks.</string>
 
-    <string name="settings_default_list">Default list for new tasks</string>
-    <string name="settings_default_reminder_time">Default reminder time</string>
+    <string name="settings_defaults_group">Defaults</string>
+    <string name="settings_default_list">List</string>
+    <string name="settings_default_project">Project</string>
+    <string name="settings_default_tags">Tags</string>
+    <string name="settings_default_tags_desc">Automatically apply these tags to new tasks.</string>
+    <string name="settings_default_tags_empty">No tags yet.</string>
+    <string name="settings_default_tags_clear">Clear tags</string>
+    <string name="settings_default_tags_value_many">%1$s +%2$d</string>
+    <string name="settings_default_reminder_time">Reminder time</string>
     <string name="settings_start_week_sunday">Start week on Sunday</string>
     <string name="settings_start_week_sunday_desc">App agendas will start on Sunday instead of Monday.</string>
     <string name="settings_voice_input_language">Voice input language</string>
@@ -207,16 +274,27 @@
     <!-- New-task defaults -->
     <string name="settings_auto_assign">Auto-assign new tasks to you</string>
     <string name="settings_auto_assign_desc">New tasks start assigned to you. Turn this off to have them start unassigned - you can still pick an assignee on any task.</string>
-    <string name="settings_default_due_date">Default due date</string>
+    <string name="settings_default_due_date">Due date</string>
     <string name="settings_default_due_date_desc">What a new task is due when you don\'t pick a date yourself.</string>
     <string name="settings_due_today">Today</string>
     <string name="settings_due_tomorrow">Tomorrow</string>
     <string name="settings_due_none">No date</string>
-    <string name="settings_default_priority">Default priority</string>
+    <string name="settings_default_priority">Priority</string>
+    <string name="settings_default_estimate">Estimate</string>
+    <string name="settings_default_estimate_desc">Planned effort added to new tasks by default.</string>
+    <string name="settings_default_estimate_custom_title">Estimate</string>
+    <string name="settings_default_estimate_custom_label">Minutes</string>
+    <string name="settings_default_estimate_custom_error">Enter 1-1440 minutes.</string>
+    <string name="settings_custom">Custom</string>
     <string name="settings_priority_none">None</string>
     <string name="settings_priority_low">Low</string>
     <string name="settings_priority_med">Medium</string>
     <string name="settings_priority_high">High</string>
+    <string name="settings_subtask_completion_action">When all subtasks are done</string>
+    <string name="settings_subtask_completion_action_desc">Choose whether the main task finishes automatically, asks first, or stays open.</string>
+    <string name="settings_subtask_completion_ask">Ask</string>
+    <string name="settings_subtask_completion_auto">Auto</string>
+    <string name="settings_subtask_completion_nothing">Nothing</string>
 
     <!-- Undo window -->
     <string name="settings_undo_window">Undo window</string>
@@ -232,6 +310,10 @@
     <string name="settings_daily_agenda_time">Agenda time</string>
     <string name="settings_overdue_nudges">Overdue reminders</string>
     <string name="settings_overdue_nudges_desc">Follow-up notifications for tasks left overdue.</string>
+    <string name="settings_quiet_hours">Quiet hours</string>
+    <string name="settings_quiet_hours_desc">Reminders that would fire during this window wait until it ends instead.</string>
+    <string name="settings_quiet_hours_start">Starts</string>
+    <string name="settings_quiet_hours_end">Ends</string>
 
     <!-- App language (Android 13+ per-app language picker) -->
     <string name="settings_app_language">App language</string>
@@ -241,6 +323,9 @@
     <string name="settings_language_picker_subtitle">Switch YATA immediately. System follows your device language.</string>
     <string name="settings_language_search_placeholder">Search languages</string>
     <string name="settings_language_selected">Selected</string>
+
+    <string name="settings_import_export_group">Import &amp; Export</string>
+    <string name="settings_danger_zone_group">Danger Zone</string>
 
     <!-- Archive -->
     <string name="settings_task_lifecycle">Task lifecycle</string>
@@ -268,6 +353,7 @@
 
     <!-- Shared actions -->
     <string name="action_cancel">Cancel</string>
+    <string name="action_not_now">Not now</string>
     <string name="action_save">Save</string>
     <string name="action_none_remove_from_project">None (remove from project)</string>
     <string name="action_none_remove_from_list">None (remove from list)</string>
@@ -298,6 +384,20 @@
     <string name="cd_trash_empty">Empty trash</string>
     <string name="cd_trash_restore">Restore</string>
     <string name="cd_trash_delete_forever">Delete forever</string>
+    <string name="trash_deleted_today">Deleted today</string>
+    <string name="trash_deleted_yesterday">Deleted yesterday</string>
+    <string name="trash_deleted_on">Deleted on %1$s</string>
+    <string name="trash_kept_forever_suffix">kept until removed</string>
+    <plurals name="trash_days_left">
+        <item quantity="one">%1$d day left</item>
+        <item quantity="other">%1$d days left</item>
+    </plurals>
+    <string name="trash_restored_snackbar">Restored \"%1$s\"</string>
+    <plurals name="trash_tasks_restored">
+        <item quantity="one">Restored %1$d task</item>
+        <item quantity="other">Restored %1$d tasks</item>
+    </plurals>
+    <string name="action_view">View</string>
 
     <!-- Archive -->
     <string name="archive_title">Archive</string>
@@ -305,11 +405,17 @@
     <string name="archive_empty_state_desc">Archived tasks will appear here. Use Archive when you want to hide a task without deleting it.</string>
     <string name="archive_empty_state_action">Go to Today</string>
     <string name="archive_notice">Archive shelves tasks without deleting them. They stay hidden from normal lists, never expire, and can be unarchived anytime.</string>
+    <string name="archive_section_shelved_active">Active</string>
+    <string name="archive_section_shelved_completed">Completed</string>
+    <string name="archive_unarchived_snackbar">Unarchived \"%1$s\"</string>
     <string name="cd_archive_unarchive">Unarchive task</string>
 
     <!-- Bulk selection toolbar -->
+    <string name="cd_bulk_select">Select</string>
     <string name="cd_bulk_cancel_selection">Cancel selection</string>
     <string name="cd_bulk_mark_done">Mark done</string>
+    <string name="cd_bulk_flag">Flag</string>
+    <string name="cd_bulk_set_priority">Set priority</string>
     <string name="cd_bulk_add_tag">Add tag</string>
     <string name="cd_bulk_assign_person">Assign to person</string>
     <string name="cd_bulk_move">Move to list or project</string>
@@ -333,6 +439,20 @@
     <plurals name="confirm_delete_tasks_title">
         <item quantity="one">Delete %1$d task?</item>
         <item quantity="other">Delete %1$d tasks?</item>
+    </plurals>
+    <!-- Undo-snackbar messages after a bulk action - "one" reuses the same wording as the
+         single-task action's own snackbar (task_deleted/task_completed) so the two stay in sync. -->
+    <plurals name="tasks_deleted">
+        <item quantity="one">@string/task_deleted</item>
+        <item quantity="other">%1$d tasks deleted</item>
+    </plurals>
+    <plurals name="tasks_completed_count">
+        <item quantity="one">@string/task_completed</item>
+        <item quantity="other">%1$d tasks completed</item>
+    </plurals>
+    <plurals name="archive_tasks_unarchived">
+        <item quantity="one">Unarchived %1$d task</item>
+        <item quantity="other">Unarchived %1$d tasks</item>
     </plurals>
     <plurals name="confirm_archive_projects_title">
         <item quantity="one">Archive %1$d project?</item>
@@ -394,7 +514,11 @@
     <string name="action_done">Done</string>
     <string name="action_export">Export</string>
     <string name="action_export_as_image">Export as image</string>
+    <string name="action_refresh">Refresh</string>
     <string name="action_export_as_pdf">Export as PDF</string>
+    <string name="action_view_archived">View archived</string>
+    <string name="action_hide_archive">Hide archive</string>
+    <string name="action_import">Import</string>
     <string name="action_go_to_existing_task">Go to existing task</string>
     <string name="action_ignore_and_create">Ignore and create</string>
     <string name="action_select_tags">Select tags</string>
@@ -403,6 +527,165 @@
     <string name="analytics_analytics">Analytics</string>
     <string name="analytics_has_overdue_tasks">Has overdue tasks</string>
     <string name="analytics_share_analytics">Share analytics</string>
+    <string name="analytics_day_streak">day streak</string>
+    <string name="analytics_days_clean">days clean</string>
+    <string name="analytics_on_time_rate">on-time rate</string>
+    <string name="analytics_due_in_7_days">due in 7 days</string>
+    <string name="analytics_due_in_30_days">due in 30 days</string>
+    <string name="analytics_postponed_tasks">postponed tasks</string>
+    <string name="analytics_most_postponed">MOST POSTPONED</string>
+    <string name="analytics_postponed_times">Postponed %1$d times</string>
+    <string name="analytics_no_postponed_tasks">No postponed tasks yet.</string>
+    <string name="analytics_planned_effort">PLANNED EFFORT</string>
+    <string name="analytics_still_open">still open</string>
+    <string name="analytics_already_late">already late</string>
+    <string name="analytics_every_open_task_estimated">Every open task is estimated</string>
+    <string name="analytics_daily_activity">DAILY ACTIVITY</string>
+    <string name="analytics_by_priority">BY PRIORITY</string>
+    <string name="analytics_overdue_aging">OVERDUE AGING</string>
+    <string name="analytics_delegation">DELEGATION</string>
+    <string name="analytics_delegated">delegated</string>
+    <string name="analytics_yours">yours</string>
+    <string name="analytics_unassigned">unassigned</string>
+    <string name="analytics_median_turnaround">median turnaround</string>
+    <string name="analytics_oldest_open">oldest open</string>
+    <string name="analytics_open_no_date">open, no date</string>
+    <string name="analytics_per_assignee">PER ASSIGNEE</string>
+    <string name="analytics_workload_share">WORKLOAD SHARE</string>
+    <string name="analytics_by_project">By Project</string>
+    <string name="analytics_by_person">By Person</string>
+    <string name="analytics_by_tag">By Tag</string>
+    <string name="analytics_by_list">By List</string>
+    <string name="analytics_nothing_in_period">Nothing in this period.</string>
+    <string name="analytics_no_tasks_due_in_period">No tasks due in this period.</string>
+    <string name="analytics_overview_needs_attention">Needs attention</string>
+    <string name="analytics_overview_on_deck">On deck</string>
+    <string name="analytics_overview_all_clear">All clear</string>
+    <string name="analytics_overview_all_clear_detail">No overdue tasks. Your next work is visible below.</string>
+    <string name="analytics_overview_overdue">overdue</string>
+    <string name="analytics_overview_next_7">next 7 days</string>
+    <string name="analytics_overview_next_30">next 30 days</string>
+    <string name="analytics_overview_on_time">on time</string>
+    <string name="analytics_overview_effort_line">%1$s due this week from %2$s still open</string>
+    <string name="analytics_overview_estimates_complete">All open tasks with planned effort are covered by estimates.</string>
+    <string name="analytics_overview_no_estimates">Add task estimates to make workload forecasts more useful.</string>
+    <string name="analytics_action_open_overdue">Open overdue</string>
+    <string name="analytics_action_high_priority">High priority</string>
+    <string name="analytics_action_review_postponed">Review postponed</string>
+    <string name="analytics_tasks_completed_by_day">Tasks completed, by day</string>
+    <string name="analytics_tasks_completed_vs_created_by_day">Tasks completed vs created, by day</string>
+    <string name="analytics_as_much_finished_as_came_in">As much finished as came in</string>
+    <string name="analytics_priority_high">High</string>
+    <string name="analytics_priority_medium">Medium</string>
+    <string name="analytics_priority_low">Low</string>
+    <string name="analytics_priority_none">No priority</string>
+    <string name="analytics_done_of_total">%1$d of %2$d completed</string>
+    <string name="analytics_delta_pp_vs_previous">%1$s pp vs previous period</string>
+    <string name="analytics_more_finished_than_created">%1$d more finished than created</string>
+    <string name="analytics_more_created_than_finished">%1$d more created than finished</string>
+    <string name="analytics_completed_count">%1$d completed</string>
+    <string name="analytics_created_count">%1$d created</string>
+    <string name="analytics_ratio">%1$d/%2$d</string>
+    <string name="analytics_count_percent">%1$d (%2$d%%)</string>
+    <string name="analytics_count_still_open">%1$d still open</string>
+    <string name="analytics_count_late">%1$d late</string>
+    <string name="analytics_overdue_count">%1$d overdue</string>
+    <string name="analytics_on_time_percent">%1$d%% on-time</string>
+    <string name="remote_sync_title">Remote sync</string>
+    <string name="remote_sync_provider">Provider</string>
+    <string name="remote_sync_repository_access">Repository access</string>
+    <string name="remote_sync_repository_access_summary">Limit the token to this private sync repo.</string>
+    <string name="remote_sync_token_label">Token</string>
+    <string name="cd_remote_sync_token_help">How to create a GitHub token</string>
+    <string name="remote_sync_repo_label">Repo</string>
+    <string name="remote_sync_repo_placeholder">owner/repo</string>
+    <string name="remote_sync_branch_label">Branch</string>
+    <string name="remote_sync_api_base_label">API base URL</string>
+    <string name="remote_sync_token_scope_hint">Fine-grained token: Contents read/write. Stored encrypted on this device.</string>
+    <string name="remote_sync_github_config_transfer_title">Config transfer</string>
+    <string name="remote_sync_export_github_config">Export config</string>
+    <string name="remote_sync_import_github_config">Import config</string>
+    <string name="remote_sync_github_config_export_password_title">Encrypt GitHub config</string>
+    <string name="remote_sync_github_config_import_password_title">Decrypt GitHub config</string>
+    <string name="remote_sync_github_config_password_hint">Use a separate transfer password. It is not saved by YATA.</string>
+    <string name="remote_sync_github_config_password_label">Transfer password</string>
+    <string name="remote_sync_github_config_confirm_password_label">Confirm password</string>
+    <string name="remote_sync_github_config_password_mismatch">Passwords do not match.</string>
+    <string name="remote_sync_github_config_export_missing">Save a GitHub repo and token before exporting.</string>
+    <string name="remote_sync_github_config_import_missing_file">Choose a GitHub config export first.</string>
+    <string name="remote_sync_github_config_import_too_large">That file is too large to be a GitHub config export.</string>
+    <string name="remote_sync_github_config_exported">GitHub config exported.</string>
+    <string name="remote_sync_github_config_imported">GitHub config imported for %1$s.</string>
+    <string name="remote_sync_activity_title">Sync activity</string>
+    <string name="remote_sync_view_all_activity">View all</string>
+    <string name="remote_sync_load_more_activity">Load more</string>
+    <string name="remote_sync_activity_summary">Snapshots pushed to this repository, newest first.</string>
+    <string name="remote_sync_activity_empty">No snapshots pushed yet.</string>
+    <string name="remote_sync_activity_this_device">This device</string>
+    <string name="remote_sync_activity_unknown_device">Unattributed</string>
+    <string name="remote_sync_github_recovery_title">Recovery</string>
+    <string name="remote_sync_github_force_download_action">Use latest GitHub snapshot</string>
+    <string name="remote_sync_github_force_download_hint">Replaces this device with the newest snapshot from the configured GitHub branch.</string>
+    <string name="remote_sync_github_force_download_title">Use latest GitHub snapshot?</string>
+    <string name="remote_sync_github_force_download_body">YATA will download the newest GitHub snapshot and replace the tasks, lists, tags, people, projects, and portable settings on this device. A recovery backup is saved first.</string>
+    <string name="remote_sync_github_force_download_progress">Downloading GitHub snapshot...</string>
+    <string name="remote_sync_github_force_download_confirm">Replace this device</string>
+    <string name="remote_sync_github_force_download_success">Restored latest GitHub snapshot: %1$s.</string>
+    <string name="remote_sync_server_location">Server location</string>
+    <string name="remote_sync_server_location_summary_ftp">Point YATA at an FTP or FTPS folder.</string>
+    <string name="remote_sync_server_location_summary_sftp">Point YATA at an SSH/SFTP folder.</string>
+    <string name="remote_sync_credentials">Credentials</string>
+    <string name="remote_sync_credentials_summary_encrypted">Saved secrets are kept encrypted on this device.</string>
+    <string name="remote_sync_credentials_summary_password_or_key">Use a password or private key for this SFTP server.</string>
+    <string name="remote_sync_password_saved_hint">Password saved -- leave blank to keep it</string>
+    <string name="remote_sync_passphrase_saved_hint">Passphrase saved -- leave blank to keep it</string>
+    <string name="remote_sync_backup_encryption">Backup encryption</string>
+    <string name="remote_sync_backup_encryption_summary">Required passphrase used to encrypt every remote backup, whichever provider you use.</string>
+    <string name="remote_sync_backup_passphrase_required">Set a backup encryption passphrase before saving remote sync.</string>
+    <string name="remote_sync_github_title">GitHub sync</string>
+    <string name="remote_sync_github_body">Sync through a private repository with commit history as restore points.</string>
+    <string name="remote_sync_ftp_title">FTP / FTPS sync</string>
+    <string name="remote_sync_ftp_body">Use your own server folder with rotated backup files.</string>
+    <string name="remote_sync_sftp_title">SFTP sync</string>
+    <string name="remote_sync_sftp_body">Use SSH-backed storage with host-key trust and rotated backups.</string>
+    <string name="remote_sync_provider_github">GitHub</string>
+    <string name="remote_sync_provider_sftp">SFTP</string>
+    <string name="remote_sync_provider_ftp">FTP/FTPS</string>
+    <string name="remote_sync_pat_help_title">Create a GitHub token</string>
+    <string name="remote_sync_pat_help_intro">Create a fine-grained personal access token for the sync repo.</string>
+    <string name="remote_sync_pat_help_step1">1. Open GitHub &gt; Settings &gt; Developer settings &gt; Personal access tokens &gt; Fine-grained tokens.</string>
+    <string name="remote_sync_pat_help_step2">2. Tap Generate new token and name it YATA sync.</string>
+    <string name="remote_sync_pat_help_step3">3. Under Repository access, select only your YATA sync repo.</string>
+    <string name="remote_sync_pat_help_step4">4. Under Repository permissions, set Contents to Read and write.</string>
+    <string name="remote_sync_pat_help_step5">5. Generate the token, copy it, then paste it here.</string>
+    <plurals name="analytics_overdue_tasks_label">
+        <item quantity="one">overdue task</item>
+        <item quantity="other">overdue tasks</item>
+    </plurals>
+    <plurals name="analytics_finished_with_due_date">
+        <item quantity="one">On-time rate from %d finished task that had a due date</item>
+        <item quantity="other">On-time rate from %d finished tasks that had a due date</item>
+    </plurals>
+    <plurals name="analytics_estimated_tasks">
+        <item quantity="one">From %d estimated task</item>
+        <item quantity="other">From %d estimated tasks</item>
+    </plurals>
+    <plurals name="analytics_unestimated_tasks">
+        <item quantity="one">%d open task has no estimate</item>
+        <item quantity="other">%d open tasks have no estimate</item>
+    </plurals>
+    <plurals name="analytics_overview_overdue_detail">
+        <item quantity="one">%d task is already late. Start here before reading the rest of the report.</item>
+        <item quantity="other">%d tasks are already late. Start here before reading the rest of the report.</item>
+    </plurals>
+    <plurals name="analytics_overview_due_soon_detail">
+        <item quantity="one">%d task is due in the next 7 days. Check effort before the week fills up.</item>
+        <item quantity="other">%d tasks are due in the next 7 days. Check effort before the week fills up.</item>
+    </plurals>
+    <plurals name="analytics_overview_unestimated_count">
+        <item quantity="one">%d open task has no estimate, so workload totals are partial.</item>
+        <item quantity="other">%d open tasks have no estimate, so workload totals are partial.</item>
+    </plurals>
     <string name="cd_add_subtask">Add subtask</string>
     <string name="cd_add_task">Add task</string>
     <string name="cd_add_task_by_voice">Add task by voice</string>
@@ -418,8 +701,8 @@
 
     <!-- Self-hosted (SFTP) backup -->
     <string name="settings_section_sftp_backup">Self-Hosted Sync &amp; Backup</string>
-    <string name="settings_sftp_backup">Self-hosted server</string>
-    <string name="settings_sftp_backup_summary">Sync across devices and keep versioned backups on your own server. Use the same protocol, folder, and encryption passphrase on each device.</string>
+    <string name="settings_sftp_backup">Cloud sync</string>
+    <string name="settings_sftp_backup_summary">Sync across devices and keep versioned backups via GitHub or your own server. Use the same provider, credentials, and encryption passphrase on each device.</string>
     <string name="settings_sftp_configure_server">Server</string>
     <string name="settings_sftp_not_configured">Not configured</string>
     <!-- %1$s is a formatted relative time, e.g. "2 hours ago". -->
@@ -433,12 +716,23 @@
     <string name="settings_sftp_protocol_ftp">FTP</string>
     <string name="settings_ftp_use_tls">Use secure connection (FTPS)</string>
     <string name="settings_ftp_plain_warning">Plain FTP sends your password and files unencrypted. Only use this on a trusted network.</string>
+    <string name="settings_ftp_strict_tls">Strict certificate verification</string>
+    <string name="settings_ftp_strict_tls_caption">Also checks that the server\'s certificate matches this hostname. Turn this on unless your server uses a self-signed or mismatched certificate — in that case, leave it off or the connection will fail.</string>
     <string name="settings_sftp_backups_to_keep_summary">Keep the last %1$d backups on the server — older ones are pruned automatically.</string>
     <string name="settings_backup_dest_local">this device</string>
-    <string name="settings_backup_dest_self_hosted">your server</string>
+    <string name="settings_backup_dest_self_hosted">remote sync</string>
     <string name="settings_backup_none_configured">No backup destinations are switched on.</string>
     <string name="settings_backup_all_failed">Backup failed — %1$s</string>
     <string name="settings_backup_partial">Backed up %1$d, but failed for %2$s</string>
+    <string name="settings_initial_sync_merge_title">Review first sync</string>
+    <string name="settings_initial_sync_merge_body">This device and the remote sync snapshot both contain data. YATA will merge them, keep a recovery backup before applying changes, and use the remote copy for any direct conflicts.</string>
+    <string name="settings_initial_sync_merge_action">Merge now</string>
+    <string name="settings_empty_local_sync_title">This device looks empty</string>
+    <string name="settings_empty_local_sync_body">This device has no tasks, but its last known sync state and the remote snapshot both contain data. This usually means a fresh install or a restored device rather than an intentional wipe. Restore the remote snapshot to bring that data onto this device, or continue to sync anyway — which will delete it from the remote copy too.</string>
+    <string name="settings_empty_local_sync_restore_action">Restore from remote</string>
+    <string name="settings_empty_local_sync_overwrite_action">Sync anyway</string>
+    <string name="settings_remote_restore_success">Restored the latest remote snapshot.</string>
+    <string name="settings_remote_restore_failed">Restore failed: %1$s</string>
     <string name="settings_backup_interval">Backup frequency</string>
     <string name="settings_backup_interval_summary">Every configured destination is backed up on this schedule.</string>
     <plurals name="settings_backup_all_ok">
@@ -454,7 +748,7 @@
     <string name="settings_backup_summary_failed">Couldn\'t read this backup: %1$s</string>
     <string name="settings_backup_passphrase">Backup encryption passphrase</string>
     <string name="settings_backup_passphrase_set">A passphrase is already set. Leave this blank to keep it, or type a new one to replace it.</string>
-    <string name="settings_backup_passphrase_hint">Encrypts the backup file itself before it leaves your device, so it stays private even on a server you don\'t fully control. Keep a copy somewhere safe — without this passphrase the backup cannot be restored, on this phone or any other.</string>
+    <string name="settings_backup_passphrase_hint">Required before remote sync can save or publish. It encrypts the backup file itself before it leaves your device, so it stays private even on a server you don\'t fully control. Keep a copy somewhere safe; without this passphrase the backup cannot be restored, on this phone or any other.</string>
     <string name="settings_sftp_host">Host</string>
     <string name="settings_sftp_port">Port</string>
     <string name="settings_sftp_username">Username</string>
@@ -499,7 +793,27 @@
     <string name="entity_editors_group_name">Group name</string>
     <string name="entity_editors_list_name">List name</string>
     <string name="entity_editors_new_group">New group</string>
+    <string name="mention_hint_tag">Type to search or create a tag</string>
+    <string name="mention_hint_person">Type to search or create a person</string>
+    <string name="mention_create_tag">Create tag \"%1$s\"</string>
+    <string name="mention_create_person">Create person \"%1$s\"</string>
+    <string name="mention_you">You</string>
+    <string name="entity_editors_exclude_from_today">Exclude from Today</string>
+    <string name="entity_editors_exclude_from_today_summary">Tasks here never show on the Today screen, even if overdue — for a backlog you\'ll schedule later.</string>
+    <string name="entity_editors_project_due_date">Project Due Date</string>
+    <string name="entity_editors_pick_date">Pick date...</string>
+    <string name="entity_editors_default_reminder">Default reminder</string>
+    <string name="entity_editors_default_reminder_summary">Pre-fills the reminder on new tasks created in this project.</string>
+    <string name="entity_editors_common_tags">Common tags</string>
+    <string name="entity_editors_common_tags_summary">Every task in this project always carries these tags, live-synced.</string>
+    <string name="entity_editors_project_color">Project color</string>
+    <string name="entity_editors_group_label">Group</string>
+    <string name="entity_editors_hide_completed_by_default">Hide completed by default</string>
+    <string name="entity_editors_hide_completed_by_default_summary">This tag\'s detail screen opens with completed tasks hidden.</string>
+    <string name="entity_editors_list_color">List color</string>
+    <string name="entity_editors_list_icon">List icon</string>
     <string name="entity_editors_person_s_name">Person\'s name</string>
+    <string name="entity_name_taken">That name is already taken. Names ignore capitalization.</string>
     <string name="entity_editors_project_name">Project name</string>
     <string name="entity_editors_remove_photo">Remove photo</string>
     <string name="entity_editors_separate_multiple_names_with_commas_to_add">Separate multiple names with commas to add several at once.</string>
@@ -507,10 +821,22 @@
     <string name="entity_editors_tag_label">Tag label</string>
     <string name="entity_editors_what_s_this_project_about">What\'s this project about?</string>
     <string name="export_options_no_limit">No limit</string>
-    <string name="help_about_help_about">Help &amp; About</string>
+    <string name="help_about_help_about">Help</string>
+    <string name="help_about_heading">HELP</string>
+    <string name="help_about_upcoming_calendar">Upcoming &amp; Calendar</string>
+    <string name="help_about_quick_add">Quick Add</string>
+    <string name="help_about_search_saved_views">Search &amp; Saved Views</string>
+    <string name="help_about_projects_lists">Projects &amp; Lists</string>
+    <string name="help_about_reminders">Reminders</string>
+    <string name="help_about_widgets">Widgets</string>
+    <string name="help_about_backup_sync">Backup &amp; Sync</string>
+    <string name="help_about_trash">Trash</string>
     <string name="list_detail_all_tasks_inside_this_list_will_be_permane">All tasks inside this list will be permanently deleted.</string>
     <string name="list_detail_delete_list">Delete list</string>
     <string name="list_detail_delete_list_2">Delete list?</string>
+    <string name="list_detail_delete_only_the_list_to_keep_its_tasks">Delete only the list to keep its tasks without a list, or delete the list and all tasks inside it.</string>
+    <string name="list_detail_list_only">List only</string>
+    <string name="list_detail_list_tasks">List + tasks</string>
     <string name="list_detail_edit_list">Edit list</string>
     <string name="list_detail_search_in_list">Search in list</string>
     <string name="lock_backspace">Backspace</string>
@@ -536,6 +862,8 @@
     <string name="main_palette_people_subtitle">Open people</string>
     <string name="main_palette_tags_subtitle">Open tags</string>
     <string name="main_palette_upcoming_subtitle">Open calendar and agenda</string>
+    <string name="main_palette_inbox_subtitle">Clean up captured tasks</string>
+    <string name="main_palette_recurring_subtitle">Review repeating tasks</string>
     <string name="main_palette_next_days_subtitle">Open the focused date list</string>
     <string name="main_palette_my_work">My Work</string>
     <string name="main_palette_my_work_subtitle">Tasks assigned to you</string>
@@ -552,6 +880,20 @@
     <string name="new_task_remove_subtask">Remove subtask</string>
     <string name="new_task_treat_as_a_single_task_instead">Treat as a single task instead</string>
     <string name="notification_helper_this_task_is_due">This task is due</string>
+    <string name="inbox_title">Inbox</string>
+    <string name="inbox_notice">Triage tasks that are missing a date, estimate, owner, or home.</string>
+    <string name="inbox_empty_title">Inbox clear</string>
+    <string name="inbox_empty_body">Every open task has enough detail to show up where it belongs.</string>
+    <string name="inbox_empty_action">Back to Today</string>
+    <string name="inbox_due_today">Today</string>
+    <string name="inbox_due_tomorrow">Tomorrow</string>
+    <string name="inbox_due_next_week">Next week</string>
+    <string name="inbox_estimate_15m">15m</string>
+    <string name="inbox_estimate_30m">30m</string>
+    <string name="inbox_estimate_1h">1h</string>
+    <string name="inbox_move">Move</string>
+    <string name="inbox_assign_me">Assign me</string>
+    <string name="inbox_ready">Ready</string>
     <string name="people_add_person">Add person</string>
     <string name="people_add_to_group">Add to group</string>
     <string name="people_details">Details</string>
@@ -560,7 +902,35 @@
     <string name="person_detail_archive_person">Archive person?</string>
     <string name="person_detail_edit_person">Edit person</string>
     <string name="person_detail_expand">Expand</string>
+    <string name="person_detail_overdue_trend">OVERDUE TREND (7 DAYS)</string>
+    <string name="person_detail_pending">Pending</string>
+    <string name="person_detail_no_open_tasks">No open tasks assigned.</string>
+    <string name="person_detail_completed_tasks">Completed Tasks</string>
+    <string name="person_detail_no_completed_tasks">No completed tasks.</string>
     <string name="person_detail_search_this_person_s_tasks">Search this person\'s tasks</string>
+    <string name="person_analytics_title">Performance</string>
+    <string name="person_analytics_summary">PERFORMANCE SUMMARY</string>
+    <string name="person_analytics_completed_period">done in period</string>
+    <string name="person_analytics_on_time_sample">On-time rate from %1$d completed tasks with due dates</string>
+    <string name="person_analytics_planned_open">planned open</string>
+    <string name="person_analytics_unestimated">unestimated</string>
+    <string name="person_analytics_activity">COMPLETIONS</string>
+    <string name="person_analytics_breakdown">BREAKDOWN</string>
+    <string name="person_analytics_no_breakdown">No tasks in this group.</string>
+    <string name="person_analytics_overdue_tasks">OVERDUE TASKS</string>
+    <string name="person_analytics_no_tasks">No tasks assigned yet.</string>
+    <string name="person_analytics_open_overdue">%1$d open - %2$d overdue</string>
+    <string name="person_analytics_done_total">%1$d/%2$d done</string>
+    <string name="staff_analytics_title">Staff Analytics</string>
+    <string name="staff_analytics_subtitle">Team performance</string>
+    <string name="staff_analytics_team_snapshot">TEAM SNAPSHOT</string>
+    <string name="staff_analytics_staff">staff</string>
+    <string name="staff_analytics_attention">ATTENTION</string>
+    <string name="staff_analytics_people_with_overdue">People with overdue work</string>
+    <string name="staff_analytics_heaviest_load">Heaviest open load</string>
+    <string name="staff_analytics_lowest_on_time">Lowest on-time rate</string>
+    <string name="staff_analytics_staff_table">STAFF TABLE</string>
+    <string name="staff_analytics_no_staff_work">No active staff work yet.</string>
     <string name="person_detail_their_past_assigned_tasks_and_stats_stay_t">Their past assigned tasks and stats stay. They\'re hidden from the People tab — you can unarchive them anytime from this same menu.</string>
     <string name="project_detail_archive_project">Archive project</string>
     <string name="project_detail_archive_project_2">Archive project?</string>
@@ -622,6 +992,11 @@
          a zero-height Text, which is also its own tap-to-edit target — invisible and untappable,
          so an unset name could never be set. -->
     <string name="profile_add_name">Add your name</string>
+    <string name="main_drawer_version">yata %1$s</string>
+    <string name="entity_hero_showing_filter">Showing: %1$s</string>
+    <string name="entity_hero_clear_filter">Clear ✕</string>
+    <string name="today_progress_cd">%1$s, %2$d percent</string>
+    <string name="today_progress_percent">%1$d%%</string>
     <string name="profile_add_email">Add your email</string>
 
     <!-- Multi-select bars. One plural shared by every tab and the bulk task action bar — the
@@ -636,6 +1011,7 @@
     <string name="bulk_add_tag_title">Add tag to selected tasks</string>
     <string name="bulk_no_tags">No tags yet - create one from the Tags tab first.</string>
     <string name="bulk_assign_title">Assign selected tasks to</string>
+    <string name="bulk_set_priority_title">Set priority for selected tasks</string>
     <string name="bulk_no_people">No people yet - add one from the People tab first.</string>
 
     <!-- Today top bar -->
@@ -695,11 +1071,24 @@
     <!-- Start date ("not actionable before"). %1$s is an already-formatted date. -->
     <string name="task_starts_on">Starts %1$s</string>
     <string name="task_start_date">Start date</string>
+    <string name="task_start_date_day_before_due">Day before due</string>
+    <string name="task_start_date_custom_days_chip">Custom days before</string>
+    <plurals name="task_start_date_n_days_before_due">
+        <item quantity="one">%1$d day before due</item>
+        <item quantity="other">%1$d days before due</item>
+    </plurals>
+    <string name="task_start_date_custom_days_title">Start before due date</string>
+    <string name="task_start_date_custom_days_label">Days before due date</string>
+    <string name="task_start_date_custom_days_error">Enter 1-3650 days.</string>
     <string name="task_start_date_none">No start date</string>
     <string name="cd_pick_start_date">Pick start date</string>
     <string name="cd_clear_start_date">Clear start date</string>
     <string name="task_start_date_hint">Hidden from Today until this date</string>
     <string name="smart_add_starts">Starts %1$s</string>
+    <string name="smart_add_due">Due %1$s</string>
+    <string name="new_task_bulk_mixed_dates">Dates differ between lines</string>
+    <string name="new_task_bulk_more_detected">+%1$d more</string>
+    <string name="new_task_bulk_truncated">Only the first %1$d lines will be added — %2$d more were ignored.</string>
     <!-- %1$s is a detected field label, e.g. "Due Tomorrow". -->
     <string name="new_task_ignore_field">Ignore %1$s</string>
     <string name="settings_set_pin">Set PIN</string>
@@ -741,11 +1130,26 @@
     <string name="task_detail_flag">Flag</string>
     <string name="task_detail_post_comment">Post comment</string>
     <string name="task_detail_reminder">Reminder</string>
+    <string name="task_detail_due_date">Due Date</string>
+    <string name="task_postponement_warning">"%1$s" has been postponed %2$d times.</string>
+    <string name="task_weekend_reschedule_warning">"%1$s" is now due on the weekend (%2$s).</string>
+    <string name="task_holiday_reschedule_warning">"%1$s" is now due on a holiday (%2$s).</string>
+    <string name="task_detail_carry_forward">Carry forward to next day</string>
+    <string name="task_detail_repeats">Repeats</string>
+    <string name="task_detail_streak_days">🔥 %1$d-day streak</string>
+    <string name="task_detail_recurring_history">Recurring history</string>
+    <string name="task_detail_none">None</string>
+    <string name="task_detail_tags_sync_hint">Tags with no ✕ come from this task\'s project and stay in sync automatically.</string>
+    <string name="task_detail_subtasks_progress">%1$d/%2$d done</string>
+    <string name="task_detail_comments">Comments</string>
     <string name="task_detail_select_list">Select list</string>
     <string name="task_detail_select_project">Select project</string>
     <string name="task_detail_skip_this_occurrence">Skip this occurrence</string>
     <string name="task_detail_tag">Tag...</string>
     <string name="task_detail_tap_to_add_notes_supports_markdown">Tap to add notes... (supports markdown)</string>
+    <string name="task_detail_all_subtasks_done_title">All subtasks done?</string>
+    <string name="task_detail_all_subtasks_done_body">Do you want to mark "%1$s" as done too?</string>
+    <string name="task_detail_mark_task_done">Mark task done</string>
     <!-- The markdown hint belongs in the field's supportingText slot, not crammed into the
          placeholder: a placeholder disappears the moment you start typing, which is exactly when
          knowing markdown is accepted becomes useful. -->
@@ -760,11 +1164,65 @@
     <string name="sort_starred_first">Starred first</string>
     <string name="today_next_10_days">Next 10 days</string>
     <string name="today_search_tasks">Search tasks</string>
+    <string name="today_voice_fab_label">Speak</string>
     <string name="upcoming_next_month">Next month</string>
     <string name="upcoming_previous_month">Previous month</string>
     <string name="voice_task_overlay_speak_again">Speak Again</string>
+    <string name="voice_task_overlay_heading">ON-DEVICE VOICE INPUT</string>
+    <string name="voice_task_overlay_mic_permission_required">Microphone permission required for voice task creation.</string>
+    <string name="voice_task_overlay_listening">Listening... Speak your task naturally\n(e.g., \'Buy groceries tomorrow at 5pm\')</string>
+    <string name="voice_task_overlay_due_chip">Due: %1$s</string>
+    <string name="voice_task_overlay_priority_chip">Priority: %1$s</string>
+    <string name="voice_task_overlay_project_chip">Project: %1$s</string>
+    <string name="voice_task_overlay_list_chip">List: %1$s</string>
+    <string name="voice_task_overlay_tag_chip">#%1$s</string>
+    <string name="voice_task_overlay_assignee_chip">@%1$s</string>
+    <string name="voice_task_overlay_create_task">Create Task</string>
     <string name="voice_task_overlay_tap_to_use_system_voice_dialog">Tap to use System Voice Dialog</string>
     <string name="welcome_skip">Skip</string>
+    <string name="welcome_next">Next</string>
+    <string name="welcome_get_started">Get Started</string>
+    <string name="welcome_title_intro">Welcome to YATA</string>
+    <string name="welcome_intro_description">Capture tasks quickly, organize them your way, and keep your day focused. Natural-language quick add, widgets, and self-hosted sync are ready when you need them.</string>
+    <string name="welcome_title_organize">Organize your work</string>
+    <string name="welcome_organize_description">Use projects for outcomes, lists for simpler buckets, tags for cross-cutting context, and people when work belongs to someone.</string>
+    <string name="welcome_title_review">Review and adjust</string>
+    <string name="welcome_review_description">Today, Upcoming, and Analytics help you see what needs attention now, what is coming next, and where work is getting stuck.</string>
+    <string name="welcome_title_projects_lists">Projects &amp; Lists</string>
+    <string name="welcome_title_people_delegation">People &amp; Delegation</string>
+    <string name="welcome_title_tags">Tags</string>
+    <string name="welcome_title_today_upcoming">Today &amp; Upcoming</string>
+    <string name="welcome_title_profile">Make it yours</string>
+    <string name="welcome_profile_description">Add your name and a picture — this is how you\'ll show up as the assignee on your own tasks and in shared exports.</string>
+    <string name="welcome_profile_email_hint">Just for display — not used to sign in or sync.</string>
+    <string name="welcome_profile_avatar_or_icon">Or pick an icon</string>
+    <string name="welcome_title_analytics">Analytics</string>
+    <string name="welcome_setup_title">Choose your starting setup</string>
+    <string name="welcome_setup_description">Pick a preset to create starter structure and switch on the features that match how you want to use YATA.</string>
+    <string name="welcome_setup_simple_title">Simple list</string>
+    <string name="welcome_setup_simple_description">A lightweight setup for personal tasks without teams, tags, or project planning.</string>
+    <string name="welcome_setup_personal_title">Personal productivity</string>
+    <string name="welcome_setup_personal_description">A focused personal workspace with projects, tags, estimates, and gentle daily nudges.</string>
+    <string name="welcome_setup_team_title">Team projects</string>
+    <string name="welcome_setup_team_description">A project-oriented workspace for assigning work and planning before tasks hit Today.</string>
+    <string name="welcome_setup_change_personal_list">Personal list</string>
+    <string name="welcome_setup_change_today_upcoming">Today + Upcoming</string>
+    <string name="welcome_setup_change_due_today">New tasks due today</string>
+    <string name="welcome_setup_change_today_someday">Today and Someday lists</string>
+    <string name="welcome_setup_change_goals_project">Goals project</string>
+    <string name="welcome_setup_change_estimate">30m default estimate</string>
+    <string name="welcome_setup_change_nudges">Agenda + overdue nudges</string>
+    <string name="welcome_setup_change_work_list">Work list</string>
+    <string name="welcome_setup_change_launch_backlog">Launch + Backlog projects</string>
+    <string name="welcome_setup_change_people_enabled">People enabled</string>
+    <string name="welcome_setup_change_auto_assign">Auto-assign to you</string>
+    <string name="welcome_setup_apply">Apply this setup</string>
+    <string name="welcome_setup_applied">Setup applied</string>
+    <string name="welcome_summary_ready_title">Your workspace is ready</string>
+    <string name="welcome_summary_apply_title">Apply a setup when you\'re ready</string>
+    <string name="welcome_summary_applied_description">%1$s has been applied. You can change every list, project, person, and preference later from the app.</string>
+    <string name="welcome_summary_unapplied_description">You can start without a preset, or apply %1$s now to create the starter workspace before you continue.</string>
+    <string name="welcome_summary_apply_preset">Apply %1$s</string>
     <string name="widget_config_widget_customizer">Widget Customizer</string>
     <string name="widget_config_corner_radius">Corner Radius</string>
     <string name="widget_config_custom_header_label">Custom Header Label</string>
@@ -817,6 +1275,10 @@
     <string name="today_day_after_tomorrow_header">DAY AFTER TOMORROW</string>
     <string name="settings_today_show_upcoming_when_empty">Show upcoming tasks when Today is empty</string>
     <string name="settings_today_show_upcoming_when_empty_summary">Automatically preview tomorrow\'s and the day after\'s tasks (dimmed) instead of showing a "Show upcoming tasks" button.</string>
+    <string name="countdown_in">in %1$s</string>
+    <string name="countdown_overdue_by">Overdue by %1$s</string>
+    <string name="settings_due_countdown">Due date countdown</string>
+    <string name="settings_due_countdown_desc">Show time remaining until a task\'s due date/time on its card and detail screen.</string>
     <string name="settings_search_help_summary">Feature guide, version, and app information</string>
     <string name="settings_reset_settings">Reset app settings</string>
     <string name="settings_reset_dialog_title">Reset app settings?</string>
@@ -846,7 +1308,33 @@
     <string name="task_archive_action">Archive task</string>
     <string name="task_unarchive_action">Unarchive task</string>
     <string name="task_link_copied">Task link copied</string>
+    <string name="task_link_long_warning_title">Long import link</string>
+    <string name="task_link_long_warning_body">This import link is %1$d characters for %2$d tasks. Some apps may send it as plain text instead of a tappable link.</string>
+    <string name="task_link_long_warning_share_anyway">Share anyway</string>
     <string name="task_deleted">Task deleted</string>
+    <string name="task_marked_open">Task marked open</string>
+    <string name="task_completed">Task completed</string>
+    <plurals name="task_transfer_imported">
+        <item quantity="one">%1$d shared task added to Inbox</item>
+        <item quantity="other">%1$d shared tasks added to Inbox</item>
+    </plurals>
+    <string name="task_transfer_import_failed">Could not import this YATA task link.</string>
+    <string name="task_transfer_import_incomplete">This shared task link looks incomplete. Try opening it from the original message.</string>
+    <string name="task_transfer_import_too_many_tasks">This shared task link contains too many tasks to import at once.</string>
+    <string name="task_transfer_import_too_large">This shared task link is too large to import.</string>
+    <string name="task_transfer_import_unsupported">This shared task link was made by an unsupported YATA version.</string>
+    <string name="shared_task_import_title">Shared Task</string>
+    <string name="shared_task_import_create_missing_title">Create missing items?</string>
+    <string name="shared_task_import_create_missing_message">%1$s aren\'t in your workspace yet. Create them and add this task?</string>
+    <string name="shared_task_import_create_and_add">Create &amp; Add</string>
+    <string name="shared_task_import_skip">Skip</string>
+    <string name="shared_tasks_import_title">Shared Tasks</string>
+    <string name="shared_tasks_import_count">%1$d tasks ready to import</string>
+    <string name="shared_tasks_import_copy_structure">Tasks will land in Inbox and create missing lists, projects, and tags.</string>
+    <string name="shared_tasks_import_inbox_only">Tasks will land in Inbox without copying structure.</string>
+    <string name="shared_tasks_import_structure_ready">Structure already exists</string>
+    <string name="shared_tasks_import_more_structure">+%1$d more</string>
+    <string name="shared_tasks_import_action">Import</string>
     <string name="export_failed">Export failed.</string>
     <string name="reminder_before_due_error">Reminder must be before the due time.</string>
     <string name="reminder_in_past_error">That reminder time has already passed today.</string>
@@ -864,6 +1352,7 @@
     <string name="export_show_tags">Show tags</string>
     <string name="export_show_assignees">Show assigned to</string>
     <string name="export_show_footer">Show Made with YATA footer</string>
+    <string name="export_include_import_link">Include import link</string>
     <string name="export_section_format">Format</string>
     <string name="export_density_relaxed">Relaxed</string>
     <string name="export_density_compact">Compact</string>
@@ -872,15 +1361,58 @@
     <string name="export_include_subtasks">Include subtasks</string>
     <string name="export_include_notes">Include notes</string>
     <string name="export_include_comments">Include comments</string>
+    <string name="export_yata_wordmark">YATA</string>
+    <string name="export_made_with_yata">Made with YATA</string>
+    <string name="export_generated_on">Generated %1$s</string>
+    <string name="export_overdue_badge">OVERDUE</string>
+    <string name="export_task_badge">TASK</string>
+    <string name="export_done_badge">DONE</string>
+    <string name="export_open_badge">OPEN</string>
+    <string name="export_priority_badge">%1$s PRIORITY</string>
+    <string name="export_flagged_badge">FLAGGED</string>
+    <string name="export_hidden_count">+%1$d</string>
+    <string name="export_labeled_pills_colon">%1$s:</string>
+    <string name="export_project_label">Project</string>
+    <string name="export_list_label">List</string>
+    <string name="export_assigned_to_label">Assigned to</string>
+    <string name="export_assignee_pill">@%1$s</string>
+    <string name="export_tags_label">Tags</string>
+    <string name="export_schedule_label">Schedule</string>
+    <string name="export_reminder_pill">Reminder: %1$s</string>
+    <string name="export_subtasks_heading">SUBTASKS (%1$d/%2$d)</string>
+    <string name="export_notes_heading">NOTES</string>
+    <string name="export_comments_heading">COMMENTS (%1$d)</string>
+    <string name="export_total_label">Total</string>
+    <string name="export_done_label">Done</string>
+    <string name="export_overdue_label">Overdue</string>
+    <string name="export_progress_label">Progress</string>
+    <string name="export_percent_complete">%1$d%% complete</string>
+    <string name="export_no_tasks">No tasks.</string>
+    <string name="export_rows_count">(%1$d)</string>
+    <string name="export_completed_at">Completed %1$s</string>
+    <string name="task_export_due_label">Due %1$s</string>
+    <string name="export_due_label">Due</string>
+    <string name="export_share_tagline">Local-first task manager</string>
+    <string name="export_shared_on">Shared %1$s</string>
+    <string name="export_more_count">+%1$d more</string>
+    <string name="export_dark_theme_toggle">Dark theme</string>
     <string name="notification_reminder_title">Reminder: %1$s</string>
     <string name="notification_action_complete">Complete</string>
     <string name="notification_action_snooze_15m">Snooze 15 min</string>
     <string name="notification_action_snooze_1h">Snooze 1 hour</string>
     <string name="notification_action_snooze_tomorrow">Snooze until tomorrow</string>
-    <string name="snooze_next_weekday">Next weekday</string>
+    <string name="snooze_next_weekday">Next business day</string>
     <string name="bulk_reschedule_selected">Reschedule selected tasks</string>
     <string name="new_task_title">New task</string>
     <!-- The four mention triggers. Kept terse because it sits inside the input field. -->
+    <string name="syntax_dialog_title">Typing shortcuts</string>
+    <string name="syntax_tag">Add a tag, e.g. #urgent</string>
+    <string name="syntax_person">Assign a person, e.g. @Sam</string>
+    <string name="syntax_project">Put it in a project, e.g. +Acme</string>
+    <string name="syntax_list">Put it in a list, e.g. =Groceries</string>
+    <string name="syntax_priority">Set priority: high, medium, low. p1, p2 and p3 work too.</string>
+    <string name="syntax_escape">Keep the next word out of all of this, e.g. \\tomorrow or \\@Sam stays in the title. Useful when a name is also a day or a month.</string>
+    <string name="syntax_plain_words">Dates, times and repeats need no symbol — just write them: “tomorrow 3pm”, “every monday”, “Aug 31”.</string>
     <string name="new_task_title_hint">What needs doing? Try # tag, @ person, + project, = list</string>
     <string name="new_task_smart_add_summary">Smart add understood this task as:</string>
     <string name="new_task_detected_title">Title: %1$s</string>
@@ -892,6 +1424,7 @@
     <string name="new_task_assign">Assign</string>
     <string name="new_task_tags">Tags</string>
     <string name="new_task_tag">Tag</string>
+    <string name="new_task_organize" translatable="false">Organize</string>
     <string name="new_task_notes">Notes</string>
     <string name="new_task_subtasks">Subtasks</string>
     <string name="new_task_create_another">Create another</string>
@@ -902,6 +1435,14 @@
     <plurals name="new_task_create_tasks">
         <item quantity="one">Create %1$d task</item>
         <item quantity="other">Create %1$d tasks</item>
+    </plurals>
+    <plurals name="new_task_bulk_create_missing">
+        <item quantity="one">Create %1$d missing item</item>
+        <item quantity="other">Create %1$d missing items</item>
+    </plurals>
+    <plurals name="new_task_bulk_lines_detected">
+        <item quantity="one">%1$d task detected — each line becomes its own task, parsed separately</item>
+        <item quantity="other">%1$d tasks detected — each line becomes its own task, parsed separately</item>
     </plurals>
     <plurals name="new_task_schedule_conflict">
         <item quantity="one">%1$d open task is already scheduled at %2$s</item>
@@ -927,6 +1468,24 @@
     <string name="recurrence_yearly">Yearly</string>
     <string name="recurrence_custom">Custom…</string>
     <string name="recurrence_custom_help">Custom rules support intervals, weekdays, monthly dates, yearly repeats, and end dates.</string>
+    <string name="recurrence_repeat_task">Repeat task</string>
+    <string name="recurrence_frequency">Frequency</string>
+    <string name="recurrence_every">Every</string>
+    <string name="recurrence_on_days">On days</string>
+    <string name="recurrence_day_of_month">Day of month</string>
+    <string name="recurrence_last_day_of_month">Last day of month</string>
+    <string name="recurrence_monthly_mode_date">Date</string>
+    <string name="recurrence_monthly_mode_weekday">Weekday</string>
+    <string name="recurrence_monthly_position_last">Last</string>
+    <string name="recurrence_repeat_from">Repeat from</string>
+    <string name="recurrence_when_you_finish_it">When you finish it</string>
+    <string name="recurrence_fixed_schedule">Fixed schedule</string>
+    <string name="recurrence_completion_based_hint">Next due date starts counting the day you mark it done</string>
+    <string name="recurrence_fixed_schedule_hint">Next due date is always on the same schedule, done or not</string>
+    <string name="recurrence_ends">Ends</string>
+    <string name="recurrence_never_ends">Never ends</string>
+    <string name="recurrence_ends_after">Ends after</string>
+    <string name="recurrence_ends_on_date">Ends on date</string>
     <string name="settings_local_backup_started">Local backup started</string>
     <string name="settings_theme_mode">Theme mode</string>
     <string name="settings_color_intensity">Color intensity</string>
@@ -964,6 +1523,9 @@
     <string name="settings_reduce_motion">Reduce motion</string>
     <string name="settings_reduce_motion_desc">Shortens navigation, sheet, and fade animations.</string>
     <string name="settings_task_row_density">Task row density</string>
+    <string name="task_row_density_compact">Compact</string>
+    <string name="task_row_density_comfortable">Comfortable</string>
+    <string name="task_row_density_spacious">Spacious</string>
     <string name="settings_task_cards">Task cards</string>
     <string name="settings_task_cards_desc">Give every task its own card instead of a flat row.</string>
     <string name="settings_today_tab">Today tab</string>
@@ -1011,8 +1573,8 @@
     <string name="settings_restore_local_backup">Restore latest local backup</string>
 
     <!-- Settings: Help, Appearance -->
-    <string name="settings_help_about_title">Help &amp; About</string>
-    <string name="settings_help_about_summary">Feature guide, version, and app identity.</string>
+    <string name="settings_help_about_title">Help</string>
+    <string name="settings_help_about_summary">Feature guide, sync tips, and app basics.</string>
     <string name="settings_theme_color">App theme color</string>
     <string name="settings_theme_color_summary">Pick a seed color to theme the app with - used instead of Material You while it\'s off.</string>
     <string name="settings_seed_default">Default</string>
@@ -1084,6 +1646,16 @@
     <string name="quick_add_widget_add_task">Add a task...</string>
     <string name="quick_add_widget_preset_deleted">Preset deleted - long-press to reconfigure</string>
     <string name="quick_add_widget_destination">Destination:</string>
+    <string name="widget_done_ratio">%1$d/%2$d done</string>
+    <string name="widget_no_tasks_here">No tasks here.</string>
+    <string name="widget_more_in_app">+%1$d more in the app</string>
+    <string name="widget_nothing_due_today">Nothing due today.</string>
+    <string name="team_overdue_widget_title">Team Overdue</string>
+    <string name="team_overdue_widget_empty">Nobody\'s behind. 🎉</string>
+    <string name="tasker_create_task_hint">Fields accept Tasker variables (%var). Leave blank to skip.</string>
+    <string name="archive_section_header">%1$s - %2$d</string>
+    <string name="image_cropper_hint">Drag to reposition, pinch to zoom</string>
+    <string name="entity_report_pdf_title">%1$s — YATA %2$s Report</string>
 
     <!-- Shared task filters and empty states -->
     <string name="task_filter_all">All</string>
@@ -1102,6 +1674,26 @@
         <item quantity="one">%1$d task</item>
         <item quantity="other">%1$d tasks</item>
     </plurals>
+    <string name="task_move_to_picker_title">Move task to...</string>
+    <string name="task_move_to_picker_projects">PROJECTS</string>
+    <string name="people_tab_assigned_done">%1$d assigned · %2$d done</string>
+    <string name="people_tab_overdue_count">%1$d overdue</string>
+    <string name="detail_search_prompt_project">Type to search tasks in this project.</string>
+    <string name="detail_search_prompt_list">Type to search tasks in this list.</string>
+    <string name="detail_search_no_matches">No matching tasks.</string>
+    <string name="next_days_all_clear">All clear</string>
+    <string name="next_days_nothing_due">Nothing due in the next %1$d days.</string>
+    <string name="recurring_tasks_title">Recurring tasks</string>
+    <string name="recurring_notice">Review every open repeating task, skip the next occurrence, or stop a task from repeating.</string>
+    <string name="recurring_empty_title">No repeating tasks</string>
+    <string name="recurring_empty_body">Tasks with repeat rules will appear here.</string>
+    <string name="recurring_empty_action">Create one</string>
+    <string name="recurring_next_due">Next due: %1$s</string>
+    <string name="recurring_skip_next">Skip next</string>
+    <string name="recurring_clear_repeat_action">Clear repeat</string>
+    <string name="recurring_clear_repeat_title">Clear repeat?</string>
+    <string name="recurring_clear_repeat_body">“%1$s” will stay as a normal task and stop creating future occurrences.</string>
+    <string name="recurring_repeat_cleared">Repeat cleared</string>
     <string name="upcoming_view_mode_upcoming">Upcoming</string>
     <string name="upcoming_view_mode_calendar">Calendar</string>
 
@@ -1122,6 +1714,14 @@
     <string name="diagnostics_status_ok">OK</string>
     <string name="diagnostics_status_attention">Attention</string>
     <string name="diagnostics_status_unknown">Unknown</string>
+    <string name="app_links_diagnostic_title">Task links</string>
+    <string name="app_links_diagnostic_verified">Verified links open directly in YATA.</string>
+    <string name="app_links_diagnostic_user_selected">YATA is selected for task links on this device.</string>
+    <string name="app_links_diagnostic_not_verified">Android has not verified YATA for task links.</string>
+    <string name="app_links_diagnostic_unknown">Link verification status is unavailable on this device.</string>
+    <string name="app_links_diagnostic_host">Host</string>
+    <string name="app_links_diagnostic_resolver">Resolver</string>
+    <string name="app_links_diagnostic_open_settings">Open link settings</string>
     <string name="diagnostics_notification_access">Notification access</string>
     <string name="diagnostics_exact_alarm_timing">Exact alarm timing</string>
     <string name="diagnostics_background_delivery">Background delivery</string>
@@ -1166,4 +1766,36 @@
     <string name="cd_expand_section">Expand section</string>
     <string name="cd_collapse_section">Collapse section</string>
 
+    <plurals name="settings_postponement_threshold_value">
+        <item quantity="one">%1$d time</item>
+        <item quantity="other">%1$d times</item>
+    </plurals>
+    <string name="settings_postponement_warning_threshold">Postponement warning threshold</string>
+    <string name="settings_postponement_warning_threshold_desc">Number of times a normal-priority task can be postponed before warning. Medium priority warns after %1$d and high priority after %2$d.</string>
+    <string name="settings_weekend_days">Weekend days</string>
+    <string name="settings_weekend_days_desc">Rescheduling a task onto one of these days shows a warning. Turn all of them off to disable the warning.</string>
+    <string name="settings_holidays">Holidays</string>
+    <string name="settings_holidays_desc">Choose which weekdays count as weekends, and add your own holiday dates (national holidays, office closures) — rescheduling a task onto either warns. No holiday data is bundled or fetched; add dates yourself and re-add movable ones (like Diwali or Easter) each year.</string>
+    <string name="settings_observe_non_working_days">Observe non-working days</string>
+    <string name="settings_observe_non_working_days_desc">When a recurring task\'s due date lands on a weekend or holiday, treat it as due the previous working day in Today, overdue counts, and notifications. The task\'s stored due date itself doesn\'t change.</string>
+    <string name="settings_holiday_pick_date">Pick date</string>
+    <string name="settings_holiday_name_label">Name</string>
+    <string name="settings_add_holiday">Add holiday</string>
+    <string name="settings_holiday_recurring_label">Repeats every year</string>
+    <string name="holiday_recurring_badge">Yearly</string>
+    <string name="holiday_one_time_section">One-time</string>
+    <string name="cd_remove_holiday">Remove %1$s</string>
+    <string name="date_picker_nonworking_day_title">Non-working day</string>
+    <string name="date_picker_nonworking_day_warning">This date falls on %1$s. Use it anyway?</string>
+    <string name="date_picker_use_anyway">Use anyway</string>
+    <string name="action_reopen">Reopen</string>
+    <string name="action_complete">Complete</string>
+    <string name="action_open">Open</string>
+    <plurals name="tasks_rescheduled">
+        <item quantity="one">Task rescheduled</item>
+        <item quantity="other">%1$d tasks rescheduled</item>
+    </plurals>
+    <string name="bulk_reschedule_keep_time">Keep each task\'s time</string>
+    <string name="recurrence_preview_next">Next: %1$s</string>
+    <string name="recurrence_preview_none">Doesn\'t repeat after this one</string>
 </resources>

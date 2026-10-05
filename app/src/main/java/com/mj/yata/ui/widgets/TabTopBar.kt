@@ -14,6 +14,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,6 +49,7 @@ fun TabTopBar(
     onProfileClick: () -> Unit,
     modifier: Modifier = Modifier,
     menuContentDescription: String? = null,
+    showNavigationIcon: Boolean = true,
     actions: @Composable RowScope.() -> Unit = {}
 ) {
     val menuLabel = menuContentDescription ?: stringResource(R.string.cd_open_drawer)
@@ -59,8 +61,10 @@ fun TabTopBar(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        YataTopBarIconButton(onClick = onMenuClick) {
-            Icon(imageVector = Icons.Default.Menu, contentDescription = menuLabel)
+        if (showNavigationIcon) {
+            YataTopBarIconButton(onClick = onMenuClick) {
+                Icon(imageVector = Icons.Default.Menu, contentDescription = menuLabel)
+            }
         }
         Text(
             text = title,
@@ -85,6 +89,7 @@ fun TabTopBar(
             IconButton(
                 onClick = onProfileClick,
                 modifier = Modifier
+                    .minimumInteractiveComponentSize()
                     .size(40.dp)
                     .semantics { contentDescription = profileLabel }
             ) {

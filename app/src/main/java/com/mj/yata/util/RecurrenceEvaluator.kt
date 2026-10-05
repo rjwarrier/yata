@@ -1,11 +1,13 @@
 package com.mj.yata.util
 
+import com.mj.yata.domain.model.DEFAULT_WEEKEND_DAYS
 import com.mj.yata.domain.model.Recurrence
 import com.mj.yata.domain.model.RecurrenceEnds
 import com.mj.yata.domain.model.Task
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
+import java.time.YearMonth
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
@@ -30,7 +32,11 @@ object RecurrenceEvaluator {
         "SU" to DayOfWeek.SUNDAY
     )
 
-    fun recurrenceSummary(r: Recurrence?): String {
+    /** [weekendDays] defaults to Saturday/Sunday, so every existing caller that hasn't been
+     * updated to pass the user's configured weekend days (Settings → Task Defaults → Holidays)
+     * compiles and reads exactly as before. Only matters when a weekly recurrence's [byday] is
+     * exactly the configured weekend/weekday set — otherwise the days are just listed by name. */
+    fun recurrenceSummary(r: Recurrence?, weekendDays: Set<String> = DEFAULT_WEEKEND_DAYS): String {
         if (r == null) return "Does not repeat"
         val n = r.interval
         val unit = when (r.freq) {
@@ -55,8 +61,8 @@ object RecurrenceEvaluator {
 
         if (r.freq == "weekly" && !r.byday.isNullOrEmpty()) {
             val sorted = r.byday.sortedBy { DAY_ORDER.indexOf(it) }
-            val isWeekdays = sorted.size == 5 && !sorted.contains("SA") && !sorted.contains("SU")
-            val isWeekends = sorted.size == 2 && sorted.contains("SA") && sorted.contains("SU")
+            val isWeekdays = weekendDays.isNotEmpty() && sorted.toSet() == (DAY_ORDER.toSet() - weekendDays)
+            val isWeekends = weekendDays.isNotEmpty() && sorted.toSet() == weekendDays
 
             base += when {
                 isWeekdays -> " on weekdays"
@@ -65,7 +71,10 @@ object RecurrenceEvaluator {
             }
         }
 
-        if (r.freq == "monthly" && r.bymonthday != null) {
+        if (r.freq == "monthly" && r.byweekday != null && r.bysetpos != null) {
+            val weekdayLabel = DAY_LABEL[r.byweekday] ?: r.byweekday
+            base += if (r.bysetpos == -1) " on the last $weekdayLabel" else " on the ${getOrdinal(r.bysetpos)} $weekdayLabel"
+        } else if (r.freq == "monthly" && r.bymonthday != null) {
             base += if (r.bymonthday == -1) " on the last day" else " on the ${getOrdinal(r.bymonthday)}"
         }
 
@@ -91,7 +100,9 @@ object RecurrenceEvaluator {
         if (r.freq == "weekly" && !r.byday.isNullOrEmpty()) {
             parts.add("BYDAY=${r.byday.joinToString(",")}")
         }
-        if (r.freq == "monthly" && r.bymonthday != null) {
+        if (r.freq == "monthly" && r.byweekday != null && r.bysetpos != null) {
+            parts.add("BYDAY=${r.bysetpos}${r.byweekday}")
+        } else if (r.freq == "monthly" && r.bymonthday != null) {
             parts.add("BYMONTHDAY=${r.bymonthday}")
         }
         when (val ends = r.ends) {
@@ -115,7 +126,9 @@ object RecurrenceEvaluator {
             "daily" -> baseDate.plusDays(interval.toLong())
             "yearly" -> baseDate.plusYears(interval.toLong())
             "monthly" -> {
-                if (r.bymonthday == -1) {
+                if (r.byweekday != null && r.bysetpos != null) {
+                    nextMonthlyWeekdayOccurrence(baseDate, r.byweekday, r.bysetpos, interval)
+                } else if (r.bymonthday == -1) {
                     // Last day of month.
                     val thisMonthLastDay = baseDate.withDayOfMonth(baseDate.lengthOfMonth())
                     if (baseDate.isBefore(thisMonthLastDay)) {
@@ -193,6 +206,34 @@ object RecurrenceEvaluator {
         return nextDate.format(dateFormatter)
     }
 
+    /**
+     * The next [count] due dates after [baseDateStr], in order, for previewing a rule while it's
+     * being edited — so "last Friday", an every-3-weeks interval or an end count can be checked
+     * against real dates before saving rather than weeks later.
+     *
+     * Walks the same steps completing the task does (`YataRepositoryImpl.toggleTaskDone`): each
+     * date comes from [calculateNextOccurrence] off the previous one, and an "ends after N" count
+     * is decremented per step, so the list stops exactly where the series would. A completion-based
+     * rule is previewed as if each occurrence were finished on its due date. Fewer than [count]
+     * dates (possibly none) means the series ends first.
+     */
+    fun previewNextOccurrences(r: Recurrence, baseDateStr: String, count: Int = 3): List<String> {
+        val dates = mutableListOf<String>()
+        var rule: Recurrence = r
+        var current = baseDateStr
+        while (dates.size < count) {
+            val next = calculateNextOccurrence(rule, current) ?: break
+            dates += next
+            current = next
+            val ends = rule.ends
+            if (ends is RecurrenceEnds.After) {
+                if (ends.count - 1 <= 0) break
+                rule = rule.copy(ends = RecurrenceEnds.After(ends.count - 1))
+            }
+        }
+        return dates
+    }
+
     /** [completions] must be sorted newest-first (as `getCompletedTasksBySeriesId` already
      * returns them). Counts consecutive on-time completions from the most recent one back —
      * "on-time" meaning completed on or before the due date it was completed against — stopping
@@ -208,6 +249,28 @@ object RecurrenceEvaluator {
             streak++
         }
         return streak
+    }
+
+    /** The nth occurrence of [weekday] in [month], or the last one when [setPos] is -1. [setPos]
+     * outside 1..4 (or -1) is clamped to 4, since a 5th occurrence doesn't exist in every month —
+     * a recurrence saved when a month happened to have 5 Fridays would otherwise silently produce
+     * no date at all the next time that weekday only occurs 4 times. */
+    private fun nthWeekdayOfMonth(month: YearMonth, weekday: DayOfWeek, setPos: Int): LocalDate =
+        if (setPos == -1) {
+            month.atEndOfMonth().with(TemporalAdjusters.lastInMonth(weekday))
+        } else {
+            month.atDay(1).with(TemporalAdjusters.dayOfWeekInMonth(setPos.coerceIn(1, 4), weekday))
+        }
+
+    private fun nextMonthlyWeekdayOccurrence(baseDate: LocalDate, weekdayCode: String, setPos: Int, interval: Int): LocalDate {
+        val weekday = DAY_MAP[weekdayCode] ?: return baseDate.plusMonths(interval.toLong())
+        val currentMonth = YearMonth.from(baseDate)
+        val candidateThisMonth = nthWeekdayOfMonth(currentMonth, weekday, setPos)
+        return if (candidateThisMonth.isAfter(baseDate)) {
+            candidateThisMonth
+        } else {
+            nthWeekdayOfMonth(currentMonth.plusMonths(interval.toLong()), weekday, setPos)
+        }
     }
 
     private fun getOrdinal(n: Int): String {

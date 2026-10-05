@@ -16,7 +16,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -35,7 +35,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mj.yata.R
+import com.mj.yata.ui.util.rememberAdaptiveSheetMaxWidth
 import com.mj.yata.ui.widgets.SegmentedControl
+import com.mj.yata.ui.widgets.YataCompactFieldShape
+import com.mj.yata.ui.widgets.yataFieldColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -46,11 +49,12 @@ fun TaskExportOptionsDialog(
     hasComments: Boolean,
     hasSubtasks: Boolean,
     hasScheduleDetails: Boolean,
+    systemDarkTheme: Boolean,
     onDismiss: () -> Unit,
     onConfirm: (TaskExportOptions) -> Unit
 ) {
     val context = LocalContext.current
-    val defaults = remember(taskTitle) { defaultTaskExportOptions(context, taskTitle) }
+    val defaults = remember(taskTitle) { defaultTaskExportOptions(context, taskTitle, systemDarkTheme) }
     var includeNotes by remember { mutableStateOf(defaults.includeNotes) }
     var includeComments by remember { mutableStateOf(defaults.includeComments) }
     var includeSubtasks by remember { mutableStateOf(defaults.includeSubtasks) }
@@ -60,14 +64,21 @@ fun TaskExportOptionsDialog(
     var destination by remember { mutableStateOf(defaults.destination) }
     var pdfPageSize by remember { mutableStateOf(defaults.pdfPageSize) }
     var imageScale by remember { mutableStateOf(defaults.imageScale) }
+    var imageDarkTheme by remember { mutableStateOf(defaults.imageDarkTheme) }
+    var includeImportLink by remember { mutableStateOf(defaults.includeImportLink) }
     var fileNameText by remember { mutableStateOf(defaults.fileNameBase) }
+
+    // The IMAGE card (TaskShareCard) is a fixed portrait layout matching its reference design and
+    // has no schedule/subtasks sections to toggle — those rows only apply to the PDF report card.
+    val showScheduleToggle = format == ExportFormat.PDF && hasScheduleDetails
+    val showSubtasksToggle = format == ExportFormat.PDF && hasSubtasks
 
     val privateNotes = if (privacyMode) false else includeNotes
     val privateComments = if (privacyMode) false else includeComments
     val contentParts = listOfNotNull(
         "details",
-        "schedule".takeIf { hasScheduleDetails && includeScheduleDetails },
-        "subtasks".takeIf { hasSubtasks && includeSubtasks },
+        "schedule".takeIf { showScheduleToggle && includeScheduleDetails },
+        "subtasks".takeIf { showSubtasksToggle && includeSubtasks },
         "notes".takeIf { hasNotes && privateNotes },
         "comments".takeIf { hasComments && privateComments }
     )
@@ -75,7 +86,8 @@ fun TaskExportOptionsDialog(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+        sheetMaxWidth = rememberAdaptiveSheetMaxWidth()
     ) {
         // Outer column pins the action row; the options scroll above it. Without the split the
         // options were measured first and the button row got whatever height was left over — on a
@@ -111,11 +123,13 @@ fun TaskExportOptionsDialog(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 SectionLabel(stringResource(R.string.export_section_file))
-                OutlinedTextField(
+                TextField(
                     value = fileNameText,
                     onValueChange = { fileNameText = it.take(64) },
                     label = { Text(stringResource(R.string.export_filename)) },
                     singleLine = true,
+                    shape = YataCompactFieldShape,
+                    colors = yataFieldColors(),
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(8.dp))
@@ -132,14 +146,14 @@ fun TaskExportOptionsDialog(
 
                 SectionLabel(stringResource(R.string.export_section_content))
                 ToggleRow(title = stringResource(R.string.export_privacy_mode), checked = privacyMode, onCheckedChange = { privacyMode = it })
-                if (hasScheduleDetails) {
+                if (showScheduleToggle) {
                     ToggleRow(
                         title = stringResource(R.string.export_include_schedule),
                         checked = includeScheduleDetails,
                         onCheckedChange = { includeScheduleDetails = it }
                     )
                 }
-                if (hasSubtasks) {
+                if (showSubtasksToggle) {
                     ToggleRow(title = stringResource(R.string.export_include_subtasks), checked = includeSubtasks, onCheckedChange = { includeSubtasks = it })
                 }
                 if (hasNotes) {
@@ -163,6 +177,11 @@ fun TaskExportOptionsDialog(
                     checked = showMadeWithFooter,
                     onCheckedChange = { showMadeWithFooter = it }
                 )
+                ToggleRow(
+                    title = stringResource(R.string.export_include_import_link),
+                    checked = includeImportLink,
+                    onCheckedChange = { includeImportLink = it }
+                )
 
                 Spacer(modifier = Modifier.height(8.dp))
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
@@ -183,6 +202,12 @@ fun TaskExportOptionsDialog(
                         onItemSelected = { imageScale = it },
                         labelProvider = { it.label }
                     )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    ToggleRow(
+                        title = stringResource(R.string.export_dark_theme_toggle),
+                        checked = imageDarkTheme,
+                        onCheckedChange = { imageDarkTheme = it }
+                    )
                 }
             }
 
@@ -198,14 +223,16 @@ fun TaskExportOptionsDialog(
                         val options = TaskExportOptions(
                             includeNotes = hasNotes && privateNotes,
                             includeComments = hasComments && privateComments,
-                            includeSubtasks = hasSubtasks && includeSubtasks,
-                            includeScheduleDetails = hasScheduleDetails && includeScheduleDetails,
+                            includeSubtasks = showSubtasksToggle && includeSubtasks,
+                            includeScheduleDetails = showScheduleToggle && includeScheduleDetails,
                             showMadeWithFooter = showMadeWithFooter,
                             privacyMode = privacyMode,
                             destination = destination,
                             fileNameBase = fileNameText,
                             pdfPageSize = pdfPageSize,
-                            imageScale = imageScale
+                            imageScale = imageScale,
+                            imageDarkTheme = imageDarkTheme,
+                            includeImportLink = includeImportLink
                         )
                         rememberTaskExportOptions(context, options)
                         onConfirm(options)

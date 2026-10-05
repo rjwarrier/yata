@@ -2,6 +2,7 @@ package com.mj.yata
 
 import com.mj.yata.domain.model.RecurrenceEnds
 import com.mj.yata.util.NaturalLanguageParser
+import com.mj.yata.util.QuickAddHighlightType
 import org.junit.Assert.*
 import org.junit.Test
 import java.time.LocalDate
@@ -20,10 +21,70 @@ class NaturalLanguageParserTest {
     }
 
     @Test
+    fun parsesCommonDateShortFormsAndMisspellings() {
+        assertEquals("2026-07-05", NaturalLanguageParser.parse("tmr call client", ref).due)
+        assertEquals("2026-07-05", NaturalLanguageParser.parse("tomrw call client", ref).due)
+        assertEquals("2026-07-05", NaturalLanguageParser.parse("tommorow call client", ref).due)
+        assertEquals("2026-07-04", NaturalLanguageParser.parse("2day file report", ref).due)
+        assertEquals("2026-07-04", NaturalLanguageParser.parse("tdy file report", ref).due)
+        assertEquals("2026-07-03", NaturalLanguageParser.parse("yday log notes", ref).due)
+
+        val nextWeek = NaturalLanguageParser.parse("nxt wk check status", ref)
+        assertEquals("2026-07-11", nextWeek.due)
+        assertEquals("check status", nextWeek.title)
+    }
+
+    @Test
     fun parsesToday() {
         val result = NaturalLanguageParser.parse("today call mom", ref)
         assertEquals("2026-07-04", result.due)
         assertEquals("call mom", result.title)
+    }
+
+    @Test
+    fun preservesTypedCaseInTitleAndExtractedNames() {
+        val result = NaturalLanguageParser.parse(
+            "tomorrow Review iPhone Quote for eBay project ClientCRM list Q3Board tag DeepWork assign to JaneDoe",
+            ref
+        )
+        assertEquals("Review iPhone Quote for eBay", result.title)
+        assertEquals("ClientCRM", result.projectName)
+        assertEquals("Q3Board", result.listName)
+        assertEquals(listOf("DeepWork"), result.tagNames)
+        assertEquals(listOf("JaneDoe"), result.assigneeNames)
+    }
+
+    @Test
+    fun bareConnectorImmediatelyBeforeAnEntityMentionIsStripped() {
+        // "@Jane" needs no leading word of its own to trigger, unlike "assigned to Jane" - so a
+        // bare "to"/"in" directly in front of it used to have nothing to absorb it, leaving it
+        // dangling in the title once "@Jane" itself was stripped.
+        assertEquals("buy milk", NaturalLanguageParser.parse("buy milk to @Jane", ref).title)
+        assertEquals("prepare slides", NaturalLanguageParser.parse("prepare slides in +Work", ref).title)
+    }
+
+    @Test
+    fun fillerWordStrandedBetweenTwoEntityMentionsIsStripped() {
+        // Each of #paperwork and @Jane is claimed on its own (single-word tag capture, bare "@"
+        // trigger) with nothing to say what the "to" connecting them belongs to - it used to be
+        // left sitting in the title between the two now-removed mentions.
+        val result = NaturalLanguageParser.parse("renew license #paperwork to @Jane", ref)
+        assertEquals("renew license", result.title)
+        assertEquals(listOf("paperwork"), result.tagNames)
+        assertEquals(listOf("Jane"), result.assigneeNames)
+    }
+
+    @Test
+    fun multiWordEntityNameStopsAtABareToOrFromInsteadOfSwallowingIt() {
+        // project/list/assignee names are captured lazily up to the next recognized boundary
+        // word - "to"/"from" weren't in that boundary list on their own (only "assign to"/"send
+        // to" were), so "project Work to tag Errand" captured the project name as "Work to"
+        // instead of stopping at "Work", corrupting the name and leaving the leftover "to" for
+        // the between-claims fix above to clean up.
+        val result = NaturalLanguageParser.parse("clean data project Work to tag Errand", ref)
+        assertEquals("clean data", result.title)
+        assertEquals("Work", result.projectName)
+        assertEquals(listOf("Errand"), result.tagNames)
     }
 
     @Test
@@ -143,6 +204,41 @@ class NaturalLanguageParserTest {
     }
 
     @Test
+    fun parsesRelativeUnitShortForms() {
+        assertEquals("2026-07-07", NaturalLanguageParser.parse("in 3 d renew license", ref).due)
+        assertEquals("2026-07-18", NaturalLanguageParser.parse("in 2 wks checkup", ref).due)
+        assertEquals("2026-08-04", NaturalLanguageParser.parse("in 1 mth renew", ref).due)
+        assertEquals("2028-07-04", NaturalLanguageParser.parse("in 2 yrs renew passport", ref).due)
+    }
+
+    @Test
+    fun parsesRelativeWordNumberCounts() {
+        assertEquals("2026-07-15", NaturalLanguageParser.parse("in eleven days renew license", ref).due)
+        assertEquals("2026-07-07", NaturalLanguageParser.parse("in thre days follow up", ref).due)
+        assertEquals("2026-07-25", NaturalLanguageParser.parse("in twenty one days renew license", ref).due)
+        assertEquals("2026-08-04", NaturalLanguageParser.parse("in thirty-one days renew license", ref).due)
+
+        val hours = NaturalLanguageParser.parse("in two hrs check oven", ref, LocalTime.of(10, 0))
+        assertEquals("12:00 PM", hours.time)
+
+        val minutes = NaturalLanguageParser.parse("in fifteen min leave", ref, LocalTime.of(10, 0))
+        assertEquals("10:15 AM", minutes.time)
+    }
+
+    @Test
+    fun parsesBroaderDateTimeShortForms() {
+        val tonight = NaturalLanguageParser.parse("tonite finish notes", ref)
+        assertEquals("2026-07-04", tonight.due)
+        assertEquals("9:00 PM", tonight.time)
+        assertEquals("finish notes", tonight.title)
+
+        val tomorrowMorning = NaturalLanguageParser.parse("tmr morn call client", ref)
+        assertEquals("2026-07-05", tomorrowMorning.due)
+        assertEquals("9:00 AM", tomorrowMorning.time)
+        assertEquals("call client", tomorrowMorning.title)
+    }
+
+    @Test
     fun parsesNextWeekday() {
         val result = NaturalLanguageParser.parse("next monday team sync", ref)
         assertEquals("2026-07-06", result.due)
@@ -157,10 +253,98 @@ class NaturalLanguageParserTest {
     }
 
     @Test
-    fun leavesMentionTokensUntouched() {
+    fun parsesDirectMentionTokens() {
         val result = NaturalLanguageParser.parse("tomorrow buy milk @home #errand", ref)
         assertEquals("2026-07-05", result.due)
-        assertEquals("buy milk @home #errand", result.title)
+        assertEquals("buy milk", result.title)
+        assertEquals(listOf("errand"), result.tagNames)
+        assertEquals(listOf("home"), result.assigneeNames)
+    }
+
+    @Test
+    fun entityCommandsStopBeforeDateClauses() {
+        val result = NaturalLanguageParser.parse("project Work tomorrow prepare deck", ref)
+        assertEquals("2026-07-05", result.due)
+        assertEquals("prepare deck", result.title)
+        assertEquals("Work", result.projectName)
+    }
+
+    @Test
+    fun parsesDirectProjectAndListTokens() {
+        val result = NaturalLanguageParser.parse("+ClientCRM =Q3Board friday review brief", ref)
+        assertEquals("2026-07-10", result.due)
+        assertEquals("review brief", result.title)
+        assertEquals("ClientCRM", result.projectName)
+        assertEquals("Q3Board", result.listName)
+    }
+
+    @Test
+    fun parsesSpokenSymbolEntityTokens() {
+        val result = NaturalLanguageParser.parse(
+            "plus project ClientCRM equals list Q3Board at sign Jane hashtag urgent tomorrow review brief",
+            ref
+        )
+        assertEquals("2026-07-05", result.due)
+        assertEquals("review brief", result.title)
+        assertEquals("ClientCRM", result.projectName)
+        assertEquals("Q3Board", result.listName)
+        assertEquals(listOf("urgent"), result.tagNames)
+        assertEquals(listOf("Jane"), result.assigneeNames)
+    }
+
+    @Test
+    fun parsesAdditionalLocalizedRelativeDates() {
+        assertEquals("2026-07-05", NaturalLanguageParser.parse("morgen bericht senden", ref).due)
+        assertEquals("2026-07-05", NaturalLanguageParser.parse("domani chiamare luca", ref).due)
+        assertEquals("2026-07-05", NaturalLanguageParser.parse("besok bayar tagihan", ref).due)
+        assertEquals("2026-07-05", NaturalLanguageParser.parse("ngay mai gui bao cao", ref).due)
+        assertEquals("2026-07-03", NaturalLanguageParser.parse("gisteren notities loggen", ref).due)
+    }
+
+    @Test
+    fun parsesAdditionalLocalizedWeekdays() {
+        assertEquals("2026-07-06", NaturalLanguageParser.parse("montag team sync", ref).due)
+        assertEquals("2026-07-06", NaturalLanguageParser.parse("lunedi team sync", ref).due)
+        assertEquals("2026-07-06", NaturalLanguageParser.parse("maandag team sync", ref).due)
+        assertEquals("2026-07-06", NaturalLanguageParser.parse("senin team sync", ref).due)
+    }
+
+    @Test
+    fun parsesAdditionalLocalizedMonthNames() {
+        assertEquals("2026-10-12", NaturalLanguageParser.parse("12 ottobre firmare contratto", ref).due)
+        assertEquals("2026-11-05", NaturalLanguageParser.parse("5 kasim rapor hazirla", ref).due)
+        assertEquals("2026-09-07", NaturalLanguageParser.parse("7 wrzesnia wyslac fakture", ref).due)
+        assertEquals("2026-11-05", NaturalLanguageParser.parse("thang muoi mot 5 gui bao cao", ref).due)
+    }
+
+    @Test
+    fun parsesAdditionalLocalizedRecurrenceUnits() {
+        assertEquals("weekly", NaturalLanguageParser.parse("ogni settimana pulire casa", ref).recurrence?.freq)
+        assertEquals("monthly", NaturalLanguageParser.parse("jeden monat miete zahlen", ref).recurrence?.freq)
+
+        val turkish = NaturalLanguageParser.parse("her 2 hafta toplanti", ref)
+        assertEquals("weekly", turkish.recurrence?.freq)
+        assertEquals(2, turkish.recurrence?.interval)
+    }
+
+    @Test
+    fun parsesQuotedMultiWordEntities() {
+        val result = NaturalLanguageParser.parse("review copy project \"Client Relaunch\" assign to 'Ana Maria' tomorrow", ref)
+        assertEquals("2026-07-05", result.due)
+        assertEquals("review copy", result.title)
+        assertEquals("Client Relaunch", result.projectName)
+        assertEquals(listOf("Ana Maria"), result.assigneeNames)
+    }
+
+    @Test
+    fun parsesUnicodeEntityNames() {
+        val result = NaturalLanguageParser.parse("preparar proposta projeto São Paulo lista März @李雷 #révision tomorrow", ref)
+        assertEquals("2026-07-05", result.due)
+        assertEquals("preparar proposta", result.title)
+        assertEquals("São Paulo", result.projectName)
+        assertEquals("März", result.listName)
+        assertEquals(listOf("révision"), result.tagNames)
+        assertEquals(listOf("李雷"), result.assigneeNames)
     }
 
     @Test
@@ -517,12 +701,41 @@ class NaturalLanguageParserTest {
     }
 
     @Test
+    fun highlightRangesMapVoiceNormalizedDateBackToOriginalText() {
+        val raw = "file receipt to day"
+        val result = NaturalLanguageParser.parse(raw, ref)
+
+        assertEquals(ref.toString(), result.due)
+        assertEquals("file receipt", result.title)
+        val slices = result.highlightRanges.map { raw.substring(it.first, it.last + 1) }
+        assertTrue(slices.any { it.equals("to day", ignoreCase = true) })
+    }
+
+    @Test
     fun highlightRangesIncludeRecurrencePhrase() {
         val raw = "every monday gym"
         val result = NaturalLanguageParser.parse(raw, ref)
         assertEquals(1, result.highlightRanges.size)
         val range = result.highlightRanges.first()
         assertEquals("every monday", raw.substring(range.first, range.last + 1))
+    }
+
+    @Test
+    fun highlightSpansCarryRecognizedDataTypes() {
+        val raw = "tomorrow 3pm every monday +Client =Backlog #urgent @Jane !1 review"
+        val result = NaturalLanguageParser.parse(raw, ref)
+        val typedSlices = result.highlightSpans.associate { span ->
+            raw.substring(span.range.first, span.range.last + 1) to span.type
+        }
+
+        assertEquals(QuickAddHighlightType.DueDate, typedSlices["tomorrow"])
+        assertEquals(QuickAddHighlightType.Time, typedSlices["3pm"])
+        assertEquals(QuickAddHighlightType.Recurrence, typedSlices["every monday"])
+        assertEquals(QuickAddHighlightType.Project, typedSlices["+Client"])
+        assertEquals(QuickAddHighlightType.List, typedSlices["=Backlog"])
+        assertEquals(QuickAddHighlightType.Tag, typedSlices["#urgent"])
+        assertEquals(QuickAddHighlightType.Assignee, typedSlices["@Jane"])
+        assertEquals(QuickAddHighlightType.Priority, typedSlices["!1"])
     }
 
     @Test
@@ -554,6 +767,60 @@ class NaturalLanguageParserTest {
     }
 
     @Test
+    fun escapeAlsoCoversTheEntityTriggerSymbols() {
+        // The escape pattern used to require a word character straight after the backslash, and
+        // none of #@+= is one — so the escape silently did not match, the mention was claimed as
+        // usual, and the orphaned backslash was left in the title ("Read RB# guide" came out as
+        // "Read RB guide" with the tag still attached).
+        val tag = NaturalLanguageParser.parse("Read \\#hashtag guide", ref)
+        assertTrue(tag.tagNames.isEmpty())
+        assertEquals("Read #hashtag guide", tag.title)
+
+        val project = NaturalLanguageParser.parse("Report for \\+ITR", ref)
+        assertNull(project.projectName)
+        assertEquals("Report for +ITR", project.title)
+
+        val person = NaturalLanguageParser.parse("Email \\@Jane about it", ref)
+        assertTrue(person.assigneeNames.isEmpty())
+        assertEquals("Email @Jane about it", person.title)
+
+        val list = NaturalLanguageParser.parse("Check \\=Inbox later", ref)
+        assertNull(list.listName)
+        assertEquals("Check =Inbox later", list.title)
+    }
+
+    @Test
+    fun escapeStopsAtWhitespaceSoOnlyTheMentionIsLiteral() {
+        // "\\@Jane about it" must protect "@Jane" alone — previously the assignee rule swallowed
+        // the trailing words and produced an assignee literally named "Jane about it".
+        val result = NaturalLanguageParser.parse("Email \\@Jane about it tomorrow", ref)
+        assertTrue(result.assigneeNames.isEmpty())
+        assertEquals("2026-07-05", result.due)
+        assertEquals("Email @Jane about it", result.title)
+    }
+
+    @Test
+    fun escapeProtectsANameTheDateRulesWouldOtherwiseEat() {
+        // A person whose name is a weekday: unescaped, the bare-weekday rule consumes it and
+        // invents a due date, taking the name out of the title with it.
+        val unescaped = NaturalLanguageParser.parse("Sunday Adekunle review", ref)
+        assertEquals("Adekunle review", unescaped.title)
+        assertNotNull(unescaped.due)
+
+        val escaped = NaturalLanguageParser.parse("\\Sunday Adekunle review", ref)
+        assertNull(escaped.due)
+        assertEquals("Sunday Adekunle review", escaped.title)
+    }
+
+    @Test
+    fun escapeHandlesNonAsciiWords() {
+        // The pattern matched ASCII word characters only, so an escaped non-Latin name was
+        // protected one letter deep.
+        val result = NaturalLanguageParser.parse("Ship \\Müller order", ref)
+        assertEquals("Ship Müller order", result.title)
+    }
+
+    @Test
     fun parsesRemindAtTimeKeyword() {
         val result = NaturalLanguageParser.parse("tomorrow remind at time pay rent", ref)
         assertEquals("At time", result.reminder)
@@ -565,6 +832,26 @@ class NaturalLanguageParserTest {
         val result = NaturalLanguageParser.parse("tomorrow remind me 15 min before standup", ref)
         assertEquals("15 min before", result.reminder)
         assertEquals("standup", result.title)
+    }
+
+    @Test
+    fun parsesReminderShortFormsAndMisspellings() {
+        assertEquals("15 min before", NaturalLanguageParser.parse("tmr remndr 15m b4 standup", ref).reminder)
+        assertEquals("1 hour before", NaturalLanguageParser.parse("tmr rmndr 1hr bef flight", ref).reminder)
+        assertEquals("5:30 PM", NaturalLanguageParser.parse("tmr rmd 5:30pm submit report", ref).reminder)
+
+        val dateReminder = NaturalLanguageParser.parse("rem tmr pay rent", ref)
+        assertEquals("2026-07-05", dateReminder.due)
+        assertEquals("At time", dateReminder.reminder)
+        assertEquals("pay rent", dateReminder.title)
+    }
+
+    @Test
+    fun parsesReminderWordNumberOffsets() {
+        assertEquals("15 min before", NaturalLanguageParser.parse("tomorrow remind me fifteen min before standup", ref).reminder)
+        assertEquals("30 min before", NaturalLanguageParser.parse("tomorrow rem thirty m b4 standup", ref).reminder)
+        assertEquals("1 hour before", NaturalLanguageParser.parse("tomorrow remind one hour before flight", ref).reminder)
+        assertEquals("1 day before", NaturalLanguageParser.parse("tomorrow rem one day before flight", ref).reminder)
     }
 
     @Test
@@ -619,6 +906,16 @@ class NaturalLanguageParserTest {
         assertEquals("low", NaturalLanguageParser.parse("low priority read book", ref).priority)
         assertEquals("low", NaturalLanguageParser.parse("someday learn guitar", ref).priority)
         assertEquals("low", NaturalLanguageParser.parse("whenever organize garage", ref).priority)
+    }
+
+    @Test
+    fun parsesPriorityShortFormsAndMisspellings() {
+        assertEquals("high", NaturalLanguageParser.parse("hi prio call client", ref).priority)
+        assertEquals("high", NaturalLanguageParser.parse("urgnt call client", ref).priority)
+        assertEquals("high", NaturalLanguageParser.parse("critcal server down", ref).priority)
+        assertEquals("med", NaturalLanguageParser.parse("med pri follow up", ref).priority)
+        assertEquals("low", NaturalLanguageParser.parse("lo prio read book", ref).priority)
+        assertTrue(NaturalLanguageParser.parse("impt call client", ref).flag)
     }
 
     @Test
@@ -745,6 +1042,40 @@ class NaturalLanguageParserTest {
         assertEquals(2, NaturalLanguageParser.parse("biweekly team sync", ref).recurrence?.interval)
         assertEquals("monthly", NaturalLanguageParser.parse("quarterly review", ref).recurrence?.freq)
         assertEquals(3, NaturalLanguageParser.parse("quarterly review", ref).recurrence?.interval)
+    }
+
+    @Test
+    fun parsesRecurrenceShortFormsAndMisspellings() {
+        assertEquals("weekly", NaturalLanguageParser.parse("wkly team sync", ref).recurrence?.freq)
+        assertEquals("monthly", NaturalLanguageParser.parse("mthly review", ref).recurrence?.freq)
+        assertEquals(3, NaturalLanguageParser.parse("qtrly review", ref).recurrence?.interval)
+        assertEquals(3, NaturalLanguageParser.parse("quaterly review", ref).recurrence?.interval)
+        assertEquals(2, NaturalLanguageParser.parse("every 2 wks haircut", ref).recurrence?.interval)
+        assertEquals(3, NaturalLanguageParser.parse("every qtr review", ref).recurrence?.interval)
+        assertEquals(2, NaturalLanguageParser.parse("every alt wk haircut", ref).recurrence?.interval)
+        assertEquals(listOf("MO"), NaturalLanguageParser.parse("ea mon review", ref).recurrence?.byday)
+    }
+
+    @Test
+    fun parsesRecurrenceWordNumberCounts() {
+        assertEquals(11, NaturalLanguageParser.parse("every eleven days water plants", ref).recurrence?.interval)
+        assertEquals(3, NaturalLanguageParser.parse("every thre weeks haircut", ref).recurrence?.interval)
+        assertEquals(21, NaturalLanguageParser.parse("every twenty one days water plants", ref).recurrence?.interval)
+
+        val result = NaturalLanguageParser.parse("daily standup for eleven times", ref)
+        assertEquals(RecurrenceEnds.After(11), result.recurrence?.ends)
+
+        val compoundEnd = NaturalLanguageParser.parse("daily standup for twenty-one times", ref)
+        assertEquals(RecurrenceEnds.After(21), compoundEnd.recurrence?.ends)
+    }
+
+    @Test
+    fun parsesQuarterCountsAsDateAndRecurrence() {
+        assertEquals("2027-01-04", NaturalLanguageParser.parse("in 2 qtrs review roadmap", ref).due)
+
+        val recurring = NaturalLanguageParser.parse("every two qtrs board review", ref)
+        assertEquals("monthly", recurring.recurrence?.freq)
+        assertEquals(6, recurring.recurrence?.interval)
     }
 
     @Test
@@ -1174,6 +1505,39 @@ class NaturalLanguageParserTest {
     }
 
     @Test
+    fun recognizedHighlightSpansDoNotOverlap() {
+        val result = NaturalLanguageParser.parse(
+            "remind me 30 min before every monday and wednesday at 3pm +Client =Backlog #urgent @Jane !1 review",
+            ref
+        )
+        val spans = result.highlightSpans.map { it.range }.sortedBy { it.first }
+        spans.zipWithNext().forEach { (left, right) ->
+            assertTrue("highlight spans must not overlap: $left and $right", left.last < right.first)
+        }
+    }
+
+    @Test
+    fun escapedRecognizedWordsRemainUnhighlighted() {
+        val result = NaturalLanguageParser.parse("\\tomorrow \\3pm \\every monday literal title", ref)
+        assertNull(result.due)
+        assertNull(result.time)
+        assertNull(result.recurrence)
+        assertTrue(result.highlightSpans.isEmpty())
+        assertEquals("tomorrow 3pm every monday literal title", result.title)
+    }
+
+    @Test
+    fun malformedEntityRunsDoNotProduceInvalidHighlightSpans() {
+        val input = "#".repeat(40) + " " + "@".repeat(40) + " " + "+".repeat(40) + " " + "=".repeat(40)
+        val result = NaturalLanguageParser.parse(input, ref)
+        result.highlightSpans.forEach { span ->
+            assertTrue(span.range.first in input.indices)
+            assertTrue(span.range.last in input.indices)
+            assertTrue(span.range.first <= span.range.last)
+        }
+    }
+
+    @Test
     fun oddInputsDoNotCrashParser() {
         val inputs = listOf(
             "",
@@ -1200,5 +1564,32 @@ class NaturalLanguageParserTest {
                 assertTrue("range is ordered for <$input>", range.first <= range.last)
             }
         }
+    }
+
+    @Test
+    fun entityCaptureIsNotSwallowedByADateWordFromAnUnlistedLanguage() {
+        // ENTITY_BOUNDARY_KEYWORDS only lists EN/ES/PT/FR date/time vocabulary, so a project/list/
+        // assignee name followed directly by a date word in another NaturalLanguageLexicon
+        // language (German "morgen", Indonesian "besok") had no boundary keyword to stop the
+        // lazy capture at - the regex swallowed the whole rest of the string including that
+        // word's own already-claimed range, so the *entire* match failed isFree and the entity
+        // silently vanished (not merely mis-captured). The fix salvages by truncating the
+        // captured value right before the claim it ran into.
+        val german = NaturalLanguageParser.parse("project Work morgen", ref)
+        assertEquals("Work", german.projectName)
+        assertEquals("2026-07-05", german.due)
+        // Both the "project Work" mention and "morgen" are correctly claimed (visible via
+        // highlightRanges), leaving nothing for the title — cleanNaturalLanguageTitle's
+        // documented fallback for that case is the original text, not a blank title.
+        assertEquals("project Work morgen", german.title)
+        assertEquals(listOf(0..11, 13..18), german.highlightRanges)
+
+        val indonesian = NaturalLanguageParser.parse("list Groceries besok", ref)
+        assertEquals("Groceries", indonesian.listName)
+        assertEquals("2026-07-05", indonesian.due)
+
+        val assignee = NaturalLanguageParser.parse("assign to Jane Doe morgen", ref)
+        assertEquals(listOf("Jane Doe"), assignee.assigneeNames)
+        assertEquals("2026-07-05", assignee.due)
     }
 }

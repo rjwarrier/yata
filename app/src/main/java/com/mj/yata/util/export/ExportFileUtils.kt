@@ -18,10 +18,10 @@ import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.util.Calendar
 
-private fun exportsDir(context: Context): File =
+internal fun exportsDir(context: Context): File =
     File(context.cacheDir, "exports").apply { mkdirs() }
 
-private fun shareUriFor(context: Context, file: File) =
+internal fun shareUriFor(context: Context, file: File) =
     FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
 
 /** Strips a tag/person name down to a safe export filename fragment. */
@@ -31,6 +31,15 @@ fun sanitizeExportFileName(name: String): String =
 fun saveBitmapAsPng(context: Context, bitmap: Bitmap, fileName: String): File {
     val file = File(exportsDir(context), fileName)
     FileOutputStream(file).use { out -> bitmap.compress(Bitmap.CompressFormat.PNG, 100, out) }
+    return file
+}
+
+/** JPEG has no alpha channel, so a fully opaque card (the task-share image) compresses smaller
+ * than the PNG path above at a visually lossless quality — worth it since these are sized for
+ * chat-app share sheets (WhatsApp/Telegram/Instagram) that re-compress anyway. */
+fun saveBitmapAsJpeg(context: Context, bitmap: Bitmap, fileName: String, quality: Int = 92): File {
+    val file = File(exportsDir(context), fileName)
+    FileOutputStream(file).use { out -> bitmap.compress(Bitmap.CompressFormat.JPEG, quality, out) }
     return file
 }
 
@@ -153,11 +162,12 @@ fun applyPdfMetadata(
     }
 }
 
-fun shareExportedFile(context: Context, file: File, mimeType: String, chooserTitle: String) {
+fun shareExportedFile(context: Context, file: File, mimeType: String, chooserTitle: String, extraText: String? = null) {
     val uri = shareUriFor(context, file)
     val intent = Intent(Intent.ACTION_SEND).apply {
         type = mimeType
         putExtra(Intent.EXTRA_STREAM, uri)
+        extraText?.takeIf { it.isNotBlank() }?.let { putExtra(Intent.EXTRA_TEXT, it) }
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
     context.startActivity(Intent.createChooser(intent, chooserTitle))
@@ -168,10 +178,11 @@ fun deliverExportedFile(
     file: File,
     mimeType: String,
     chooserTitle: String,
-    destination: ExportDestination
+    destination: ExportDestination,
+    extraText: String? = null
 ): ExportOutcome {
     if (destination == ExportDestination.SHARE) {
-        shareExportedFile(context, file, mimeType, chooserTitle)
+        shareExportedFile(context, file, mimeType, chooserTitle, extraText)
         return ExportOutcome(file = file, destination = destination, pageCount = if (mimeType == "application/pdf") countPdfPages(context, file) else 1)
     }
     val saved = copyExportToDownloads(context, file, mimeType)

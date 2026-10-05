@@ -38,6 +38,11 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.List
@@ -45,17 +50,19 @@ import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.EventAvailable
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Label
 import androidx.compose.material.icons.filled.Mic
 import com.mj.yata.R
 import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.YataEase
+import com.mj.yata.ui.util.rememberAdaptiveSheetMaxWidth
 import com.mj.yata.ui.widgets.PressableScaleBox
 import com.mj.yata.util.findBestEntityMatch
-import com.mj.yata.util.toProperCase
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Repeat
@@ -111,15 +118,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.text.input.TransformedText
-import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mj.yata.domain.model.Person
@@ -130,6 +134,7 @@ import com.mj.yata.domain.model.Subtask
 import com.mj.yata.domain.model.Tag
 import com.mj.yata.domain.model.Task
 import com.mj.yata.domain.model.YataList
+import com.mj.yata.domain.model.activeLists
 import com.mj.yata.domain.model.activePeople
 import com.mj.yata.domain.model.activeProjects
 import com.mj.yata.ui.theme.LocalYataAccents
@@ -138,6 +143,9 @@ import com.mj.yata.ui.widgets.PriorityBars
 import com.mj.yata.ui.widgets.SegmentedControl
 import com.mj.yata.ui.widgets.consumeMentionToken
 import com.mj.yata.ui.widgets.detectMentionToken
+import com.mj.yata.ui.widgets.quickAddFieldsOwnedByMention
+import com.mj.yata.ui.widgets.rankedMentionMatches
+import com.mj.yata.ui.widgets.rememberQuickAddHighlightTransformation
 import com.mj.yata.ui.widgets.TRIGGER_LIST
 import com.mj.yata.ui.widgets.TRIGGER_PERSON
 import com.mj.yata.ui.widgets.TRIGGER_PROJECT
@@ -151,6 +159,7 @@ import com.mj.yata.util.NaturalLanguageParser
 import com.mj.yata.util.ParsedQuickAdd
 import com.mj.yata.util.TaskScheduleUtils
 import com.mj.yata.util.findSimilarTask
+import com.mj.yata.util.resolveParsedQuickAddEntities
 import java.time.LocalDate
 
 internal fun pickAccentFor(name: String): String =
@@ -159,6 +168,104 @@ internal fun pickAccentFor(name: String): String =
 /** Forced on every chip in the Assigned-to/Tags rows so mixed content (avatars, dots, dashed
  * "add" pills) never drifts out of alignment — matches the attribute-chip row's YataSelectChip height. */
 private val CHIP_ROW_HEIGHT = 34.dp
+
+/** Most entity chips the bulk preview will draw before collapsing the tail into a "+N more"
+ * count. A paste naming a distinct tag per line would otherwise render one chip per line. */
+private const val BULK_PREVIEW_CHIP_LIMIT = 12
+
+/** Most tasks a single bulk paste will create. Chosen well above any realistic roster while
+ * keeping the one-off parse-and-insert cost of a stray paste bounded. */
+private const val MAX_BULK_TASKS = 500
+
+/**
+ * The typing shorthand the parser understands, shown from the (i) in the New Task header.
+ *
+ * Every one of these already worked; none of them was discoverable. The title field's hint names
+ * four of the symbols and has no room for the rest, and the escape had no mention anywhere in the
+ * app at all.
+ */
+@Composable
+internal fun QuickAddSyntaxDialog(onDismiss: () -> Unit) {
+    val rows = listOf(
+        "#" to stringResource(R.string.syntax_tag),
+        "@" to stringResource(R.string.syntax_person),
+        "+" to stringResource(R.string.syntax_project),
+        "=" to stringResource(R.string.syntax_list),
+        "!1 !2 !3" to stringResource(R.string.syntax_priority),
+        "\\" to stringResource(R.string.syntax_escape)
+    )
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.syntax_dialog_title)) },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                rows.forEach { (symbol, meaning) ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text(
+                            text = symbol,
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                            ),
+                            color = MaterialTheme.colorScheme.primary,
+                            // Fixed column so the meanings line up rather than stepping in and
+                            // out with the width of each symbol.
+                            modifier = Modifier.width(84.dp)
+                        )
+                        Text(
+                            text = meaning,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                Text(
+                    text = stringResource(R.string.syntax_plain_words),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_close)) }
+        }
+    )
+}
+
+/**
+ * A bulleted or numbered list marker at the head of a pasted line — "1.", "2)", "-", "*", a
+ * bullet glyph. The trailing whitespace requirement is what keeps a decimal ("1.5x review") or an
+ * initial ("P A Francis") from being mistaken for one, and the numeral is capped at three digits
+ * so a title opening with a year survives.
+ */
+private val BULK_LIST_MARKER =
+    Regex("""^\s*(?:[-*•‣◦▪–—]|\(?\d{1,3}[.)\]])\s+""")
+
+/**
+ * Splits pasted text into the lines bulk mode turns into tasks.
+ *
+ * Splits on every line terminator rather than "\n" alone: text copied out of a spreadsheet or a
+ * rich-text editor can arrive separated by a lone carriage return, or by U+2028/U+2029, none of
+ * which a "\n" split catches — the entire paste would land as one very long single task.
+ *
+ * Leading list markers are stripped only when more than half the lines carry one. That majority
+ * test is what separates list *formatting* from content: a roster pasted out of a numbered list
+ * loses the numbering, while a single line that merely happens to start "1. " keeps it. Stripping
+ * is also all-or-nothing across the paste, so lines never end up inconsistently trimmed.
+ */
+internal fun bulkLinesFrom(text: String): List<String> {
+    val raw = text.split(Regex("""\r\n|\r|\n|\u2028|\u2029"""))
+        .map { it.trim() }
+        .filter { it.isNotBlank() }
+    if (raw.size < 2) return raw
+    val marked = raw.count { BULK_LIST_MARKER.containsMatchIn(it) }
+    if (marked * 2 <= raw.size) return raw
+    return raw.map { it.replace(BULK_LIST_MARKER, "").trim() }.filter { it.isNotBlank() }
+}
 
 /**
  * Everything the sheet collected for one new task, handed to the caller as a single value.
@@ -188,8 +295,89 @@ data class NewTaskDraft(
     val projectId: String?,
     val notes: String?,
     val subtasks: List<Subtask>,
-    val flag: Boolean
+    val flag: Boolean,
+    val estimateMinutes: Int?
 )
+
+/** Lists/projects/tags a shared task named that don't exist locally yet. Populated only for the
+ * kinds the sender's structure-copy choice actually carried. Presenting this before anything is
+ * created is what turns "tap a link, silently gain three new lists" into a choice the receiver
+ * made — see docs/app-links-team-sharing-design.md §5. */
+data class PendingSharedStructure(
+    val listName: String?,
+    val projectName: String?,
+    val tagNames: List<String>
+) {
+    val isEmpty: Boolean get() = listName == null && projectName == null && tagNames.isEmpty()
+}
+
+data class ResolvedSharedTask(val draft: NewTaskDraft, val pending: PendingSharedStructure)
+
+/** One smart-add preview chip. [matched] is false for a project/list/tag/person mention that was
+ * typed but didn't resolve to an existing entity — see the smart-add chip row below for why that
+ * needs its own visual state instead of looking identical to a successful match. */
+private data class DetectedQuickAddChip(
+    val label: String,
+    val onClick: () -> Unit,
+    val onDismiss: () -> Unit,
+    val matched: Boolean = true
+)
+
+/**
+ * Matches a [com.mj.yata.util.export.SharedTaskDraft] against locally-known lists/projects/tags
+ * by name (case-insensitively, same convention [com.mj.yata.util.export.TaskTransferImporter]
+ * uses for its own direct-import path), and reports whatever it named but couldn't find.
+ *
+ * People are deliberately absent here: a shared task never resolves or creates a
+ * [com.mj.yata.domain.model.Person] on this device (see
+ * docs/app-links-team-sharing-design.md §4) — [NewTaskDraft.assigneeIds] is always empty, which
+ * leaves the sheet's normal "assign to me" default to apply exactly as it would for a task
+ * created by hand.
+ */
+fun com.mj.yata.util.export.SharedTaskDraft.resolveAgainstLocalData(
+    lists: List<YataList>,
+    projects: List<Project>,
+    tags: List<Tag>
+): ResolvedSharedTask {
+    fun findByName(name: String, candidates: List<Pair<String, String>>): String? =
+        candidates.firstOrNull { (candidateName, _) -> candidateName.trim().equals(name.trim(), ignoreCase = true) }?.second
+
+    val listNames = lists.map { it.name to it.id }
+    val projectNames = projects.map { it.name to it.id }
+    val tagNames = tags.map { it.name to it.id }
+
+    val listId = list?.let { findByName(it.name, listNames) }
+    val projectId = project?.let { findByName(it.name, projectNames) }
+    val resolvedTagIds = this.tags.mapNotNull { findByName(it.name, tagNames) }
+    val missingTagNames = this.tags.filter { findByName(it.name, tagNames) == null }.map { it.name }
+
+    val draft = NewTaskDraft(
+        title = title,
+        listId = listId,
+        priority = priority,
+        assigneeIds = emptyList(),
+        tagIds = resolvedTagIds,
+        recurrence = recurrence,
+        due = due,
+        startDate = startDate,
+        time = time,
+        reminder = null,
+        section = "",
+        projectId = projectId,
+        notes = notes,
+        subtasks = subtaskTitles.mapIndexed { index, subtitle ->
+            Subtask(id = "sub_" + java.util.UUID.randomUUID().toString(), title = subtitle, done = false, sortOrder = index)
+        },
+        flag = flag,
+        estimateMinutes = estimateMinutes
+    )
+    val pending = PendingSharedStructure(
+        listName = list?.name?.takeIf { listId == null },
+        projectName = project?.name?.takeIf { projectId == null },
+        tagNames = missingTagNames
+    )
+    return ResolvedSharedTask(draft, pending)
+}
 
 private val stringStateListSaver: Saver<SnapshotStateList<String>, Any> = listSaver(
     save = { it.toList() },
@@ -233,7 +421,9 @@ private fun encodeRecurrence(recurrence: Recurrence?): String {
         recurrence.byday.orEmpty().joinToString(","),
         recurrence.bymonthday?.toString().orEmpty(),
         ends,
-        recurrence.basedOnCompletion.toString()
+        recurrence.basedOnCompletion.toString(),
+        recurrence.byweekday.orEmpty(),
+        recurrence.bysetpos?.toString().orEmpty()
     ).joinToString("|") { android.net.Uri.encode(it) }
 }
 
@@ -252,9 +442,19 @@ private fun decodeRecurrence(value: String): Recurrence? {
             byday = parts[2].takeIf(String::isNotBlank)?.split(','),
             bymonthday = parts[3].toIntOrNull(),
             ends = ends,
-            basedOnCompletion = parts[5].toBoolean()
+            basedOnCompletion = parts[5].toBoolean(),
+            byweekday = parts.getOrNull(6)?.takeIf(String::isNotBlank),
+            bysetpos = parts.getOrNull(7)?.toIntOrNull()
         )
     }.getOrNull()
+}
+
+private fun dayBefore(date: String?): String? = date?.let {
+    runCatching { LocalDate.parse(it).minusDays(1).toString() }.getOrNull()
+}
+
+private fun daysBefore(date: String?, days: Int): String? = date?.let {
+    runCatching { LocalDate.parse(it).minusDays(days.toLong()).toString() }.getOrNull()
 }
 
 private val recurrenceSaver = Saver<Recurrence?, String>(
@@ -284,6 +484,12 @@ fun NewTaskSheet(
     onAddTaskAndContinue: ((NewTaskDraft) -> Unit)? = null,
     onCreateTag: (id: String, name: String, color: String) -> Unit,
     onCreatePerson: (id: String, name: String, color: String) -> Unit,
+    /** Creates a project named in a pasted bulk line whose name matches nothing existing. Null
+     * means this host doesn't offer it, and such a name is shown as unmatched without a create
+     * affordance — projects carry colour/icon/description a name alone can't fill in, so this is
+     * never automatic (see MentionAutocomplete, which withholds its inline create row for the
+     * same reason); the bulk preview asks first. */
+    onCreateProject: ((id: String, name: String, color: String) -> Unit)? = null,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
     initialAssigneeId: String? = null,
@@ -291,6 +497,14 @@ fun NewTaskSheet(
     initialListId: String? = null,
     initialTagId: String? = null,
     initialDueDateOverride: String? = null,
+    /** Prefills the sheet from an already-resolved shared task (see [resolveAgainstLocalData])
+     * instead of building a task from scratch. Deliberately one field rather than yet more
+     * `initial*` parameters — see [NewTaskDraft]'s doc comment on why that path is dangerous
+     * here. */
+    initialDraft: NewTaskDraft? = null,
+    /** Lets the shared-task-import flow show "Shared Task" instead of "New Task" in the header,
+     * without a separate copy of this screen's chrome. */
+    @androidx.annotation.StringRes headerTitleRes: Int = R.string.new_task_title,
     projectsEnabled: Boolean = true,
     tagsEnabled: Boolean = true,
     peopleEnabled: Boolean = true,
@@ -299,16 +513,27 @@ fun NewTaskSheet(
     voiceLanguage: String = "default",
     defaultDueDate: com.mj.yata.domain.model.DefaultDueDate = com.mj.yata.domain.model.DefaultDueDate.TODAY,
     defaultPriority: String = "none",
+    defaultEstimateMinutes: Int? = null,
+    defaultProjectId: String? = null,
+    defaultTagIds: Set<String> = emptySet(),
+    dueDatePickerContext: com.mj.yata.ui.widgets.DueDatePickerContext = com.mj.yata.ui.widgets.DueDatePickerContext.None,
     onDraftStateChanged: (Boolean) -> Unit = {}
 ) {
-    var title by rememberSaveable(stateSaver = TextFieldValue.Saver) { mutableStateOf(TextFieldValue("")) }
-    var selectedListId by rememberSaveable { mutableStateOf(initialListId) }
-    var selectedProjectId by rememberSaveable { mutableStateOf(initialProjectId) }
-    var selectedPriority by rememberSaveable { mutableStateOf(defaultPriority) }
+    var title by rememberSaveable(stateSaver = TextFieldValue.Saver) {
+        mutableStateOf(TextFieldValue(initialDraft?.title ?: ""))
+    }
+    val effectiveInitialProjectId = remember(initialProjectId, defaultProjectId, projectsEnabled, projects, initialDraft) {
+        initialDraft?.projectId ?: initialProjectId ?: defaultProjectId?.takeIf { id ->
+            projectsEnabled && projects.any { it.id == id }
+        }
+    }
+    var selectedListId by rememberSaveable { mutableStateOf(initialDraft?.listId ?: initialListId) }
+    var selectedProjectId by rememberSaveable { mutableStateOf(effectiveInitialProjectId) }
+    var selectedPriority by rememberSaveable { mutableStateOf(initialDraft?.priority ?: defaultPriority) }
     // No manual toggle exists for this yet (unlike due/time/priority below) — quick-add is
     // currently the only way to flag a task before it's created, so there's no "manually set"
     // state to protect it from being overwritten.
-    var selectedFlag by rememberSaveable { mutableStateOf(false) }
+    var selectedFlag by rememberSaveable { mutableStateOf(initialDraft?.flag ?: false) }
     // No section chosen at creation — there's no picker here (adding one risks tipping this
     // form's parameter count over the register-allocation limit it already hit once, see
     // NewTaskDraft's doc comment). A new task starts in the project's implicit "No section"
@@ -317,25 +542,36 @@ fun NewTaskSheet(
 
     // Initial due date: an explicit override (e.g. the day tapped on the calendar) wins,
     // otherwise the pre-selected project's due date, otherwise the user's configured default
-    // (which is TODAY unless changed, preserving the previous hardcoded behavior).
-    val initialDueDate = remember(projects, initialProjectId, initialDueDateOverride, defaultDueDate) {
-        if (initialDueDateOverride != null) {
+    // (which is TODAY unless changed, preserving the previous hardcoded behavior). A shared
+    // task's own due date takes priority over all of that — it describes the work, not this
+    // device's usual defaults.
+    val initialDueDate = remember(projects, effectiveInitialProjectId, initialDueDateOverride, defaultDueDate, initialDraft) {
+        if (initialDraft?.due != null) {
+            initialDraft.due
+        } else if (initialDueDateOverride != null) {
             initialDueDateOverride
-        } else if (initialProjectId != null) {
-            val projectObj = projects.find { it.id == initialProjectId }
+        } else if (effectiveInitialProjectId != null) {
+            val projectObj = projects.find { it.id == effectiveInitialProjectId }
             projectObj?.due
         } else {
             defaultDueDate.resolve()
         }
     }
     var selectedDueDate by rememberSaveable { mutableStateOf<String?>(initialDueDate) }
-    var selectedStartDate by rememberSaveable { mutableStateOf<String?>(null) }
-    var selectedTime by rememberSaveable { mutableStateOf<String?>(null) }
+    var selectedStartDate by rememberSaveable { mutableStateOf(initialDraft?.startDate) }
+    var selectedTime by rememberSaveable { mutableStateOf(initialDraft?.time) }
+    // A shared task's reminder is never carried (it's the sender's own nudge preference, not the
+    // recipient's — see docs/app-links-team-sharing-design.md §2), so initialDraft.reminder is
+    // always null here; nothing to seed.
     var selectedReminder by rememberSaveable { mutableStateOf<String?>(null) }
     val context = androidx.compose.ui.platform.LocalContext.current
-    var selectedRecurrence by rememberSaveable(stateSaver = recurrenceSaver) { mutableStateOf<Recurrence?>(null) }
+    var selectedRecurrence by rememberSaveable(stateSaver = recurrenceSaver) {
+        mutableStateOf(initialDraft?.recurrence)
+    }
     var showDatePicker by remember { mutableStateOf(false) }
     var showStartDatePicker by remember { mutableStateOf(false) }
+    var showCustomStartOffsetDialog by remember { mutableStateOf(false) }
+    var customStartOffsetText by rememberSaveable { mutableStateOf("") }
     var titleFocused by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
     var showReminderTimePicker by remember { mutableStateOf(false) }
@@ -345,17 +581,36 @@ fun NewTaskSheet(
     // Quick-add: typing a date/time phrase in the title (e.g. "tomorrow 3pm") prefills these
     // chips. Once the user picks a due date/time manually, their choice always wins over
     // further parsing — see setDueDate/setTime below.
-    var dueManuallySet by rememberSaveable { mutableStateOf(initialDueDateOverride != null) }
-    var startDateManuallySet by rememberSaveable { mutableStateOf(false) }
-    var timeManuallySet by rememberSaveable { mutableStateOf(false) }
-    var recurrenceManuallySet by rememberSaveable { mutableStateOf(false) }
+    // A shared task's own values are as deliberate as anything the user picks by hand, so each
+    // is marked manually-set the same way a tap on its picker would — otherwise quick-add's
+    // parse of the (already-final) title could silently overwrite what the sender actually sent.
+    var dueManuallySet by rememberSaveable { mutableStateOf(initialDueDateOverride != null || initialDraft?.due != null) }
+    var startDateManuallySet by rememberSaveable { mutableStateOf(initialDraft?.startDate != null) }
+    var startDateDaysBeforeDue by rememberSaveable { mutableStateOf<Int?>(null) }
+    var timeManuallySet by rememberSaveable { mutableStateOf(initialDraft?.time != null) }
+    var recurrenceManuallySet by rememberSaveable { mutableStateOf(initialDraft?.recurrence != null) }
     var reminderManuallySet by rememberSaveable { mutableStateOf(false) }
-    var priorityManuallySet by rememberSaveable { mutableStateOf(false) }
-    var quickAddDismissed by rememberSaveable { mutableStateOf(false) }
+    var priorityManuallySet by rememberSaveable { mutableStateOf(initialDraft != null) }
+    var quickAddDismissed by rememberSaveable { mutableStateOf(initialDraft != null) }
     var ignoredQuickAddFields by rememberSaveable(stateSaver = stringSetSaver) { mutableStateOf(setOf<String>()) }
     var keepAdding by rememberSaveable { mutableStateOf(false) }
-    val setDueDate: (String?) -> Unit = { selectedDueDate = it; dueManuallySet = true }
-    val setStartDate: (String?) -> Unit = { selectedStartDate = it; startDateManuallySet = true }
+    val setDueDate: (String?) -> Unit = {
+        selectedDueDate = it
+        dueManuallySet = true
+        startDateDaysBeforeDue?.let { daysBeforeDue ->
+            selectedStartDate = daysBefore(it, daysBeforeDue)
+        }
+    }
+    val setStartDate: (String?) -> Unit = {
+        selectedStartDate = it
+        startDateManuallySet = true
+        startDateDaysBeforeDue = null
+    }
+    val setStartDateDaysBeforeDue: (Int) -> Unit = { daysBeforeDue ->
+        selectedStartDate = daysBefore(selectedDueDate, daysBeforeDue)
+        startDateManuallySet = true
+        startDateDaysBeforeDue = daysBeforeDue
+    }
     val setTime: (String?) -> Unit = { selectedTime = it; timeManuallySet = true }
     val setRecurrence: (Recurrence?) -> Unit = { selectedRecurrence = it; recurrenceManuallySet = true }
     val setReminder: (String?) -> Unit = { selectedReminder = it; reminderManuallySet = true }
@@ -374,16 +629,26 @@ fun NewTaskSheet(
         }
     }
 
+    val effectiveInitialTagIds = remember(initialTagId, defaultTagIds, tagsEnabled, tags, initialDraft) {
+        if (!tagsEnabled) {
+            emptySet()
+        } else {
+            val existingTagIds = tags.map { it.id }.toSet()
+            (defaultTagIds.filter { it in existingTagIds } + listOfNotNull(initialTagId) + (initialDraft?.tagIds ?: emptyList())).toSet()
+        }
+    }
     val selectedTagIds = rememberSaveable(saver = stringStateListSaver) { mutableStateListOf<String>() }
-    LaunchedEffect(initialTagId, tagsEnabled) {
-        if (tagsEnabled && initialTagId != null && !selectedTagIds.contains(initialTagId)) {
-            selectedTagIds.add(initialTagId)
+    LaunchedEffect(effectiveInitialTagIds, tagsEnabled) {
+        if (tagsEnabled && selectedTagIds.isEmpty()) {
+            selectedTagIds.addAll(effectiveInitialTagIds)
         }
     }
     var activePanel by remember { mutableStateOf<String?>(null) }
 
-    var notes by rememberSaveable { mutableStateOf("") }
-    val subtasks = rememberSaveable(saver = subtaskStateListSaver) { mutableStateListOf<Subtask>() }
+    var notes by rememberSaveable { mutableStateOf(initialDraft?.notes ?: "") }
+    val subtasks = rememberSaveable(saver = subtaskStateListSaver) {
+        mutableStateListOf(*(initialDraft?.subtasks ?: emptyList()).toTypedArray())
+    }
     var newSubtaskTitle by rememberSaveable { mutableStateOf("") }
 
     val accents = LocalYataAccents.current
@@ -400,10 +665,10 @@ fun NewTaskSheet(
     }
     val canCreateTask = title.text.isNotBlank()
     val hasMeaningfulDraft = title.text.isNotBlank() || notes.isNotBlank() || subtasks.isNotEmpty() ||
-        selectedListId != initialListId || selectedProjectId != initialProjectId ||
+        selectedListId != initialListId || selectedProjectId != effectiveInitialProjectId ||
         selectedPriority != defaultPriority || selectedFlag || selectedTime != null ||
         selectedReminder != null || selectedRecurrence != null ||
-        selectedTagIds.any { it != initialTagId } ||
+        selectedTagIds.toSet() != effectiveInitialTagIds ||
         selectedAssigneeIds.any { it != initialAssignee }
     LaunchedEffect(hasMeaningfulDraft) { onDraftStateChanged(hasMeaningfulDraft) }
 
@@ -411,10 +676,75 @@ fun NewTaskSheet(
     // instead of a single task with a garbled multi-line title — each gets its own
     // NaturalLanguageParser pass (see bulkTaskLines below), same engine as single-task mode.
     var bulkModeDismissed by remember { mutableStateOf(false) }
-    val bulkTaskLines = remember(title.text) {
-        title.text.split("\n").map { it.trim() }.filter { it.isNotBlank() }
-    }
+    val bulkAllLines = remember(title.text) { bulkLinesFrom(title.text) }
+    // Hard ceiling on how much one paste can do. Parsing costs roughly a millisecond a line, and
+    // each line becomes its own database write, so an accidental paste of a whole document would
+    // otherwise block the main thread long enough to be killed as an ANR. The excess is reported
+    // rather than dropped quietly — see the truncation warning in the preview card.
+    val bulkTaskLines = remember(bulkAllLines) { bulkAllLines.take(MAX_BULK_TASKS) }
+    val bulkTruncatedCount = bulkAllLines.size - bulkTaskLines.size
     val isBulkTasks = !bulkModeDismissed && bulkTaskLines.size > 1
+
+    // What a bulk paste will actually produce. Bulk mode suppresses the single-task smart-add
+    // preview, so without this the whole operation is blind: every line is parsed and resolved at
+    // submit time, and a #tag or +project naming something that doesn't exist yet resolves to
+    // nothing and is dropped in silence — N tasks land with no tag and no project and nothing
+    // said so. Aggregated across lines rather than shown per line, since a paste of this shape
+    // usually repeats the same tag/project on every row.
+    //
+    // Parses are memoized per line rather than left to NaturalLanguageParser's own 64-entry LRU.
+    // That cache is sized for single-task typing; a paste longer than it evicts every entry on
+    // each keystroke, so *every* line re-parses on *every* character. Measured: 50 lines 2.4ms,
+    // but 200 lines 233ms and 1000 lines 920ms, per keystroke, on the main thread during
+    // composition. Keeping the results keyed by the line text means editing one line reparses
+    // only that line. Keyed on AppClock.today as well, so relative dates ("tomorrow") don't stay
+    // frozen on the wrong day if the sheet is open across midnight.
+    val bulkToday = com.mj.yata.util.AppClock.today
+    val bulkParseMemo = remember { mutableMapOf<String, ParsedQuickAdd>() }
+    val bulkParsedLines = remember(bulkTaskLines, isBulkTasks, bulkToday) {
+        if (!isBulkTasks) {
+            bulkParseMemo.clear()
+            emptyList()
+        } else {
+            val fresh = LinkedHashMap<String, ParsedQuickAdd>(bulkTaskLines.size)
+            val parsed = bulkTaskLines.map { line ->
+                val value = bulkParseMemo[line] ?: NaturalLanguageParser.parse(line, bulkToday)
+                fresh[line] = value
+                value
+            }
+            // Retain only lines still present, so an edited-away line can't pin memory forever.
+            bulkParseMemo.clear()
+            bulkParseMemo.putAll(fresh)
+            parsed
+        }
+    }
+    // Deduplicated case-insensitively, keeping the first spelling seen. findBestEntityMatch is
+    // itself case-insensitive, so "#ITR" and "#itr" in the same paste resolve to one tag — but a
+    // plain distinct() treats them as two different missing names and "Create missing items"
+    // would dutifully create both, leaving a duplicate nothing subsequently resolves to.
+    fun List<String>.distinctNames(): List<String> = distinctBy { it.trim().lowercase() }
+    val bulkTagNames = remember(bulkParsedLines) { bulkParsedLines.flatMap { it.tagNames }.distinctNames() }
+    val bulkProjectNames = remember(bulkParsedLines) { bulkParsedLines.mapNotNull { it.projectName }.distinctNames() }
+    val bulkListNames = remember(bulkParsedLines) { bulkParsedLines.mapNotNull { it.listName }.distinctNames() }
+    val bulkPersonNames = remember(bulkParsedLines) { bulkParsedLines.flatMap { it.assigneeNames }.distinctNames() }
+    val bulkDueDates = remember(bulkParsedLines) { bulkParsedLines.mapNotNull { it.due }.distinct() }
+    // Names already handed to onCreateTag/onCreateProject this session. `tags`/`projects` arrive
+    // from a Flow, so they still look unmatched for the moment it takes that write to come back —
+    // without this, a second tap on Create (or a recomposition-triggered re-read) creates the
+    // same tag again.
+    val bulkRequestedCreations = remember { mutableStateListOf<String>() }
+    fun String.creationRequested() = bulkRequestedCreations.any { it.equals(this.trim(), ignoreCase = true) }
+    // Unmatched = the name resolves to no existing entity, so submitting now would drop it.
+    val bulkUnmatchedTags = remember(bulkTagNames, tags, tagsEnabled, bulkRequestedCreations.size) {
+        if (!tagsEnabled) emptyList()
+        else bulkTagNames.filter { findBestEntityMatch(it, tags, { tag -> tag.name }) == null && !it.creationRequested() }
+    }
+    val bulkUnmatchedProjects = remember(bulkProjectNames, projects, projectsEnabled, bulkRequestedCreations.size) {
+        if (!projectsEnabled) emptyList()
+        else bulkProjectNames.filter {
+            findBestEntityMatch(it, projects.activeProjects(), { p -> p.name }) == null && !it.creationRequested()
+        }
+    }
 
     // Lists have no feature flag — they are always available — so `=` needs no gate, unlike the
     // other three whose entity types can each be switched off in Settings.
@@ -438,6 +768,9 @@ fun NewTaskSheet(
         else NaturalLanguageParser.parse(title.text)
     }
     val quickAddMatched = !isBulkTasks && !quickAddDismissed && quickAdd.title != title.text.trim()
+    val effectiveIgnoredQuickAddFields = remember(ignoredQuickAddFields, mention) {
+        ignoredQuickAddFields + quickAddFieldsOwnedByMention(mention)
+    }
     val finalTitlePreview = remember(title.text, quickAddMatched, quickAdd.title) {
         if (quickAddMatched) quickAdd.title else title.text.trim()
     }
@@ -455,29 +788,29 @@ fun NewTaskSheet(
             }.take(2)
         }
     }
-    LaunchedEffect(quickAdd, quickAddDismissed, isBulkTasks, ignoredQuickAddFields) {
+    LaunchedEffect(quickAdd, quickAddDismissed, isBulkTasks, effectiveIgnoredQuickAddFields) {
         if (!quickAddDismissed && !isBulkTasks) {
-            if ("due" !in ignoredQuickAddFields && !dueManuallySet && quickAdd.due != null) selectedDueDate = quickAdd.due
-            if ("start" !in ignoredQuickAddFields && !startDateManuallySet && quickAdd.startDate != null) selectedStartDate = quickAdd.startDate
-            if ("time" !in ignoredQuickAddFields && !timeManuallySet && quickAdd.time != null) selectedTime = quickAdd.time
-            if ("recurrence" !in ignoredQuickAddFields && !recurrenceManuallySet && quickAdd.recurrence != null) selectedRecurrence = quickAdd.recurrence
-            if ("reminder" !in ignoredQuickAddFields && !reminderManuallySet && quickAdd.reminder != null) selectedReminder = quickAdd.reminder
-            if ("priority" !in ignoredQuickAddFields && !priorityManuallySet && quickAdd.priority != null) selectedPriority = quickAdd.priority
-            if ("flag" !in ignoredQuickAddFields && quickAdd.flag) selectedFlag = true
+            if ("due" !in effectiveIgnoredQuickAddFields && !dueManuallySet && quickAdd.due != null) selectedDueDate = quickAdd.due
+            if ("start" !in effectiveIgnoredQuickAddFields && !startDateManuallySet && quickAdd.startDate != null) selectedStartDate = quickAdd.startDate
+            if ("time" !in effectiveIgnoredQuickAddFields && !timeManuallySet && quickAdd.time != null) selectedTime = quickAdd.time
+            if ("recurrence" !in effectiveIgnoredQuickAddFields && !recurrenceManuallySet && quickAdd.recurrence != null) selectedRecurrence = quickAdd.recurrence
+            if ("reminder" !in effectiveIgnoredQuickAddFields && !reminderManuallySet && quickAdd.reminder != null) selectedReminder = quickAdd.reminder
+            if ("priority" !in effectiveIgnoredQuickAddFields && !priorityManuallySet && quickAdd.priority != null) selectedPriority = quickAdd.priority
+            if ("flag" !in effectiveIgnoredQuickAddFields && quickAdd.flag) selectedFlag = true
 
-            if ("project" !in ignoredQuickAddFields && selectedProjectId == null && quickAdd.projectName != null) {
-                findBestEntityMatch(quickAdd.projectName, projects, { it.name })?.let { selectedProjectId = it.id }
+            if ("project" !in effectiveIgnoredQuickAddFields && selectedProjectId == null && quickAdd.projectName != null) {
+                findBestEntityMatch(quickAdd.projectName, projects.activeProjects(), { it.name })?.let { selectedProjectId = it.id }
             }
-            if ("list" !in ignoredQuickAddFields && selectedListId == null && quickAdd.listName != null) {
-                findBestEntityMatch(quickAdd.listName, lists, { it.name })?.let { selectedListId = it.id }
+            if ("list" !in effectiveIgnoredQuickAddFields && selectedListId == null && quickAdd.listName != null) {
+                findBestEntityMatch(quickAdd.listName, lists.activeLists(), { it.name })?.let { selectedListId = it.id }
             }
-            if ("tags" !in ignoredQuickAddFields && quickAdd.tagNames.isNotEmpty()) {
+            if ("tags" !in effectiveIgnoredQuickAddFields && quickAdd.tagNames.isNotEmpty()) {
                 val matchedTagIds = quickAdd.tagNames.mapNotNull { target ->
                     findBestEntityMatch(target, tags, { it.name })?.id
                 }.distinct().filterNot { it in selectedTagIds }
                 selectedTagIds.addAll(matchedTagIds)
             }
-            if ("people" !in ignoredQuickAddFields && quickAdd.assigneeNames.isNotEmpty()) {
+            if ("people" !in effectiveIgnoredQuickAddFields && quickAdd.assigneeNames.isNotEmpty()) {
                 val matchedAssigneeIds = quickAdd.assigneeNames.mapNotNull { target ->
                     findBestEntityMatch(target, activePeople, { it.name })?.id
                 }.distinct().filterNot { it in selectedAssigneeIds }
@@ -490,12 +823,26 @@ fun NewTaskSheet(
     // A project with no due date of its own means its tasks default to no due date too — not
     // "today". This used to fall back to today, which clobbered the correct null the initial
     // state above already computed the moment this effect ran on first composition.
-    var lastLoadedProjectId by remember { mutableStateOf<String?>(null) }
+    //
+    // Only applies when nothing has already claimed the due date. Picking a project can itself
+    // come from quick-add parsing a project mention in the same title that also mentions a due
+    // date (e.g. "call plumber +renovation tomorrow") — that project selection lands in
+    // `selectedProjectId` a beat before this effect's coroutine runs, so without the
+    // `quickAdd.due` check here, an explicitly typed due date would get silently overwritten by
+    // the project's default the instant the project was recognized. A due date the user actually
+    // wrote always wins.
+    var lastLoadedProjectId by remember { mutableStateOf(effectiveInitialProjectId) }
     LaunchedEffect(selectedProjectId, projects) {
         val projectObj = projects.find { it.id == selectedProjectId }
         if (projectObj != null && projectObj.id != lastLoadedProjectId) {
             lastLoadedProjectId = projectObj.id
-            setDueDate(projectObj.due)
+            val dueAlreadyClaimed = dueManuallySet || ("due" !in effectiveIgnoredQuickAddFields && quickAdd.due != null)
+            if (!dueAlreadyClaimed) {
+                // Not routed through setDueDate(): this is a default, not a manual pick, and
+                // marking it dueManuallySet would incorrectly block quick-add from ever
+                // overriding it if the user later types a due phrase into the title.
+                selectedDueDate = projectObj.due
+            }
             if (selectedReminder == null) {
                 selectedReminder = projectObj.defaultReminder
             }
@@ -504,41 +851,45 @@ fun NewTaskSheet(
 
     var isVoiceOverlayOpen by remember { mutableStateOf(false) }
 
+    fun applyVoiceQuickAdd(parsed: ParsedQuickAdd) {
+        val parsedTitle = parsed.title
+        title = TextFieldValue(parsedTitle, TextRange(parsedTitle.length))
+        if (parsed.due != null) { selectedDueDate = parsed.due; dueManuallySet = true }
+        if (parsed.startDate != null) { selectedStartDate = parsed.startDate; startDateManuallySet = true }
+        if (parsed.time != null) { selectedTime = parsed.time; timeManuallySet = true }
+        if (parsed.recurrence != null) { selectedRecurrence = parsed.recurrence; recurrenceManuallySet = true }
+        if (parsed.reminder != null) { selectedReminder = parsed.reminder; reminderManuallySet = true }
+        if (parsed.priority != null) { selectedPriority = parsed.priority; priorityManuallySet = true }
+        if (parsed.flag) selectedFlag = true
+        if (projectsEnabled && parsed.projectName != null) {
+            findBestEntityMatch(parsed.projectName, projects.activeProjects(), { it.name })?.let { selectedProjectId = it.id }
+        }
+        if (parsed.listName != null) {
+            findBestEntityMatch(parsed.listName, lists.activeLists(), { it.name })?.let { selectedListId = it.id }
+        }
+        if (tagsEnabled && parsed.tagNames.isNotEmpty()) {
+            val matchedTagIds = parsed.tagNames.mapNotNull { target ->
+                findBestEntityMatch(target, tags, { it.name })?.id
+            }.distinct().filterNot { it in selectedTagIds }
+            selectedTagIds.addAll(matchedTagIds)
+        }
+        if (peopleEnabled && parsed.assigneeNames.isNotEmpty()) {
+            val matchedAssigneeIds = parsed.assigneeNames.mapNotNull { target ->
+                findBestEntityMatch(target, activePeople, { it.name })?.id
+            }.distinct().filterNot { it in selectedAssigneeIds }
+            selectedAssigneeIds.addAll(matchedAssigneeIds)
+        }
+        quickAddDismissed = false
+    }
+
     val speechLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == android.app.Activity.RESULT_OK) {
             val matches = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
-            val spoken = matches?.firstOrNull()?.trim()
+            val spoken = matches.orEmpty().map { it.trim() }.filter { it.isNotBlank() }.maxByOrNull { it.length }
             if (!spoken.isNullOrBlank()) {
-                val parsed = NaturalLanguageParser.parse(spoken)
-                val properTitle = parsed.title.toProperCase()
-                title = TextFieldValue(properTitle, TextRange(properTitle.length))
-                if (parsed.due != null) { selectedDueDate = parsed.due; dueManuallySet = true }
-                if (parsed.time != null) { selectedTime = parsed.time; timeManuallySet = true }
-                if (parsed.recurrence != null) { selectedRecurrence = parsed.recurrence; recurrenceManuallySet = true }
-                if (parsed.reminder != null) { selectedReminder = parsed.reminder; reminderManuallySet = true }
-                if (parsed.priority != null) { selectedPriority = parsed.priority; priorityManuallySet = true }
-                if (parsed.flag) selectedFlag = true
-                if (parsed.projectName != null) {
-                    findBestEntityMatch(parsed.projectName, projects, { it.name })?.let { selectedProjectId = it.id }
-                }
-                if (parsed.listName != null) {
-                    findBestEntityMatch(parsed.listName, lists, { it.name })?.let { selectedListId = it.id }
-                }
-                if (parsed.tagNames.isNotEmpty()) {
-                    val matchedTagIds = parsed.tagNames.mapNotNull { target ->
-                        findBestEntityMatch(target, tags, { it.name })?.id
-                    }.distinct()
-                    selectedTagIds.addAll(matchedTagIds)
-                }
-                if (parsed.assigneeNames.isNotEmpty()) {
-                    val matchedAssigneeIds = parsed.assigneeNames.mapNotNull { target ->
-                        findBestEntityMatch(target, activePeople, { it.name })?.id
-                    }.distinct()
-                    selectedAssigneeIds.addAll(matchedAssigneeIds)
-                }
-                quickAddDismissed = false
+                applyVoiceQuickAdd(NaturalLanguageParser.parse(spoken))
             }
         }
     }
@@ -571,6 +922,7 @@ fun NewTaskSheet(
         selectedStartDate = null
         dueManuallySet = initialDueDateOverride != null
         startDateManuallySet = false
+        startDateDaysBeforeDue = null
         timeManuallySet = false
         recurrenceManuallySet = false
         reminderManuallySet = false
@@ -586,32 +938,50 @@ fun NewTaskSheet(
             // Each line gets its own NaturalLanguageParser pass — independent due/time/
             // priority/recurrence/flag per task — sharing only the sheet-level fields that
             // aren't naturally per-line (project/list/section/assignees/tags/notes/subtasks).
-            bulkTaskLines.forEach { line ->
-                val parsed = NaturalLanguageParser.parse(line)
+            // The same parses the preview above was computed from, not a fresh pass: re-parsing
+            // here would repeat the whole cost a second time, and — since the two passes would
+            // resolve relative dates against whatever "today" each happened to see — could create
+            // tasks that disagree with the preview the user just approved.
+            bulkParsedLines.forEach { parsed ->
+                val resolved = resolveParsedQuickAddEntities(
+                    quickAdd = parsed,
+                    baseListId = selectedListId,
+                    baseProjectId = selectedProjectId,
+                    baseTagIds = selectedTagIds.toList(),
+                    baseAssigneeIds = selectedAssigneeIds.toList(),
+                    lists = lists,
+                    projects = projects,
+                    people = people,
+                    tags = tags,
+                    projectsEnabled = projectsEnabled,
+                    tagsEnabled = tagsEnabled,
+                    peopleEnabled = peopleEnabled
+                )
                 onAddTask(
                     NewTaskDraft(
                         title = parsed.title,
-                        listId = selectedListId,
+                        listId = resolved.listId,
                         priority = parsed.priority ?: "none",
-                        assigneeIds = selectedAssigneeIds.toList(),
-                        tagIds = selectedTagIds.toList(),
+                        assigneeIds = resolved.assigneeIds,
+                        tagIds = resolved.tagIds,
                         recurrence = parsed.recurrence,
-                        due = parsed.due ?: initialDueDate,
+                        due = parsed.due ?: resolved.projectDue ?: initialDueDate,
                         // Per-line like the due date: "review draft starts monday" on one line
                         // shouldn't defer the other lines in the same bulk paste.
                         startDate = parsed.startDate,
                         time = parsed.time,
                         reminder = parsed.reminder ?: selectedReminder,
                         section = selectedSection,
-                        projectId = selectedProjectId,
+                        projectId = resolved.projectId,
                         notes = notes.trim().ifBlank { null },
                         subtasks = subtasks.toList(),
-                        flag = parsed.flag
+                        flag = parsed.flag,
+                        estimateMinutes = defaultEstimateMinutes
                     )
                 )
             }
         } else {
-            val finalTitle = (if (quickAddMatched) quickAdd.title else title.text.trim()).toProperCase()
+            val finalTitle = if (quickAddMatched) quickAdd.title else title.text.trim()
             val add = if (keepAdding && onAddTaskAndContinue != null) onAddTaskAndContinue else onAddTask
             add(
                 NewTaskDraft(
@@ -629,7 +999,8 @@ fun NewTaskSheet(
                     projectId = selectedProjectId,
                     notes = notes.trim().ifBlank { null },
                     subtasks = subtasks.toList(),
-                    flag = selectedFlag
+                    flag = selectedFlag,
+                    estimateMinutes = initialDraft?.estimateMinutes ?: defaultEstimateMinutes
                 )
             )
             if (keepAdding && onAddTaskAndContinue != null) {
@@ -666,16 +1037,28 @@ fun NewTaskSheet(
             // and the create button ends up behind the gesture nav bar.
             .safeDrawingPadding()
     ) {
+        var showSyntaxDialog by remember { mutableStateOf(false) }
+        if (showSyntaxDialog) {
+            QuickAddSyntaxDialog(onDismiss = { showSyntaxDialog = false })
+        }
         TopAppBar(
             title = {
                 Text(
-                    text = stringResource(R.string.new_task_title),
+                    text = stringResource(headerTitleRes),
                     style = MaterialTheme.typography.titleMedium
                 )
             },
             navigationIcon = {
                 IconButton(onClick = onDismiss) {
                     Icon(imageVector = Icons.Default.Close, contentDescription = stringResource(R.string.action_close))
+                }
+            },
+            actions = {
+                IconButton(onClick = { showSyntaxDialog = true }) {
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = stringResource(R.string.syntax_dialog_title)
+                    )
                 }
             },
             colors = TopAppBarDefaults.topAppBarColors(
@@ -733,32 +1116,54 @@ fun NewTaskSheet(
             // A real rounded pill isn't possible inline in an editable BasicTextField, so this
             // approximates one with a tinted background + bold colored text (same accent@16%
             // language TagChip/YataSelectChip use elsewhere) — far more visible than a thin underline.
-            val quickAddChipColor = MaterialTheme.colorScheme.primary
-            val quickAddVisualTransformation = remember(quickAdd.highlightRanges, quickAddMatched, quickAddChipColor) {
-                VisualTransformation { text ->
-                    if (!quickAddMatched || quickAdd.highlightRanges.isEmpty()) {
-                        TransformedText(text, OffsetMapping.Identity)
-                    } else {
-                        val annotated = buildAnnotatedString {
-                            append(text.text)
-                            quickAdd.highlightRanges.forEach { range ->
-                                val start = range.first.coerceIn(0, text.text.length)
-                                val end = (range.last + 1).coerceIn(0, text.text.length)
-                                if (start < end) {
-                                    addStyle(
-                                        SpanStyle(
-                                            color = quickAddChipColor,
-                                            fontWeight = FontWeight.Bold,
-                                            background = quickAddChipColor.copy(alpha = 0.16f)
-                                        ),
-                                        start,
-                                        end
-                                    )
-                                }
-                            }
-                        }
-                        TransformedText(annotated, OffsetMapping.Identity)
+            val quickAddVisualTransformation = rememberQuickAddHighlightTransformation(
+                spans = quickAdd.highlightSpans,
+                enabled = quickAddMatched
+            )
+
+            // Accepts the top-ranked suggestion for whatever mention is currently under the
+            // cursor (same ranking MentionSuggestions renders), so a hardware/attached keyboard
+            // can commit a mention via Tab without the hand leaving the keys to tap the dropdown
+            // row. False (and a no-op) when there's no active mention or nothing matches, so the
+            // caller can decide whether to consume the key event or let it fall through as usual.
+            fun acceptTopMentionMatch(): Boolean {
+                val activeMention = mention ?: return false
+                return when (activeMention.trigger) {
+                    TRIGGER_TAG -> {
+                        val match = rankedMentionMatches(activeMention.query, tags, { it.name }).firstOrNull()
+                        if (match != null) {
+                            if (match.id !in selectedTagIds) selectedTagIds.add(match.id)
+                            title = consumeMentionToken(title, activeMention)
+                            true
+                        } else false
                     }
+                    TRIGGER_PERSON -> {
+                        val match = rankedMentionMatches(activeMention.query, activePeople, { it.name }).firstOrNull()
+                        if (match != null) {
+                            if (match.id !in selectedAssigneeIds) selectedAssigneeIds.add(match.id)
+                            title = consumeMentionToken(title, activeMention)
+                            true
+                        } else false
+                    }
+                    TRIGGER_PROJECT -> {
+                        val match = rankedMentionMatches(activeMention.query, projects.activeProjects(), { it.name }).firstOrNull()
+                        if (match != null) {
+                            selectedProjectId = match.id
+                            selectedListId = null
+                            title = consumeMentionToken(title, activeMention)
+                            true
+                        } else false
+                    }
+                    TRIGGER_LIST -> {
+                        val match = rankedMentionMatches(activeMention.query, lists.activeLists(), { it.name }).firstOrNull()
+                        if (match != null) {
+                            selectedListId = match.id
+                            selectedProjectId = null
+                            title = consumeMentionToken(title, activeMention)
+                            true
+                        } else false
+                    }
+                    else -> false
                 }
             }
 
@@ -771,8 +1176,8 @@ fun NewTaskSheet(
             // Focus is shown by a primary ring that animates in, which is also the only state cue
             // left now that the underline is gone.
             val titleBorder by animateColorAsState(
-                targetValue = if (titleFocused) MaterialTheme.colorScheme.primary
-                              else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
+                targetValue = if (titleFocused) MaterialTheme.colorScheme.primary.copy(alpha = 0.72f)
+                              else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.24f),
                 // YataDur.micro rather than a literal, so the ring honours Reduce Motion.
                 animationSpec = tween(durationMillis = YataDur.micro, easing = YataEase.emphDecel),
                 label = "titleFieldBorder"
@@ -791,7 +1196,7 @@ fun NewTaskSheet(
                     .heightIn(min = 92.dp)
                     .clip(RoundedCornerShape(28.dp))
                     .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                    .border(2.dp, titleBorder, RoundedCornerShape(28.dp))
+                    .border(1.5.dp, titleBorder, RoundedCornerShape(28.dp))
                     .padding(start = 20.dp, end = 8.dp, top = 6.dp, bottom = 6.dp)
             ) {
                 BasicTextField(
@@ -833,6 +1238,16 @@ fun NewTaskSheet(
                         .weight(1f)
                         .focusRequester(focusRequester)
                         .onFocusChanged { titleFocused = it.isFocused }
+                        // Tab commits the top mention match instead of shifting focus off the
+                        // field — only intercepted while a mention is actually in progress, so
+                        // Tab still behaves normally (moving focus) the rest of the time.
+                        .onPreviewKeyEvent { event ->
+                            if (event.type == KeyEventType.KeyDown && event.key == Key.Tab && mention != null) {
+                                acceptTopMentionMatch()
+                            } else {
+                                false
+                            }
+                        }
                         .padding(vertical = 14.dp)
                         .testTag("new_task_title_input"),
                     decorationBox = { inner ->
@@ -891,11 +1306,11 @@ fun NewTaskSheet(
                     tags = tags,
                     people = activePeople,
                     onSelectTag = { tag ->
-                        selectedTagIds.add(tag.id)
+                        if (tag.id !in selectedTagIds) selectedTagIds.add(tag.id)
                         title = consumeMentionToken(title, mention)
                     },
                     onSelectPerson = { person ->
-                        selectedAssigneeIds.add(person.id)
+                        if (person.id !in selectedAssigneeIds) selectedAssigneeIds.add(person.id)
                         title = consumeMentionToken(title, mention)
                     },
                     onCreateTag = { name ->
@@ -928,42 +1343,208 @@ fun NewTaskSheet(
             }
 
             if (isBulkTasks) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(MaterialTheme.colorScheme.primaryContainer)
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Icon(
-                        Icons.AutoMirrored.Filled.List,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Text(
-                        text = "${bulkTaskLines.size} tasks detected — each line becomes its own task, parsed separately",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.weight(1f)
-                    )
-                    Icon(
-                        Icons.Default.Close,
-                        contentDescription = stringResource(R.string.new_task_treat_as_a_single_task_instead),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier
-                            .size(16.dp)
-                            .clip(CircleShape)
-                            .clickable { bulkModeDismissed = true }
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.List,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Text(
+                            text = pluralStringResource(R.plurals.new_task_bulk_lines_detected, bulkTaskLines.size, bulkTaskLines.size),
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Icon(
+                            Icons.Default.Close,
+                            contentDescription = stringResource(R.string.new_task_treat_as_a_single_task_instead),
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier
+                                .size(16.dp)
+                                .clip(CircleShape)
+                                .clickable { bulkModeDismissed = true }
+                        )
+                    }
+
+                    if (bulkTruncatedCount > 0) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.ErrorOutline,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Text(
+                                text = stringResource(
+                                    R.string.new_task_bulk_truncated,
+                                    MAX_BULK_TASKS,
+                                    bulkTruncatedCount
+                                ),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+
+                    // One chip per distinct thing the paste will apply, flagged unmatched when the
+                    // name resolves to nothing and would otherwise be dropped without a word.
+                    //
+                    // When the lines disagree on a date the chip says so rather than disappearing.
+                    // Showing nothing was the worst option: a paste meant to share one date is
+                    // exactly the case where a stray extra date means a line got misread — a
+                    // person named "Sunday" or "May", say, whose name the parser took for a day —
+                    // and silently hiding the chip removed the only clue that had happened.
+                    val bulkChips = buildList<Pair<String, Boolean>> {
+                        when (bulkDueDates.size) {
+                            0 -> Unit
+                            1 -> add(
+                                stringResource(
+                                    R.string.smart_add_due,
+                                    TaskScheduleUtils.formatDueDate(bulkDueDates.first())
+                                ) to true
+                            )
+                            else -> add(stringResource(R.string.new_task_bulk_mixed_dates) to false)
+                        }
+                        if (tagsEnabled) bulkTagNames.forEach { add("#$it" to (it !in bulkUnmatchedTags)) }
+                        if (projectsEnabled) bulkProjectNames.forEach { add("+$it" to (it !in bulkUnmatchedProjects)) }
+                        bulkListNames.forEach { name ->
+                            add("=$name" to (findBestEntityMatch(name, lists.activeLists(), { it.name }) != null))
+                        }
+                        if (peopleEnabled) bulkPersonNames.forEach { name ->
+                            add("@$name" to (findBestEntityMatch(name, activePeople, { it.name }) != null))
+                        }
+                    }
+                    if (bulkChips.isNotEmpty()) {
+                        // A paste naming a different tag on every line would otherwise render one
+                        // chip per line and bury the sheet. Unmatched ones sort first so the
+                        // things at risk of being dropped are never the ones cut from the list;
+                        // the Create button below still acts on all of them, not just the shown.
+                        val shownChips = bulkChips.sortedBy { it.second }.take(BULK_PREVIEW_CHIP_LIMIT)
+                        val hiddenChipCount = bulkChips.size - shownChips.size
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            shownChips.forEach { (label, matched) ->
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(
+                                            if (matched) MaterialTheme.colorScheme.surface
+                                            else MaterialTheme.colorScheme.errorContainer
+                                        )
+                                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                                ) {
+                                    if (!matched) {
+                                        Icon(
+                                            Icons.Default.ErrorOutline,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onErrorContainer,
+                                            modifier = Modifier.size(13.dp)
+                                        )
+                                    }
+                                    Text(
+                                        text = label,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = if (matched) MaterialTheme.colorScheme.onSurface
+                                                else MaterialTheme.colorScheme.onErrorContainer,
+                                        // A pathologically long name must not stretch the card.
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                            }
+                            if (hiddenChipCount > 0) {
+                                Text(
+                                    text = stringResource(R.string.new_task_bulk_more_detected, hiddenChipCount),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    // Creating is its own action rather than folded into Add: `tags`/`projects`
+                    // arrive from a Flow, so anything created here would not be back in those
+                    // lists in time for a submit happening in the same click.
+                    val creatableProjects = if (onCreateProject != null) bulkUnmatchedProjects else emptyList()
+                    val missingCount = bulkUnmatchedTags.size + creatableProjects.size
+                    if (missingCount > 0) {
+                        TextButton(
+                            onClick = {
+                                // Snapshotted before creating: recording each name flips it out of
+                                // the unmatched lists mid-loop otherwise.
+                                val tagsToCreate = bulkUnmatchedTags.toList()
+                                val projectsToCreate = creatableProjects.toList()
+                                bulkRequestedCreations.addAll(tagsToCreate + projectsToCreate)
+                                tagsToCreate.forEach { name ->
+                                    onCreateTag("tag_" + java.util.UUID.randomUUID().toString(), name, pickAccentFor(name))
+                                }
+                                projectsToCreate.forEach { name ->
+                                    onCreateProject?.invoke("proj_" + java.util.UUID.randomUUID().toString(), name, pickAccentFor(name))
+                                }
+                            }
+                        ) {
+                            Icon(
+                                Icons.Default.Add,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = pluralStringResource(
+                                    R.plurals.new_task_bulk_create_missing, missingCount, missingCount
+                                ),
+                                style = MaterialTheme.typography.labelLarge
+                            )
+                        }
+                    }
                 }
             } else if (quickAddMatched) {
-                val detectedItems = listOfNotNull<Triple<String, () -> Unit, () -> Unit>>(
-                    quickAdd.due?.takeIf { "due" !in ignoredQuickAddFields }?.let {
-                        Triple("Due ${TaskScheduleUtils.formatDueDate(it)}", { activePanel = "DueDate" }, {
+                // Resolved once here (not just for the dismiss handlers) so the chip can show what
+                // actually matched instead of the raw typed text — a mistyped "+wrk" and a matched
+                // "+work" used to render an identical "Project wrk" chip either way, so there was no
+                // visible difference between a successful attach and a silent no-op.
+                val projectMatch = quickAdd.projectName?.let { name ->
+                    findBestEntityMatch(name, projects.activeProjects(), { it.name })
+                }
+                val listMatch = quickAdd.listName?.let { name ->
+                    findBestEntityMatch(name, lists.activeLists(), { it.name })
+                }
+                val matchedTagIds = quickAdd.tagNames.mapNotNull { target ->
+                    findBestEntityMatch(target, tags, { tag -> tag.name })?.id
+                }.toSet()
+                val matchedAssigneeIds = quickAdd.assigneeNames.mapNotNull { target ->
+                    findBestEntityMatch(target, activePeople, { person -> person.name })?.id
+                }.toSet()
+
+                val detectedItems = listOfNotNull<DetectedQuickAddChip>(
+                    quickAdd.due?.takeIf { "due" !in effectiveIgnoredQuickAddFields }?.let {
+                        DetectedQuickAddChip("Due ${TaskScheduleUtils.formatDueDate(it)}", { activePanel = "DueDate" }, {
                             setDueDate(null)
                             ignoredQuickAddFields = ignoredQuickAddFields + "due"
                         })
                     },
-                    quickAdd.startDate?.takeIf { "start" !in ignoredQuickAddFields }?.let {
-                        Triple(
+                    quickAdd.startDate?.takeIf { "start" !in effectiveIgnoredQuickAddFields }?.let {
+                        DetectedQuickAddChip(
                             stringResource(R.string.smart_add_starts, TaskScheduleUtils.formatDueDate(it)),
                             { activePanel = "StartDate" },
                             {
@@ -972,14 +1553,14 @@ fun NewTaskSheet(
                             }
                         )
                     },
-                    quickAdd.time?.takeIf { "time" !in ignoredQuickAddFields }?.let {
-                        Triple("Time $it", { activePanel = "Time" }, {
+                    quickAdd.time?.takeIf { "time" !in effectiveIgnoredQuickAddFields }?.let {
+                        DetectedQuickAddChip("Time $it", { activePanel = "Time" }, {
                             setTime(null)
                             ignoredQuickAddFields = ignoredQuickAddFields + "time"
                         })
                     },
-                    quickAdd.recurrence?.takeIf { "recurrence" !in ignoredQuickAddFields }?.let {
-                        Triple("Repeat ${com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it)}", {
+                    quickAdd.recurrence?.takeIf { "recurrence" !in effectiveIgnoredQuickAddFields }?.let {
+                        DetectedQuickAddChip("Repeat ${com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it, dueDatePickerContext.weekendDays)}", {
                             activePanel = null
                             showRecurrenceSheet = true
                         }, {
@@ -987,75 +1568,90 @@ fun NewTaskSheet(
                             ignoredQuickAddFields = ignoredQuickAddFields + "recurrence"
                         })
                     },
-                    quickAdd.reminder?.takeIf { "reminder" !in ignoredQuickAddFields }?.let {
-                        Triple("Remind $it", { activePanel = "Reminder" }, {
+                    quickAdd.reminder?.takeIf { "reminder" !in effectiveIgnoredQuickAddFields }?.let {
+                        DetectedQuickAddChip("Remind $it", { activePanel = "Reminder" }, {
                             setReminder(null)
                             ignoredQuickAddFields = ignoredQuickAddFields + "reminder"
                         })
                     },
-                    quickAdd.priority?.takeIf { "priority" !in ignoredQuickAddFields }?.let {
-                        Triple("${it.uppercase()} priority", { activePanel = "Priority" }, {
+                    quickAdd.priority?.takeIf { "priority" !in effectiveIgnoredQuickAddFields }?.let {
+                        DetectedQuickAddChip("${it.uppercase()} priority", { activePanel = "Priority" }, {
                             setPriority("none")
                             ignoredQuickAddFields = ignoredQuickAddFields + "priority"
                         })
                     },
-                    "Flagged".takeIf { quickAdd.flag && "flag" !in ignoredQuickAddFields }?.let {
-                        Triple(it, { selectedFlag = !selectedFlag }, {
+                    "Flagged".takeIf { quickAdd.flag && "flag" !in effectiveIgnoredQuickAddFields }?.let {
+                        DetectedQuickAddChip(it, { selectedFlag = !selectedFlag }, {
                             selectedFlag = false
                             ignoredQuickAddFields = ignoredQuickAddFields + "flag"
                         })
                     },
-                    quickAdd.projectName?.takeIf { "project" !in ignoredQuickAddFields }?.let {
-                        Triple("Project $it", { activePanel = "Project" }, {
-                            selectedProjectId = null
-                            ignoredQuickAddFields = ignoredQuickAddFields + "project"
-                        })
+                    quickAdd.projectName?.takeIf { "project" !in effectiveIgnoredQuickAddFields }?.let { typed ->
+                        DetectedQuickAddChip(
+                            label = "Project ${projectMatch?.name ?: typed}",
+                            onClick = { activePanel = "Project" },
+                            onDismiss = {
+                                selectedProjectId = null
+                                ignoredQuickAddFields = ignoredQuickAddFields + "project"
+                            },
+                            matched = projectMatch != null
+                        )
                     },
-                    quickAdd.listName?.takeIf { "list" !in ignoredQuickAddFields }?.let {
-                        Triple("List $it", { activePanel = "List" }, {
-                            selectedListId = null
-                            ignoredQuickAddFields = ignoredQuickAddFields + "list"
-                        })
+                    quickAdd.listName?.takeIf { "list" !in effectiveIgnoredQuickAddFields }?.let { typed ->
+                        DetectedQuickAddChip(
+                            label = "List ${listMatch?.name ?: typed}",
+                            onClick = { activePanel = "List" },
+                            onDismiss = {
+                                selectedListId = null
+                                ignoredQuickAddFields = ignoredQuickAddFields + "list"
+                            },
+                            matched = listMatch != null
+                        )
                     },
-                    quickAdd.tagNames.takeIf { it.isNotEmpty() && "tags" !in ignoredQuickAddFields }?.joinToString(", ") { "#$it" }?.let {
-                        Triple("Tags $it", { activePanel = "Tags" }, {
-                            val matchedTagIds = quickAdd.tagNames.mapNotNull { target ->
-                                findBestEntityMatch(target, tags, { tag -> tag.name })?.id
-                            }.toSet()
-                            selectedTagIds.removeAll(matchedTagIds)
-                            ignoredQuickAddFields = ignoredQuickAddFields + "tags"
-                        })
+                    quickAdd.tagNames.takeIf { it.isNotEmpty() && "tags" !in effectiveIgnoredQuickAddFields }?.joinToString(", ") { "#$it" }?.let {
+                        DetectedQuickAddChip(
+                            label = "Tags $it",
+                            onClick = { activePanel = "Tags" },
+                            onDismiss = {
+                                selectedTagIds.removeAll(matchedTagIds)
+                                ignoredQuickAddFields = ignoredQuickAddFields + "tags"
+                            },
+                            matched = matchedTagIds.isNotEmpty()
+                        )
                     },
-                    quickAdd.assigneeNames.takeIf { it.isNotEmpty() && "people" !in ignoredQuickAddFields }?.joinToString(", ") { "@$it" }?.let {
-                        Triple("People $it", { activePanel = "People" }, {
-                            val matchedAssigneeIds = quickAdd.assigneeNames.mapNotNull { target ->
-                                findBestEntityMatch(target, activePeople, { person -> person.name })?.id
-                            }.toSet()
-                            selectedAssigneeIds.removeAll(matchedAssigneeIds)
-                            ignoredQuickAddFields = ignoredQuickAddFields + "people"
-                        })
+                    quickAdd.assigneeNames.takeIf { it.isNotEmpty() && "people" !in effectiveIgnoredQuickAddFields }?.joinToString(", ") { "@$it" }?.let {
+                        DetectedQuickAddChip(
+                            label = "People $it",
+                            onClick = { activePanel = "People" },
+                            onDismiss = {
+                                selectedAssigneeIds.removeAll(matchedAssigneeIds)
+                                ignoredQuickAddFields = ignoredQuickAddFields + "people"
+                            },
+                            matched = matchedAssigneeIds.isNotEmpty()
+                        )
                     }
                 )
-                AnimatedVisibility(
-                    visible = true,
-                    enter = fadeIn(tween(150)) + expandVertically(tween(150)),
-                    exit = fadeOut(tween(100)) + shrinkVertically(tween(100))
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(14.dp))
-                            // Solid, not primaryContainer at 45% alpha. That alpha was the whole
-                            // legibility problem: blending the container down over the sheet
-                            // background produces a colour that is neither primaryContainer nor
-                            // surface, so `onPrimaryContainer` — which is only guaranteed to
-                            // contrast against the *solid* container — stopped being the right
-                            // pair for it, and the text washed out. M3 colour roles come in pairs;
-                            // putting alpha on one half of a pair breaks the guarantee.
-                            .background(MaterialTheme.colorScheme.primaryContainer)
-                            .padding(horizontal = 12.dp, vertical = 10.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                if (detectedItems.isNotEmpty()) {
+                    AnimatedVisibility(
+                        visible = true,
+                        enter = fadeIn(tween(com.mj.yata.ui.theme.YataDur.micro)) + expandVertically(tween(com.mj.yata.ui.theme.YataDur.micro)),
+                        exit = fadeOut(tween(com.mj.yata.ui.theme.YataDur.micro)) + shrinkVertically(tween(com.mj.yata.ui.theme.YataDur.micro))
                     ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(14.dp))
+                                // Solid, not primaryContainer at 45% alpha. That alpha was the whole
+                                // legibility problem: blending the container down over the sheet
+                                // background produces a colour that is neither primaryContainer nor
+                                // surface, so `onPrimaryContainer` — which is only guaranteed to
+                                // contrast against the *solid* container — stopped being the right
+                                // pair for it, and the text washed out. M3 colour roles come in pairs;
+                                // putting alpha on one half of a pair breaks the guarantee.
+                                .background(MaterialTheme.colorScheme.primaryContainer)
+                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -1083,7 +1679,7 @@ fun NewTaskSheet(
                         )
                     }
                     Text(
-                        text = stringResource(R.string.new_task_detected_title, quickAdd.title.toProperCase()),
+                        text = stringResource(R.string.new_task_detected_title, quickAdd.title),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
@@ -1091,27 +1687,49 @@ fun NewTaskSheet(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        detectedItems.forEach { (item, onItemClick, onDismissItem) ->
+                        detectedItems.forEach { chip ->
                             InputChip(
                                 selected = true,
-                                onClick = onItemClick,
-                                label = { Text(item) },
+                                onClick = chip.onClick,
+                                label = { Text(chip.label) },
                                 // Explicit colours: the default selected chip is
                                 // secondaryContainer, which against a primaryContainer card is
                                 // blue on blue. `surface` lifts the chips off the card and keeps
-                                // onSurface as a guaranteed contrast pair for the label.
-                                colors = InputChipDefaults.inputChipColors(
-                                    selectedContainerColor = MaterialTheme.colorScheme.surface,
-                                    selectedLabelColor = MaterialTheme.colorScheme.onSurface,
-                                    selectedTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant
-                                ),
+                                // onSurface as a guaranteed contrast pair for the label. An
+                                // unmatched project/list/tag/person name (typed but not found
+                                // among existing entities) tints error instead, so a mistyped
+                                // mention that silently attached nothing looks different from one
+                                // that worked, rather than both rendering the same chip.
+                                colors = if (chip.matched) {
+                                    InputChipDefaults.inputChipColors(
+                                        selectedContainerColor = MaterialTheme.colorScheme.surface,
+                                        selectedLabelColor = MaterialTheme.colorScheme.onSurface,
+                                        selectedTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                } else {
+                                    InputChipDefaults.inputChipColors(
+                                        selectedContainerColor = MaterialTheme.colorScheme.errorContainer,
+                                        selectedLabelColor = MaterialTheme.colorScheme.onErrorContainer,
+                                        selectedTrailingIconColor = MaterialTheme.colorScheme.onErrorContainer
+                                    )
+                                },
+                                leadingIcon = if (!chip.matched) {
+                                    {
+                                        Icon(
+                                            Icons.Default.ErrorOutline,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onErrorContainer,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                } else null,
                                 trailingIcon = {
                                     Icon(
                                         Icons.Default.Close,
-                                        contentDescription = stringResource(R.string.new_task_ignore_field, item),
+                                        contentDescription = stringResource(R.string.new_task_ignore_field, chip.label),
                                         modifier = Modifier
                                             .size(16.dp)
-                                            .clickable { onDismissItem() }
+                                            .clickable { chip.onDismiss() }
                                     )
                                 }
                             )
@@ -1154,92 +1772,99 @@ fun NewTaskSheet(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSecondaryContainer
                         )
+                        }
                     }
                 }
             }
 
-            // Attribute chip row
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                YataSelectChip(
-                    label = TaskScheduleUtils.formatDueDate(selectedDueDate),
-                    selected = selectedDueDate != null,
-                    onClick = { activePanel = if (activePanel == "DueDate") null else "DueDate" },
-                    tint = MaterialTheme.colorScheme.primary,
-                    leading = { Icon(Icons.Default.Today, contentDescription = null, tint = if (selectedDueDate != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(15.dp)) },
-                    showCheck = false
-                )
-                // Sits next to Due so the two dates read as a pair. Unset it shows no label text
-                // of its own — the icon alone keeps the row from growing for a field most tasks
-                // never use.
-                YataSelectChip(
-                    label = selectedStartDate?.let { TaskScheduleUtils.formatDueDate(it) } ?: stringResource(R.string.task_start_date),
-                    selected = selectedStartDate != null,
-                    onClick = { activePanel = if (activePanel == "StartDate") null else "StartDate" },
-                    tint = MaterialTheme.colorScheme.secondary,
-                    leading = { Icon(Icons.Default.EventAvailable, contentDescription = null, tint = if (selectedStartDate != null) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(15.dp)) },
-                    showCheck = false
-                )
-                if (projectsEnabled) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                SectionLabel(stringResource(R.string.export_schedule_label))
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     YataSelectChip(
-                        label = project?.name ?: stringResource(R.string.entity_project),
-                        selected = project != null,
-                        onClick = { activePanel = if (activePanel == "Project") null else "Project" },
-                        tint = projectColor,
-                        dotColor = if (project != null) projectColor else null,
+                        label = TaskScheduleUtils.formatDueDate(selectedDueDate),
+                        selected = selectedDueDate != null,
+                        onClick = { activePanel = if (activePanel == "DueDate") null else "DueDate" },
+                        tint = MaterialTheme.colorScheme.primary,
+                        leading = { Icon(Icons.Default.Today, contentDescription = null, tint = if (selectedDueDate != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(15.dp)) },
+                        showCheck = false
+                    )
+                    YataSelectChip(
+                        label = selectedTime ?: stringResource(R.string.new_task_time),
+                        selected = selectedTime != null,
+                        onClick = { activePanel = if (activePanel == "Time") null else "Time" },
+                        tint = MaterialTheme.colorScheme.tertiary,
+                        leading = { Icon(Icons.Default.AccessTime, contentDescription = null, tint = if (selectedTime != null) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(14.dp)) },
+                        showCheck = false
+                    )
+                    YataSelectChip(
+                        label = TaskScheduleUtils.formatReminder(selectedReminder),
+                        selected = selectedReminder != null,
+                        onClick = { activePanel = if (activePanel == "Reminder") null else "Reminder" },
+                        tint = MaterialTheme.colorScheme.secondary,
+                        leading = { Icon(Icons.Default.Notifications, contentDescription = null, tint = if (selectedReminder != null) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(14.dp)) },
+                        showCheck = false
+                    )
+                    YataSelectChip(
+                        label = selectedRecurrence?.let { com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it, dueDatePickerContext.weekendDays) } ?: stringResource(R.string.new_task_repeat),
+                        selected = selectedRecurrence != null,
+                        onClick = { activePanel = if (activePanel == "Repeat") null else "Repeat" },
+                        tint = MaterialTheme.colorScheme.tertiary,
+                        leading = { Icon(Icons.Default.Repeat, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(14.dp)) },
+                        showCheck = false
+                    )
+                    // Start date stays with schedule settings, but trails the common due/time/
+                    // reminder/repeat actions so the first scan line is about when the task is due.
+                    YataSelectChip(
+                        label = selectedStartDate?.let { TaskScheduleUtils.formatDueDate(it) } ?: stringResource(R.string.task_start_date),
+                        selected = selectedStartDate != null,
+                        onClick = { activePanel = if (activePanel == "StartDate") null else "StartDate" },
+                        tint = MaterialTheme.colorScheme.secondary,
+                        leading = { Icon(Icons.Default.EventAvailable, contentDescription = null, tint = if (selectedStartDate != null) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(15.dp)) },
                         showCheck = false
                     )
                 }
-                YataSelectChip(
-                    label = listName,
-                    selected = list != null,
-                    onClick = { activePanel = if (activePanel == "List") null else "List" },
-                    tint = listColor,
-                    dotColor = if (list != null) listColor else null,
-                    showCheck = false
-                )
-                YataSelectChip(
-                    label = if (selectedPriority == "none") stringResource(R.string.new_task_priority) else selectedPriority.uppercase(),
-                    selected = selectedPriority != "none",
-                    onClick = { activePanel = if (activePanel == "Priority") null else "Priority" },
-                    tint = priorityChipColor(selectedPriority, accents),
-                    leading = {
-                        if (selectedPriority == "none") {
-                            Icon(Icons.Default.Flag, contentDescription = null, tint = priorityChipColor(selectedPriority, accents), modifier = Modifier.size(14.dp))
-                        } else {
-                            PriorityBars(priority = selectedPriority)
-                        }
-                    },
-                    showCheck = false
-                )
-                YataSelectChip(
-                    label = selectedRecurrence?.let { com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it) } ?: stringResource(R.string.new_task_repeat),
-                    selected = selectedRecurrence != null,
-                    onClick = { activePanel = if (activePanel == "Repeat") null else "Repeat" },
-                    tint = MaterialTheme.colorScheme.tertiary,
-                    leading = { Icon(Icons.Default.Repeat, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(14.dp)) },
-                    showCheck = false
-                )
-                // Time/Reminder live in this same row (not a separate one further down) so the
-                // reveal panel below always opens right under whichever chip triggered it.
-                YataSelectChip(
-                    label = selectedTime ?: stringResource(R.string.new_task_time),
-                    selected = selectedTime != null,
-                    onClick = { activePanel = if (activePanel == "Time") null else "Time" },
-                    tint = MaterialTheme.colorScheme.tertiary,
-                    leading = { Icon(Icons.Default.AccessTime, contentDescription = null, tint = if (selectedTime != null) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(14.dp)) },
-                    showCheck = false
-                )
-                YataSelectChip(
-                    label = TaskScheduleUtils.formatReminder(selectedReminder),
-                    selected = selectedReminder != null,
-                    onClick = { activePanel = if (activePanel == "Reminder") null else "Reminder" },
-                    tint = MaterialTheme.colorScheme.secondary,
-                    leading = { Icon(Icons.Default.Notifications, contentDescription = null, tint = if (selectedReminder != null) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(14.dp)) },
-                    showCheck = false
-                )
+
+                SectionLabel(stringResource(R.string.new_task_organize))
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    if (projectsEnabled) {
+                        YataSelectChip(
+                            label = project?.name ?: stringResource(R.string.entity_project),
+                            selected = project != null,
+                            onClick = { activePanel = if (activePanel == "Project") null else "Project" },
+                            tint = projectColor,
+                            dotColor = if (project != null) projectColor else null,
+                            showCheck = false
+                        )
+                    }
+                    YataSelectChip(
+                        label = listName,
+                        selected = list != null,
+                        onClick = { activePanel = if (activePanel == "List") null else "List" },
+                        tint = listColor,
+                        dotColor = if (list != null) listColor else null,
+                        showCheck = false
+                    )
+                    YataSelectChip(
+                        label = if (selectedPriority == "none") stringResource(R.string.new_task_priority) else selectedPriority.uppercase(),
+                        selected = selectedPriority != "none",
+                        onClick = { activePanel = if (activePanel == "Priority") null else "Priority" },
+                        tint = priorityChipColor(selectedPriority, accents),
+                        leading = {
+                            if (selectedPriority == "none") {
+                                Icon(Icons.Default.Flag, contentDescription = null, tint = priorityChipColor(selectedPriority, accents), modifier = Modifier.size(14.dp))
+                            } else {
+                                PriorityBars(priority = selectedPriority)
+                            }
+                        },
+                        showCheck = false
+                    )
+                }
             }
 
             // Reveal panel — right under the attribute chips that open it, so it never appears
@@ -1254,7 +1879,17 @@ fun NewTaskSheet(
                             onPickDate = { showDatePicker = true }
                         )
                         "StartDate" -> StartDatePanel(
+                            dueDate = selectedDueDate,
                             selectedStartDate = selectedStartDate,
+                            daysBeforeDue = startDateDaysBeforeDue,
+                            onPickDaysBeforeDue = setStartDateDaysBeforeDue,
+                            onPickCustomDaysBeforeDue = {
+                                customStartOffsetText = startDateDaysBeforeDue
+                                    ?.takeIf { it != 1 }
+                                    ?.toString()
+                                    ?: "2"
+                                showCustomStartOffsetDialog = true
+                            },
                             onPick = { setStartDate(it) },
                             onClear = { setStartDate(null) },
                             onPickDate = { showStartDatePicker = true }
@@ -1314,7 +1949,7 @@ fun NewTaskSheet(
                 }
             }
 
-            // Assigned to — always shows real avatar+name chips, not a count
+            // Assigned to — back on its own line so real avatar/name chips don't crowd Project/List.
             if (peopleEnabled) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     SectionLabel(stringResource(R.string.new_task_assigned_to))
@@ -1341,7 +1976,7 @@ fun NewTaskSheet(
                 }
             }
 
-            // Tags — always shows real tag chips, not a count
+            // Tags — also gets its own line because users can add several of them.
             if (tagsEnabled) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     SectionLabel(stringResource(R.string.new_task_tags))
@@ -1437,7 +2072,14 @@ fun NewTaskSheet(
             Spacer(modifier = Modifier.size(12.dp))
         }
 
-        reminderValidationMessage?.let { message ->
+        AnimatedVisibility(
+            visible = reminderValidationMessage != null,
+            enter = fadeIn(tween(YataDur.fade, easing = YataEase.emphDecel)) +
+                expandVertically(tween(YataDur.sheet, easing = YataEase.emphasized)),
+            exit = fadeOut(tween(YataDur.fade)) +
+                shrinkVertically(tween(YataDur.sheet, easing = YataEase.emphasized))
+        ) {
+            val message = reminderValidationMessage.orEmpty()
             Surface(
                 color = MaterialTheme.colorScheme.errorContainer,
                 contentColor = MaterialTheme.colorScheme.onErrorContainer,
@@ -1504,7 +2146,7 @@ fun NewTaskSheet(
                 .padding(horizontal = 20.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            val repeatText = selectedRecurrence?.let { com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it) }
+            val repeatText = selectedRecurrence?.let { com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it, dueDatePickerContext.weekendDays) }
             val contextText = listOfNotNull(project?.name, list?.name).joinToString(" · ").ifEmpty { context.getString(R.string.new_task_no_container) }
             Text(
                 text = contextText + (repeatText?.let { " · $it" } ?: ""),
@@ -1557,8 +2199,9 @@ fun NewTaskSheet(
     }
 
     if (showDatePicker) {
-        YataDatePickerDialog(
+        com.mj.yata.ui.widgets.DueDateCalendarDialog(
             initialDate = selectedDueDate,
+            context = dueDatePickerContext,
             onDismiss = { showDatePicker = false },
             onConfirm = {
                 setDueDate(it)
@@ -1574,6 +2217,62 @@ fun NewTaskSheet(
             onConfirm = {
                 setStartDate(it)
                 showStartDatePicker = false
+            }
+        )
+    }
+
+    if (showCustomStartOffsetDialog) {
+        val customStartOffsetDays = customStartOffsetText.toIntOrNull()
+        val customStartOffsetValid = customStartOffsetDays != null &&
+            customStartOffsetDays in 1..3650 &&
+            daysBefore(selectedDueDate, customStartOffsetDays) != null
+        val confirmCustomStartOffset: () -> Unit = {
+            val daysBeforeDue = customStartOffsetDays
+            if (daysBeforeDue != null && daysBeforeDue in 1..3650) {
+                setStartDateDaysBeforeDue(daysBeforeDue)
+                showCustomStartOffsetDialog = false
+            }
+        }
+        AlertDialog(
+            onDismissRequest = { showCustomStartOffsetDialog = false },
+            title = { Text(stringResource(R.string.task_start_date_custom_days_title)) },
+            text = {
+                OutlinedTextField(
+                    value = customStartOffsetText,
+                    onValueChange = { value ->
+                        customStartOffsetText = value.filter { it.isDigit() }.take(4)
+                    },
+                    label = { Text(stringResource(R.string.task_start_date_custom_days_label)) },
+                    singleLine = true,
+                    isError = customStartOffsetText.isNotBlank() && !customStartOffsetValid,
+                    supportingText = {
+                        if (customStartOffsetText.isNotBlank() && !customStartOffsetValid) {
+                            Text(stringResource(R.string.task_start_date_custom_days_error))
+                        }
+                    },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Number,
+                        imeAction = ImeAction.Done
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onDone = {
+                            if (customStartOffsetValid) confirmCustomStartOffset()
+                        }
+                    )
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = customStartOffsetValid,
+                    onClick = confirmCustomStartOffset
+                ) {
+                    Text(stringResource(R.string.action_done))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCustomStartOffsetDialog = false }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
             }
         )
     }
@@ -1611,7 +2310,8 @@ fun NewTaskSheet(
 
     if (showRecurrenceSheet) {
         ModalBottomSheet(
-            onDismissRequest = { showRecurrenceSheet = false }
+            onDismissRequest = { showRecurrenceSheet = false },
+            sheetMaxWidth = rememberAdaptiveSheetMaxWidth()
         ) {
             RecurrenceSheet(
                 initialRecurrence = selectedRecurrence,
@@ -1620,7 +2320,8 @@ fun NewTaskSheet(
                     showRecurrenceSheet = false
                 },
                 onDismiss = { showRecurrenceSheet = false },
-                referenceDate = selectedDueDate
+                referenceDate = selectedDueDate,
+                weekendDays = dueDatePickerContext.weekendDays
             )
         }
     }
@@ -1631,33 +2332,7 @@ fun NewTaskSheet(
             onDismiss = { isVoiceOverlayOpen = false },
             voiceLanguage = voiceLanguage,
             onTaskRecognized = { parsed ->
-                val properTitle = parsed.title.toProperCase()
-                title = TextFieldValue(properTitle, TextRange(properTitle.length))
-                if (parsed.due != null) { selectedDueDate = parsed.due; dueManuallySet = true }
-                if (parsed.time != null) { selectedTime = parsed.time; timeManuallySet = true }
-                if (parsed.recurrence != null) { selectedRecurrence = parsed.recurrence; recurrenceManuallySet = true }
-                if (parsed.reminder != null) { selectedReminder = parsed.reminder; reminderManuallySet = true }
-                if (parsed.priority != null) { selectedPriority = parsed.priority; priorityManuallySet = true }
-                if (parsed.flag) selectedFlag = true
-                if (parsed.projectName != null) {
-                    findBestEntityMatch(parsed.projectName, projects, { it.name })?.let { selectedProjectId = it.id }
-                }
-                if (parsed.listName != null) {
-                    findBestEntityMatch(parsed.listName, lists, { it.name })?.let { selectedListId = it.id }
-                }
-                if (parsed.tagNames.isNotEmpty()) {
-                    val matchedTagIds = parsed.tagNames.mapNotNull { target ->
-                        findBestEntityMatch(target, tags, { it.name })?.id
-                    }.distinct()
-                    selectedTagIds.addAll(matchedTagIds)
-                }
-                if (parsed.assigneeNames.isNotEmpty()) {
-                    val matchedAssigneeIds = parsed.assigneeNames.mapNotNull { target ->
-                        findBestEntityMatch(target, activePeople, { it.name })?.id
-                    }.distinct()
-                    selectedAssigneeIds.addAll(matchedAssigneeIds)
-                }
-                quickAddDismissed = false
+                applyVoiceQuickAdd(parsed)
             }
         )
     }
@@ -1757,17 +2432,33 @@ private fun DueDatePanel(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun StartDatePanel(
+    dueDate: String?,
     selectedStartDate: String?,
+    daysBeforeDue: Int?,
+    onPickDaysBeforeDue: (Int) -> Unit,
+    onPickCustomDaysBeforeDue: () -> Unit,
     onPick: (String?) -> Unit,
     onClear: () -> Unit,
     onPickDate: () -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            YataSelectChip(stringResource(R.string.date_tomorrow), selectedStartDate == LocalDate.now().plusDays(1).toString(), { onPick(LocalDate.now().plusDays(1).toString()) })
-            YataSelectChip(stringResource(R.string.date_next_week), selectedStartDate == LocalDate.now().plusWeeks(1).toString(), { onPick(LocalDate.now().plusWeeks(1).toString()) })
-            YataSelectChip(stringResource(R.string.date_next_month), selectedStartDate == LocalDate.now().plusMonths(1).toString(), { onPick(LocalDate.now().plusMonths(1).toString()) })
-            YataSelectChip(stringResource(R.string.task_start_date_none), selectedStartDate == null, { onClear() })
+            val canFollowDueDate = dayBefore(dueDate) != null
+            val startDateIsFollowingDue = daysBeforeDue != null && canFollowDueDate
+
+            if (canFollowDueDate) {
+                val customDaysBeforeDue = daysBeforeDue?.takeIf { it != 1 }
+                val customDaysLabel = customDaysBeforeDue?.let {
+                    pluralStringResource(R.plurals.task_start_date_n_days_before_due, it, it)
+                } ?: stringResource(R.string.task_start_date_custom_days_chip)
+
+                YataSelectChip(stringResource(R.string.task_start_date_day_before_due), daysBeforeDue == 1, { onPickDaysBeforeDue(1) })
+                YataSelectChip(customDaysLabel, customDaysBeforeDue != null, onPickCustomDaysBeforeDue)
+            }
+            YataSelectChip(stringResource(R.string.date_tomorrow), !startDateIsFollowingDue && selectedStartDate == LocalDate.now().plusDays(1).toString(), { onPick(LocalDate.now().plusDays(1).toString()) })
+            YataSelectChip(stringResource(R.string.date_next_week), !startDateIsFollowingDue && selectedStartDate == LocalDate.now().plusWeeks(1).toString(), { onPick(LocalDate.now().plusWeeks(1).toString()) })
+            YataSelectChip(stringResource(R.string.date_next_month), !startDateIsFollowingDue && selectedStartDate == LocalDate.now().plusMonths(1).toString(), { onPick(LocalDate.now().plusMonths(1).toString()) })
+            YataSelectChip(stringResource(R.string.task_start_date_none), !startDateIsFollowingDue && selectedStartDate == null, { onClear() })
             YataSelectChip(stringResource(R.string.date_pick), false, { onPickDate() })
         }
         Text(
@@ -1975,11 +2666,11 @@ private fun RepeatPanel(
             }
             val presets = listOf<Pair<String, Recurrence?>>(
                 stringResource(R.string.settings_none) to null,
-                stringResource(R.string.recurrence_daily) to Recurrence("daily", 1, null, null, RecurrenceEnds.Never),
-                stringResource(R.string.recurrence_weekdays) to Recurrence("weekly", 1, listOf("MO", "TU", "WE", "TH", "FR"), null, RecurrenceEnds.Never),
-                stringResource(R.string.recurrence_weekly) to Recurrence("weekly", 1, listOf(weeklyDay), null, RecurrenceEnds.Never),
-                stringResource(R.string.recurrence_monthly) to Recurrence("monthly", 1, null, baseDate.dayOfMonth, RecurrenceEnds.Never),
-                stringResource(R.string.recurrence_yearly) to Recurrence("yearly", 1, null, null, RecurrenceEnds.Never)
+                stringResource(R.string.recurrence_daily) to Recurrence("daily", 1, null, null, ends = RecurrenceEnds.Never),
+                stringResource(R.string.recurrence_weekdays) to Recurrence("weekly", 1, listOf("MO", "TU", "WE", "TH", "FR"), null, ends = RecurrenceEnds.Never),
+                stringResource(R.string.recurrence_weekly) to Recurrence("weekly", 1, listOf(weeklyDay), null, ends = RecurrenceEnds.Never),
+                stringResource(R.string.recurrence_monthly) to Recurrence("monthly", 1, null, baseDate.dayOfMonth, ends = RecurrenceEnds.Never),
+                stringResource(R.string.recurrence_yearly) to Recurrence("yearly", 1, null, null, ends = RecurrenceEnds.Never)
             )
             presets.forEach { (label, rec) ->
                 val isSelected = if (rec == null) selectedRecurrence == null

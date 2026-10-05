@@ -26,7 +26,7 @@ fun StarToggleButton(
     onToggle: () -> Unit,
     starredColor: Color,
     modifier: Modifier = Modifier,
-    unstarredColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+    unstarredColor: Color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.48f),
     starredContentDescription: String = "Unstar",
     unstarredContentDescription: String = "Star"
 ) {
@@ -43,7 +43,7 @@ fun StarToggleButton(
             contentDescription = if (starred) starredContentDescription else unstarredContentDescription,
             tint = if (starred) starredColor else unstarredColor,
             modifier = Modifier
-                .size(20.dp)
+                .size(18.dp)
                 .graphicsLayer {
                     scaleX = starScale.value
                     scaleY = starScale.value

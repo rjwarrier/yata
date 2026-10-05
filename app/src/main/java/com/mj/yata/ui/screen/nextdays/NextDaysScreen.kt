@@ -10,6 +10,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.outlined.EventAvailable
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -27,6 +29,7 @@ import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.yataItemFade
 import com.mj.yata.ui.theme.yataItemPlacement
 import com.mj.yata.ui.theme.YataEase
+import com.mj.yata.ui.util.AdaptiveContentBox
 import com.mj.yata.ui.widgets.TaskRow
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -58,14 +61,18 @@ fun NextDaysScreen(
     val todayTabEnabled by viewModel.todayTabEnabled.collectAsStateWithLifecycle()
     val upcomingTabEnabled by viewModel.upcomingTabEnabled.collectAsStateWithLifecycle()
     val todayBadgeCount by viewModel.todayRemainingCount.collectAsStateWithLifecycle()
+    val hideCompleted by viewModel.hideCompletedNextDays.collectAsStateWithLifecycle()
 
     val scope = rememberCoroutineScope()
     val undoWindowSeconds = com.mj.yata.ui.widgets.LocalUndoWindowSeconds.current
     val snackbarHostState = remember { SnackbarHostState() }
+    // Snooze and bulk-reschedule Undo offers (AppUndoBus) land here while this screen is on top.
+    com.mj.yata.ui.widgets.RegisterUndoSnackbarHost(snackbarHostState)
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     fun deleteTaskWithUndo(task: Task) {
         scope.launch {
-            val result = showUndoSnackbar(snackbarHostState, "Task deleted", undoWindowSeconds)
+            val result = showUndoSnackbar(snackbarHostState, context.getString(R.string.task_deleted), undoWindowSeconds)
             if (!result) {
                 viewModel.deleteTask(task)
             }
@@ -76,9 +83,13 @@ fun NextDaysScreen(
     val todayStr = remember(today) { today.toString() }
     val endStr = remember(today) { today.plusDays((WINDOW_DAYS - 1).toLong()).toString() }
 
-    val upcomingTasks = remember(tasks, todayStr, endStr) {
-        tasks.filter { it.due != null && it.due >= todayStr && it.due <= endStr }
-            .sortedWith(compareBy({ it.due }, { it.sortOrder }))
+    val upcomingTasks = remember(tasks, todayStr, endStr, hideCompleted) {
+        tasks.filter {
+            it.due != null &&
+            it.due >= todayStr &&
+            it.due <= endStr &&
+            (!hideCompleted || !it.done)
+        }.sortedWith(compareBy({ it.due }, { it.sortOrder }))
     }
     val groupedByDate = remember(upcomingTasks) { upcomingTasks.groupBy { it.due!! } }
     val projectsById = remember(projects) { projects.associateBy { it.id } }
@@ -104,7 +115,7 @@ fun NextDaysScreen(
             SnackbarHost(snackbarHostState) { data -> com.mj.yata.ui.widgets.YataSnackbar(data) }
         },
         bottomBar = {
-            com.mj.yata.ui.screen.main.CustomBottomNav(
+            com.mj.yata.ui.screen.main.AdaptiveBottomNav(
                 selectedTab = -1,
                 todayBadgeCount = todayBadgeCount,
                 peopleEnabled = peopleFeatureEnabled,
@@ -130,30 +141,43 @@ fun NextDaysScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Default.ArrowBack, contentDescription = stringResource(R.string.cd_back))
                     }
+                },
+                actions = {
+                    com.mj.yata.ui.widgets.YataTopBarIconToggleButton(
+                        checked = hideCompleted,
+                        onCheckedChange = { viewModel.setHideCompletedNextDays(it) }
+                    ) {
+                        Icon(
+                            imageVector = if (hideCompleted) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                            contentDescription = stringResource(
+                                if (hideCompleted) R.string.today_show_completed else R.string.today_hide_completed
+                            )
+                        )
+                    }
                 }
             )
         }
     ) { innerPadding ->
+        AdaptiveContentBox(
+            modifier = modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .padding(innerPadding)
+        ) {
         if (upcomingTasks.isEmpty()) {
             Box(
-                modifier = modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background)
-                    .padding(innerPadding),
+                modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
                 com.mj.yata.ui.widgets.TabEmptyState(
                     icon = Icons.Outlined.EventAvailable,
-                    title = "All clear",
-                    subtitle = "Nothing due in the next $WINDOW_DAYS days."
+                    title = stringResource(R.string.next_days_all_clear),
+                    subtitle = stringResource(R.string.next_days_nothing_due, WINDOW_DAYS)
                 )
             }
         } else {
             LazyColumn(
-                modifier = modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background)
-                    .padding(innerPadding),
+                modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(bottom = 32.dp)
             ) {
                 groupedByDate.forEach { (dateStr, dateTasks) ->
@@ -171,7 +195,7 @@ fun NextDaysScreen(
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = "${dateTasks.size} ${if (dateTasks.size == 1) "task" else "tasks"}",
+                                text = pluralStringResource(R.plurals.task_count_lower, dateTasks.size, dateTasks.size),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -203,6 +227,7 @@ fun NextDaysScreen(
                     }
                 }
             }
+        }
         }
     }
 }

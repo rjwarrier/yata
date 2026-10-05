@@ -34,6 +34,7 @@ class RemoteBackupCredentialsStore @Inject constructor(@ApplicationContext conte
         const val KEY_PRIVATE_KEY_PEM = "private_key_pem"
         const val KEY_PASSPHRASE = "passphrase"
         const val KEY_BACKUP_PASSPHRASE = "backup_passphrase"
+        const val KEY_GITHUB_TOKEN = "github_token"
     }
 
     private val prefs by lazy {
@@ -69,7 +70,7 @@ class RemoteBackupCredentialsStore @Inject constructor(@ApplicationContext conte
     /**
      * Passphrase the backup *file itself* is encrypted with before it leaves the device — distinct
      * from [password] (which authenticates to the server) and from [passphrase] (which unlocks an
-     * SSH private key). Null means backups are uploaded unencrypted.
+     * SSH private key). Null means remote backup is not fully configured.
      *
      * Kept here so scheduled backups can run unattended, but unlike the other secrets this one is
      * unrecoverable-by-design: it never goes to the server, so a backup can only be restored by
@@ -80,6 +81,12 @@ class RemoteBackupCredentialsStore @Inject constructor(@ApplicationContext conte
         get() = prefs.getString(KEY_BACKUP_PASSPHRASE, null)
         set(value) = prefs.edit {
             if (!value.isNullOrBlank()) putString(KEY_BACKUP_PASSPHRASE, value) else remove(KEY_BACKUP_PASSPHRASE)
+        }
+
+    var githubToken: String?
+        get() = prefs.getString(KEY_GITHUB_TOKEN, null)
+        set(value) = prefs.edit {
+            if (!value.isNullOrBlank()) putString(KEY_GITHUB_TOKEN, value) else remove(KEY_GITHUB_TOKEN)
         }
 
     /** Wipes all of them — called when the user disables/reconfigures self-hosted backup, so

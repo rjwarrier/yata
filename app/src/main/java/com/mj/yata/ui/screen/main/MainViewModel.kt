@@ -11,19 +11,29 @@ import com.mj.yata.data.local.crash.CrashLogStore
 import com.mj.yata.data.local.datastore.UserPreferences
 import com.mj.yata.data.local.operationhistory.OperationHistoryEntry
 import com.mj.yata.data.local.operationhistory.OperationHistoryStore
+import com.mj.yata.data.github.GitHubApiBase
+import com.mj.yata.data.github.GitHubNotFoundException
+import com.mj.yata.data.github.GitHubConfigTransfer
+import com.mj.yata.data.github.GitHubConfigTransferPayload
+import com.mj.yata.data.github.HttpGitHubApi
+import com.mj.yata.data.github.requirePrivateWriteAccess
 import com.mj.yata.data.sftp.RemoteBackupCredentialsStore
 import com.mj.yata.data.sftp.SftpConnectionTestResult
 import com.mj.yata.domain.model.*
 import com.mj.yata.domain.repository.YataRepository
+import com.mj.yata.domain.sync.RestorePoint
 import com.mj.yata.domain.usecase.BackupOperations
 import com.mj.yata.domain.usecase.TaskOperations
 import com.mj.yata.util.AnalyticsPeriod
 import com.mj.yata.util.AnalyticsUiState
 import com.mj.yata.util.AnalyticsUtils
 import com.mj.yata.util.AppLanguageController
+import com.mj.yata.util.capitalizeTaskSentence
 import com.mj.yata.ui.error.AppErrorBus
 import com.mj.yata.ui.sheets.NewTaskDraft
 import com.mj.yata.util.NaturalLanguageParser
+import com.mj.yata.util.initialsFor
+import com.mj.yata.util.withParsedQuickAdd
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -34,6 +44,12 @@ import java.time.LocalDate
 import java.util.UUID
 import javax.inject.Inject
 
+enum class WelcomeSetupPreset {
+    SIMPLE_LIST,
+    PERSONAL_PRODUCTIVITY,
+    TEAM_PROJECTS
+}
+
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val repository: YataRepository,
@@ -41,6 +57,7 @@ class MainViewModel @Inject constructor(
     private val taskOperations: TaskOperations,
     private val backupOperations: BackupOperations,
     private val errorBus: AppErrorBus,
+    private val undoBus: com.mj.yata.ui.undo.AppUndoBus,
     private val crashLogStore: CrashLogStore,
     private val operationHistoryStore: OperationHistoryStore,
     private val remoteBackupCredentialsStore: RemoteBackupCredentialsStore
@@ -166,6 +183,9 @@ data class SettingsUiState(
     val userEmail: String = "",
     val userPhotoUri: String? = null,
     val defaultListId: String = "",
+    val defaultProjectId: String = "",
+    val defaultTagIds: Set<String> = emptySet(),
+    val defaultEstimateMinutes: Int? = null,
     val startOfWeekSunday: Boolean = true,
     val defaultReminderHour: Int = 9,
     val defaultReminderMinute: Int = 0,
@@ -191,6 +211,8 @@ data class SettingsUiState(
     val tagsFeatureEnabled: Boolean = true,
     val projectsFeatureEnabled: Boolean = true,
     val lists: List<YataList> = emptyList(),
+    val activeProjects: List<Project> = emptyList(),
+    val tags: List<Tag> = emptyList(),
     val backupIntervalMinutes: Long = 1440L,
     val localBackupEnabled: Boolean = false,
     val localBackupLastAt: Long? = null,
@@ -205,12 +227,29 @@ data class SettingsUiState(
     val sftpHostKeyFingerprint: String? = null,
     val remoteBackupProtocol: com.mj.yata.domain.model.RemoteBackupProtocol = com.mj.yata.domain.model.RemoteBackupProtocol.SFTP,
     val ftpUseTls: Boolean = true,
+    val ftpStrictTls: Boolean = false,
     val sftpKeepCount: Int = 5,
+    val githubOwner: String = "",
+    val githubRepo: String = "",
+    val githubBranch: String = "",
+    val githubApiBase: String = "https://api.github.com",
+    val githubTokenExpiresAt: Long? = null,
+    val githubLastHeadSha: String? = null,
     val dateAliasDefinitions: Set<String> = emptySet(),
     val savedThemePresetDefinitions: Set<String> = emptySet(),
-    val taskerIntegrationEnabled: Boolean = true,
+    val taskerIntegrationEnabled: Boolean = false,
     val todayRemainingCount: Int = 0
 )
+
+data class GitHubConfigTransferSummary(
+    val owner: String,
+    val repo: String,
+    val branch: String,
+    val apiBase: String,
+    val hasBackupPassphrase: Boolean
+) {
+    val repoLabel: String = "$owner/$repo"
+}
 
 data class MainScreenUiState(
     val tasks: List<Task> = emptyList(),
@@ -237,6 +276,51 @@ data class MainScreenUiState(
     val todayRemainingCount: Int = 0
 )
 
+data class InboxTaskUiModel(
+    val task: Task,
+    val list: YataList?,
+    val assignees: List<Person>,
+    val tags: List<Tag>
+)
+
+data class InboxUiState(
+    val rows: List<InboxTaskUiModel> = emptyList(),
+    val lists: List<YataList> = emptyList(),
+    val projects: List<Project> = emptyList(),
+    val myPerson: Person? = null,
+    val missingDueCount: Int = 0,
+    val missingEstimateCount: Int = 0,
+    val missingHomeCount: Int = 0,
+    val missingOwnerCount: Int = 0,
+    val peopleFeatureEnabled: Boolean = true,
+    val tagsFeatureEnabled: Boolean = true,
+    val projectsFeatureEnabled: Boolean = true,
+    val taskRowDensity: TaskRowDensity = TaskRowDensity.COMFORTABLE,
+    val todayTabEnabled: Boolean = true,
+    val upcomingTabEnabled: Boolean = true,
+    val todayRemainingCount: Int = 0
+)
+
+data class RecurringTaskUiModel(
+    val task: Task,
+    val list: YataList?,
+    val assignees: List<Person>,
+    val tags: List<Tag>
+)
+
+data class RecurringTasksUiState(
+    val rows: List<RecurringTaskUiModel> = emptyList(),
+    val dueSoonCount: Int = 0,
+    val noDueCount: Int = 0,
+    val peopleFeatureEnabled: Boolean = true,
+    val tagsFeatureEnabled: Boolean = true,
+    val projectsFeatureEnabled: Boolean = true,
+    val taskRowDensity: TaskRowDensity = TaskRowDensity.COMFORTABLE,
+    val todayTabEnabled: Boolean = true,
+    val upcomingTabEnabled: Boolean = true,
+    val todayRemainingCount: Int = 0
+)
+
 private data class SettingsProfileState(
     val themeMode: ThemeMode,
     val appFont: AppFont,
@@ -247,6 +331,9 @@ private data class SettingsProfileState(
 
 private data class SettingsReminderState(
     val defaultListId: String,
+    val defaultProjectId: String,
+    val defaultTagIds: Set<String>,
+    val defaultEstimateMinutes: Int?,
     val startOfWeekSunday: Boolean,
     val defaultReminderHour: Int,
     val defaultReminderMinute: Int
@@ -297,6 +384,8 @@ private data class SettingsVisualFeatureState(
 
 private data class SettingsBackupState(
     val lists: List<YataList>,
+    val activeProjects: List<Project>,
+    val tags: List<Tag>,
     val backupIntervalMinutes: Long,
     val localBackupEnabled: Boolean,
     val localBackupLastAt: Long?
@@ -323,13 +412,24 @@ private data class SftpStatusState(
 private data class RemoteBackupProtocolState(
     val remoteBackupProtocol: com.mj.yata.domain.model.RemoteBackupProtocol,
     val ftpUseTls: Boolean,
+    val ftpStrictTls: Boolean,
     val sftpKeepCount: Int
+)
+
+private data class GitHubSettingsState(
+    val owner: String,
+    val repo: String,
+    val branch: String,
+    val apiBase: String,
+    val tokenExpiresAt: Long?,
+    val lastHeadSha: String?
 )
 
 private data class SftpSettingsState(
     val config: SftpConfigState,
     val status: SftpStatusState,
-    val protocol: RemoteBackupProtocolState
+    val protocol: RemoteBackupProtocolState,
+    val github: GitHubSettingsState
 )
 
 private data class SettingsPortState(
@@ -383,11 +483,63 @@ private data class MainNavigationState(
     val todayRemainingCount: Int
 )
 
+private data class TaskListsSourceState(
+    val tasks: List<Task>,
+    val lists: List<YataList>,
+    val projects: List<Project>,
+    val people: List<Person>,
+    val tags: List<Tag>
+)
+
+private data class LightweightFeatureState(
+    val peopleFeatureEnabled: Boolean,
+    val tagsFeatureEnabled: Boolean,
+    val projectsFeatureEnabled: Boolean,
+    val taskRowDensity: TaskRowDensity,
+    val todayTabEnabled: Boolean,
+    val upcomingTabEnabled: Boolean,
+    val todayRemainingCount: Int
+)
+
+data class PostponementWarning(
+    val taskTitle: String,
+    val postponementCount: Int
+)
+
+data class WeekendRescheduleWarning(
+    val taskTitle: String,
+    val dayLabel: String,
+    val isHoliday: Boolean = false
+)
+
     // Data streams
-    val tasks: StateFlow<List<Task>> = repository.getTasks()
+    //
+    // The five core streams are shared (replay = 1) before being turned into StateFlows, so that
+    // [initialDataLoaded] below can wait on the same upstream Room subscription the UI uses. It
+    // used to subscribe to fresh repository flows of its own, which ran the full tasks query
+    // (relations, subtasks and all) plus the other four a second time on every cold start, on the
+    // critical path to first frame. The shared flow has no seed value, so `first()` on it still
+    // waits for Room's real first emission exactly as before. Its 5s stop timeout covers the
+    // window between that `first()` finishing and the UI's own collector arriving.
+    private val tasksSource = repository.getTasks().shareCore()
+    private val projectsSource = repository.getProjects().shareCore()
+    private val listsSource = repository.getLists().shareCore()
+    private val peopleSource = repository.getPeople().shareCore()
+    private val tagsSource = repository.getTags().shareCore()
+
+    private fun <T> Flow<T>.shareCore(): SharedFlow<T> =
+        shareIn(viewModelScope, SharingStarted.WhileSubscribed(5000), replay = 1)
+
+    val tasks: StateFlow<List<Task>> = tasksSource
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val projects: StateFlow<List<Project>> = repository.getProjects()
+    private val _postponementWarnings = MutableSharedFlow<PostponementWarning>()
+    val postponementWarnings: SharedFlow<PostponementWarning> = _postponementWarnings.asSharedFlow()
+
+    private val _weekendRescheduleWarnings = MutableSharedFlow<WeekendRescheduleWarning>()
+    val weekendRescheduleWarnings: SharedFlow<WeekendRescheduleWarning> = _weekendRescheduleWarnings.asSharedFlow()
+
+    val projects: StateFlow<List<Project>> = projectsSource
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val activeProjects: StateFlow<List<Project>> = repository.getActiveProjects()
@@ -396,10 +548,10 @@ private data class MainNavigationState(
     val archivedProjects: StateFlow<List<Project>> = repository.getArchivedProjects()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val lists: StateFlow<List<YataList>> = repository.getLists()
+    val lists: StateFlow<List<YataList>> = listsSource
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val people: StateFlow<List<Person>> = repository.getPeople()
+    val people: StateFlow<List<Person>> = peopleSource
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val activePeople: StateFlow<List<Person>> = repository.getActivePeople()
@@ -408,7 +560,7 @@ private data class MainNavigationState(
     val archivedPeople: StateFlow<List<Person>> = repository.getArchivedPeople()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val tags: StateFlow<List<Tag>> = repository.getTags()
+    val tags: StateFlow<List<Tag>> = tagsSource
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val tagGroups: StateFlow<List<TagGroup>> = repository.getTagGroups()
@@ -416,6 +568,34 @@ private data class MainNavigationState(
 
     val personGroups: StateFlow<List<PersonGroup>> = repository.getPersonGroups()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    private val _initialDataLoaded = MutableStateFlow(false)
+
+    /**
+     * True once the core lists have all received their first real Room emission. [tasks] and
+     * friends above start at `emptyList()` as their [stateIn] seed, indistinguishable from a
+     * genuinely empty list - so on cold start every tab briefly rendered its "nothing here" empty
+     * state (with icon pulse) before Room's first query result replaced it. Tabs gate their empty
+     * state on this instead, showing a loading skeleton until the real data lands.
+     *
+     * Subscribes to the seedless shared sources rather than the [tasks]/[projects]/etc.
+     * [StateFlow]s above: those start at `emptyList()`, so collecting them here first would just
+     * observe that seed instead of waiting for it to be replaced.
+     */
+    val initialDataLoaded: StateFlow<Boolean> = _initialDataLoaded.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            combine(
+                tasksSource,
+                projectsSource,
+                listsSource,
+                peopleSource,
+                tagsSource
+            ) { _, _, _, _, _ -> Unit }.first()
+            _initialDataLoaded.value = true
+        }
+    }
 
     /** Today's remaining (due, incomplete) task count — the badge shown on every bottom nav bar,
      * and consumed by [settingsUiState]/[mainScreenUiState] below instead of each recomputing it
@@ -428,21 +608,53 @@ private data class MainNavigationState(
      * Today tab and the home-screen widgets — this one had drifted from *them* too, checking only
      * project exclusion and neither deferral nor waiting-on, so the badge could show a count the
      * Today screen it links to didn't actually list. */
+    private data class NonWorkingDayContext(
+        val weekendDays: Set<String>,
+        val holidays: List<Holiday>,
+        val enabled: Boolean
+    )
+
+    private data class TodayCountInputs(
+        val tasks: List<Task>,
+        val projects: List<Project>,
+        val lists: List<YataList>,
+        val people: List<Person>,
+        val today: java.time.LocalDate
+    )
+
+    private val nonWorkingDayContext: Flow<NonWorkingDayContext> = combine(
+        userPreferences.weekendDaysFlow,
+        userPreferences.holidaysFlow,
+        userPreferences.observeNonWorkingDaysFlow
+    ) { weekendDays, holidaysRaw, enabled ->
+        NonWorkingDayContext(weekendDays, holidaysRaw.mapNotNull(Holiday::decode), enabled)
+    }
+
     val todayRemainingCount: StateFlow<Int> = combine(
-        tasks,
-        projects,
-        lists,
-        people
-    ) { list, projectList, listList, peopleList ->
-        val todayStr = LocalDate.now().toString()
-        val myId = peopleList.firstOrNull { it.isMe }?.id
-        val excludedProjectIds = projectList.hiddenFromMainTaskProjectIds()
-        val excludedListIds = listList.hiddenFromMainTaskListIds()
-        list.count {
-            it.isActionableToday(todayStr, System.currentTimeMillis(), myId) &&
-                it.projectId !in excludedProjectIds && it.listId !in excludedListIds
+        combine(
+            tasks,
+            projects,
+            lists,
+            people,
+            com.mj.yata.util.AppClock.todayFlow
+        ) { list, projectList, listList, peopleList, today ->
+            TodayCountInputs(list, projectList, listList, peopleList, today)
+        },
+        nonWorkingDayContext
+    ) { inputs, nonWorkingDays ->
+        val todayStr = inputs.today.toString()
+        val nowMillis = System.currentTimeMillis()
+        val myId = inputs.people.firstOrNull { it.isMe }?.id
+        val excludedProjectIds = inputs.projects.hiddenFromMainTaskProjectIds()
+        val excludedListIds = inputs.lists.hiddenFromMainTaskListIds()
+        inputs.tasks.count {
+            it.isActionableToday(
+                todayStr, nowMillis, myId,
+                nonWorkingDays.weekendDays, nonWorkingDays.holidays, nonWorkingDays.enabled
+            ) && it.projectId !in excludedProjectIds && it.listId !in excludedListIds
         }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+    }.flowOn(Dispatchers.Default) // walks every live task on each emission — keep it off the UI thread
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
     val voiceRecognitionLanguage: StateFlow<String> = userPreferences.voiceRecognitionLanguageFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "default")
@@ -469,8 +681,6 @@ private data class MainNavigationState(
 
     fun getTasksForPerson(personId: String): Flow<List<Task>> = repository.getTasksForPerson(personId)
 
-    fun searchTasks(query: String): Flow<List<Task>> = repository.searchTasks(query)
-
     private val settingsCoreFlow = combine(
         combine(
             userPreferences.themeModeFlow,
@@ -482,12 +692,31 @@ private data class MainNavigationState(
             SettingsProfileState(themeMode, appFont, userName, userEmail, userPhotoUri)
         },
         combine(
-            userPreferences.defaultListIdFlow,
+            combine(
+                userPreferences.defaultListIdFlow,
+                userPreferences.defaultProjectIdFlow,
+                userPreferences.defaultTagIdsFlow,
+                userPreferences.defaultEstimateMinutesFlow
+            ) { defaultListId, defaultProjectId, defaultTagIds, defaultEstimateMinutes ->
+                SettingsReminderState(
+                    defaultListId = defaultListId,
+                    defaultProjectId = defaultProjectId,
+                    defaultTagIds = defaultTagIds,
+                    defaultEstimateMinutes = defaultEstimateMinutes,
+                    startOfWeekSunday = true,
+                    defaultReminderHour = 9,
+                    defaultReminderMinute = 0
+                )
+            },
             userPreferences.startOfWeekSundayFlow,
             userPreferences.defaultReminderHourFlow,
             userPreferences.defaultReminderMinuteFlow
-        ) { defaultListId, startOfWeekSunday, defaultReminderHour, defaultReminderMinute ->
-            SettingsReminderState(defaultListId, startOfWeekSunday, defaultReminderHour, defaultReminderMinute)
+        ) { defaults, startOfWeekSunday, defaultReminderHour, defaultReminderMinute ->
+            defaults.copy(
+                startOfWeekSunday = startOfWeekSunday,
+                defaultReminderHour = defaultReminderHour,
+                defaultReminderMinute = defaultReminderMinute
+            )
         },
         combine(
             combine(
@@ -557,12 +786,21 @@ private data class MainNavigationState(
     val settingsUiState: StateFlow<SettingsUiState> = combine(
         settingsCoreFlow,
         combine(
-            lists,
+            combine(lists, activeProjects, tags) { lists, activeProjects, tags ->
+                Triple(lists, activeProjects, tags)
+            },
             userPreferences.backupIntervalMinutesFlow,
             userPreferences.localBackupEnabledFlow,
             userPreferences.localBackupLastAtFlow
-        ) { lists, backupIntervalMinutes, localBackupEnabled, localBackupLastAt ->
-            SettingsBackupState(lists, backupIntervalMinutes, localBackupEnabled, localBackupLastAt)
+        ) { data, backupIntervalMinutes, localBackupEnabled, localBackupLastAt ->
+            SettingsBackupState(
+                lists = data.first,
+                activeProjects = data.second,
+                tags = data.third,
+                backupIntervalMinutes = backupIntervalMinutes,
+                localBackupEnabled = localBackupEnabled,
+                localBackupLastAt = localBackupLastAt
+            )
         },
         combine(
             combine(
@@ -581,9 +819,31 @@ private data class MainNavigationState(
             combine(
                 userPreferences.remoteBackupProtocolFlow,
                 userPreferences.ftpUseTlsFlow,
+                userPreferences.ftpStrictTlsFlow,
                 userPreferences.sftpKeepCountFlow
-            ) { protocol, ftpUseTls, keepCount -> RemoteBackupProtocolState(protocol, ftpUseTls, keepCount) }
-        ) { config, status, protocol -> SftpSettingsState(config, status, protocol) },
+            ) { protocol, ftpUseTls, ftpStrictTls, keepCount ->
+                RemoteBackupProtocolState(protocol, ftpUseTls, ftpStrictTls, keepCount)
+            },
+            combine(
+                userPreferences.githubOwnerFlow,
+                userPreferences.githubRepoFlow,
+                userPreferences.githubBranchFlow,
+                userPreferences.githubApiBaseFlow,
+                combine(
+                    userPreferences.githubTokenExpiresAtFlow,
+                    userPreferences.githubLastHeadShaFlow
+                ) { tokenExpiresAt, lastHeadSha -> tokenExpiresAt to lastHeadSha }
+            ) { owner, repo, branch, apiBase, tokenState ->
+                GitHubSettingsState(
+                    owner = owner,
+                    repo = repo,
+                    branch = branch,
+                    apiBase = apiBase,
+                    tokenExpiresAt = tokenState.first,
+                    lastHeadSha = tokenState.second
+                )
+            }
+        ) { config, status, protocol, github -> SftpSettingsState(config, status, protocol, github) },
         combine(
             userPreferences.dateAliasDefinitionsFlow,
             userPreferences.savedThemePresetsFlow,
@@ -600,6 +860,9 @@ private data class MainNavigationState(
             userEmail = core.profile.userEmail,
             userPhotoUri = core.profile.userPhotoUri,
             defaultListId = core.reminder.defaultListId,
+            defaultProjectId = core.reminder.defaultProjectId,
+            defaultTagIds = core.reminder.defaultTagIds,
+            defaultEstimateMinutes = core.reminder.defaultEstimateMinutes,
             startOfWeekSunday = core.reminder.startOfWeekSunday,
             defaultReminderHour = core.reminder.defaultReminderHour,
             defaultReminderMinute = core.reminder.defaultReminderMinute,
@@ -625,6 +888,8 @@ private data class MainNavigationState(
             tagsFeatureEnabled = core.visualFeature.tagsFeatureEnabled,
             projectsFeatureEnabled = core.visualFeature.projectsFeatureEnabled,
             lists = backup.lists,
+            activeProjects = backup.activeProjects,
+            tags = backup.tags,
             backupIntervalMinutes = backup.backupIntervalMinutes,
             localBackupEnabled = backup.localBackupEnabled,
             localBackupLastAt = backup.localBackupLastAt,
@@ -639,7 +904,14 @@ private data class MainNavigationState(
             sftpHostKeyFingerprint = sftp.status.sftpHostKeyFingerprint,
             remoteBackupProtocol = sftp.protocol.remoteBackupProtocol,
             ftpUseTls = sftp.protocol.ftpUseTls,
+            ftpStrictTls = sftp.protocol.ftpStrictTls,
             sftpKeepCount = sftp.protocol.sftpKeepCount,
+            githubOwner = sftp.github.owner,
+            githubRepo = sftp.github.repo,
+            githubBranch = sftp.github.branch,
+            githubApiBase = sftp.github.apiBase,
+            githubTokenExpiresAt = sftp.github.tokenExpiresAt,
+            githubLastHeadSha = sftp.github.lastHeadSha,
             dateAliasDefinitions = ports.dateAliasDefinitions,
             savedThemePresetDefinitions = ports.savedThemePresetDefinitions,
             taskerIntegrationEnabled = ports.taskerIntegrationEnabled,
@@ -727,7 +999,8 @@ private data class MainNavigationState(
     /** Every Analytics-screen metric, computed off the UI thread in [AnalyticsUtils.computeUiState]
      * whenever the underlying data or the selected period changes — the screen only renders this. */
     val analyticsUiState: StateFlow<AnalyticsUiState> = combine(
-        tasks, projects, people, tags, lists, analyticsPeriodFlow
+        tasks, projects, people, tags, lists, analyticsPeriodFlow,
+        userPreferences.weekendDaysFlow, userPreferences.holidaysFlow, userPreferences.observeNonWorkingDaysFlow
     ) { values ->
         @Suppress("UNCHECKED_CAST")
         AnalyticsUtils.computeUiState(
@@ -736,7 +1009,10 @@ private data class MainNavigationState(
             people = values[2] as List<Person>,
             tags = values[3] as List<Tag>,
             lists = values[4] as List<YataList>,
-            period = values[5] as AnalyticsPeriod
+            period = values[5] as AnalyticsPeriod,
+            weekendDays = values[6] as Set<String>,
+            holidays = (values[7] as Set<String>).mapNotNull(Holiday::decode),
+            observeNonWorkingDays = values[8] as Boolean
         )
     }.flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AnalyticsUiState())
@@ -771,6 +1047,15 @@ private data class MainNavigationState(
     val defaultListId: StateFlow<String> = userPreferences.defaultListIdFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
 
+    val defaultProjectId: StateFlow<String> = userPreferences.defaultProjectIdFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
+
+    val defaultTagIds: StateFlow<Set<String>> = userPreferences.defaultTagIdsFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
+
+    val defaultEstimateMinutes: StateFlow<Int?> = userPreferences.defaultEstimateMinutesFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
     val startOfWeekSunday: StateFlow<Boolean> = userPreferences.startOfWeekSundayFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
@@ -793,6 +1078,30 @@ private data class MainNavigationState(
     val defaultPriority: StateFlow<String> = userPreferences.defaultPriorityFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "none")
 
+    val postponementWarningThreshold: StateFlow<Int> = userPreferences.postponementWarningThresholdFlow
+        .stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5000),
+            DEFAULT_POSTPONEMENT_WARNING_THRESHOLD
+        )
+
+    val weekendDays: StateFlow<Set<String>> = userPreferences.weekendDaysFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DEFAULT_WEEKEND_DAYS)
+
+    val holidays: StateFlow<Set<String>> = userPreferences.holidaysFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
+
+    val observeNonWorkingDays: StateFlow<Boolean> = userPreferences.observeNonWorkingDaysFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    val subtaskCompletionAction: StateFlow<com.mj.yata.domain.model.SubtaskCompletionAction> =
+        userPreferences.subtaskCompletionActionFlow
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(5000),
+                com.mj.yata.domain.model.SubtaskCompletionAction.ASK
+            )
+
     val trashRetentionDays: StateFlow<Int> = userPreferences.trashRetentionDaysFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 30)
 
@@ -810,6 +1119,21 @@ private data class MainNavigationState(
 
     val overdueNudgesEnabled: StateFlow<Boolean> = userPreferences.overdueNudgesEnabledFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val quietHoursEnabled: StateFlow<Boolean> = userPreferences.quietHoursEnabledFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    val quietHoursStartHour: StateFlow<Int> = userPreferences.quietHoursStartHourFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 22)
+
+    val quietHoursStartMinute: StateFlow<Int> = userPreferences.quietHoursStartMinuteFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+    val quietHoursEndHour: StateFlow<Int> = userPreferences.quietHoursEndHourFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 7)
+
+    val quietHoursEndMinute: StateFlow<Int> = userPreferences.quietHoursEndMinuteFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
     val undoWindowSeconds: StateFlow<Int> = userPreferences.undoWindowSecondsFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 4)
@@ -833,6 +1157,8 @@ private data class MainNavigationState(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
     val todayShowUpcomingWhenEmpty: StateFlow<Boolean> = userPreferences.todayShowUpcomingWhenEmptyFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+    val dueCountdownEnabled: StateFlow<Boolean> = userPreferences.dueCountdownEnabledFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
     val timeFormat: StateFlow<com.mj.yata.domain.model.TimeFormat> = userPreferences.timeFormatFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.mj.yata.domain.model.TimeFormat.SYSTEM)
     val dateFormat: StateFlow<com.mj.yata.domain.model.DateFormat> = userPreferences.dateFormatFlow
@@ -840,6 +1166,10 @@ private data class MainNavigationState(
 
     fun setTodayShowUpcomingWhenEmpty(enabled: Boolean) {
         safeLaunch { userPreferences.setTodayShowUpcomingWhenEmpty(enabled) }
+    }
+
+    fun setDueCountdownEnabled(enabled: Boolean) {
+        safeLaunch { userPreferences.setDueCountdownEnabled(enabled) }
     }
 
     fun setSwipeRightAction(action: com.mj.yata.domain.model.SwipeAction) {
@@ -890,6 +1220,18 @@ private data class MainNavigationState(
         safeLaunch { userPreferences.setOverdueNudgesEnabled(enabled) }
     }
 
+    fun setQuietHoursEnabled(enabled: Boolean) {
+        safeLaunch { userPreferences.setQuietHoursEnabled(enabled) }
+    }
+
+    fun setQuietHoursStart(hour: Int, minute: Int) {
+        safeLaunch { userPreferences.setQuietHoursStart(hour, minute) }
+    }
+
+    fun setQuietHoursEnd(hour: Int, minute: Int) {
+        safeLaunch { userPreferences.setQuietHoursEnd(hour, minute) }
+    }
+
     fun setAutoArchiveDays(days: Int) {
         safeLaunch { userPreferences.setAutoArchiveDays(days) }
     }
@@ -900,6 +1242,44 @@ private data class MainNavigationState(
 
     fun setDefaultPriority(priority: String) {
         safeLaunch { userPreferences.setDefaultPriority(priority) }
+    }
+
+    fun setPostponementWarningThreshold(threshold: Int) {
+        safeLaunch { userPreferences.setPostponementWarningThreshold(threshold) }
+    }
+
+    fun setWeekendDays(days: Set<String>) {
+        safeLaunch { userPreferences.setWeekendDays(days) }
+    }
+
+    fun setObserveNonWorkingDays(enabled: Boolean) {
+        safeLaunch { userPreferences.setObserveNonWorkingDays(enabled) }
+    }
+
+    fun addHoliday(date: String, label: String, recurring: Boolean) {
+        val trimmed = label.trim()
+        if (date.isBlank() || trimmed.isBlank()) return
+        safeLaunch { userPreferences.addHoliday(Holiday(date, trimmed, recurring)) }
+    }
+
+    fun removeHoliday(encodedHoliday: String) {
+        safeLaunch { userPreferences.removeHoliday(encodedHoliday) }
+    }
+
+    fun setDefaultProjectId(id: String) {
+        safeLaunch { userPreferences.setDefaultProjectId(id) }
+    }
+
+    fun setDefaultTagIds(ids: Set<String>) {
+        safeLaunch { userPreferences.setDefaultTagIds(ids) }
+    }
+
+    fun setDefaultEstimateMinutes(minutes: Int?) {
+        safeLaunch { userPreferences.setDefaultEstimateMinutes(minutes) }
+    }
+
+    fun setSubtaskCompletionAction(action: com.mj.yata.domain.model.SubtaskCompletionAction) {
+        safeLaunch { userPreferences.setSubtaskCompletionAction(action) }
     }
 
     fun setTrashRetentionDays(days: Int) {
@@ -951,6 +1331,9 @@ private data class MainNavigationState(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     val hideCompletedToday: StateFlow<Boolean> = userPreferences.hideCompletedTodayFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    val hideCompletedNextDays: StateFlow<Boolean> = userPreferences.hideCompletedNextDaysFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     val hideCompletedProject: StateFlow<Boolean> = userPreferences.hideCompletedProjectFlow
@@ -1005,6 +1388,209 @@ private data class MainNavigationState(
     val upcomingTabEnabled: StateFlow<Boolean> = userPreferences.upcomingTabEnabledFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
+    private val inboxCandidateTasks: StateFlow<List<Task>> = repository.getInboxCandidateTasks()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    private val recurringScreenTasks: StateFlow<List<Task>> = repository.getRecurringTasks()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    private fun taskListsSource(taskFlow: Flow<List<Task>>): Flow<TaskListsSourceState> = combine(
+        taskFlow,
+        lists,
+        projects,
+        people,
+        tags
+    ) { tasks, lists, projects, people, tags ->
+        TaskListsSourceState(tasks, lists, projects, people, tags)
+    }
+
+    private val lightweightScreenFeatures: Flow<LightweightFeatureState> = combine(
+        combine(
+            peopleFeatureEnabled,
+            tagsFeatureEnabled,
+            projectsFeatureEnabled,
+            taskRowDensity
+        ) { peopleFeatureEnabled, tagsFeatureEnabled, projectsFeatureEnabled, taskRowDensity ->
+            MainFeatureState(
+                peopleFeatureEnabled = peopleFeatureEnabled,
+                tagsFeatureEnabled = tagsFeatureEnabled,
+                projectsFeatureEnabled = projectsFeatureEnabled,
+                taskRowDensity = taskRowDensity,
+                todayTabEnabled = true
+            )
+        },
+        todayTabEnabled,
+        upcomingTabEnabled,
+        todayRemainingCount
+    ) { feature, todayTabEnabled, upcomingTabEnabled, todayRemainingCount ->
+        LightweightFeatureState(
+            peopleFeatureEnabled = feature.peopleFeatureEnabled,
+            tagsFeatureEnabled = feature.tagsFeatureEnabled,
+            projectsFeatureEnabled = feature.projectsFeatureEnabled,
+            taskRowDensity = feature.taskRowDensity,
+            todayTabEnabled = todayTabEnabled,
+            upcomingTabEnabled = upcomingTabEnabled,
+            todayRemainingCount = todayRemainingCount
+        )
+    }
+
+    val inboxUiState: StateFlow<InboxUiState> = combine(
+        taskListsSource(inboxCandidateTasks),
+        lightweightScreenFeatures,
+        userName
+    ) { source, features, userName ->
+        buildInboxUiState(source, features, userName)
+    }.flowOn(Dispatchers.Default)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), InboxUiState())
+
+    val recurringTasksUiState: StateFlow<RecurringTasksUiState> = combine(
+        taskListsSource(recurringScreenTasks),
+        lightweightScreenFeatures
+    ) { source, features ->
+        buildRecurringTasksUiState(source, features)
+    }.flowOn(Dispatchers.Default)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), RecurringTasksUiState())
+
+    private fun buildInboxUiState(
+        source: TaskListsSourceState,
+        features: LightweightFeatureState,
+        userName: String
+    ): InboxUiState {
+        val listsById = source.lists.associateBy { it.id }
+        val peopleById = if (features.peopleFeatureEnabled) source.people.associateBy { it.id } else emptyMap()
+        val projectsById = if (features.tagsFeatureEnabled) source.projects.associateBy { it.id } else emptyMap()
+        val tagsById = if (features.tagsFeatureEnabled) source.tags.associateBy { it.id } else emptyMap()
+        val myPerson = if (features.peopleFeatureEnabled) {
+            source.people.firstOrNull { it.isMe }
+                ?: userName.takeIf { it.isNotBlank() }?.let { name ->
+                    source.people.firstOrNull { it.name.equals(name, ignoreCase = true) }
+                }
+        } else {
+            null
+        }
+
+        var missingDueCount = 0
+        var missingEstimateCount = 0
+        var missingHomeCount = 0
+        var missingOwnerCount = 0
+        val rows = buildList {
+            source.tasks.forEach { task ->
+                if (task.done) return@forEach
+
+                val missingDue = task.due == null
+                val missingEstimate = task.estimateMinutes == null
+                val missingHome = features.projectsFeatureEnabled && task.projectId == null && task.listId == null
+                val missingOwner = features.peopleFeatureEnabled && task.assigneeIds.isEmpty()
+                if (!missingDue && !missingEstimate && !missingHome && !missingOwner) return@forEach
+
+                if (missingDue) missingDueCount++
+                if (missingEstimate) missingEstimateCount++
+                if (missingHome) missingHomeCount++
+                if (missingOwner) missingOwnerCount++
+
+                add(
+                    InboxTaskUiModel(
+                        task = task,
+                        list = listsById[task.listId],
+                        assignees = if (features.peopleFeatureEnabled) {
+                            task.assigneeIds.mapNotNull { peopleById[it] }
+                        } else {
+                            emptyList()
+                        },
+                        tags = if (features.tagsFeatureEnabled) {
+                            task.effectiveTags(projectsById, tagsById)
+                        } else {
+                            emptyList()
+                        }
+                    )
+                )
+            }
+        }.sortedWith(
+            compareBy<InboxTaskUiModel> { it.task.due ?: "9999-99-99" }
+                .thenBy { it.task.createdAt ?: Long.MAX_VALUE }
+                .thenBy { it.task.sortOrder }
+        )
+
+        return InboxUiState(
+            rows = rows,
+            lists = source.lists,
+            projects = source.projects,
+            myPerson = myPerson,
+            missingDueCount = missingDueCount,
+            missingEstimateCount = missingEstimateCount,
+            missingHomeCount = missingHomeCount,
+            missingOwnerCount = missingOwnerCount,
+            peopleFeatureEnabled = features.peopleFeatureEnabled,
+            tagsFeatureEnabled = features.tagsFeatureEnabled,
+            projectsFeatureEnabled = features.projectsFeatureEnabled,
+            taskRowDensity = features.taskRowDensity,
+            todayTabEnabled = features.todayTabEnabled,
+            upcomingTabEnabled = features.upcomingTabEnabled,
+            todayRemainingCount = features.todayRemainingCount
+        )
+    }
+
+    private fun buildRecurringTasksUiState(
+        source: TaskListsSourceState,
+        features: LightweightFeatureState
+    ): RecurringTasksUiState {
+        val listsById = source.lists.associateBy { it.id }
+        val peopleById = if (features.peopleFeatureEnabled) source.people.associateBy { it.id } else emptyMap()
+        val projectsById = if (features.tagsFeatureEnabled) source.projects.associateBy { it.id } else emptyMap()
+        val tagsById = if (features.tagsFeatureEnabled) source.tags.associateBy { it.id } else emptyMap()
+        val todayIso = com.mj.yata.util.AppClock.today.toString()
+        val nextWeekIso = com.mj.yata.util.AppClock.today.plusDays(7).toString()
+
+        var dueSoonCount = 0
+        var noDueCount = 0
+        val rows = buildList {
+            source.tasks.forEach { task ->
+                val recurrence = task.recurrence ?: return@forEach
+                if (task.done) return@forEach
+
+                val due = task.due
+                if (due == null) {
+                    noDueCount++
+                } else if (due >= todayIso && due <= nextWeekIso) {
+                    dueSoonCount++
+                }
+
+                add(
+                    RecurringTaskUiModel(
+                        task = task,
+                        list = listsById[task.listId],
+                        assignees = if (features.peopleFeatureEnabled) {
+                            task.assigneeIds.mapNotNull { peopleById[it] }
+                        } else {
+                            emptyList()
+                        },
+                        tags = if (features.tagsFeatureEnabled) {
+                            task.effectiveTags(projectsById, tagsById)
+                        } else {
+                            emptyList()
+                        }
+                    )
+                )
+            }
+        }.sortedWith(
+            compareBy<RecurringTaskUiModel> { it.task.due ?: "9999-99-99" }
+                .thenBy { it.task.title.lowercase() }
+        )
+
+        return RecurringTasksUiState(
+            rows = rows,
+            dueSoonCount = dueSoonCount,
+            noDueCount = noDueCount,
+            peopleFeatureEnabled = features.peopleFeatureEnabled,
+            tagsFeatureEnabled = features.tagsFeatureEnabled,
+            projectsFeatureEnabled = features.projectsFeatureEnabled,
+            taskRowDensity = features.taskRowDensity,
+            todayTabEnabled = features.todayTabEnabled,
+            upcomingTabEnabled = features.upcomingTabEnabled,
+            todayRemainingCount = features.todayRemainingCount
+        )
+    }
+
     val fabPosition: StateFlow<com.mj.yata.domain.model.FabPosition> = userPreferences.fabPositionFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.mj.yata.domain.model.FabPosition.RIGHT)
 
@@ -1025,12 +1611,27 @@ private data class MainNavigationState(
      * never filled in — showing a sync button whose only destination is guaranteed to fail is
      * worse than not showing it.
      */
+    private val remoteBackupConfiguredForTopBar: StateFlow<Boolean> = combine(
+        userPreferences.remoteBackupProtocolFlow,
+        userPreferences.sftpHostFlow,
+        userPreferences.githubOwnerFlow,
+        userPreferences.githubRepoFlow
+    ) { protocol, host, githubOwner, githubRepo ->
+        when (protocol) {
+            com.mj.yata.domain.model.RemoteBackupProtocol.GITHUB ->
+                githubOwner.isNotBlank() && githubRepo.isNotBlank()
+            com.mj.yata.domain.model.RemoteBackupProtocol.FTP,
+            com.mj.yata.domain.model.RemoteBackupProtocol.SFTP ->
+                host.isNotBlank()
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
     val anyBackupDestinationEnabled: StateFlow<Boolean> = combine(
         userPreferences.localBackupEnabledFlow,
         userPreferences.sftpBackupEnabledFlow,
-        userPreferences.sftpHostFlow
-    ) { local, selfHosted, host ->
-        local || (selfHosted && host.isNotBlank())
+        remoteBackupConfiguredForTopBar
+    ) { local, selfHosted, remoteConfigured ->
+        local || (selfHosted && remoteConfigured)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     val syncInProgress: StateFlow<Boolean> = backupOperations.syncInProgress
@@ -1075,6 +1676,17 @@ private data class MainNavigationState(
         }
     }
 
+    fun completeTaskAfterSavingSubtasks(task: Task, subtasks: List<Subtask>, onDoneCallback: () -> Unit) {
+        safeLaunch {
+            repository.upsertTask(task.copy(subtasks = subtasks), notify = false, resyncReminder = false)
+            val latestTask = tasks.value.find { it.id == task.id }
+            if (latestTask?.done != true) {
+                repository.toggleTaskDone(task.id)
+                onDoneCallback()
+            }
+        }
+    }
+
     fun skipTaskOccurrence(id: String) {
         safeLaunch {
             repository.skipTaskOccurrence(id)
@@ -1110,8 +1722,19 @@ private data class MainNavigationState(
         safeLaunch { taskOperations.bulkSetList(ids, listId) }
     }
 
-    fun duplicateTask(taskId: String, dueAdjustment: (LocalDate) -> LocalDate = { it }) {
-        safeLaunch { taskOperations.duplicate(taskId, dueAdjustment) }
+    fun duplicateTask(
+        taskId: String,
+        dueAdjustment: (LocalDate) -> LocalDate = { it },
+        onDuplicated: (Task) -> Unit = {}
+    ) {
+        safeLaunch {
+            val duplicated = taskOperations.duplicate(taskId, dueAdjustment)
+            if (duplicated != null) {
+                withContext(Dispatchers.Main) {
+                    onDuplicated(duplicated)
+                }
+            }
+        }
     }
 
     fun rolloverProjectTasks(projectId: String) {
@@ -1122,8 +1745,18 @@ private data class MainNavigationState(
         safeLaunch { taskOperations.rolloverOverdueProjectTasks(projectId) }
     }
 
-    fun bulkDuplicateTasks(ids: List<String>) {
-        safeLaunch { taskOperations.bulkDuplicate(ids) }
+    fun bulkDuplicateTasks(
+        ids: List<String>,
+        onDuplicatedSingle: (Task) -> Unit = {}
+    ) {
+        safeLaunch {
+            val duplicated = taskOperations.bulkDuplicate(ids)
+            if (duplicated.size == 1) {
+                withContext(Dispatchers.Main) {
+                    onDuplicatedSingle(duplicated.first())
+                }
+            }
+        }
     }
 
     fun commitTaskOrder(orderedTasks: List<Task>) {
@@ -1158,6 +1791,14 @@ private data class MainNavigationState(
 
     fun bulkAssignPerson(ids: List<String>, personId: String) {
         safeLaunch { taskOperations.bulkAssignPerson(ids, personId) }
+    }
+
+    fun bulkSetPriority(ids: List<String>, priority: String) {
+        safeLaunch { taskOperations.bulkSetPriority(ids, priority) }
+    }
+
+    fun bulkSetFlag(ids: List<String>, flag: Boolean) {
+        safeLaunch { taskOperations.bulkSetFlag(ids, flag) }
     }
 
     fun toggleTaskFlag(id: String) {
@@ -1198,7 +1839,8 @@ private data class MainNavigationState(
         section = draft.section,
         projectId = draft.projectId,
         subtasks = draft.subtasks,
-        flag = draft.flag
+        flag = draft.flag,
+        estimateMinutes = draft.estimateMinutes
     )
 
     fun addTask(
@@ -1216,12 +1858,13 @@ private data class MainNavigationState(
         section: String = "",
         projectId: String? = null,
         subtasks: List<Subtask> = emptyList(),
-        flag: Boolean = false
+        flag: Boolean = false,
+        estimateMinutes: Int? = null
     ) {
         safeLaunch {
             val newTask = Task(
                 id = "t_" + UUID.randomUUID().toString(),
-                title = title,
+                title = capitalizeTaskSentence(title),
                 listId = listId,
                 projectId = projectId,
                 section = section,
@@ -1236,15 +1879,37 @@ private data class MainNavigationState(
                 tagIds = tagIds,
                 recurrence = recurrence,
                 subtasks = subtasks,
-                notes = notes
+                notes = notes,
+                estimateMinutes = estimateMinutes
             )
             repository.upsertTask(newTask)
         }
     }
 
-    fun upsertTask(task: Task) {
+    /** [skipRescheduleWarning] lets a caller that already warned the user before this save — e.g.
+     * [DueDateCalendarDialog], which warns immediately when a holiday/weekend day is tapped and
+     * only calls back here once the user confirmed "use anyway" — skip the redundant save-time
+     * weekend/holiday snackbar for that same due-date change. Postponement-count warning is
+     * unrelated (it has no equivalent "moment of choice" to warn at) and always still applies. */
+    fun upsertTask(task: Task, skipRescheduleWarning: Boolean = false) {
         safeLaunch {
-            repository.upsertTask(task)
+            val previous = tasks.value.find { it.id == task.id }
+            val updated = previous?.let {
+                task.copy(
+                    postponementCount = nextPostponementCount(
+                        previousDue = it.due,
+                        nextDue = task.due,
+                        previousCount = it.postponementCount
+                    )
+                )
+            } ?: task
+            repository.upsertTask(updated)
+            if (updated.postponementCount > (previous?.postponementCount ?: 0)) {
+                warnIfPostponedOften(updated)
+            }
+            if (!skipRescheduleWarning) {
+                warnIfRescheduledToWeekend(previous?.due, updated)
+            }
         }
     }
 
@@ -1255,16 +1920,19 @@ private data class MainNavigationState(
             val task = tasks.value.find { it.id == id } ?: return@safeLaunch
             val parsed = NaturalLanguageParser.parse(trimmed)
             val parsedTitle = parsed.title.ifBlank { trimmed }
+            val updated = task.copy(title = parsedTitle).withParsedQuickAdd(
+                quickAdd = parsed,
+                lists = lists.value,
+                projects = projects.value,
+                people = people.value,
+                tags = tags.value,
+                projectsEnabled = projectsFeatureEnabled.value,
+                tagsEnabled = tagsFeatureEnabled.value,
+                peopleEnabled = peopleFeatureEnabled.value
+            )
             repository.upsertTask(
-                task.copy(
-                    title = parsedTitle,
-                    due = parsed.due ?: task.due,
-                    time = parsed.time ?: task.time,
-                    reminder = parsed.reminder ?: task.reminder,
-                    recurrence = parsed.recurrence ?: task.recurrence,
-                    priority = parsed.priority ?: task.priority
-                ),
-                resyncReminder = parsed.due != null || parsed.time != null || parsed.reminder != null
+                updated,
+                resyncReminder = updated.due != task.due || updated.time != task.time || updated.reminder != task.reminder
             )
             userPreferences.recordRecentTask(id)
         }
@@ -1303,16 +1971,70 @@ private data class MainNavigationState(
 
     fun quickSnoozeTask(id: String, preset: QuickSnoozePreset) {
         safeLaunch {
-            taskOperations.quickSnooze(id, preset)
+            taskOperations.quickSnooze(id, preset)?.let { change ->
+                offerRescheduleUndo(listOf(change))
+                warnAfterReschedule(change)
+            }
             userPreferences.recordRecentTask(id)
         }
     }
 
-    fun bulkRescheduleTasks(ids: List<String>, preset: QuickSnoozePreset) {
+    fun bulkRescheduleTasks(ids: List<String>, preset: QuickSnoozePreset, keepExistingTime: Boolean = false) {
         safeLaunch {
-            taskOperations.bulkReschedule(ids, preset)
+            val changes = taskOperations.bulkReschedule(ids, preset, keepExistingTime)
+            offerRescheduleUndo(changes)
+            changes.forEach { warnAfterReschedule(it) }
             ids.take(8).forEach { userPreferences.recordRecentTask(it) }
         }
+    }
+
+    /** Offered before the postponement/weekend warnings below so the Undo, which is the
+     * time-limited one, reaches the snackbar host first instead of queueing behind them. */
+    private fun offerRescheduleUndo(changes: List<com.mj.yata.domain.usecase.Rescheduled>) {
+        val undoable = changes.filter { it.changedSchedule }
+        if (undoable.isEmpty()) return
+        undoBus.offer(
+            com.mj.yata.ui.undo.UndoRequest(R.plurals.tasks_rescheduled, undoable.size) {
+                safeLaunch { taskOperations.undoReschedule(undoable) }
+            }
+        )
+    }
+
+    private suspend fun warnAfterReschedule(change: com.mj.yata.domain.usecase.Rescheduled) {
+        if (change.updated.postponementCount > change.previous.postponementCount) {
+            warnIfPostponedOften(change.updated)
+        }
+        warnIfRescheduledToWeekend(change.previous.due, change.updated)
+    }
+
+    private suspend fun warnIfPostponedOften(task: Task) {
+        val normalThreshold = userPreferences.postponementWarningThresholdFlow.first()
+        val effectiveThreshold = postponementWarningThresholdFor(task.priority, normalThreshold)
+        if (task.postponementCount >= effectiveThreshold) {
+            _postponementWarnings.emit(PostponementWarning(task.title, task.postponementCount))
+        }
+    }
+
+    /** Independent of [warnIfPostponedOften] — this fires on where the task landed, not on
+     * whether the move counted as a postponement, so a reschedule to an *earlier* weekend/holiday
+     * date still warns even though it never touches the postponement counter. Holiday takes
+     * priority over weekend when a date is both, since naming the holiday is more useful than
+     * just saying "weekend". */
+    private suspend fun warnIfRescheduledToWeekend(previousDue: String?, task: Task) {
+        val holidays = userPreferences.holidaysFlow.first().mapNotNull(Holiday::decode)
+        val holidayLabel = rescheduledHolidayLabel(previousDue, task.due, holidays)
+        if (holidayLabel != null) {
+            _weekendRescheduleWarnings.emit(WeekendRescheduleWarning(task.title, holidayLabel, isHoliday = true))
+            return
+        }
+        val weekendDays = userPreferences.weekendDaysFlow.first()
+        if (!isRescheduledToWeekend(previousDue, task.due, weekendDays)) return
+        val date = java.time.LocalDate.parse(task.due)
+        val dayLabel = date.dayOfWeek.getDisplayName(
+            java.time.format.TextStyle.FULL,
+            java.util.Locale.getDefault()
+        )
+        _weekendRescheduleWarnings.emit(WeekendRescheduleWarning(task.title, dayLabel))
     }
 
     fun deleteTask(task: Task) {
@@ -1328,6 +2050,13 @@ private data class MainNavigationState(
     fun restoreTask(id: String) {
         safeLaunch {
             repository.restoreTask(id)
+        }
+    }
+
+    fun bulkRestoreTasks(ids: List<String>) {
+        if (ids.isEmpty()) return
+        safeLaunch {
+            ids.forEach { repository.restoreTask(it) }
         }
     }
 
@@ -1350,6 +2079,13 @@ private data class MainNavigationState(
     fun permanentlyDeleteTask(task: Task) {
         safeLaunch {
             repository.permanentlyDeleteTask(task)
+        }
+    }
+
+    fun bulkPermanentlyDeleteTasks(tasks: List<Task>) {
+        if (tasks.isEmpty()) return
+        safeLaunch {
+            tasks.forEach { repository.permanentlyDeleteTask(it) }
         }
     }
 
@@ -1400,6 +2136,190 @@ private data class MainNavigationState(
         }
     }
 
+    fun applyWelcomeSetupPreset(preset: WelcomeSetupPreset) {
+        safeLaunch {
+            suspend fun ensureList(
+                id: String,
+                name: String,
+                color: String,
+                icon: String,
+                starred: Boolean = false,
+                excludeFromToday: Boolean = false
+            ): YataList {
+                val existing = lists.value.firstOrNull { it.id == id }
+                    ?: lists.value.firstOrNull { it.name.equals(name, ignoreCase = true) }
+                val row = existing?.copy(
+                    starred = existing.starred || starred,
+                    excludeFromToday = existing.excludeFromToday || excludeFromToday
+                ) ?: YataList(
+                    id = id,
+                    name = name,
+                    color = color,
+                    icon = icon,
+                    starred = starred,
+                    excludeFromToday = excludeFromToday
+                )
+                repository.upsertList(row)
+                return row
+            }
+
+            suspend fun ensureProject(
+                id: String,
+                name: String,
+                color: String,
+                icon: String,
+                starred: Boolean = false,
+                excludeFromToday: Boolean = false
+            ): Project {
+                val existing = projects.value.firstOrNull { it.id == id }
+                    ?: projects.value.firstOrNull { it.name.equals(name, ignoreCase = true) }
+                val row = existing?.copy(
+                    starred = existing.starred || starred,
+                    excludeFromToday = existing.excludeFromToday || excludeFromToday
+                ) ?: Project(
+                    id = id,
+                    name = name,
+                    color = color,
+                    icon = icon,
+                    starred = starred,
+                    excludeFromToday = excludeFromToday
+                )
+                repository.upsertProject(row)
+                return row
+            }
+
+            suspend fun ensurePerson(
+                id: String,
+                name: String,
+                color: String,
+                starred: Boolean = false
+            ): Person {
+                val existing = people.value.firstOrNull { it.id == id }
+                    ?: people.value.firstOrNull { it.name.equals(name, ignoreCase = true) }
+                val row = existing?.copy(starred = existing.starred || starred) ?: Person(
+                    id = id,
+                    name = name,
+                    initials = initialsFor(name).takeUnless { it == "?" } ?: "P",
+                    color = color,
+                    starred = starred
+                )
+                repository.upsertPerson(row)
+                return row
+            }
+
+            when (preset) {
+                WelcomeSetupPreset.SIMPLE_LIST -> {
+                    val personal = ensureList(
+                        id = "welcome-list-personal",
+                        name = "Personal",
+                        color = "accentA",
+                        icon = "taskalt",
+                        starred = true
+                    )
+                    userPreferences.setPeopleFeatureEnabled(false)
+                    userPreferences.setTagsFeatureEnabled(false)
+                    userPreferences.setProjectsFeatureEnabled(false)
+                    userPreferences.setTodayTabEnabled(true)
+                    userPreferences.setUpcomingTabEnabled(true)
+                    userPreferences.setDefaultListId(personal.id)
+                    userPreferences.setDefaultProjectId("")
+                    userPreferences.setDefaultDueDate(DefaultDueDate.TODAY)
+                    userPreferences.setDefaultPriority("none")
+                    userPreferences.setDefaultEstimateMinutes(null)
+                    userPreferences.setAutoAssignToMe(false)
+                }
+                WelcomeSetupPreset.PERSONAL_PRODUCTIVITY -> {
+                    ensureList(
+                        id = "welcome-list-today",
+                        name = "Today",
+                        color = "accentA",
+                        icon = "event",
+                        starred = true
+                    )
+                    ensureList(
+                        id = "welcome-list-someday",
+                        name = "Someday",
+                        color = "accentK",
+                        icon = "bookmark",
+                        starred = true,
+                        excludeFromToday = true
+                    )
+                    val goals = ensureProject(
+                        id = "welcome-project-goals",
+                        name = "Goals",
+                        color = "accentE",
+                        icon = "flag",
+                        starred = true
+                    )
+                    userPreferences.setPeopleFeatureEnabled(false)
+                    userPreferences.setTagsFeatureEnabled(true)
+                    userPreferences.setProjectsFeatureEnabled(true)
+                    userPreferences.setTodayTabEnabled(true)
+                    userPreferences.setUpcomingTabEnabled(true)
+                    userPreferences.setDefaultListId("")
+                    userPreferences.setDefaultProjectId(goals.id)
+                    userPreferences.setDefaultDueDate(DefaultDueDate.TODAY)
+                    userPreferences.setDefaultPriority("none")
+                    userPreferences.setDefaultEstimateMinutes(30)
+                    userPreferences.setAutoAssignToMe(false)
+                    userPreferences.setDailyAgendaEnabled(true)
+                    userPreferences.setOverdueNudgesEnabled(true)
+                }
+                WelcomeSetupPreset.TEAM_PROJECTS -> {
+                    ensureList(
+                        id = "welcome-list-work",
+                        name = "Work",
+                        color = "accentB",
+                        icon = "work",
+                        starred = true
+                    )
+                    val launch = ensureProject(
+                        id = "welcome-project-launch",
+                        name = "Launch",
+                        color = "accentC",
+                        icon = "campaign",
+                        starred = true
+                    )
+                    ensureProject(
+                        id = "welcome-project-backlog",
+                        name = "Backlog",
+                        color = "accentK",
+                        icon = "inventory",
+                        starred = true,
+                        excludeFromToday = true
+                    )
+                    val profileName = userPreferences.userNameFlow.first().ifBlank { "You" }
+                    val profilePhotoUri = userPreferences.userPhotoUriFlow.first()
+                    val existingMe = people.value.firstOrNull { it.isMe }
+                    if (existingMe != null) {
+                        repository.upsertPerson(
+                            existingMe.copy(
+                                name = profileName,
+                                initials = initialsFor(profileName).takeUnless { it == "?" } ?: existingMe.initials,
+                                starred = true,
+                                photoUri = profilePhotoUri
+                            )
+                        )
+                    }
+                    ensurePerson("welcome-person-teammate", "Teammate", "accentD", starred = true)
+                    userPreferences.setPeopleFeatureEnabled(true)
+                    userPreferences.setTagsFeatureEnabled(true)
+                    userPreferences.setProjectsFeatureEnabled(true)
+                    userPreferences.setTodayTabEnabled(true)
+                    userPreferences.setUpcomingTabEnabled(true)
+                    userPreferences.setDefaultListId("")
+                    userPreferences.setDefaultProjectId(launch.id)
+                    userPreferences.setDefaultDueDate(DefaultDueDate.NONE)
+                    userPreferences.setDefaultPriority("none")
+                    userPreferences.setDefaultEstimateMinutes(30)
+                    userPreferences.setAutoAssignToMe(true)
+                    userPreferences.setDailyAgendaEnabled(true)
+                    userPreferences.setOverdueNudgesEnabled(true)
+                }
+            }
+        }
+    }
+
     fun upsertProject(project: Project) {
         safeLaunch {
             repository.upsertProject(project)
@@ -1422,13 +2342,6 @@ private data class MainNavigationState(
     fun deleteProjectOnly(project: Project) {
         safeLaunch {
             repository.deleteProjectOnly(project)
-        }
-    }
-
-    fun bulkDeleteProjects(ids: List<String>) {
-        safeLaunch {
-            val byId = projects.value.associateBy { it.id }
-            ids.forEach { id -> byId[id]?.let { repository.deleteProject(it) } }
         }
     }
 
@@ -1526,22 +2439,36 @@ private data class MainNavigationState(
         }
     }
 
-    fun addTag(name: String, color: String, groupId: String? = null, hideCompletedByDefault: Boolean = false) {
+    fun addTag(
+        name: String,
+        color: String,
+        groupId: String? = null,
+        hideCompletedByDefault: Boolean = false,
+        description: String? = null,
+        pendingGroup: TagGroup? = null
+    ) {
         safeLaunch {
             val tag = Tag(
                 id = "tag_" + UUID.randomUUID().toString(),
-                name = name.lowercase().trim(),
+                name = name.trim(),
                 color = color,
                 groupId = groupId,
-                hideCompletedByDefault = hideCompletedByDefault
+                hideCompletedByDefault = hideCompletedByDefault,
+                description = description?.trim()?.ifBlank { null }
             )
-            repository.upsertTag(tag)
+            repository.upsertTags(listOf(tag), pendingGroup)
         }
     }
 
     fun upsertTag(tag: Tag) {
         safeLaunch {
             repository.upsertTag(tag)
+        }
+    }
+
+    fun upsertTag(tag: Tag, pendingGroup: TagGroup?) {
+        safeLaunch {
+            repository.upsertTags(listOf(tag), pendingGroup)
         }
     }
 
@@ -1558,16 +2485,22 @@ private data class MainNavigationState(
         }
     }
 
+    fun setTagsGroup(tagIds: List<String>, groupId: String?) {
+        safeLaunch {
+            repository.setTagsGroup(tagIds, groupId, pendingGroup = null)
+        }
+    }
+
+    fun createTagGroupAndAssign(group: TagGroup, tagIds: List<String>) {
+        safeLaunch {
+            repository.setTagsGroup(tagIds, group.id, pendingGroup = group)
+        }
+    }
+
     fun toggleTagStarred(id: String) {
         safeLaunch {
             val tag = tags.value.find { it.id == id } ?: return@safeLaunch
             repository.upsertTag(tag.copy(starred = !tag.starred))
-        }
-    }
-
-    fun addTagGroup(name: String, color: String) {
-        safeLaunch {
-            repository.upsertTagGroup(TagGroup(id = "tg_" + UUID.randomUUID().toString(), name = name, color = color))
         }
     }
 
@@ -1612,6 +2545,12 @@ private data class MainNavigationState(
     fun deleteList(list: YataList) {
         safeLaunch {
             repository.deleteList(list)
+        }
+    }
+
+    fun deleteListOnly(list: YataList) {
+        safeLaunch {
+            repository.deleteListOnly(list)
         }
     }
 
@@ -1881,6 +2820,12 @@ private data class MainNavigationState(
         }
     }
 
+    fun setHideCompletedNextDays(hide: Boolean) {
+        safeLaunch {
+            userPreferences.setHideCompletedNextDays(hide)
+        }
+    }
+
     fun setHideCompletedProject(hide: Boolean) {
         safeLaunch {
             userPreferences.setHideCompletedProject(hide)
@@ -2019,9 +2964,21 @@ private data class MainNavigationState(
     }
 
     /** Backs up every enabled destination; one result per attempted destination. */
-    fun backupAllNow(onResult: (List<com.mj.yata.domain.model.BackupRunResult>) -> Unit) {
+    fun backupAllNow(
+        allowInitialJoinMerge: Boolean = false,
+        allowEmptyLocalOverwrite: Boolean = false,
+        onResult: (List<com.mj.yata.domain.model.BackupRunResult>) -> Unit
+    ) {
         backupOperations.cancelDebouncedBackup()
-        safeLaunch { onResult(backupOperations.backupAllConfigured()) }
+        safeLaunch {
+            onResult(
+                backupOperations.backupAllConfigured(
+                    allowInitialJoinMerge = allowInitialJoinMerge,
+                    allowEmptyLocalOverwrite = allowEmptyLocalOverwrite,
+                    remoteSyncRunReason = "Manual sync & backup started by user"
+                )
+            )
+        }
     }
 
     fun setBackupIntervalMinutes(minutes: Long) {
@@ -2033,9 +2990,149 @@ private data class MainNavigationState(
         safeLaunch { userPreferences.setFtpUseTls(useTls) }
     }
 
+    fun setGitHubToken(token: String) {
+        remoteBackupCredentialsStore.githubToken = token.ifBlank { null }
+    }
+
+    fun hasGitHubToken(): Boolean = remoteBackupCredentialsStore.githubToken != null
+
+    suspend fun exportGitHubConfiguration(password: String): Result<String> = withContext(Dispatchers.IO) {
+        runCatching {
+            val owner = userPreferences.githubOwnerFlow.first().trim()
+            val repo = userPreferences.githubRepoFlow.first().trim()
+            val branch = userPreferences.githubBranchFlow.first().trim().ifBlank { "main" }
+            val apiBase = userPreferences.githubApiBaseFlow.first().trim().ifBlank { "https://api.github.com" }
+            val token = remoteBackupCredentialsStore.githubToken.orEmpty()
+            val backupPassphrase = remoteBackupCredentialsStore.backupPassphrase
+                ?: error("Set a backup passphrase before exporting GitHub sync configuration")
+            GitHubConfigTransfer.encryptToJson(
+                GitHubConfigTransferPayload(
+                    owner = owner,
+                    repo = repo,
+                    branch = branch,
+                    apiBase = apiBase,
+                    token = token,
+                    tokenExpiresAt = userPreferences.githubTokenExpiresAtFlow.first(),
+                    backupPassphrase = backupPassphrase
+                ),
+                password
+            )
+        }
+    }
+
+    suspend fun importGitHubConfiguration(
+        exportText: String,
+        password: String
+    ): Result<GitHubConfigTransferSummary> = withContext(Dispatchers.IO) {
+        runCatching {
+            val payload = GitHubConfigTransfer.decryptFromJson(exportText, password)
+            remoteBackupCredentialsStore.githubToken = payload.token
+            remoteBackupCredentialsStore.backupPassphrase = payload.backupPassphrase
+            userPreferences.setGitHubConfiguration(
+                owner = payload.owner,
+                repo = payload.repo,
+                branch = payload.branch,
+                apiBase = payload.apiBase
+            )
+            userPreferences.setGitHubTokenExpiresAt(payload.tokenExpiresAt)
+            GitHubConfigTransferSummary(
+                owner = payload.owner,
+                repo = payload.repo,
+                branch = payload.branch,
+                apiBase = payload.apiBase,
+                hasBackupPassphrase = payload.backupPassphrase != null
+            )
+        }
+    }
+
+    fun saveGitHubConfiguration(
+        owner: String,
+        repo: String,
+        branch: String,
+        apiBase: String = "https://api.github.com",
+        onSaved: () -> Unit = {}
+    ) {
+        safeLaunch {
+            userPreferences.setGitHubConfiguration(
+                owner = owner,
+                repo = repo,
+                branch = branch,
+                apiBase = apiBase
+            )
+            onSaved()
+        }
+    }
+
+    fun connectGitHubConfiguration(
+        repoText: String,
+        token: String,
+        apiBase: String = "https://api.github.com",
+        onResult: (Result<Unit>) -> Unit
+    ) {
+        safeLaunch {
+            val result = runCatching {
+                val normalizedApiBase = GitHubApiBase.validate(apiBase)
+                val tokenToUse = token.ifBlank { remoteBackupCredentialsStore.githubToken.orEmpty() }
+                check(tokenToUse.isNotBlank()) { "GitHub token is required" }
+                val api = HttpGitHubApi(
+                    tokenProvider = { tokenToUse },
+                    apiBaseProvider = { normalizedApiBase }
+                )
+                val parsed = parseGitHubRepo(repoText)
+                val (owner, repo) = withContext(Dispatchers.IO) {
+                    if (parsed.first != null) {
+                        parsed.first!! to parsed.second
+                    } else {
+                        api.getUser().login to parsed.second
+                    }
+                }
+                withContext(Dispatchers.IO) {
+                    val remoteRepo = try {
+                        api.getRepo(owner, repo)
+                    } catch (e: GitHubNotFoundException) {
+                        val userLogin = api.getUser().login
+                        if (owner == userLogin) {
+                            api.createRepo(repo, private = true)
+                        } else {
+                            throw e
+                        }
+                    }
+                    remoteRepo.requirePrivateWriteAccess()
+                    remoteBackupCredentialsStore.githubToken = tokenToUse
+                    userPreferences.setGitHubConfiguration(
+                        // The API's own owner login, not the possibly-stale one the user typed or
+                        // parsed from the repo text - if the repo was renamed/transferred since,
+                        // this is the canonical value sync should track going forward.
+                        owner = remoteRepo.owner,
+                        repo = remoteRepo.name,
+                        branch = remoteRepo.defaultBranch,
+                        apiBase = normalizedApiBase
+                    )
+                    userPreferences.setGitHubTokenExpiresAt(api.tokenExpiresAtEpochMillis)
+                }
+            }
+            onResult(result)
+        }
+    }
+
+    private fun parseGitHubRepo(repoText: String): Pair<String?, String> {
+        val trimmed = repoText.trim()
+        require(trimmed.isNotBlank()) { "GitHub repo is required" }
+        val parts = trimmed.split("/", limit = 2)
+        return if (parts.size == 2) {
+            val owner = parts[0].trim()
+            val repo = parts[1].trim()
+            require(owner.isNotBlank() && repo.isNotBlank()) { "Enter the repo as owner/name" }
+            owner to repo
+        } else {
+            null to trimmed
+        }
+    }
+
     fun saveRemoteBackupConfiguration(
         protocol: com.mj.yata.domain.model.RemoteBackupProtocol,
         useTls: Boolean,
+        strictTls: Boolean,
         host: String,
         port: Int,
         username: String,
@@ -2047,6 +3144,7 @@ private data class MainNavigationState(
             userPreferences.setRemoteBackupConfiguration(
                 protocol = protocol,
                 useTls = useTls,
+                strictTls = strictTls,
                 host = host,
                 port = port,
                 username = username,
@@ -2063,7 +3161,7 @@ private data class MainNavigationState(
 
     fun hasRemoteBackupPassword(): Boolean = remoteBackupCredentialsStore.password != null
 
-    /** Passphrase the uploaded backup file is encrypted with; blank clears it (uploads in clear). */
+    /** Passphrase the uploaded backup file is encrypted with; blank clears the remote backup setup. */
     fun setRemoteBackupPassphrase(passphrase: String) {
         remoteBackupCredentialsStore.backupPassphrase = passphrase.ifBlank { null }
     }
@@ -2112,6 +3210,23 @@ private data class MainNavigationState(
 
     fun restoreSftpBackup(filename: String, onResult: (Result<Unit>) -> Unit) {
         safeLaunch { onResult(backupOperations.restoreSftpBackup(filename)) }
+    }
+
+    fun listRemoteRestorePoints(limit: Int = Int.MAX_VALUE, forceRefresh: Boolean = false, onResult: (Result<List<RestorePoint>>) -> Unit) {
+        safeLaunch { onResult(backupOperations.listRemoteRestorePoints(limit, forceRefresh)) }
+    }
+
+    fun restoreRemoteSnapshot(id: String, onResult: (Result<Unit>) -> Unit) {
+        safeLaunch { onResult(backupOperations.restoreRemoteSnapshot(id)) }
+    }
+
+    fun restoreLatestRemoteSnapshot(onResult: (Result<RestorePoint>) -> Unit) {
+        backupOperations.cancelDebouncedBackup()
+        safeLaunch { onResult(backupOperations.restoreLatestRemoteSnapshot()) }
+    }
+
+    fun inspectRemoteSnapshot(id: String, onResult: (Result<com.mj.yata.domain.model.BackupSummary>) -> Unit) {
+        safeLaunch { onResult(backupOperations.inspectRemoteSnapshot(id)) }
     }
 
     fun testFtpConnection(onResult: (Result<Unit>) -> Unit) {

@@ -14,8 +14,7 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun rememberShimmerBrush(): Brush {
-    val transition = rememberInfiniteTransition(label = "shimmer")
-    val translateAnim = transition.animateFloat(
+    val translateAnim = com.mj.yata.ui.theme.rememberMotionAwareInfiniteFloat(
         initialValue = 0f,
         targetValue = 1000f,
         animationSpec = infiniteRepeatable(
@@ -33,6 +32,34 @@ fun rememberShimmerBrush(): Brush {
         start = Offset.Zero,
         end = Offset(x = translateAnim.value, y = translateAnim.value)
     )
+}
+
+/**
+ * Placeholder rows for a tab's list content, shown while [com.mj.yata.ui.screen.main.MainViewModel.initialDataLoaded]
+ * is still false — the gap between the ViewModel existing and Room's first query landing, during
+ * which every list is `emptyList()` indistinguishable from a real empty state. Sized to roughly
+ * match a comfortable-density [TaskRow]/list-item card so the layout doesn't visibly jump once
+ * real content replaces it.
+ */
+@Composable
+fun ListRowsShimmer(rowCount: Int = 6, modifier: Modifier = Modifier) {
+    val brush = rememberShimmerBrush()
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 4.dp, vertical = 4.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        repeat(rowCount) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(68.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(brush)
+            )
+        }
+    }
 }
 
 @Composable

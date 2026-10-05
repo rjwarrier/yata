@@ -1,14 +1,22 @@
 package com.mj.yata.ui.screen.main
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.ui.platform.LocalContext
 import com.mj.yata.util.backupResultMessage
+import com.mj.yata.util.emptyLocalDataConfirmationRequired
+import com.mj.yata.util.initialSyncConfirmationRequired
+import com.mj.yata.util.resolveParsedQuickAddEntities
 import com.mj.yata.util.selfHostedSyncLockFailure
 import com.mj.yata.util.syncLockClearPrompt
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -66,8 +74,13 @@ import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.yataItemFade
 import com.mj.yata.ui.theme.yataItemPlacement
 import com.mj.yata.ui.theme.YataEase
+import com.mj.yata.ui.util.AdaptiveContentBox
+import com.mj.yata.ui.util.rememberAdaptiveLayoutInfo
 import com.mj.yata.ui.widgets.PersonAvatar
 import com.mj.yata.ui.widgets.PressableScaleBox
+import com.mj.yata.ui.widgets.VoiceTaskOverlay
+import com.mj.yata.ui.widgets.YataCompactFieldShape
+import com.mj.yata.ui.widgets.yataFieldColors
 import com.mj.yata.ui.sheets.*
 import kotlinx.coroutines.launch
 
@@ -79,7 +92,11 @@ fun MainScreen(
     viewModel: MainViewModel,
     navController: NavController,
     onNavigateToSettings: () -> Unit,
+    onNavigateToHelpAbout: () -> Unit,
     onNavigateToAnalytics: () -> Unit,
+    onNavigateToStaffAnalytics: () -> Unit,
+    onNavigateToInbox: () -> Unit,
+    onNavigateToRecurringTasks: () -> Unit,
     onNavigateToNextDays: () -> Unit,
     onNavigateToSearch: () -> Unit,
     onNavigateToSavedSearch: (String) -> Unit = {},
@@ -92,15 +109,21 @@ fun MainScreen(
     requestedTab: Int = -1,
     onTabRequestHandled: () -> Unit = {},
     initialShowNewTaskSheet: Boolean = false,
-    initialQuickAddListId: String? = null
+    initialQuickAddListId: String? = null,
+    initialQuickCapture: Boolean = false
 ) {
     val scope = rememberCoroutineScope()
     val undoWindowSeconds = com.mj.yata.ui.widgets.LocalUndoWindowSeconds.current
     val defaultDueDate by viewModel.defaultDueDate.collectAsStateWithLifecycle()
     val autoAssignToMe by viewModel.autoAssignToMe.collectAsStateWithLifecycle()
     val defaultPriority by viewModel.defaultPriority.collectAsStateWithLifecycle()
+    val defaultProjectId by viewModel.defaultProjectId.collectAsStateWithLifecycle()
+    val defaultTagIds by viewModel.defaultTagIds.collectAsStateWithLifecycle()
+    val defaultEstimateMinutes by viewModel.defaultEstimateMinutes.collectAsStateWithLifecycle()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val snackbarHostState = remember { SnackbarHostState() }
+    // Snooze and bulk-reschedule Undo offers (AppUndoBus) land here while this screen is on top.
+    com.mj.yata.ui.widgets.RegisterUndoSnackbarHost(snackbarHostState)
 
     // Manual sync from the Today top bar. The in-progress state comes from BackupOperations so
     // automatic startup/debounced/settings syncs animate the same button.
@@ -110,22 +133,35 @@ fun MainScreen(
     val lastSyncSucceeded by viewModel.lastSyncSucceeded.collectAsStateWithLifecycle()
     val syncProgress by viewModel.syncProgress.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val adaptiveLayout = rememberAdaptiveLayoutInfo()
+    val useWideNavigation = adaptiveLayout.isWide
     var showClearSyncLockDialog by remember { mutableStateOf(false) }
     var clearSyncLockDialogMessage by remember { mutableStateOf<String?>(null) }
+    var initialSyncMergeMessage by remember { mutableStateOf<String?>(null) }
+    var emptyLocalSyncMessage by remember { mutableStateOf<String?>(null) }
     var isClearingSyncLock by remember { mutableStateOf(false) }
 
-    fun runManualSync() {
+    fun runManualSync(allowInitialJoinMerge: Boolean = false, allowEmptyLocalOverwrite: Boolean = false) {
         // Guarded rather than queued: repeated taps during a slow upload should do nothing, not
         // stack up duplicate backups of the same data.
         if (syncInProgress) return
         // Every configured destination runs from this one button. The message
         // names whichever ones failed rather than a blanket "sync failed" that would be wrong for
         // the destinations that did succeed.
-        viewModel.backupAllNow { results ->
+        viewModel.backupAllNow(
+            allowInitialJoinMerge = allowInitialJoinMerge,
+            allowEmptyLocalOverwrite = allowEmptyLocalOverwrite
+        ) { results ->
             val syncLockFailure = results.selfHostedSyncLockFailure()
+            val initialJoinFailure = results.initialSyncConfirmationRequired()
+            val emptyLocalFailure = results.emptyLocalDataConfirmationRequired()
             if (syncLockFailure != null) {
                 clearSyncLockDialogMessage = syncLockClearPrompt(context, syncLockFailure)
                 showClearSyncLockDialog = true
+            } else if (initialJoinFailure != null && !allowInitialJoinMerge) {
+                initialSyncMergeMessage = initialJoinFailure.message
+            } else if (emptyLocalFailure != null && !allowEmptyLocalOverwrite) {
+                emptyLocalSyncMessage = emptyLocalFailure.message
             } else {
                 scope.launch {
                     snackbarHostState.showSnackbar(backupResultMessage(results, context).text)
@@ -139,10 +175,36 @@ fun MainScreen(
     fun bulkDeleteWithUndo(ids: List<String>) {
         if (ids.isEmpty()) return
         scope.launch {
-            val result = showUndoSnackbar(snackbarHostState, if (ids.size == 1) "Task deleted" else "${ids.size} tasks deleted", undoWindowSeconds)
+            val message = context.resources.getQuantityString(R.plurals.tasks_deleted, ids.size, ids.size)
+            val result = showUndoSnackbar(snackbarHostState, message, undoWindowSeconds)
             if (!result) {
                 viewModel.bulkDeleteTasks(ids)
             }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.postponementWarnings.collect { warning ->
+            snackbarHostState.showSnackbar(
+                context.getString(
+                    R.string.task_postponement_warning,
+                    warning.taskTitle,
+                    warning.postponementCount
+                )
+            )
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.weekendRescheduleWarnings.collect { warning ->
+            snackbarHostState.showSnackbar(
+                context.getString(
+                    if (warning.isHoliday) R.string.task_holiday_reschedule_warning
+                    else R.string.task_weekend_reschedule_warning,
+                    warning.taskTitle,
+                    warning.dayLabel
+                )
+            )
         }
     }
 
@@ -157,18 +219,49 @@ fun MainScreen(
     // Sheet states
     var activeSheet by rememberSaveable { mutableStateOf(MainSheetType.None) }
     var newTaskHasDraft by rememberSaveable { mutableStateOf(false) }
+    var quickCaptureMode by rememberSaveable { mutableStateOf(false) }
     var showDiscardNewTaskDialog by rememberSaveable { mutableStateOf(false) }
     var isNewListSheetOpen by remember { mutableStateOf(false) }
     var showCommandPalette by remember { mutableStateOf(false) }
+    var showTodayVoiceOverlay by remember { mutableStateOf(false) }
+
+    fun openNewTask() {
+        quickCaptureMode = false
+        activeSheet = MainSheetType.NewTask
+    }
+
+    fun openQuickCapture() {
+        quickCaptureMode = true
+        activeSheet = MainSheetType.NewTask
+    }
+
+    fun NewTaskDraft.asInboxCaptureDraft(): NewTaskDraft = copy(
+        listId = null,
+        projectId = null,
+        assigneeIds = emptyList(),
+        tagIds = emptyList(),
+        estimateMinutes = null
+    )
 
     // "Quick Add" launcher shortcut / widget tap lands here with this set — open the sheet once,
-    // pre-selecting a list if the Quick Add widget's list chip was what was tapped.
-    LaunchedEffect(initialShowNewTaskSheet) {
-        if (initialShowNewTaskSheet) activeSheet = MainSheetType.NewTask
+    // pre-selecting a list if the Quick Add widget's list chip was what was tapped. Quick Capture
+    // uses the same sheet but clears defaults so the saved task remains an Inbox triage item.
+    LaunchedEffect(initialShowNewTaskSheet, initialQuickCapture) {
+        if (initialShowNewTaskSheet) {
+            if (initialQuickCapture) openQuickCapture() else openNewTask()
+        }
     }
 
     // Database updates flows
     val uiState by viewModel.mainScreenUiState.collectAsStateWithLifecycle()
+    // Separate from mainScreenUiState's combine chain deliberately - see its own doc comment on
+    // MainViewModel for why it has to observe the raw repository flows directly rather than any
+    // of the StateFlows that chain feeds from.
+    val initialDataLoaded by viewModel.initialDataLoaded.collectAsStateWithLifecycle()
+    val weekendDays by viewModel.weekendDays.collectAsStateWithLifecycle()
+    val holidaysRaw by viewModel.holidays.collectAsStateWithLifecycle()
+    val holidays = remember(holidaysRaw) { holidaysRaw.mapNotNull(com.mj.yata.domain.model.Holiday::decode) }
+    val observeNonWorkingDays by viewModel.observeNonWorkingDays.collectAsStateWithLifecycle()
     val tasks = uiState.tasks
     val projects = uiState.projects
     val activeProjects = uiState.activeProjects
@@ -241,7 +334,8 @@ fun MainScreen(
         val previous = tasks.find { it.id == id } ?: return
         viewModel.toggleTaskDone(id) { if (!previous.done) celebrateTrigger++ }
         scope.launch {
-            val result = showUndoSnackbar(snackbarHostState, if (previous.done) "Task marked open" else "Task completed", undoWindowSeconds)
+            val message = context.getString(if (previous.done) R.string.task_marked_open else R.string.task_completed)
+            val result = showUndoSnackbar(snackbarHostState, message, undoWindowSeconds)
             if (result) {
                 viewModel.restoreTasks(listOf(previous))
             }
@@ -253,7 +347,8 @@ fun MainScreen(
         if (previous.isEmpty()) return
         viewModel.bulkCompleteTasks(ids)
         scope.launch {
-            val result = showUndoSnackbar(snackbarHostState, "${previous.size} task(s) completed", undoWindowSeconds)
+            val message = context.resources.getQuantityString(R.plurals.tasks_completed_count, previous.size, previous.size)
+            val result = showUndoSnackbar(snackbarHostState, message, undoWindowSeconds)
             if (result) {
                 viewModel.restoreTasks(previous)
             }
@@ -271,6 +366,7 @@ fun MainScreen(
         }
     }
 
+    Box(modifier = Modifier.fillMaxSize()) {
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
@@ -331,7 +427,7 @@ fun MainScreen(
                             )
                             Column {
                                 Text(
-                                    text = "yata ${BuildConfig.VERSION_NAME}",
+                                    text = stringResource(R.string.main_drawer_version, BuildConfig.VERSION_NAME),
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -376,17 +472,15 @@ fun MainScreen(
                             }
                         }
                     }
-                    if (tagsFeatureEnabled) {
-                        item {
-                            DrawerItem(stringResource(R.string.tab_tags), Icons.AutoMirrored.Filled.Label, selectedTab == 3) {
-                                selectedTab = 3
-                                scope.launch { drawerState.close() }
-                            }
+                    item {
+                        DrawerItem(stringResource(R.string.inbox_title), Icons.Default.Inbox, false) {
+                            onNavigateToInbox()
+                            scope.launch { drawerState.close() }
                         }
                     }
                     item {
-                        DrawerItem(stringResource(R.string.tab_upcoming), Icons.Default.CalendarViewWeek, selectedTab == 4) {
-                            selectedTab = 4
+                        DrawerItem(stringResource(R.string.recurring_tasks_title), Icons.Default.EventRepeat, false) {
+                            onNavigateToRecurringTasks()
                             scope.launch { drawerState.close() }
                         }
                     }
@@ -570,12 +664,34 @@ fun MainScreen(
                         onNavigateToSettings()
                         scope.launch { drawerState.close() }
                     }
+                    DrawerItem(stringResource(R.string.settings_section_help_about), Icons.AutoMirrored.Filled.HelpOutline, false) {
+                        onNavigateToHelpAbout()
+                        scope.launch { drawerState.close() }
+                    }
                 }
                 }
             }
         }
     ) {
+        Row(modifier = Modifier.fillMaxSize()) {
+            if (useWideNavigation) {
+                MainNavigationRail(
+                    selectedTab = selectedTab,
+                    todayBadgeCount = todayBadgeCount,
+                    peopleEnabled = peopleFeatureEnabled,
+                    tagsEnabled = tagsFeatureEnabled,
+                    projectsEnabled = projectsFeatureEnabled,
+                    todayEnabled = todayTabEnabled,
+                    upcomingEnabled = upcomingTabEnabled,
+                    onTabSelected = { selectedTab = it },
+                    onMenuClick = { scope.launch { drawerState.open() } },
+                    onSearchClick = onNavigateToSearch,
+                    onSettingsClick = onNavigateToSettings
+                )
+                VerticalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f))
+            }
         Scaffold(
+            modifier = Modifier.weight(1f),
             snackbarHost = {
                 SnackbarHost(snackbarHostState) { data -> com.mj.yata.ui.widgets.YataSnackbar(data) }
             },
@@ -585,73 +701,197 @@ fun MainScreen(
                 androidx.compose.material3.FabPosition.End
             },
             bottomBar = {
-                CustomBottomNav(
-                    selectedTab = selectedTab,
-                    todayBadgeCount = todayBadgeCount,
-                    peopleEnabled = peopleFeatureEnabled,
-                    tagsEnabled = tagsFeatureEnabled,
-                    projectsEnabled = projectsFeatureEnabled,
-                    todayEnabled = todayTabEnabled,
-                    upcomingEnabled = upcomingTabEnabled,
-                    onTabSelected = { selectedTab = it }
-                )
+                if (!useWideNavigation) {
+                    CustomBottomNav(
+                        selectedTab = selectedTab,
+                        todayBadgeCount = todayBadgeCount,
+                        peopleEnabled = peopleFeatureEnabled,
+                        tagsEnabled = tagsFeatureEnabled,
+                        projectsEnabled = projectsFeatureEnabled,
+                        todayEnabled = todayTabEnabled,
+                        upcomingEnabled = upcomingTabEnabled,
+                        onTabSelected = { selectedTab = it }
+                    )
+                }
             },
             floatingActionButton = {
                 // Each tab offers its own primary creation action; others show no FAB.
                 val fabTarget = when (selectedTab) {
-                    0 -> "New task" to MainSheetType.NewTask
-                    1 -> "New project" to MainSheetType.NewProject
-                    2 -> "Add person" to MainSheetType.NewPerson
-                    3 -> "New tag" to MainSheetType.NewTag
-                    4 -> "New task" to MainSheetType.NewTask
+                    0 -> stringResource(R.string.new_task_title) to MainSheetType.NewTask
+                    1 -> stringResource(R.string.projects_new_project) to MainSheetType.NewProject
+                    2 -> stringResource(R.string.people_add_person) to MainSheetType.NewPerson
+                    3 -> stringResource(R.string.tags_new_tag) to MainSheetType.NewTag
+                    4 -> stringResource(R.string.new_task_title) to MainSheetType.NewTask
                     else -> null
                 }
 
-                AnimatedVisibility(
-                    visible = fabTarget != null && fabPosition != com.mj.yata.domain.model.FabPosition.HIDDEN,
-                    enter = scaleIn(),
-                    exit = scaleOut()
+                val fabAlign = if (fabPosition == com.mj.yata.domain.model.FabPosition.LEFT) {
+                    Alignment.Start
+                } else {
+                    Alignment.End
+                }
+
+                Column(
+                    horizontalAlignment = fabAlign,
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.width(IntrinsicSize.Max)
                 ) {
-                    val (fabLabel, sheetType) = fabTarget ?: ("New task" to MainSheetType.NewTask)
-                    PressableScaleBox(
-                        onClick = {
-                            activeSheet = sheetType
-                        },
-                        // No navigationBarsPadding here. CustomBottomNav already consumes the
-                        // system navigation inset in both modes — the floating variant on its
-                        // outer Box, the docked variant on its inner one — and Scaffold positions
-                        // the FAB relative to the bottomBar's *outer* height. Applying the inset
-                        // again added the full nav-bar height a second time, which is why the FAB
-                        // floated well clear of the panel: ~24dp on gesture nav, ~48dp with the
-                        // three-button bar. Scaffold's own 16dp FAB-to-bottomBar spacing is the
-                        // only gap needed, and it's the M3 default.
-                        modifier = Modifier
+                    // Today-only voice capture, stacked above the main FAB below.
+                    // Matched in size to the main FAB on Today screen via IntrinsicSize.Max & fillMaxWidth.
+                    // Scale+fade only, deliberately no expandVertically/shrinkVertically: that
+                    // paired a layout-changing animation (this element's own measured height, which
+                    // forces the Column to remeasure and reposition the FAB below every frame) with
+                    // a draw-only one on the same element, and drove them off spring physics while
+                    // fade ran on a separate fixed-duration tween -- so alpha finished solid well
+                    // before scale/height settled, reading as the chip still growing after it
+                    // already looked done. Scale and fade now share one spring each direction, so
+                    // they settle together, and this element's own layout size is fixed the whole
+                    // time it's part of the tree -- only its paint transform animates.
+                    AnimatedVisibility(
+                        visible = selectedTab == 0 && fabPosition != com.mj.yata.domain.model.FabPosition.HIDDEN,
+                        enter = scaleIn(
+                            animationSpec = spring(dampingRatio = 0.85f, stiffness = Spring.StiffnessMediumLow),
+                            initialScale = 0.85f
+                        ) + fadeIn(
+                            animationSpec = spring(dampingRatio = 0.85f, stiffness = Spring.StiffnessMediumLow)
+                        ),
+                        exit = scaleOut(
+                            animationSpec = spring(dampingRatio = 0.95f, stiffness = Spring.StiffnessMediumLow),
+                            targetScale = 0.85f
+                        ) + fadeOut(
+                            animationSpec = spring(dampingRatio = 0.95f, stiffness = Spring.StiffnessMediumLow)
+                        )
                     ) {
-                        Surface(
-                            color = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary,
-                            shape = RoundedCornerShape(16.dp),
-                            tonalElevation = 6.dp,
-                            shadowElevation = 6.dp
+                        PressableScaleBox(
+                            onClick = { showTodayVoiceOverlay = true },
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Row(
-                                modifier = Modifier
-                                    .heightIn(min = 56.dp)
-                                    .padding(horizontal = 22.dp, vertical = 16.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            Surface(
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                shape = RoundedCornerShape(percent = 50),
+                                tonalElevation = 6.dp,
+                                shadowElevation = 6.dp,
+                                modifier = Modifier.fillMaxWidth()
                             ) {
-                                Icon(Icons.Default.Add, contentDescription = null)
-                                androidx.compose.animation.AnimatedContent(
-                                    targetState = fabLabel,
-                                    transitionSpec = {
-                                        (androidx.compose.animation.slideInVertically { height -> height } + fadeIn()).togetherWith(
-                                            androidx.compose.animation.slideOutVertically { height -> -height } + fadeOut()
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .heightIn(min = 56.dp)
+                                        .padding(horizontal = 22.dp, vertical = 16.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Mic,
+                                        contentDescription = null
+                                    )
+                                    Text(
+                                        text = stringResource(R.string.today_voice_fab_label),
+                                        style = MaterialTheme.typography.labelLarge,
+                                        maxLines = 1,
+                                        softWrap = false
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    // Same reasoning as the voice FAB above: fade now shares the scale's spring
+                    // in each direction instead of racing it on a fixed tween, so opacity and size
+                    // settle together.
+                    AnimatedVisibility(
+                        visible = fabTarget != null && fabPosition != com.mj.yata.domain.model.FabPosition.HIDDEN,
+                        enter = scaleIn(
+                            animationSpec = spring(dampingRatio = 0.85f, stiffness = Spring.StiffnessMediumLow),
+                            initialScale = 0.85f
+                        ) + fadeIn(
+                            animationSpec = spring(dampingRatio = 0.85f, stiffness = Spring.StiffnessMediumLow)
+                        ),
+                        exit = scaleOut(
+                            animationSpec = spring(dampingRatio = 0.95f, stiffness = Spring.StiffnessMediumLow),
+                            targetScale = 0.85f
+                        ) + fadeOut(
+                            animationSpec = spring(dampingRatio = 0.95f, stiffness = Spring.StiffnessMediumLow)
+                        )
+                    ) {
+                        val (fabLabel, sheetType) = fabTarget ?: ("New task" to MainSheetType.NewTask)
+                        PressableScaleBox(
+                            onClick = {
+                                quickCaptureMode = false
+                                activeSheet = sheetType
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Surface(
+                                color = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary,
+                                shape = RoundedCornerShape(16.dp),
+                                tonalElevation = 6.dp,
+                                shadowElevation = 6.dp,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .heightIn(min = 56.dp)
+                                        .padding(horizontal = 22.dp, vertical = 16.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
+                                ) {
+                                    Icon(Icons.Default.Add, contentDescription = null)
+                                    AnimatedContent(
+                                        targetState = fabLabel,
+                                        transitionSpec = {
+                                            // Slide and fade now share one spring per direction
+                                            // (previously fade ran on a separate fixed tween,
+                                            // finishing solid while the slide was still settling).
+                                            // sizeAnimationSpec snaps rather than animates: the
+                                            // parent Column already sizes itself off
+                                            // IntrinsicSize.Max, which reports each label's final
+                                            // width immediately, before any width animation here
+                                            // could get partway through it. Animating this size too
+                                            // just fought that outer snap instead of agreeing with
+                                            // it -- one instant width change reads cleaner than two
+                                            // mechanisms racing to different rates.
+                                            val enterAnim = slideInVertically(
+                                                animationSpec = spring(
+                                                    dampingRatio = 0.85f,
+                                                    stiffness = Spring.StiffnessMediumLow
+                                                )
+                                            ) { height -> height } + fadeIn(
+                                                animationSpec = spring(
+                                                    dampingRatio = 0.85f,
+                                                    stiffness = Spring.StiffnessMediumLow
+                                                )
+                                            )
+                                            val exitAnim = slideOutVertically(
+                                                animationSpec = spring(
+                                                    dampingRatio = 0.95f,
+                                                    stiffness = Spring.StiffnessMediumLow
+                                                )
+                                            ) { height -> -height } + fadeOut(
+                                                animationSpec = spring(
+                                                    dampingRatio = 0.95f,
+                                                    stiffness = Spring.StiffnessMediumLow
+                                                )
+                                            )
+                                            enterAnim.togetherWith(exitAnim).using(
+                                                SizeTransform(
+                                                    clip = false,
+                                                    sizeAnimationSpec = { _, _ -> snap() }
+                                                )
+                                            )
+                                        },
+                                        label = "fabLabelAnim"
+                                    ) { targetLabel ->
+                                        Text(
+                                            text = targetLabel,
+                                            style = MaterialTheme.typography.labelLarge,
+                                            maxLines = 1,
+                                            softWrap = false
                                         )
-                                    },
-                                    label = "fabLabelAnim"
-                                ) { targetLabel ->
-                                    Text(targetLabel, style = MaterialTheme.typography.labelLarge)
+                                    }
                                 }
                             }
                         }
@@ -670,7 +910,7 @@ fun MainScreen(
                                     true
                                 }
                                 Key.N -> {
-                                    activeSheet = MainSheetType.NewTask
+                                    openNewTask()
                                     true
                                 }
                                 Key.F -> {
@@ -683,8 +923,10 @@ fun MainScreen(
                             false
                         }
                     }
-                    .padding(bottom = innerPadding.calculateBottomPadding())
+                    .padding(bottom = innerPadding.calculateBottomPadding()),
+                contentAlignment = Alignment.TopCenter
             ) {
+                AdaptiveContentBox(contentMaxWidth = adaptiveLayout.contentMaxWidth) {
                 // Tab switcher with dynamic M3 slide-fade animations
                 androidx.compose.animation.AnimatedContent(
                     targetState = selectedTab,
@@ -715,9 +957,10 @@ fun MainScreen(
                             userName = userName,
                             userPhotoUri = userPhotoUri,
                             onMenuClick = { scope.launch { drawerState.open() } },
+                            showMenuButton = !useWideNavigation,
                             onSearchClick = onNavigateToSearch,
                             onNextDaysClick = onNavigateToNextDays,
-                            onNewTaskClick = { activeSheet = MainSheetType.NewTask },
+                            onNewTaskClick = { openNewTask() },
                             onProfileClick = onNavigateToSettings,
                             onTaskClick = onNavigateToTaskDetail,
                             onToggleDone = { toggleDoneWithUndo(it) },
@@ -728,9 +971,11 @@ fun MainScreen(
                             onBulkAddTag = { ids, tagId -> viewModel.bulkAddTag(ids, tagId) },
                             onBulkSetProject = { ids, projectId -> viewModel.bulkSetProject(ids, projectId) },
                             onBulkSetList = { ids, listId -> viewModel.bulkSetList(ids, listId) },
-                            onBulkDuplicate = { viewModel.bulkDuplicateTasks(it) },
+                            onBulkDuplicate = { ids -> viewModel.bulkDuplicateTasks(ids) { single -> onNavigateToTaskDetail(single.id) } },
                             onBulkAssignPerson = { ids, personId -> viewModel.bulkAssignPerson(ids, personId) },
-                            onBulkReschedule = { ids, preset -> viewModel.bulkRescheduleTasks(ids, preset) },
+                            onBulkReschedule = { ids, preset, keepExistingTime -> viewModel.bulkRescheduleTasks(ids, preset, keepExistingTime) },
+                            onBulkSetPriority = { ids, priority -> viewModel.bulkSetPriority(ids, priority) },
+                            onBulkSetFlag = { ids, flag -> viewModel.bulkSetFlag(ids, flag) },
                             onRenameTask = { id, title -> viewModel.renameTask(id, title) },
                             onAddComment = { taskId, body -> viewModel.addComment(taskId, body) },
                             peopleEnabled = peopleFeatureEnabled,
@@ -748,7 +993,12 @@ fun MainScreen(
                             syncProgress = syncProgress,
                             syncButtonEnabled = !syncInProgress,
                             onSyncClick = { runManualSync() },
-                            showUpcomingWhenEmpty = todayShowUpcomingWhenEmpty
+                            showUpcomingWhenEmpty = todayShowUpcomingWhenEmpty,
+                            weekendDays = weekendDays,
+                            holidays = holidays,
+                            observeNonWorkingDays = observeNonWorkingDays,
+                            useWideLayout = useWideNavigation,
+                            initialDataLoaded = initialDataLoaded
                         )
                         1 -> ProjectsTab(
                             projects = projects,
@@ -758,6 +1008,7 @@ fun MainScreen(
                             userName = userName,
                             userPhotoUri = userPhotoUri,
                             onMenuClick = { scope.launch { drawerState.open() } },
+                            showMenuButton = !useWideNavigation,
                             onSearchClick = onNavigateToSearch,
                             onProfileClick = onNavigateToSettings,
                             onProjectClick = onNavigateToProjectDetail,
@@ -765,7 +1016,9 @@ fun MainScreen(
                             onToggleProjectStar = { viewModel.toggleProjectStarred(it) },
                             onProjectsReordered = { viewModel.commitProjectOrder(it) },
                             onBulkArchiveProjects = { viewModel.bulkArchiveProjects(it) },
-                            peopleEnabled = peopleFeatureEnabled
+                            peopleEnabled = peopleFeatureEnabled,
+                            useWideLayout = useWideNavigation,
+                            initialDataLoaded = initialDataLoaded
                         )
                         2 -> PeopleTab(
                             people = people,
@@ -774,9 +1027,11 @@ fun MainScreen(
                             userName = userName,
                             userPhotoUri = userPhotoUri,
                             onMenuClick = { scope.launch { drawerState.open() } },
+                            showMenuButton = !useWideNavigation,
                             onSearchClick = onNavigateToSearch,
                             onProfileClick = onNavigateToSettings,
                             onPersonClick = onNavigateToPersonDetail,
+                            onAnalyticsClick = onNavigateToStaffAnalytics,
                             onAddPersonClick = { activeSheet = MainSheetType.NewPerson },
                             onAssignGroup = { personIds, groupId -> viewModel.setPeopleGroup(personIds, groupId) },
                             onCreateGroupAndAssign = { id, name, personIds ->
@@ -786,7 +1041,9 @@ fun MainScreen(
                             onToggleStar = { viewModel.togglePersonStarred(it) },
                             onDeleteGroup = { viewModel.deletePersonGroup(it) },
                             sortMode = sortModePeopleTab,
-                            onSortModeChange = { viewModel.setSortModePeopleTab(it) }
+                            onSortModeChange = { viewModel.setSortModePeopleTab(it) },
+                            useWideLayout = useWideNavigation,
+                            initialDataLoaded = initialDataLoaded
                         )
                         3 -> TagsTab(
                             tags = tags,
@@ -797,16 +1054,23 @@ fun MainScreen(
                             userName = userName,
                             userPhotoUri = userPhotoUri,
                             onMenuClick = { scope.launch { drawerState.open() } },
+                            showMenuButton = !useWideNavigation,
                             onSearchClick = onNavigateToSearch,
                             onProfileClick = onNavigateToSettings,
                             onTagClick = onNavigateToTagDetail,
                             onNewTagClick = { activeSheet = MainSheetType.NewTag },
                             onToggleStar = { viewModel.toggleTagStarred(it) },
+                            onAssignGroup = { tagIds, groupId -> viewModel.setTagsGroup(tagIds, groupId) },
+                            onCreateGroupAndAssign = { id, name, tagIds ->
+                                viewModel.createTagGroupAndAssign(com.mj.yata.domain.model.TagGroup(id = id, name = name, color = "accentJ"), tagIds)
+                            },
                             onDeleteGroup = { viewModel.deleteTagGroup(it) },
                             onBulkDeleteTags = { viewModel.bulkDeleteTags(it) },
                             tagsEnabled = tagsFeatureEnabled,
                             sortMode = sortModeTagsTab,
-                            onSortModeChange = { viewModel.setSortModeTagsTab(it) }
+                            onSortModeChange = { viewModel.setSortModeTagsTab(it) },
+                            useWideLayout = useWideNavigation,
+                            initialDataLoaded = initialDataLoaded
                         )
                         4 -> UpcomingTab(
                             tasks = tasks,
@@ -820,6 +1084,8 @@ fun MainScreen(
                             onSelectedDayChange = { calendarSelectedDay = it },
                             startOfWeekSunday = startOfWeekSunday,
                             onMenuClick = { scope.launch { drawerState.open() } },
+                            showMenuButton = !useWideNavigation,
+                            useWideLayout = useWideNavigation,
                             onSearchClick = onNavigateToSearch,
                             onProfileClick = onNavigateToSettings,
                             onTaskClick = onNavigateToTaskDetail,
@@ -831,20 +1097,29 @@ fun MainScreen(
                             onBulkAddTag = { ids, tagId -> viewModel.bulkAddTag(ids, tagId) },
                             onBulkSetProject = { ids, projectId -> viewModel.bulkSetProject(ids, projectId) },
                             onBulkSetList = { ids, listId -> viewModel.bulkSetList(ids, listId) },
-                            onBulkDuplicate = { viewModel.bulkDuplicateTasks(it) },
+                            onBulkDuplicate = { ids -> viewModel.bulkDuplicateTasks(ids) { single -> onNavigateToTaskDetail(single.id) } },
                             onBulkAssignPerson = { ids, personId -> viewModel.bulkAssignPerson(ids, personId) },
-                            onBulkReschedule = { ids, preset -> viewModel.bulkRescheduleTasks(ids, preset) },
+                            onBulkReschedule = { ids, preset, keepExistingTime -> viewModel.bulkRescheduleTasks(ids, preset, keepExistingTime) },
+                            onBulkSetPriority = { ids, priority -> viewModel.bulkSetPriority(ids, priority) },
+                            onBulkSetFlag = { ids, flag -> viewModel.bulkSetFlag(ids, flag) },
                             onRenameTask = { id, title -> viewModel.renameTask(id, title) },
                             onAddComment = { taskId, body -> viewModel.addComment(taskId, body) },
                             peopleEnabled = peopleFeatureEnabled,
                             tagsEnabled = tagsFeatureEnabled,
                             projectsEnabled = projectsFeatureEnabled,
-                            taskRowDensity = taskRowDensity
+                            taskRowDensity = taskRowDensity,
+                            initialDataLoaded = initialDataLoaded,
+                            weekendDays = weekendDays,
+                            holidays = holidays,
+                            observeNonWorkingDays = observeNonWorkingDays
                         )
                     }
                 }
+                }
             }
         }
+        }
+    }
     }
 
     if (showCommandPalette) {
@@ -858,7 +1133,11 @@ fun MainScreen(
             onDismiss = { showCommandPalette = false },
             onNewTask = {
                 showCommandPalette = false
-                activeSheet = MainSheetType.NewTask
+                openNewTask()
+            },
+            onQuickCapture = {
+                showCommandPalette = false
+                openQuickCapture()
             },
             onSearch = {
                 showCommandPalette = false
@@ -871,6 +1150,14 @@ fun MainScreen(
             onAnalytics = {
                 showCommandPalette = false
                 onNavigateToAnalytics()
+            },
+            onInbox = {
+                showCommandPalette = false
+                onNavigateToInbox()
+            },
+            onRecurringTasks = {
+                showCommandPalette = false
+                onNavigateToRecurringTasks()
             },
             onNextDays = {
                 showCommandPalette = false
@@ -896,7 +1183,10 @@ fun MainScreen(
         if (activeSheet == MainSheetType.NewTask) {
             val requestDismissNewTask = {
                 if (newTaskHasDraft) showDiscardNewTaskDialog = true
-                else activeSheet = MainSheetType.None
+                else {
+                    activeSheet = MainSheetType.None
+                    quickCaptureMode = false
+                }
             }
             androidx.compose.ui.window.Dialog(
                 onDismissRequest = requestDismissNewTask,
@@ -905,56 +1195,78 @@ fun MainScreen(
                     decorFitsSystemWindows = false
                 )
             ) {
-                NewTaskSheet(
-                    lists = lists,
-                    projects = activeProjects,
-                    people = activePeople,
-                    tags = tags,
-                    tasks = tasks,
-                    onAddTask = { draft ->
-                        viewModel.addTask(draft)
-                        newTaskHasDraft = false
-                        activeSheet = MainSheetType.None
-                    },
-                    onAddTaskAndContinue = { draft ->
-                        viewModel.addTask(draft)
-                    },
-                    onGoToExistingTask = { id ->
-                        newTaskHasDraft = false
-                        activeSheet = MainSheetType.None
-                        onNavigateToTaskDetail(id)
-                    },
-                    autoAssignToMe = autoAssignToMe,
-                onCreateTag = { id, name, color ->
-                        viewModel.upsertTag(Tag(id = id, name = name, color = color))
-                    },
-                    onCreatePerson = { id, name, color ->
-                        viewModel.upsertPerson(
-                            Person(id = id, name = name, initials = initialsFor(name), color = color, isMe = false)
-                        )
-                    },
-                    onDismiss = requestDismissNewTask,
-                    initialListId = initialQuickAddListId,
-                    initialDueDateOverride = if (selectedTab == 4) calendarSelectedDay.toString() else null,
-                    projectsEnabled = projectsFeatureEnabled,
-                    tagsEnabled = tagsFeatureEnabled,
-                    peopleEnabled = peopleFeatureEnabled,
-                    voiceLanguage = voiceLanguage,
-                    defaultDueDate = defaultDueDate,
-                    defaultPriority = defaultPriority,
-                    onDraftStateChanged = { newTaskHasDraft = it }
-                )
+                val newTaskSheetModifier = if (useWideNavigation) {
+                    Modifier.widthIn(max = 720.dp)
+                } else {
+                    Modifier
+                }
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = if (useWideNavigation) Alignment.Center else Alignment.TopStart
+                ) {
+                    NewTaskSheet(
+                        dueDatePickerContext = com.mj.yata.ui.widgets.rememberDueDatePickerContext(viewModel),
+                        lists = if (quickCaptureMode) emptyList() else lists,
+                        projects = if (quickCaptureMode) emptyList() else activeProjects,
+                        people = if (quickCaptureMode) emptyList() else activePeople,
+                        tags = if (quickCaptureMode) emptyList() else tags,
+                        tasks = tasks,
+                        onAddTask = { draft ->
+                            viewModel.addTask(if (quickCaptureMode) draft.asInboxCaptureDraft() else draft)
+                            newTaskHasDraft = false
+                            activeSheet = MainSheetType.None
+                            quickCaptureMode = false
+                        },
+                        onAddTaskAndContinue = { draft ->
+                            viewModel.addTask(if (quickCaptureMode) draft.asInboxCaptureDraft() else draft)
+                        },
+                        onGoToExistingTask = { id ->
+                            newTaskHasDraft = false
+                            activeSheet = MainSheetType.None
+                            quickCaptureMode = false
+                            onNavigateToTaskDetail(id)
+                        },
+                        autoAssignToMe = if (quickCaptureMode) false else autoAssignToMe,
+                        onCreateProject = { id, name, color ->
+                            viewModel.upsertProject(com.mj.yata.domain.model.Project(id = id, name = name, color = color, icon = "layers"))
+                        },
+                        onCreateTag = { id, name, color ->
+                            viewModel.upsertTag(Tag(id = id, name = name, color = color))
+                        },
+                        onCreatePerson = { id, name, color ->
+                            viewModel.upsertPerson(
+                                Person(id = id, name = name, initials = initialsFor(name), color = color, isMe = false)
+                            )
+                        },
+                        onDismiss = requestDismissNewTask,
+                        initialListId = if (quickCaptureMode) null else initialQuickAddListId,
+                        initialDueDateOverride = if (!quickCaptureMode && selectedTab == 4) calendarSelectedDay.toString() else null,
+                        projectsEnabled = !quickCaptureMode && projectsFeatureEnabled,
+                        tagsEnabled = !quickCaptureMode && tagsFeatureEnabled,
+                        peopleEnabled = !quickCaptureMode && peopleFeatureEnabled,
+                        voiceLanguage = voiceLanguage,
+                        defaultDueDate = if (quickCaptureMode) DefaultDueDate.NONE else defaultDueDate,
+                        defaultPriority = defaultPriority,
+                        defaultProjectId = if (quickCaptureMode) null else defaultProjectId,
+                        defaultTagIds = if (quickCaptureMode) emptySet() else defaultTagIds,
+                        defaultEstimateMinutes = if (quickCaptureMode) null else defaultEstimateMinutes,
+                        onDraftStateChanged = { newTaskHasDraft = it },
+                        modifier = newTaskSheetModifier
+                    )
+                }
             }
         } else {
             ModalBottomSheet(
                 onDismissRequest = { activeSheet = MainSheetType.None },
                 sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
                 shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-                containerColor = MaterialTheme.colorScheme.surfaceContainer
+                containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                sheetMaxWidth = if (useWideNavigation) 640.dp else BottomSheetDefaults.SheetMaxWidth
             ) {
                 when (activeSheet) {
                     MainSheetType.NewProject -> ProjectEditorSheet(
                         tags = tags,
+                        existingNames = projects.map { it.name },
                         onSave = { name, color, icon, due, commonTagIds, defaultReminder, description, excludeFromToday ->
                             viewModel.addProject(name, color, icon, due, commonTagIds, defaultReminder, description, excludeFromToday)
                             activeSheet = MainSheetType.None
@@ -976,8 +1288,8 @@ fun MainScreen(
                     MainSheetType.NewTag -> TagEditorSheet(
                         groups = tagGroups,
                         existingNames = tags.map { it.name },
-                        onSave = { name, color, groupId, hideCompletedByDefault ->
-                            viewModel.addTag(name, color, groupId, hideCompletedByDefault)
+                        onSave = { name, color, groupId, hideCompletedByDefault, description, pendingGroup ->
+                            viewModel.addTag(name, color, groupId, hideCompletedByDefault, description, pendingGroup)
                             activeSheet = MainSheetType.None
                         },
                         onCreateGroup = { id, name, color ->
@@ -991,6 +1303,54 @@ fun MainScreen(
         }
     }
 
+    // Today's voice FAB — captures and creates a task directly, without going through
+    // NewTaskSheet. VoiceTaskOverlay's own checkmark already carries the fully parsed result
+    // (due/time/priority/tags/assignees), so entity name -> id resolution is the only step left
+    // before it's a savable NewTaskDraft, same as bulk-mode quick add does per line.
+    if (showTodayVoiceOverlay) {
+        VoiceTaskOverlay(
+            isOpen = showTodayVoiceOverlay,
+            onDismiss = { showTodayVoiceOverlay = false },
+            voiceLanguage = voiceLanguage,
+            onTaskRecognized = { parsed ->
+                val resolved = resolveParsedQuickAddEntities(
+                    quickAdd = parsed,
+                    baseListId = null,
+                    baseProjectId = null,
+                    baseTagIds = emptyList(),
+                    baseAssigneeIds = emptyList(),
+                    lists = lists,
+                    projects = activeProjects,
+                    people = activePeople,
+                    tags = tags,
+                    projectsEnabled = projectsFeatureEnabled,
+                    tagsEnabled = tagsFeatureEnabled,
+                    peopleEnabled = peopleFeatureEnabled
+                )
+                viewModel.addTask(
+                    NewTaskDraft(
+                        title = parsed.title,
+                        listId = resolved.listId,
+                        priority = parsed.priority ?: "none",
+                        assigneeIds = resolved.assigneeIds,
+                        tagIds = resolved.tagIds,
+                        recurrence = parsed.recurrence,
+                        due = parsed.due ?: resolved.projectDue ?: defaultDueDate.resolve(),
+                        startDate = parsed.startDate,
+                        time = parsed.time,
+                        reminder = parsed.reminder,
+                        section = "",
+                        projectId = resolved.projectId,
+                        notes = null,
+                        subtasks = emptyList(),
+                        flag = parsed.flag,
+                        estimateMinutes = defaultEstimateMinutes
+                    )
+                )
+            }
+        )
+    }
+
     if (showDiscardNewTaskDialog) {
         AlertDialog(
             onDismissRequest = { showDiscardNewTaskDialog = false },
@@ -1001,6 +1361,7 @@ fun MainScreen(
                     showDiscardNewTaskDialog = false
                     newTaskHasDraft = false
                     activeSheet = MainSheetType.None
+                    quickCaptureMode = false
                 }) {
                     Text(stringResource(R.string.action_discard), color = MaterialTheme.colorScheme.error)
                 }
@@ -1013,6 +1374,78 @@ fun MainScreen(
         )
     }
 
+
+    if (initialSyncMergeMessage != null) {
+        AlertDialog(
+            onDismissRequest = { initialSyncMergeMessage = null },
+            title = { Text(stringResource(R.string.settings_initial_sync_merge_title)) },
+            text = { Text(initialSyncMergeMessage ?: stringResource(R.string.settings_initial_sync_merge_body)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        initialSyncMergeMessage = null
+                        runManualSync(allowInitialJoinMerge = true)
+                    }
+                ) {
+                    Text(stringResource(R.string.settings_initial_sync_merge_action))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { initialSyncMergeMessage = null }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            }
+        )
+    }
+
+    if (emptyLocalSyncMessage != null) {
+        AlertDialog(
+            onDismissRequest = { emptyLocalSyncMessage = null },
+            title = { Text(stringResource(R.string.settings_empty_local_sync_title)) },
+            text = { Text(emptyLocalSyncMessage ?: stringResource(R.string.settings_empty_local_sync_body)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        emptyLocalSyncMessage = null
+                        viewModel.restoreLatestRemoteSnapshot { result ->
+                            scope.launch {
+                                snackbarHostState.showSnackbar(
+                                    if (result.isSuccess) {
+                                        context.getString(R.string.settings_remote_restore_success)
+                                    } else {
+                                        context.getString(
+                                            R.string.settings_remote_restore_failed,
+                                            result.exceptionOrNull()?.message ?: ""
+                                        )
+                                    }
+                                )
+                            }
+                        }
+                    }
+                ) {
+                    Text(stringResource(R.string.settings_empty_local_sync_restore_action))
+                }
+            },
+            dismissButton = {
+                Row {
+                    TextButton(onClick = { emptyLocalSyncMessage = null }) {
+                        Text(stringResource(R.string.action_cancel))
+                    }
+                    TextButton(
+                        onClick = {
+                            emptyLocalSyncMessage = null
+                            runManualSync(allowEmptyLocalOverwrite = true)
+                        }
+                    ) {
+                        Text(
+                            stringResource(R.string.settings_empty_local_sync_overwrite_action),
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+            }
+        )
+    }
 
     if (showClearSyncLockDialog) {
         AlertDialog(
@@ -1077,9 +1510,11 @@ fun MainScreen(
         ModalBottomSheet(
             onDismissRequest = { isNewListSheetOpen = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = if (useWideNavigation) 640.dp else BottomSheetDefaults.SheetMaxWidth
         ) {
             ListEditorSheet(
+                existingNames = lists.map { it.name },
                 onSave = { name, color, icon, excludeFromToday ->
                     viewModel.addList(name, color, icon = icon, excludeFromToday = excludeFromToday)
                     isNewListSheetOpen = false
@@ -1107,9 +1542,12 @@ private fun CommandPaletteDialog(
     savedSmartFilterSets: Set<String> = emptySet(),
     onDismiss: () -> Unit,
     onNewTask: () -> Unit,
+    onQuickCapture: () -> Unit,
     onSearch: () -> Unit,
     onSettings: () -> Unit,
     onAnalytics: () -> Unit,
+    onInbox: () -> Unit,
+    onRecurringTasks: () -> Unit,
     onNextDays: () -> Unit,
     onSavedSearch: (String) -> Unit,
     onSelectTab: (Int) -> Unit,
@@ -1118,12 +1556,15 @@ private fun CommandPaletteDialog(
     var query by remember { mutableStateOf("") }
     val commandEntries = listOfNotNull(
         PaletteEntry(stringResource(R.string.new_task_title), stringResource(R.string.main_palette_new_task_subtitle), Icons.Default.Add, onNewTask),
+        PaletteEntry(stringResource(R.string.quick_add_dialog_quick_add), stringResource(R.string.main_palette_inbox_subtitle), Icons.Default.Inbox, onQuickCapture),
         PaletteEntry(stringResource(R.string.cd_search), stringResource(R.string.main_palette_search_subtitle), Icons.Default.Search, onSearch),
         PaletteEntry(stringResource(R.string.tab_today), stringResource(R.string.main_palette_today_subtitle), Icons.Default.Today) { onSelectTab(0) },
         if (projectsEnabled) PaletteEntry(stringResource(R.string.tab_projects), stringResource(R.string.main_palette_projects_subtitle), Icons.Default.Layers) { onSelectTab(1) } else null,
         if (peopleEnabled) PaletteEntry(stringResource(R.string.tab_people), stringResource(R.string.main_palette_people_subtitle), Icons.Default.People) { onSelectTab(2) } else null,
         if (tagsEnabled) PaletteEntry(stringResource(R.string.tab_tags), stringResource(R.string.main_palette_tags_subtitle), Icons.AutoMirrored.Filled.Label) { onSelectTab(3) } else null,
         PaletteEntry(stringResource(R.string.tab_upcoming), stringResource(R.string.main_palette_upcoming_subtitle), Icons.Default.CalendarViewWeek) { onSelectTab(4) },
+        PaletteEntry(stringResource(R.string.inbox_title), stringResource(R.string.main_palette_inbox_subtitle), Icons.Default.Inbox, onInbox),
+        PaletteEntry(stringResource(R.string.recurring_tasks_title), stringResource(R.string.main_palette_recurring_subtitle), Icons.Default.Repeat, onRecurringTasks),
         PaletteEntry(stringResource(R.string.today_next_10_days), stringResource(R.string.main_palette_next_days_subtitle), Icons.Default.DateRange, onNextDays),
         // Formerly the drawer's "Tools" section. They're preset searches, so the palette — which
         // already filters by title and subtitle — is a better home than eight fixed menu rows:
@@ -1161,12 +1602,14 @@ private fun CommandPaletteDialog(
         title = { Text(stringResource(R.string.main_command_palette)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedTextField(
+                TextField(
                     value = query,
                     onValueChange = { query = it },
                     singleLine = true,
                     leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                     placeholder = { Text(stringResource(R.string.main_search_actions_or_tasks)) },
+                    shape = YataCompactFieldShape,
+                    colors = yataFieldColors(),
                     modifier = Modifier.fillMaxWidth()
                 )
                 LazyColumn(
@@ -1280,6 +1723,112 @@ fun DrawerItem(
 private data class NavIcon(val id: Int, val label: String, val outlined: ImageVector, val filled: ImageVector)
 
 @Composable
+private fun MainNavigationRail(
+    selectedTab: Int,
+    todayBadgeCount: Int,
+    peopleEnabled: Boolean,
+    tagsEnabled: Boolean,
+    projectsEnabled: Boolean,
+    todayEnabled: Boolean,
+    upcomingEnabled: Boolean,
+    onTabSelected: (Int) -> Unit,
+    onMenuClick: () -> Unit,
+    onSearchClick: () -> Unit,
+    onSettingsClick: () -> Unit
+) {
+    val items = listOfNotNull(
+        if (todayEnabled) NavIcon(0, stringResource(R.string.tab_today), Icons.Outlined.Today, Icons.Filled.Today) else null,
+        if (projectsEnabled) NavIcon(1, stringResource(R.string.tab_projects), Icons.Outlined.Layers, Icons.Filled.Layers) else null,
+        if (peopleEnabled) NavIcon(2, stringResource(R.string.tab_people), Icons.Outlined.People, Icons.Filled.People) else null,
+        if (tagsEnabled) NavIcon(3, stringResource(R.string.tab_tags), Icons.AutoMirrored.Outlined.Label, Icons.AutoMirrored.Filled.Label) else null,
+        if (upcomingEnabled) NavIcon(4, stringResource(R.string.tab_upcoming), Icons.Outlined.CalendarViewWeek, Icons.Filled.CalendarViewWeek) else null
+    )
+
+    NavigationRail(
+        modifier = Modifier
+            .fillMaxHeight()
+            .width(92.dp)
+            .statusBarsPadding(),
+        containerColor = MaterialTheme.colorScheme.surfaceContainer,
+        header = {
+            IconButton(
+                onClick = onMenuClick,
+                modifier = Modifier.padding(top = 12.dp, bottom = 8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Menu,
+                    contentDescription = stringResource(R.string.cd_open_drawer)
+                )
+            }
+        }
+    ) {
+        items.forEach { navIcon ->
+            NavigationRailItem(
+                selected = navIcon.id == selectedTab,
+                onClick = { onTabSelected(navIcon.id) },
+                icon = {
+                    if (navIcon.id == 0 && todayBadgeCount > 0) {
+                        BadgedBox(badge = { Badge { Text(todayBadgeCount.coerceAtMost(99).toString()) } }) {
+                            Icon(
+                                imageVector = if (navIcon.id == selectedTab) navIcon.filled else navIcon.outlined,
+                                contentDescription = navIcon.label
+                            )
+                        }
+                    } else {
+                        Icon(
+                            imageVector = if (navIcon.id == selectedTab) navIcon.filled else navIcon.outlined,
+                            contentDescription = navIcon.label
+                        )
+                    }
+                },
+                label = { Text(navIcon.label, maxLines = 1) },
+                alwaysShowLabel = false
+            )
+        }
+        Spacer(modifier = Modifier.weight(1f))
+        NavigationRailItem(
+            selected = false,
+            onClick = onSearchClick,
+            icon = { Icon(Icons.Default.Search, contentDescription = stringResource(R.string.cd_search)) },
+            label = { Text(stringResource(R.string.cd_search), maxLines = 1) },
+            alwaysShowLabel = false
+        )
+        NavigationRailItem(
+            selected = false,
+            onClick = onSettingsClick,
+            icon = { Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.settings_settings)) },
+            label = { Text(stringResource(R.string.settings_settings), maxLines = 1) },
+            alwaysShowLabel = false
+        )
+    }
+}
+
+@Composable
+fun AdaptiveBottomNav(
+    selectedTab: Int,
+    todayBadgeCount: Int = 0,
+    peopleEnabled: Boolean = true,
+    tagsEnabled: Boolean = true,
+    projectsEnabled: Boolean = true,
+    todayEnabled: Boolean = true,
+    upcomingEnabled: Boolean = true,
+    onTabSelected: (Int) -> Unit
+) {
+    if (!rememberAdaptiveLayoutInfo().isWide) {
+        CustomBottomNav(
+            selectedTab = selectedTab,
+            todayBadgeCount = todayBadgeCount,
+            peopleEnabled = peopleEnabled,
+            tagsEnabled = tagsEnabled,
+            projectsEnabled = projectsEnabled,
+            todayEnabled = todayEnabled,
+            upcomingEnabled = upcomingEnabled,
+            onTabSelected = onTabSelected
+        )
+    }
+}
+
+@Composable
 fun CustomBottomNav(
     selectedTab: Int,
     todayBadgeCount: Int = 0,
@@ -1294,11 +1843,11 @@ fun CustomBottomNav(
     // are hidden — filtering the list must not renumber the survivors, or a disabled tab in the
     // middle would shift every tab after it onto the wrong id.
     val items = listOfNotNull(
-        if (todayEnabled) NavIcon(0, "Today", Icons.Outlined.Today, Icons.Filled.Today) else null,
-        if (projectsEnabled) NavIcon(1, "Projects", Icons.Outlined.Layers, Icons.Filled.Layers) else null,
-        if (peopleEnabled) NavIcon(2, "People", Icons.Outlined.People, Icons.Filled.People) else null,
-        if (tagsEnabled) NavIcon(3, "Tags", Icons.AutoMirrored.Outlined.Label, Icons.AutoMirrored.Filled.Label) else null,
-        if (upcomingEnabled) NavIcon(4, "Upcoming", Icons.Outlined.CalendarViewWeek, Icons.Filled.CalendarViewWeek) else null
+        if (todayEnabled) NavIcon(0, stringResource(R.string.tab_today), Icons.Outlined.Today, Icons.Filled.Today) else null,
+        if (projectsEnabled) NavIcon(1, stringResource(R.string.tab_projects), Icons.Outlined.Layers, Icons.Filled.Layers) else null,
+        if (peopleEnabled) NavIcon(2, stringResource(R.string.tab_people), Icons.Outlined.People, Icons.Filled.People) else null,
+        if (tagsEnabled) NavIcon(3, stringResource(R.string.tab_tags), Icons.AutoMirrored.Outlined.Label, Icons.AutoMirrored.Filled.Label) else null,
+        if (upcomingEnabled) NavIcon(4, stringResource(R.string.tab_upcoming), Icons.Outlined.CalendarViewWeek, Icons.Filled.CalendarViewWeek) else null
     )
 
     // Top-only hairline (per handoff's borderTop) — a Surface `border` would ring all 4 sides,

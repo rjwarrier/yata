@@ -1,20 +1,15 @@
 package com.mj.yata.ui.screen.settings
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -43,30 +38,21 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.mj.yata.BuildConfig
 import com.mj.yata.R
-import com.mj.yata.ui.screen.main.CustomBottomNav
+import com.mj.yata.ui.screen.main.AdaptiveBottomNav
 import com.mj.yata.ui.screen.main.MainViewModel
-import com.mj.yata.ui.theme.BodoniModaFamily
-import kotlinx.coroutines.delay
+import com.mj.yata.ui.util.AdaptiveContentBox
 
 private data class HelpSection(
-    val title: String,
+    @androidx.annotation.StringRes val title: Int,
     val description: String,
     val bullets: List<String>,
     val icon: ImageVector
@@ -74,7 +60,7 @@ private data class HelpSection(
 
 private val helpSections = listOf(
     HelpSection(
-        title = "Today",
+        title = R.string.tab_today,
         description = "Your day view combines overdue work and tasks due today.",
         bullets = listOf(
             "The progress ring counts tasks that were pending at the start of today.",
@@ -84,7 +70,7 @@ private val helpSections = listOf(
         icon = Icons.Default.Today
     ),
     HelpSection(
-        title = "Upcoming & Calendar",
+        title = R.string.help_about_upcoming_calendar,
         description = "Plan across the next week or switch to a full month calendar.",
         bullets = listOf(
             "The date strip starts from today and shows task dots by list color.",
@@ -94,52 +80,53 @@ private val helpSections = listOf(
         icon = Icons.Default.CalendarMonth
     ),
     HelpSection(
-        title = "Quick Add",
+        title = R.string.help_about_quick_add,
         description = "Create tasks quickly with natural language.",
         bullets = listOf(
             "Try text like \"call Priya tomorrow 3pm high priority\".",
             "YATA can detect due dates, times, priority, and list names.",
-            "Quick Add also works from shortcuts, widgets, voice input, and share sheets."
+            "Quick Add also works from shortcuts, widgets, voice input, and share sheets.",
+            "Put \\ before a word to keep it literal - \\tomorrow, \\#urgent, \\@Sam or \\+Acme stay in the title instead of becoming a date, tag, person or project. Useful when a name is also a day or a month, like \\Sunday Adekunle."
         ),
         icon = Icons.Default.PostAdd
     ),
     HelpSection(
-        title = "Search & Saved Views",
+        title = R.string.help_about_search_saved_views,
         description = "Find anything fast, and jump back to a filtered view in one tap.",
         bullets = listOf(
             "The command palette (drawer > Command palette) reaches every screen, saved filter, and recent task by typing part of its name.",
-            "Save a combination of filters from the Search screen — saved views show up in both the drawer's Custom Views and the command palette.",
+            "Save a combination of filters from the Search screen - saved views show up in both the drawer's Custom Views and the command palette.",
             "One-tap presets like Focus Mode, Assigned to Me, Morning/Evening Review, and Task Health need no setup."
         ),
         icon = Icons.Default.Search
     ),
     HelpSection(
-        title = "Projects & Lists",
+        title = R.string.help_about_projects_lists,
         description = "Use projects for larger outcomes and lists for reusable buckets.",
         bullets = listOf(
             "Star important projects or lists to keep them in the drawer.",
             "Archive old containers without deleting their data.",
             "Exclude backlog-style containers from Today when their tasks should stay out of the daily view.",
-            "Give a project user-defined sections (⋮ menu > Manage sections) to group its tasks under headings like Design or Backend.",
+            "Give a project user-defined sections (overflow menu > Manage sections) to group its tasks under headings like Design or Backend.",
             "Long-press a task on any project, list, tag, or person screen to multiselect and bulk complete, tag, assign, move, reschedule, duplicate, or delete."
         ),
         icon = Icons.Default.ViewAgenda
     ),
     HelpSection(
-        title = "People",
+        title = R.string.tab_people,
         description = "Assign tasks and track delegated work.",
         bullets = listOf(
             "Mark one person as you for assigned-to-me filtering.",
             "Person detail screens show open and completed work for that person.",
             "Team overdue widgets summarize who needs attention.",
-            "The first person assigned to a task is its owner — shown larger in the avatar stack and labeled on the task detail screen; everyone else is a collaborator.",
+            "The first person assigned to a task is its owner - shown larger in the avatar stack and labeled on the task detail screen; everyone else is a collaborator.",
             "Bulk-assigning shows each person's open and overdue count, so you're not delegating blind.",
-            "Delegate a task and set a \"waiting on\" follow-up date from its detail screen — it stays out of Today until that date, then reappears on its own."
+            "Delegate a task and set a \"waiting on\" follow-up date from its detail screen - it stays out of Today until that date, then reappears on its own."
         ),
         icon = Icons.Default.Groups
     ),
     HelpSection(
-        title = "Tags",
+        title = R.string.tab_tags,
         description = "Add flexible labels that cut across lists and projects.",
         bullets = listOf(
             "Group tags for cleaner browsing.",
@@ -149,7 +136,7 @@ private val helpSections = listOf(
         icon = Icons.AutoMirrored.Filled.Label
     ),
     HelpSection(
-        title = "Analytics",
+        title = R.string.analytics_analytics,
         description = "Review progress patterns and workload health.",
         bullets = listOf(
             "Track completions, streaks, on-time rate, and aging buckets.",
@@ -159,7 +146,7 @@ private val helpSections = listOf(
         icon = Icons.Default.Analytics
     ),
     HelpSection(
-        title = "Reminders",
+        title = R.string.help_about_reminders,
         description = "Set per-task alerts that survive device reboots.",
         bullets = listOf(
             "Reminders use Android alarms and are rescheduled after reboot.",
@@ -169,7 +156,7 @@ private val helpSections = listOf(
         icon = Icons.Default.Notifications
     ),
     HelpSection(
-        title = "Widgets",
+        title = R.string.help_about_widgets,
         description = "Keep YATA visible outside the phone app.",
         bullets = listOf(
             "Home widgets cover today, upcoming, progress, quick add, team overdue, and one pinned list.",
@@ -179,19 +166,20 @@ private val helpSections = listOf(
         icon = Icons.Default.Widgets
     ),
     HelpSection(
-        title = "Backup & Export",
-        description = "Protect or move your data when you need to.",
+        title = R.string.help_about_backup_sync,
+        description = "Keep your data recoverable, portable, and in sync across devices.",
         bullets = listOf(
-            "Self-hosted sync keeps encrypted copies on your own server when enabled.",
-            "File backup and restore use JSON for the full YATA dataset.",
-            "Calendar export creates an .ics file, and Markdown export is useful for sharing.",
-            "Choose how many server backups to keep (2–15) with the slider in Settings > Self-hosted sync.",
-            "Pick the backup schedule — right after any change in a task, or every 30, 60, or 120 minutes."
+            "Remote sync can use GitHub, SFTP, FTPS, or FTP; GitHub stores one snapshot in your private repo and uses commit history for restore points.",
+            "For GitHub, use a fine-grained personal access token for the sync repo with Contents set to Read and write; the token field's info button shows the steps.",
+            "Remote sync requires a backup encryption passphrase; encrypted files start with YATAENC1 and need the same passphrase to restore.",
+            "YATA merges local and remote changes before publishing, retries GitHub ref conflicts, and creates a local recovery backup before restore.",
+            "SFTP/FTP keep rotated server backup files and may use a clearable sync lock; GitHub has no lock because branch updates are fast-forward checked.",
+            "File backup/restore uses full JSON; Calendar and Markdown exports are for sharing, and the backup schedule can run after task changes or every 30, 60, or 120 minutes."
         ),
         icon = Icons.Default.Backup
     ),
     HelpSection(
-        title = "Trash",
+        title = R.string.help_about_trash,
         description = "Deleted tasks are recoverable before they are permanently removed.",
         bullets = listOf(
             "Task deletes are soft deletes with Undo where available.",
@@ -216,19 +204,10 @@ fun HelpAboutScreen(
     val projectsFeatureEnabled = viewModel.projectsFeatureEnabled.collectAsStateWithLifecycle().value
     val todayTabEnabled = viewModel.todayTabEnabled.collectAsStateWithLifecycle().value
     val upcomingTabEnabled = viewModel.upcomingTabEnabled.collectAsStateWithLifecycle().value
-    val demoModeEnabled by viewModel.demoModeEnabled.collectAsStateWithLifecycle()
-    var demoModeFeedback by remember { mutableStateOf<Int?>(null) }
-
-    LaunchedEffect(demoModeFeedback) {
-        if (demoModeFeedback != null) {
-            delay(3_000)
-            demoModeFeedback = null
-        }
-    }
 
     Scaffold(
         bottomBar = {
-            CustomBottomNav(
+            AdaptiveBottomNav(
                 selectedTab = -1,
                 todayBadgeCount = todayBadgeCount,
                 peopleEnabled = peopleFeatureEnabled,
@@ -257,18 +236,22 @@ fun HelpAboutScreen(
             )
         }
     ) { innerPadding ->
-        LazyColumn(
+        AdaptiveContentBox(
             modifier = modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
                 .padding(innerPadding)
+        ) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
                 .padding(horizontal = 20.dp),
             contentPadding = PaddingValues(top = 20.dp, bottom = 20.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             item {
                 Text(
-                    text = "HELP",
+                    text = stringResource(R.string.help_about_heading),
                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -278,96 +261,7 @@ fun HelpAboutScreen(
                 HelpSectionCard(section = section)
             }
 
-            item {
-                Text(
-                    text = "ABOUT",
-                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Surface(
-                    color = MaterialTheme.colorScheme.surfaceContainerLow,
-                    shape = RoundedCornerShape(16.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(64.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.primaryContainer)
-                                .clickable {
-                                    viewModel.toggleDemoMode()
-                                    demoModeFeedback = if (demoModeEnabled) {
-                                        R.string.help_demo_mode_off
-                                    } else {
-                                        R.string.help_demo_mode_on
-                                    }
-                                },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Image(
-                                painter = painterResource(R.drawable.rj_logo_mark),
-                                contentDescription = null,
-                                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onPrimaryContainer),
-                                modifier = Modifier.size(width = 44.dp, height = 29.dp)
-                            )
-                        }
-                        if (demoModeEnabled) {
-                            Text(
-                                text = stringResource(R.string.help_demo_mode_active),
-                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                        demoModeFeedback?.let { messageRes ->
-                            Text(
-                                text = stringResource(messageRes),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "yata",
-                            style = MaterialTheme.typography.headlineSmall.copy(
-                                fontFamily = BodoniModaFamily,
-                                fontWeight = FontWeight.Bold
-                            ),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = "yet another todo app",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "v${BuildConfig.VERSION_NAME}  ·  Build ${BuildConfig.VERSION_CODE}.${BuildConfig.BUILD_DATE}",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "From the Labs of RJ",
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = "Made in 🇮🇳",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
+        }
         }
     }
 }
@@ -403,7 +297,7 @@ private fun HelpSectionCard(section: HelpSection) {
                 }
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = section.title,
+                        text = stringResource(section.title),
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurface
                     )

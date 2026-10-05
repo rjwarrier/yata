@@ -4,7 +4,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -14,13 +16,18 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.IosShare
 import androidx.compose.material.icons.filled.LocalFireDepartment
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Snooze
 import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -33,13 +40,15 @@ import androidx.compose.ui.unit.sp
 import com.mj.yata.R
 import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.theme.LocalYataAccents
-import com.mj.yata.ui.widgets.PersonAvatar
 import com.mj.yata.ui.widgets.ProgressRing
 import com.mj.yata.ui.widgets.SegmentedControl
 import com.mj.yata.util.AnalyticsPeriod
+import com.mj.yata.util.CapacitySnapshot
 import com.mj.yata.util.DayActivity
 import com.mj.yata.util.EntityStat
+import com.mj.yata.util.EstimateUtils
 import com.mj.yata.util.PriorityStat
+import com.mj.yata.util.PostponedTaskStat
 import com.mj.yata.util.label
 import java.time.format.DateTimeFormatter
 import kotlin.math.roundToInt
@@ -47,13 +56,46 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.YataEase
+import com.mj.yata.ui.util.AdaptiveContentBox
+import com.mj.yata.ui.widgets.ContextualHelpButton
+import com.mj.yata.ui.widgets.ContextualHelpTopic
 
-@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * Every number on this screen is about some set of tasks, and until now none of them said *which*.
+ * A row becomes tappable when there is an exact destination for the tasks behind it — an entity's
+ * own detail screen, or a search filter that selects precisely the set being counted. Rows with no
+ * exact match stay inert on purpose: sending someone to an almost-right list is worse than leaving
+ * them to look, because they'd act on the wrong tasks believing they were the right ones.
+ */
+private fun Modifier.drillDown(onClick: (() -> Unit)?): Modifier =
+    if (onClick == null) this else this.clickable(onClick = onClick)
+
+/** The affordance that tells a tappable row apart from an inert one, given they otherwise look
+ * identical. Occupies no space when there's nothing to drill into, so the inert rows keep their
+ * existing layout exactly. */
+@Composable
+private fun DrillDownChevron(visible: Boolean) {
+    if (!visible) return
+    Icon(
+        imageVector = Icons.Default.ChevronRight,
+        contentDescription = null,
+        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+        modifier = Modifier.size(16.dp)
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun AnalyticsScreen(
     viewModel: MainViewModel,
     onNavigateBack: () -> Unit,
     onNavigateToTab: (Int) -> Unit,
+    onNavigateToSearch: (String) -> Unit = {},
+    onNavigateToProject: (String) -> Unit = {},
+    onNavigateToPerson: (String) -> Unit = {},
+    onNavigateToTag: (String) -> Unit = {},
+    onNavigateToList: (String) -> Unit = {},
+    onNavigateToTaskDetail: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val todayBadgeCount by viewModel.todayRemainingCount.collectAsStateWithLifecycle()
@@ -77,20 +119,17 @@ fun AnalyticsScreen(
     val dueNext7 = stats.dueNext7
     val dueNext30 = stats.dueNext30
     val agingBuckets = stats.agingBuckets
-    val workloadShares = stats.workloadShares
     val dailyActivity = stats.dailyActivity
     val priorityStats = stats.priorityStats
     val projectStats = stats.projectStats
-    val personStats = stats.personStats
     val tagStats = stats.tagStats
     val listStats = stats.listStats
-    val delegationStats = stats.delegationStats
-    val delegationSummary = stats.delegationSummary
+    val mostPostponedTasks = stats.mostPostponedTasks
     val insights = stats.insights
 
     Scaffold(
         bottomBar = {
-            com.mj.yata.ui.screen.main.CustomBottomNav(
+            com.mj.yata.ui.screen.main.AdaptiveBottomNav(
                 selectedTab = -1,
                 todayBadgeCount = todayBadgeCount,
                 peopleEnabled = peopleFeatureEnabled,
@@ -118,6 +157,23 @@ fun AnalyticsScreen(
                     }
                 },
                 actions = {
+                    ContextualHelpButton(
+                        title = stringResource(R.string.analytics_analytics),
+                        topics = listOf(
+                            ContextualHelpTopic(
+                                title = "Period vs current numbers",
+                                body = "The segmented period changes completion and activity charts. Overdue, due-soon, and planned-effort numbers always describe the current task state."
+                            ),
+                            ContextualHelpTopic(
+                                title = "Tap into the work",
+                                body = "Rows with a chevron open the exact project, person, tag, list, task, or search view behind that number."
+                            ),
+                            ContextualHelpTopic(
+                                title = "Planned effort",
+                                body = "Effort totals only include tasks with estimates. The coverage note tells you how much open work is still unestimated."
+                            )
+                        )
+                    )
                     IconButton(onClick = {
                         val markdown = com.mj.yata.util.buildAnalyticsMarkdown(
                             periodLabel = period.label(),
@@ -126,11 +182,9 @@ fun AnalyticsScreen(
                             overdueCount = overdue,
                             priorityStats = priorityStats,
                             projectStats = projectStats,
-                            personStats = personStats,
                             tagStats = tagStats,
                             overallOnTimeRate = overallOnTimeRate,
                             agingBuckets = agingBuckets,
-                            workloadShares = workloadShares,
                             dueNext7 = dueNext7,
                             dueNext30 = dueNext30
                         )
@@ -138,7 +192,12 @@ fun AnalyticsScreen(
                             type = "text/plain"
                             putExtra(android.content.Intent.EXTRA_TEXT, markdown)
                         }
-                        context.startActivity(android.content.Intent.createChooser(shareIntent, "Share analytics"))
+                        context.startActivity(
+                            android.content.Intent.createChooser(
+                                shareIntent,
+                                context.getString(R.string.analytics_share_analytics)
+                            )
+                        )
                     }) {
                         Icon(Icons.Default.IosShare, contentDescription = stringResource(R.string.analytics_share_analytics))
                     }
@@ -146,11 +205,15 @@ fun AnalyticsScreen(
             )
         }
     ) { innerPadding ->
-        Column(
+        AdaptiveContentBox(
             modifier = modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
                 .padding(innerPadding)
+        ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
@@ -162,12 +225,34 @@ fun AnalyticsScreen(
                 labelProvider = { it.label() }
             )
 
+            AnalyticsOverviewCard(
+                overdue = overdue,
+                dueNext7 = dueNext7,
+                dueNext30 = dueNext30,
+                onTimeRate = overallOnTimeRate,
+                capacity = stats.capacity,
+                postponedOpenTaskCount = stats.postponedOpenTaskCount,
+                hasMostPostponedTasks = mostPostponedTasks.isNotEmpty(),
+                onOpenOverdue = { onNavigateToSearch(com.mj.yata.util.SEARCH_FILTER_OVERDUE) },
+                onOpenHighPriority = { onNavigateToSearch(com.mj.yata.util.SEARCH_FILTER_HIGH_PRIORITY) },
+                onOpenMostPostponed = {
+                    mostPostponedTasks.firstOrNull()?.let { onNavigateToTaskDetail(it.id) }
+                }
+            )
+
             // Ranked callouts, above the tables. The breakdowns below say what the numbers are;
             // these say which of them is worth looking at, which is otherwise a scan across
             // several sections once there are more than a handful of projects/tags/people.
             if (insights.isNotEmpty()) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    insights.forEach { insight -> InsightBanner(insight) }
+                    insights.forEach { insight ->
+                        InsightBanner(
+                            insight = insight,
+                            onClick = insight.searchFilter?.let { filter ->
+                                { onNavigateToSearch(filter) }
+                            }
+                        )
+                    }
                 }
             }
 
@@ -181,21 +266,25 @@ fun AnalyticsScreen(
                     icon = Icons.Default.LocalFireDepartment,
                     iconTint = MaterialTheme.colorScheme.tertiary,
                     value = "$streak",
-                    label = "day streak"
+                    label = stringResource(R.string.analytics_day_streak)
                 )
                 InsightChip(
                     modifier = Modifier.weight(1f),
                     icon = Icons.Default.WarningAmber,
                     iconTint = if (overdue > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
                     value = "$overdue",
-                    label = if (overdue == 1) "overdue task" else "overdue tasks"
+                    label = pluralStringResource(R.plurals.analytics_overdue_tasks_label, overdue),
+                    onClick = if (overdue > 0) {
+                        { onNavigateToSearch(com.mj.yata.util.SEARCH_FILTER_OVERDUE) }
+                    } else null,
+                    trend = stats.overdueTrend
                 )
                 InsightChip(
                     modifier = Modifier.weight(1f),
                     icon = Icons.Default.LocalFireDepartment,
                     iconTint = MaterialTheme.colorScheme.primary,
                     value = "$zeroOverdueStreak",
-                    label = "days clean"
+                    label = stringResource(R.string.analytics_days_clean)
                 )
             }
 
@@ -209,22 +298,125 @@ fun AnalyticsScreen(
                     icon = Icons.Default.WarningAmber,
                     iconTint = MaterialTheme.colorScheme.primary,
                     value = overallOnTimeRate?.let { "${(it * 100).roundToInt()}%" } ?: "—",
-                    label = "on-time rate"
+                    label = stringResource(R.string.analytics_on_time_rate),
+                    trend = stats.onTimeRateTrend,
+                    trendUnit = "pp"
                 )
                 InsightChip(
                     modifier = Modifier.weight(1f),
                     icon = Icons.Default.ArrowUpward,
                     iconTint = MaterialTheme.colorScheme.onSurfaceVariant,
                     value = "$dueNext7",
-                    label = "due in 7 days"
+                    label = stringResource(R.string.analytics_due_in_7_days)
                 )
                 InsightChip(
                     modifier = Modifier.weight(1f),
                     icon = Icons.Default.ArrowUpward,
                     iconTint = MaterialTheme.colorScheme.onSurfaceVariant,
                     value = "$dueNext30",
-                    label = "due in 30 days"
+                    label = stringResource(R.string.analytics_due_in_30_days)
                 )
+            }
+
+            if (stats.postponedOpenTaskCount > 0) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    InsightChip(
+                        modifier = Modifier.weight(1f),
+                        icon = Icons.Default.Snooze,
+                        iconTint = MaterialTheme.colorScheme.error,
+                        value = stats.postponedOpenTaskCount.toString(),
+                        label = stringResource(R.string.analytics_postponed_tasks)
+                    )
+                    InsightChip(
+                        modifier = Modifier.weight(1f),
+                        icon = Icons.Default.WarningAmber,
+                        iconTint = MaterialTheme.colorScheme.error,
+                        value = stats.maxPostponementCount.toString(),
+                        label = stringResource(R.string.analytics_most_postponed)
+                    )
+                }
+            }
+
+            // What the on-time rate rests on. Without it, a rate over four tasks and a rate over
+            // four hundred are the same number on screen, and tasks finished before completion
+            // timestamps existed are silently excluded with no way to tell.
+            if (overallOnTimeRate != null) {
+                Text(
+                    text = pluralStringResource(
+                        R.plurals.analytics_finished_with_due_date,
+                        stats.onTimeRateSampleSize,
+                        stats.onTimeRateSampleSize
+                    ),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            // Effort rather than task count — the one section in terms of the thing that runs
+            // out. Hidden entirely when nothing open is estimated, since a "0h" total would say
+            // the opposite of "not estimated yet".
+            stats.capacity?.let { capacity ->
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = stringResource(R.string.analytics_planned_effort),
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Surface(
+                        color = MaterialTheme.colorScheme.surfaceContainerLow,
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                MiniStat(
+                                    modifier = Modifier.weight(1f),
+                                    value = EstimateUtils.format(capacity.openMinutes),
+                                    label = stringResource(R.string.analytics_still_open)
+                                )
+                                MiniStat(
+                                    modifier = Modifier.weight(1f),
+                                    value = EstimateUtils.format(capacity.dueNext7Minutes),
+                                    label = stringResource(R.string.analytics_due_in_7_days)
+                                )
+                                if (capacity.overdueMinutes > 0) {
+                                    MiniStat(
+                                        modifier = Modifier.weight(1f),
+                                        value = EstimateUtils.format(capacity.overdueMinutes),
+                                        label = stringResource(R.string.analytics_already_late),
+                                        emphasise = true,
+                                        onClick = { onNavigateToSearch(com.mj.yata.util.SEARCH_FILTER_OVERDUE) }
+                                    )
+                                }
+                            }
+                            // The total is only as good as its coverage; say how much of the
+                            // backlog it actually saw rather than implying it saw all of it.
+                            Text(
+                                text = if (capacity.unestimatedOpenCount == 0) {
+                                    stringResource(R.string.analytics_every_open_task_estimated)
+                                } else {
+                                    pluralStringResource(
+                                        R.plurals.analytics_estimated_tasks,
+                                        capacity.estimatedOpenCount,
+                                        capacity.estimatedOpenCount
+                                    ) + " · " + pluralStringResource(
+                                        R.plurals.analytics_unestimated_tasks,
+                                        capacity.unestimatedOpenCount,
+                                        capacity.unestimatedOpenCount
+                                    )
+                                },
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
             }
 
             // Summary card
@@ -241,11 +433,15 @@ fun AnalyticsScreen(
                     ProgressRing(progress = completionPct, size = 72.dp, strokeWidth = 6.dp)
                     Column {
                         Text(
-                            text = "$doneCount of $totalCount completed",
+                            text = stringResource(R.string.analytics_done_of_total, doneCount, totalCount),
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                         )
                         Text(
-                            text = if (totalCount == 0) "No tasks due in this period." else "${totalCount - doneCount} still open",
+                            text = if (totalCount == 0) {
+                                stringResource(R.string.analytics_no_tasks_due_in_period)
+                            } else {
+                                stringResource(R.string.analytics_count_still_open, totalCount - doneCount)
+                            },
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -267,7 +463,10 @@ fun AnalyticsScreen(
                                     )
                                 }
                                 Text(
-                                    text = "${if (deltaPoints > 0) "+" else ""}$deltaPoints pp vs previous period",
+                                    text = stringResource(
+                                        R.string.analytics_delta_pp_vs_previous,
+                                        "${if (deltaPoints > 0) "+" else ""}$deltaPoints"
+                                    ),
                                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                                     color = trendColor
                                 )
@@ -280,7 +479,7 @@ fun AnalyticsScreen(
             if (dailyActivity.isNotEmpty()) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        text = "DAILY ACTIVITY",
+                        text = stringResource(R.string.analytics_daily_activity),
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -290,13 +489,59 @@ fun AnalyticsScreen(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
+                            // Created counts only exist for tasks added since DB 27; on a database
+                            // that predates it every day would read as zero created, which would
+                            // look like "nothing came in" rather than "not recorded". Show the
+                            // second series only once there's something real to compare against.
+                            val createdTotal = dailyActivity.sumOf { it.createdCount }
+                            val completedTotal = dailyActivity.sumOf { it.completedCount }
+                            val showCreated = createdTotal > 0
                             Text(
-                                text = "Tasks completed, by day",
+                                text = stringResource(
+                                    if (showCreated) {
+                                        R.string.analytics_tasks_completed_vs_created_by_day
+                                    } else {
+                                        R.string.analytics_tasks_completed_by_day
+                                    }
+                                ),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
+                            if (showCreated) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                ChartLegend(
+                                    completedTotal = completedTotal,
+                                    createdTotal = createdTotal
+                                )
+                            }
                             Spacer(modifier = Modifier.height(12.dp))
-                            DailyActivityChart(days = dailyActivity, showLabels = period == AnalyticsPeriod.WEEK)
+                            DailyActivityChart(
+                                days = dailyActivity,
+                                showLabels = period == AnalyticsPeriod.WEEK,
+                                showCreated = showCreated
+                            )
+                            if (showCreated) {
+                                Spacer(modifier = Modifier.height(10.dp))
+                                // The whole point of the second series: whether more went out
+                                // than came in. Deliberately worded as the arithmetic rather than
+                                // as a verdict — when the gap is big enough to matter, the
+                                // insight banner at the top of the screen says so in those terms,
+                                // and the two shouldn't print the same sentence twice.
+                                val net = completedTotal - createdTotal
+                                Text(
+                                    text = when {
+                                        net > 0 -> stringResource(R.string.analytics_more_finished_than_created, net)
+                                        net < 0 -> stringResource(R.string.analytics_more_created_than_finished, -net)
+                                        else -> stringResource(R.string.analytics_as_much_finished_as_came_in)
+                                    },
+                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                    color = when {
+                                        net > 0 -> LocalYataAccents.current.accentE
+                                        net < 0 -> MaterialTheme.colorScheme.error
+                                        else -> MaterialTheme.colorScheme.onSurfaceVariant
+                                    }
+                                )
+                            }
                         }
                     }
                 }
@@ -305,7 +550,7 @@ fun AnalyticsScreen(
             if (priorityStats.isNotEmpty()) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        text = "BY PRIORITY",
+                        text = stringResource(R.string.analytics_by_priority),
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -316,7 +561,14 @@ fun AnalyticsScreen(
                     ) {
                         Column(modifier = Modifier.padding(vertical = 4.dp)) {
                             priorityStats.forEachIndexed { index, stat ->
-                                PriorityStatRow(stat)
+                                // Only "high" has an exact search filter; the other buckets have
+                                // no equivalent chip, so they stay inert rather than approximating.
+                                PriorityStatRow(
+                                    stat = stat,
+                                    onClick = if (stat.priority == "high") {
+                                        { onNavigateToSearch(com.mj.yata.util.SEARCH_FILTER_HIGH_PRIORITY) }
+                                    } else null
+                                )
                                 if (index != priorityStats.lastIndex) {
                                     HorizontalDivider(
                                         color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
@@ -332,7 +584,7 @@ fun AnalyticsScreen(
             if (agingBuckets.isNotEmpty()) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        text = "OVERDUE AGING",
+                        text = stringResource(R.string.analytics_overdue_aging),
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -344,7 +596,15 @@ fun AnalyticsScreen(
                         Column(modifier = Modifier.padding(vertical = 4.dp)) {
                             val maxAging = agingBuckets.maxOf { it.count }
                             agingBuckets.forEachIndexed { index, bucket ->
-                                AgingBucketRow(bucket, maxAging)
+                                // Every bucket is a slice of "overdue"; the filter can't express
+                                // the age range, so this lands on all overdue work rather than
+                                // exactly this bucket. Close enough to be useful and honest —
+                                // the bucket is a subset of what you'll see, not a different set.
+                                AgingBucketRow(
+                                    bucket = bucket,
+                                    maxCount = maxAging,
+                                    onClick = { onNavigateToSearch(com.mj.yata.util.SEARCH_FILTER_OVERDUE) }
+                                )
                                 if (index != agingBuckets.lastIndex) {
                                     HorizontalDivider(
                                         color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
@@ -357,163 +617,251 @@ fun AnalyticsScreen(
                 }
             }
 
-            // Where open work sits relative to you — the question the rest of the screen never
-            // answered, since every other breakdown is per-entity rather than "how much have I
-            // actually handed off".
-            if (peopleFeatureEnabled && delegationSummary.totalOpen > 0) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        text = "DELEGATION",
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Surface(
-                        color = MaterialTheme.colorScheme.surfaceContainerLow,
-                        shape = RoundedCornerShape(16.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            DelegationSplitBar(delegationSummary)
-                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                MiniStat(
-                                    modifier = Modifier.weight(1f),
-                                    value = "${delegationSummary.delegatedOpen}",
-                                    label = "delegated"
-                                )
-                                MiniStat(
-                                    modifier = Modifier.weight(1f),
-                                    value = "${delegationSummary.selfOpen}",
-                                    label = "yours"
-                                )
-                                MiniStat(
-                                    modifier = Modifier.weight(1f),
-                                    value = "${delegationSummary.unassignedOpen}",
-                                    label = "unassigned",
-                                    emphasise = delegationSummary.unassignedOpen > 0
-                                )
-                            }
-                            if (stats.medianTurnaroundDays != null || stats.oldestOpenAgeDays != null) {
-                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-                                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                    stats.medianTurnaroundDays?.let {
-                                        MiniStat(modifier = Modifier.weight(1f), value = "${it}d", label = "median turnaround")
-                                    }
-                                    stats.oldestOpenAgeDays?.let {
-                                        MiniStat(modifier = Modifier.weight(1f), value = "${it}d", label = "oldest open")
-                                    }
-                                    if (stats.openWithoutDueDate > 0) {
-                                        MiniStat(
-                                            modifier = Modifier.weight(1f),
-                                            value = "${stats.openWithoutDueDate}",
-                                            label = "open, no date"
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+            if (mostPostponedTasks.isNotEmpty()) {
+                MostPostponedSection(
+                    tasks = mostPostponedTasks,
+                    onTaskClick = onNavigateToTaskDetail
+                )
             }
 
-            // Per-assignee health. Deliberately separate from "By Person" below, which is a
-            // progress breakdown scoped to the period — this one is about whether delegated work
-            // is actually moving, and includes people whose work all sits outside the window.
-            if (peopleFeatureEnabled && delegationStats.isNotEmpty()) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        text = "PER ASSIGNEE",
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Surface(
-                        color = MaterialTheme.colorScheme.surfaceContainerLow,
-                        shape = RoundedCornerShape(16.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(modifier = Modifier.padding(vertical = 4.dp)) {
-                            delegationStats.forEachIndexed { index, stat ->
-                                DelegationStatRow(stat)
-                                if (index != delegationStats.lastIndex) {
-                                    HorizontalDivider(
-                                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
-                                        modifier = Modifier.padding(horizontal = 16.dp)
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (peopleFeatureEnabled && workloadShares.isNotEmpty()) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        text = "WORKLOAD SHARE",
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Surface(
-                        color = MaterialTheme.colorScheme.surfaceContainerLow,
-                        shape = RoundedCornerShape(16.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(modifier = Modifier.padding(vertical = 4.dp)) {
-                            workloadShares.forEachIndexed { index, share ->
-                                val accents = LocalYataAccents.current
-                                WorkloadShareRow(share, accents.getAccent(share.person.color))
-                                if (index != workloadShares.lastIndex) {
-                                    HorizontalDivider(
-                                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
-                                        modifier = Modifier.padding(horizontal = 16.dp)
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
+            // Each breakdown row names an entity that already has a detail screen listing exactly
+            // the tasks it counted, so the row is a link to it rather than a dead number.
             if (projectsFeatureEnabled) {
-                AnalyticsSection(title = "By Project", stats = projectStats) { stat ->
-                    val accents = LocalYataAccents.current
-                    EntityStatRow(stat = stat, color = accents.getAccent(stat.colorKey))
-                }
-            }
-
-            if (peopleFeatureEnabled) {
-                AnalyticsSection(title = "By Person", stats = personStats) { stat ->
+                AnalyticsSection(title = stringResource(R.string.analytics_by_project), stats = projectStats) { stat ->
                     val accents = LocalYataAccents.current
                     EntityStatRow(
                         stat = stat,
                         color = accents.getAccent(stat.colorKey),
-                        subtitle = insightSubtitle(stat),
-                        leading = {
-                            PersonAvatar(
-                                initials = com.mj.yata.util.initialsFor(stat.name),
-                                accentKey = stat.colorKey,
-                                size = 28.dp
-                            )
-                        }
+                        onClick = { onNavigateToProject(stat.id) }
                     )
                 }
             }
 
             if (tagsFeatureEnabled) {
-                AnalyticsSection(title = "By Tag", stats = tagStats) { stat ->
+                AnalyticsSection(title = stringResource(R.string.analytics_by_tag), stats = tagStats) { stat ->
                     val accents = LocalYataAccents.current
                     val color = if (stat.colorKey == "error") MaterialTheme.colorScheme.error else accents.getAccent(stat.colorKey)
-                    EntityStatRow(stat = stat, color = color, subtitle = insightSubtitle(stat))
+                    EntityStatRow(
+                        stat = stat,
+                        color = color,
+                        subtitle = insightSubtitle(stat),
+                        onClick = { onNavigateToTag(stat.id) }
+                    )
                 }
             }
 
             // Lists had no breakdown at all, despite being one of the three organising axes
             // alongside projects and tags. Not feature-flagged — lists can't be switched off.
-            AnalyticsSection(title = "By List", stats = listStats) { stat ->
+            AnalyticsSection(title = stringResource(R.string.analytics_by_list), stats = listStats) { stat ->
                 val accents = LocalYataAccents.current
-                EntityStatRow(stat = stat, color = accents.getAccent(stat.colorKey))
+                EntityStatRow(
+                    stat = stat,
+                    color = accents.getAccent(stat.colorKey),
+                    onClick = { onNavigateToList(stat.id) }
+                )
             }
 
             Spacer(modifier = Modifier.height(72.dp))
+        }
+    }
+}
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun AnalyticsOverviewCard(
+    overdue: Int,
+    dueNext7: Int,
+    dueNext30: Int,
+    onTimeRate: Float?,
+    capacity: CapacitySnapshot?,
+    postponedOpenTaskCount: Int,
+    hasMostPostponedTasks: Boolean,
+    onOpenOverdue: () -> Unit,
+    onOpenHighPriority: () -> Unit,
+    onOpenMostPostponed: () -> Unit
+) {
+    val accents = LocalYataAccents.current
+    val attentionColor = when {
+        overdue > 0 -> MaterialTheme.colorScheme.error
+        dueNext7 > 0 -> MaterialTheme.colorScheme.primary
+        else -> accents.accentE
+    }
+    val title = when {
+        overdue > 0 -> stringResource(R.string.analytics_overview_needs_attention)
+        dueNext7 > 0 -> stringResource(R.string.analytics_overview_on_deck)
+        else -> stringResource(R.string.analytics_overview_all_clear)
+    }
+    val detail = when {
+        overdue > 0 -> pluralStringResource(
+            R.plurals.analytics_overview_overdue_detail,
+            overdue,
+            overdue
+        )
+        dueNext7 > 0 -> pluralStringResource(
+            R.plurals.analytics_overview_due_soon_detail,
+            dueNext7,
+            dueNext7
+        )
+        else -> stringResource(R.string.analytics_overview_all_clear_detail)
+    }
+    val confidenceText = capacity?.let {
+        if (it.unestimatedOpenCount == 0) {
+            stringResource(R.string.analytics_overview_estimates_complete)
+        } else {
+            pluralStringResource(
+                R.plurals.analytics_overview_unestimated_count,
+                it.unestimatedOpenCount,
+                it.unestimatedOpenCount
+            )
+        }
+    } ?: stringResource(R.string.analytics_overview_no_estimates)
+
+    Surface(
+        color = attentionColor.copy(alpha = 0.10f),
+        shape = RoundedCornerShape(18.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Icon(
+                    imageVector = if (overdue > 0) Icons.Default.WarningAmber else Icons.Default.CheckCircle,
+                    contentDescription = null,
+                    tint = attentionColor,
+                    modifier = Modifier.size(28.dp)
+                )
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = detail,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                OverviewMetricPill(
+                    icon = Icons.Default.WarningAmber,
+                    iconTint = if (overdue > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                    value = overdue.toString(),
+                    label = stringResource(R.string.analytics_overview_overdue)
+                )
+                OverviewMetricPill(
+                    icon = Icons.Default.Schedule,
+                    iconTint = MaterialTheme.colorScheme.primary,
+                    value = dueNext7.toString(),
+                    label = stringResource(R.string.analytics_overview_next_7)
+                )
+                OverviewMetricPill(
+                    icon = Icons.Default.ArrowUpward,
+                    iconTint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    value = dueNext30.toString(),
+                    label = stringResource(R.string.analytics_overview_next_30)
+                )
+                OverviewMetricPill(
+                    icon = Icons.Default.CheckCircle,
+                    iconTint = accents.accentE,
+                    value = onTimeRate?.let { "${(it * 100).roundToInt()}%" } ?: "—",
+                    label = stringResource(R.string.analytics_overview_on_time)
+                )
+            }
+
+            capacity?.let {
+                Text(
+                    text = stringResource(
+                        R.string.analytics_overview_effort_line,
+                        EstimateUtils.format(it.dueNext7Minutes),
+                        EstimateUtils.format(it.openMinutes)
+                    ),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Text(
+                text = confidenceText,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                if (overdue > 0) {
+                    AssistChip(
+                        onClick = onOpenOverdue,
+                        label = { Text(stringResource(R.string.analytics_action_open_overdue)) },
+                        leadingIcon = {
+                            Icon(Icons.Default.WarningAmber, contentDescription = null, modifier = Modifier.size(18.dp))
+                        }
+                    )
+                }
+                AssistChip(
+                    onClick = onOpenHighPriority,
+                    label = { Text(stringResource(R.string.analytics_action_high_priority)) },
+                    leadingIcon = {
+                        Icon(Icons.Default.Flag, contentDescription = null, modifier = Modifier.size(18.dp))
+                    }
+                )
+                if (postponedOpenTaskCount > 0 && hasMostPostponedTasks) {
+                    AssistChip(
+                        onClick = onOpenMostPostponed,
+                        label = { Text(stringResource(R.string.analytics_action_review_postponed)) },
+                        leadingIcon = {
+                            Icon(Icons.Default.Snooze, contentDescription = null, modifier = Modifier.size(18.dp))
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun OverviewMetricPill(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    iconTint: Color,
+    value: String,
+    label: String
+) {
+    Surface(
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.74f),
+        shape = RoundedCornerShape(14.dp),
+        modifier = Modifier.widthIn(min = 120.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Icon(imageVector = icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(18.dp))
+            Column {
+                Text(
+                    text = value,
+                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
+                )
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
         }
     }
 }
@@ -524,12 +872,15 @@ private fun InsightChip(
     iconTint: Color,
     value: String,
     label: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
+    trend: com.mj.yata.util.MetricTrend? = null,
+    trendUnit: String = ""
 ) {
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         shape = RoundedCornerShape(16.dp),
-        modifier = modifier
+        modifier = modifier.drillDown(onClick)
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
@@ -547,16 +898,74 @@ private fun InsightChip(
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                // A flat trend prints nothing rather than "0": three chips each announcing "no
+                // change" is noise, and the absence already says it.
+                if (trend != null && !trend.isFlat) {
+                    Spacer(modifier = Modifier.height(2.dp))
+                    TrendLabel(trend = trend, unit = trendUnit)
+                }
             }
         }
     }
 }
+/** The direction a headline figure moved, coloured by whether that direction is good for *this*
+ * metric — which is why the judgement travels in [com.mj.yata.util.MetricTrend] rather than being
+ * inferred from the sign here. */
+@Composable
+private fun TrendLabel(trend: com.mj.yata.util.MetricTrend, unit: String) {
+    val color = if (trend.improved) LocalYataAccents.current.accentE else MaterialTheme.colorScheme.error
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+        Icon(
+            imageVector = if (trend.delta > 0) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
+            contentDescription = null,
+            tint = color,
+            modifier = Modifier.size(11.dp)
+        )
+        Text(
+            text = "${kotlin.math.abs(trend.delta)}$unit",
+            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+            color = color
+        )
+    }
+}
+/** Names the two series and carries their period totals, so the chart can be read without
+ * counting bars. */
+@Composable
+private fun ChartLegend(completedTotal: Int, createdTotal: Int) {
+    Row(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
+        LegendSwatch(
+            color = MaterialTheme.colorScheme.primary,
+            label = stringResource(R.string.analytics_completed_count, completedTotal)
+        )
+        LegendSwatch(
+            color = MaterialTheme.colorScheme.tertiary,
+            label = stringResource(R.string.analytics_created_count, createdTotal)
+        )
+    }
+}
 
 @Composable
-private fun DailyActivityChart(days: List<DayActivity>, showLabels: Boolean) {
-    val maxCount = (days.maxOfOrNull { it.completedCount } ?: 0).coerceAtLeast(1)
+private fun LegendSwatch(color: Color, label: String) {
+    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+        Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(color))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@Composable
+private fun DailyActivityChart(days: List<DayActivity>, showLabels: Boolean, showCreated: Boolean) {
+    // Both series share one scale, otherwise "created" and "completed" bars of equal height would
+    // mean different counts and the comparison the chart exists for would be a lie.
+    val maxCount = days.maxOfOrNull {
+        maxOf(it.completedCount, if (showCreated) it.createdCount else 0)
+    }?.coerceAtLeast(1) ?: 1
     val trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
     val doneColor = MaterialTheme.colorScheme.primary
+    val createdColor = MaterialTheme.colorScheme.tertiary
 
     Row(
         modifier = Modifier
@@ -565,35 +974,52 @@ private fun DailyActivityChart(days: List<DayActivity>, showLabels: Boolean) {
         horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         days.forEach { day ->
-            val targetPct = day.completedCount.toFloat() / maxCount
-            val animatedPct by animateFloatAsState(
-                targetValue = targetPct,
+            val animatedDonePct by animateFloatAsState(
+                targetValue = day.completedCount.toFloat() / maxCount,
                 animationSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized),
                 label = "chartBarHeight"
+            )
+            val animatedCreatedPct by animateFloatAsState(
+                targetValue = if (showCreated) day.createdCount.toFloat() / maxCount else 0f,
+                animationSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized),
+                label = "chartCreatedBarHeight"
             )
             Canvas(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
             ) {
-                val barWidth = size.width * 0.55f
-                val x = (size.width - barWidth) / 2f
-                val barHeight = size.height * animatedPct
+                // Two bars share the slot when created counts are shown, so a day reads as a
+                // pair (in vs out) rather than needing the eye to track across two charts.
+                val slotWidth = if (showCreated) size.width * 0.42f else size.width * 0.55f
+                val gap = if (showCreated) size.width * 0.10f else 0f
+                val totalWidth = if (showCreated) slotWidth * 2 + gap else slotWidth
+                val startX = (size.width - totalWidth) / 2f
 
-                // Faint full-height track so a zero-completion day still reads as a bar slot.
-                drawRoundRect(
-                    color = trackColor,
-                    topLeft = androidx.compose.ui.geometry.Offset(x, 0f),
-                    size = androidx.compose.ui.geometry.Size(barWidth, size.height),
-                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(barWidth / 2f, barWidth / 2f)
-                )
-                if (barHeight > 0f) {
-                    drawRoundRect(
-                        color = doneColor,
-                        topLeft = androidx.compose.ui.geometry.Offset(x, size.height - barHeight),
-                        size = androidx.compose.ui.geometry.Size(barWidth, barHeight),
-                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(barWidth / 2f, barWidth / 2f)
-                    )
+                fun bar(x: Float, pct: Float, color: androidx.compose.ui.graphics.Color, drawTrack: Boolean) {
+                    if (drawTrack) {
+                        // Faint full-height track so a zero-count day still reads as a bar slot.
+                        drawRoundRect(
+                            color = trackColor,
+                            topLeft = androidx.compose.ui.geometry.Offset(x, 0f),
+                            size = androidx.compose.ui.geometry.Size(slotWidth, size.height),
+                            cornerRadius = androidx.compose.ui.geometry.CornerRadius(slotWidth / 2f, slotWidth / 2f)
+                        )
+                    }
+                    val barHeight = size.height * pct
+                    if (barHeight > 0f) {
+                        drawRoundRect(
+                            color = color,
+                            topLeft = androidx.compose.ui.geometry.Offset(x, size.height - barHeight),
+                            size = androidx.compose.ui.geometry.Size(slotWidth, barHeight),
+                            cornerRadius = androidx.compose.ui.geometry.CornerRadius(slotWidth / 2f, slotWidth / 2f)
+                        )
+                    }
+                }
+
+                bar(startX, animatedDonePct, doneColor, drawTrack = true)
+                if (showCreated) {
+                    bar(startX + slotWidth + gap, animatedCreatedPct, createdColor, drawTrack = true)
                 }
             }
         }
@@ -615,13 +1041,13 @@ private fun DailyActivityChart(days: List<DayActivity>, showLabels: Boolean) {
 }
 
 @Composable
-private fun PriorityStatRow(stat: PriorityStat) {
+private fun PriorityStatRow(stat: PriorityStat, onClick: (() -> Unit)? = null) {
     val accents = LocalYataAccents.current
     val (label, color) = when (stat.priority) {
-        "high" -> "High" to MaterialTheme.colorScheme.error
-        "med" -> "Medium" to accents.accentD
-        "low" -> "Low" to accents.accentE
-        else -> "No priority" to MaterialTheme.colorScheme.onSurfaceVariant
+        "high" -> stringResource(R.string.analytics_priority_high) to MaterialTheme.colorScheme.error
+        "med" -> stringResource(R.string.analytics_priority_medium) to accents.accentD
+        "low" -> stringResource(R.string.analytics_priority_low) to accents.accentE
+        else -> stringResource(R.string.analytics_priority_none) to MaterialTheme.colorScheme.onSurfaceVariant
     }
     val animatedPct by animateFloatAsState(
         targetValue = stat.pct,
@@ -631,6 +1057,7 @@ private fun PriorityStatRow(stat: PriorityStat) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .drillDown(onClick)
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -653,15 +1080,20 @@ private fun PriorityStatRow(stat: PriorityStat) {
             )
         }
         Text(
-            text = "${stat.done}/${stat.total}",
+            text = stringResource(R.string.analytics_ratio, stat.done, stat.total),
             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+        DrillDownChevron(visible = onClick != null)
     }
 }
 
 @Composable
-private fun AgingBucketRow(bucket: com.mj.yata.util.AgingBucket, maxCount: Int) {
+private fun AgingBucketRow(
+    bucket: com.mj.yata.util.AgingBucket,
+    maxCount: Int,
+    onClick: (() -> Unit)? = null
+) {
     val color = when (bucket.label) {
         "0-3 days" -> LocalYataAccents.current.accentD
         "4-7 days" -> MaterialTheme.colorScheme.tertiary
@@ -675,6 +1107,7 @@ private fun AgingBucketRow(bucket: com.mj.yata.util.AgingBucket, maxCount: Int) 
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .drillDown(onClick)
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -697,53 +1130,87 @@ private fun AgingBucketRow(bucket: com.mj.yata.util.AgingBucket, maxCount: Int) 
             )
         }
         Text(
-            text = "${bucket.count}",
+            text = bucket.count.toString(),
             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+        DrillDownChevron(visible = onClick != null)
     }
 }
 
 @Composable
-private fun WorkloadShareRow(share: com.mj.yata.util.WorkloadShare, color: Color) {
-    val animatedPct by animateFloatAsState(
-        targetValue = share.share,
-        animationSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized),
-        label = "workloadShareProgress"
-    )
+private fun MostPostponedSection(
+    tasks: List<PostponedTaskStat>,
+    onTaskClick: (String) -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = stringResource(R.string.analytics_most_postponed),
+            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.primary
+        )
+        Surface(
+            color = MaterialTheme.colorScheme.surfaceContainerLow,
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(vertical = 4.dp)) {
+                tasks.forEachIndexed { index, task ->
+                    MostPostponedTaskRow(
+                        task = task,
+                        onClick = { onTaskClick(task.id) }
+                    )
+                    if (index != tasks.lastIndex) {
+                        HorizontalDivider(
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
+                            modifier = Modifier.padding(horizontal = 16.dp)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MostPostponedTaskRow(
+    task: PostponedTaskStat,
+    onClick: () -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .drillDown(onClick)
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        PersonAvatar(
-            initials = com.mj.yata.util.initialsFor(share.person.name),
-            accentKey = share.person.color,
-            size = 28.dp
+        Box(
+            modifier = Modifier
+                .size(10.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.error)
         )
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = share.person.name,
-                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                text = task.title,
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
             Spacer(modifier = Modifier.height(4.dp))
-            LinearProgressIndicator(
-                progress = { animatedPct },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(4.dp)
-                    .clip(RoundedCornerShape(2.dp)),
-                color = color,
-                trackColor = color.copy(alpha = 0.16f)
+            Text(
+                text = task.due ?: stringResource(R.string.date_no_due),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
         Text(
-            text = "${share.openCount} (${(share.share * 100).roundToInt()}%)",
+            text = stringResource(R.string.analytics_postponed_times, task.postponementCount),
             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.error
         )
+        DrillDownChevron(visible = true)
     }
 }
 
@@ -766,7 +1233,7 @@ private fun AnalyticsSection(
         ) {
             if (stats.isEmpty()) {
                 Text(
-                    text = "Nothing in this period.",
+                    text = stringResource(R.string.analytics_nothing_in_period),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(16.dp)
@@ -791,10 +1258,11 @@ private fun AnalyticsSection(
 /** "N overdue" (if any) plus the on-time completion rate, e.g. "1 overdue · 80% on-time" —
  * null pieces (no overdue work, or nothing in the period has a completion timestamp to judge)
  * are dropped rather than shown as zero. */
+@Composable
 private fun insightSubtitle(stat: EntityStat): String? {
     val parts = mutableListOf<String>()
-    if (stat.overdue > 0) parts += if (stat.overdue == 1) "1 overdue" else "${stat.overdue} overdue"
-    stat.onTimeRate?.let { parts += "${(it * 100).roundToInt()}% on-time" }
+    if (stat.overdue > 0) parts += stringResource(R.string.analytics_overdue_count, stat.overdue)
+    stat.onTimeRate?.let { parts += stringResource(R.string.analytics_on_time_percent, (it * 100).roundToInt()) }
     return parts.joinToString(" · ").ifEmpty { null }
 }
 
@@ -803,7 +1271,8 @@ private fun EntityStatRow(
     stat: EntityStat,
     color: Color,
     subtitle: String? = null,
-    leading: (@Composable () -> Unit)? = null
+    leading: (@Composable () -> Unit)? = null,
+    onClick: (() -> Unit)? = null
 ) {
     val animatedPct by animateFloatAsState(
         targetValue = stat.pct,
@@ -813,6 +1282,7 @@ private fun EntityStatRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .drillDown(onClick)
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -859,17 +1329,21 @@ private fun EntityStatRow(
             }
         }
         Text(
-            text = "${stat.done}/${stat.total}",
+            text = stringResource(R.string.analytics_ratio, stat.done, stat.total),
             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+        DrillDownChevron(visible = onClick != null)
     }
 }
 
 /** One ranked callout from [com.mj.yata.util.AnalyticsUtils.buildInsights]. Styled by severity so
  * the thing that needs attention reads differently from the thing that's merely true. */
 @Composable
-private fun InsightBanner(insight: com.mj.yata.util.AnalyticsInsight) {
+private fun InsightBanner(
+    insight: com.mj.yata.util.AnalyticsInsight,
+    onClick: (() -> Unit)? = null
+) {
     val accents = LocalYataAccents.current
     val accent = when (insight.severity) {
         com.mj.yata.util.InsightSeverity.WARN -> MaterialTheme.colorScheme.error
@@ -879,7 +1353,7 @@ private fun InsightBanner(insight: com.mj.yata.util.AnalyticsInsight) {
     Surface(
         color = accent.copy(alpha = 0.10f),
         shape = RoundedCornerShape(14.dp),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth().drillDown(onClick)
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
@@ -907,47 +1381,7 @@ private fun InsightBanner(insight: com.mj.yata.util.AnalyticsInsight) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-        }
-    }
-}
-
-/** Delegated / yours / unassigned as one proportional bar, so the split reads at a glance rather
- * than as three numbers to compare mentally. */
-@Composable
-private fun DelegationSplitBar(summary: com.mj.yata.util.DelegationSummary) {
-    val accents = LocalYataAccents.current
-    val total = summary.totalOpen.coerceAtLeast(1)
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(10.dp)
-            .clip(RoundedCornerShape(5.dp))
-    ) {
-        // weight(fill = false) with a zero weight is an error, so each segment is only emitted
-        // when it actually has tasks in it.
-        if (summary.delegatedOpen > 0) {
-            Box(
-                modifier = Modifier
-                    .weight(summary.delegatedOpen.toFloat() / total)
-                    .fillMaxHeight()
-                    .background(MaterialTheme.colorScheme.primary)
-            )
-        }
-        if (summary.selfOpen > 0) {
-            Box(
-                modifier = Modifier
-                    .weight(summary.selfOpen.toFloat() / total)
-                    .fillMaxHeight()
-                    .background(accents.accentE)
-            )
-        }
-        if (summary.unassignedOpen > 0) {
-            Box(
-                modifier = Modifier
-                    .weight(summary.unassignedOpen.toFloat() / total)
-                    .fillMaxHeight()
-                    .background(MaterialTheme.colorScheme.outlineVariant)
-            )
+            DrillDownChevron(visible = onClick != null)
         }
     }
 }
@@ -958,9 +1392,10 @@ private fun MiniStat(
     value: String,
     label: String,
     modifier: Modifier = Modifier,
-    emphasise: Boolean = false
+    emphasise: Boolean = false,
+    onClick: (() -> Unit)? = null
 ) {
-    Column(modifier = modifier) {
+    Column(modifier = modifier.drillDown(onClick)) {
         Text(
             text = value,
             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
@@ -972,67 +1407,5 @@ private fun MiniStat(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 2
         )
-    }
-}
-
-/** One assignee's delegation health: how much they hold, how much is late, how fast it moves. */
-@Composable
-private fun DelegationStatRow(stat: com.mj.yata.util.DelegationStat) {
-    val accents = LocalYataAccents.current
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        PersonAvatar(
-            initials = com.mj.yata.util.initialsFor(stat.person.name),
-            accentKey = stat.person.color,
-            size = 32.dp
-        )
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = stat.person.name,
-                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Spacer(modifier = Modifier.height(2.dp))
-            // Only the facts that exist for this person — an assignee with no completions yet
-            // shouldn't get a row of em-dashes.
-            val parts = buildList {
-                add("${stat.openCount} open")
-                if (stat.completedInPeriod > 0) add("${stat.completedInPeriod} done")
-                stat.onTimeRate?.let { add("${(it * 100).roundToInt()}% on time") }
-                stat.medianTurnaroundDays?.let { add("~${it}d turnaround") }
-            }
-            Text(
-                text = parts.joinToString(" · "),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 2
-            )
-        }
-        if (stat.overdueCount > 0) {
-            Surface(
-                color = MaterialTheme.colorScheme.error.copy(alpha = 0.12f),
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Text(
-                    text = "${stat.overdueCount} late",
-                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                )
-            }
-        } else if (stat.openCount > 0) {
-            Icon(
-                imageVector = Icons.Default.CheckCircle,
-                contentDescription = null,
-                tint = accents.accentE,
-                modifier = Modifier.size(18.dp)
-            )
-        }
     }
 }

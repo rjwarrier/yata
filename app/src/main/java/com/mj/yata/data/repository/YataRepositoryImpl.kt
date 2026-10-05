@@ -12,6 +12,7 @@ import androidx.room.withTransaction
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import java.util.UUID
@@ -29,29 +30,42 @@ class YataRepositoryImpl @Inject constructor(
     // Keep repository reads as the cold Room flows themselves. A StateFlow with an `emptyList()`
     // initial value can satisfy `.first()` before Room has emitted when a backup worker starts in
     // a process with no UI collectors, producing a valid-looking but empty backup.
+    //
+    // Task-list reads map on Dispatchers.Default. Room runs the query itself off the main thread,
+    // but a plain `.map` runs in the *collector's* context, which for the ViewModel's stateIn is
+    // Main — so every emission re-mapped the whole list there, JSON-parsing each task's recurrence
+    // (deserializeRecurrence) on the UI thread after every single write.
     override fun getTasks(): Flow<List<Task>> = db.taskDao().getTasksWithRelations()
-        .map { list -> list.map { it.toDomain() } }
+        .mapTasksOffMain()
+
+    override fun getInboxCandidateTasks(): Flow<List<Task>> = db.taskDao().getInboxCandidateTasksWithRelations()
+        .mapTasksOffMain()
+
+    override fun getRecurringTasks(): Flow<List<Task>> = db.taskDao().getRecurringTasksWithRelations()
+        .mapTasksOffMain()
 
     override fun getTaskById(id: String): Flow<Task?> {
         return db.taskDao().getTaskWithRelationsById(id).map { it?.toDomain() }
     }
 
     override fun getTasksForList(listId: String): Flow<List<Task>> {
-        return db.taskDao().getTasksWithRelationsForList(listId).map { list ->
-            list.map { it.toDomain() }
-        }
+        return db.taskDao().getTasksWithRelationsForList(listId).mapTasksOffMain()
     }
 
     override fun getTasksForProject(projectId: String): Flow<List<Task>> {
-        return db.taskDao().getTasksWithRelationsForProject(projectId).map { list ->
-            list.map { it.toDomain() }
-        }
+        return db.taskDao().getTasksWithRelationsForProject(projectId).mapTasksOffMain()
     }
 
     override fun getTasksForPerson(personId: String): Flow<List<Task>> {
-        return db.taskDao().getTasksWithRelationsForPerson(personId).map { list ->
-            list.map { it.toDomain() }
-        }
+        return db.taskDao().getTasksWithRelationsForPerson(personId).mapTasksOffMain()
+    }
+
+    override suspend fun getTasksByIds(ids: Collection<String>): List<Task> {
+        if (ids.isEmpty()) return emptyList()
+        val rows = chunkedIn(ids.distinct()) { db.taskDao().getLiveTasksWithRelationsByIds(it) }
+        // Mapped off the caller's thread for the same reason as mapTasksOffMain: callers are
+        // ViewModel coroutines on Main, and the mapping JSON-parses each recurrence.
+        return withContext(Dispatchers.Default) { rows.map { it.toDomain() } }
     }
 
     override suspend fun getTaskStreak(taskId: String): Int = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
@@ -78,42 +92,52 @@ class YataRepositoryImpl @Inject constructor(
         tasks: List<Task>,
         notify: Boolean,
         resyncReminder: Boolean,
-        preserveExistingCreatedAt: Boolean
+        preserveExistingCreatedAt: Boolean,
+        trackPostponements: Boolean
     ) {
         if (tasks.isEmpty()) return
-        val sanitizedTasks = withContext(Dispatchers.IO) {
-            tasks.map { sanitizeTaskForWrite(it) }
-        }
 
-        db.withTransaction {
+        val sanitizedTasks = db.withTransaction {
+            val references = existingReferences(tasks)
+            val sanitizedTasks = tasks.map { sanitizeTaskForWrite(it, references) }
             // Batch-fetch existing cross-refs for every task up front — 3 queries total instead
             // of 3 per task — then diff each task against its slice of these in-memory maps.
+            // Chunked, because a restore or sync passes every task in the backup through here.
             val taskIds = sanitizedTasks.map { it.id }
-            val existingPeopleByTask = db.taskDao().getPersonCrossRefsForTasks(taskIds)
+            val existingPeopleByTask = chunkedIn(taskIds) { db.taskDao().getPersonCrossRefsForTasks(it) }
                 .groupBy({ it.taskId }, { it.personId })
-            val existingTagsByTask = db.taskDao().getTagCrossRefsForTasks(taskIds)
+            val existingTagsByTask = chunkedIn(taskIds) { db.taskDao().getTagCrossRefsForTasks(it) }
                 .groupBy({ it.taskId }, { it.tagId })
-            val existingSubtasksByTask = db.subtaskDao().getSubtasksForTasksDirect(taskIds)
+            val existingSubtasksByTask = chunkedIn(taskIds) { db.subtaskDao().getSubtasksForTasksDirect(it) }
                 .groupBy { it.taskId }
             // `insert` is an @Upsert and can't distinguish a create from an update, so an edit to
             // an existing task would otherwise restamp createdAt with the time of the edit. Take
             // the stored value where there is one; fall back to the incoming task's (a restore
             // from backup carries its own); only then treat it as newly created.
-            val existingCreatedAt = if (preserveExistingCreatedAt) {
-                db.taskDao().getCreatedAtForTasks(taskIds).associate { it.id to it.createdAt }
-            } else {
-                emptyMap()
-            }
+            val writeSnapshots = chunkedIn(taskIds) { db.taskDao().getWriteSnapshotsForTasks(it) }.associateBy { it.id }
             val now = System.currentTimeMillis()
 
             sanitizedTasks.forEach { task ->
+                val existing = writeSnapshots[task.id]
                 val entity = task.toEntity().let {
                     it.copy(
                         createdAt = if (preserveExistingCreatedAt) {
-                            existingCreatedAt[task.id] ?: it.createdAt ?: now
+                            existing?.createdAt ?: it.createdAt ?: now
                         } else {
                             it.createdAt
-                        }
+                        },
+                        postponementCount = if (trackPostponements && existing != null) {
+                            maxOf(
+                                it.postponementCount,
+                                nextPostponementCount(
+                                    previousDue = existing.dueDate,
+                                    nextDue = it.dueDate,
+                                    previousCount = existing.postponementCount
+                                )
+                            )
+                        } else {
+                            it.postponementCount
+                        }.coerceAtLeast(0)
                     )
                 }
                 db.taskDao().insert(entity)
@@ -147,6 +171,7 @@ class YataRepositoryImpl @Inject constructor(
                     }
                 }
             }
+            sanitizedTasks
         }
 
         if (resyncReminder) {
@@ -159,17 +184,6 @@ class YataRepositoryImpl @Inject constructor(
             })
         }
         if (notify) widgetUpdater.notifyTasksChanged()
-    }
-
-    override fun searchTasks(query: String): Flow<List<Task>> {
-        if (query.isBlank()) return kotlinx.coroutines.flow.flowOf(emptyList())
-        val ftsQuery = query.split(Regex("[^\\p{L}\\p{N}_]+"))
-            .filter { it.isNotBlank() }
-            .joinToString(" ") { "${it.replace("\"", "")}*" }
-            .ifBlank { "__yata_no_match__*" }
-        return db.taskDao().searchTasksWithRelations(ftsQuery, query).map { list ->
-            list.map { it.toDomain() }
-        }
     }
 
     override suspend fun setTaskFlag(id: String, flag: Boolean, notify: Boolean) = withContext(Dispatchers.IO) {
@@ -335,7 +349,7 @@ class YataRepositoryImpl @Inject constructor(
     }
 
     override fun getDeletedTasks(): Flow<List<Task>> {
-        return db.taskDao().getDeletedTasksWithRelations().map { list -> list.map { it.toDomain() } }
+        return db.taskDao().getDeletedTasksWithRelations().mapTasksOffMain()
     }
 
     override suspend fun restoreTask(id: String) {
@@ -345,7 +359,7 @@ class YataRepositoryImpl @Inject constructor(
     }
 
     override fun getArchivedTasks(): Flow<List<Task>> {
-        return db.taskDao().getArchivedTasksWithRelations().map { list -> list.map { it.toDomain() } }
+        return db.taskDao().getArchivedTasksWithRelations().mapTasksOffMain()
     }
 
     override suspend fun setTaskArchived(id: String, archived: Boolean) {
@@ -441,9 +455,15 @@ class YataRepositoryImpl @Inject constructor(
     }
 
     override suspend fun deleteProject(project: Project) {
+        // Soft-delete the project's tasks into Trash rather than letting the FK's CASCADE hard-delete
+        // them outright - see softDeleteByProjectId's doc for why that has to happen (and clear
+        // projectId) before the project row itself is removed, in the same transaction.
         val tasksToDelete = db.taskDao().getTasksCascadedByProjectDelete(project.id)
         tasksToDelete.forEach { reminderScheduler.cancelReminder(it) }
-        db.projectDao().delete(project.toEntity())
+        db.withTransaction {
+            db.taskDao().softDeleteByProjectId(project.id, System.currentTimeMillis())
+            db.projectDao().delete(project.toEntity())
+        }
         widgetUpdater.notifyTasksChanged()
     }
 
@@ -483,9 +503,21 @@ class YataRepositoryImpl @Inject constructor(
     }
 
     override suspend fun deleteList(list: YataList) {
+        // See deleteProject's comment - same reasoning, list equivalent.
         val tasksToDelete = db.taskDao().getTasksCascadedByListDelete(list.id)
         tasksToDelete.forEach { reminderScheduler.cancelReminder(it) }
-        db.listDao().delete(list.toEntity())
+        db.withTransaction {
+            db.taskDao().softDeleteByListId(list.id, System.currentTimeMillis())
+            db.listDao().delete(list.toEntity())
+        }
+        widgetUpdater.notifyTasksChanged()
+    }
+
+    override suspend fun deleteListOnly(list: YataList) {
+        db.withTransaction {
+            db.taskDao().clearList(list.id)
+            db.listDao().delete(list.toEntity())
+        }
         widgetUpdater.notifyTasksChanged()
     }
 
@@ -552,6 +584,24 @@ class YataRepositoryImpl @Inject constructor(
         widgetUpdater.notifyTasksChanged()
     }
 
+    override suspend fun upsertTags(tags: List<Tag>, pendingGroup: TagGroup?) {
+        if (tags.isEmpty()) return
+        db.withTransaction {
+            pendingGroup?.let { db.tagGroupDao().insert(it.toEntity()) }
+            db.tagDao().insertAll(tags.map { it.toEntity() })
+        }
+        widgetUpdater.notifyTasksChanged()
+    }
+
+    override suspend fun setTagsGroup(tagIds: List<String>, groupId: String?, pendingGroup: TagGroup?) {
+        if (tagIds.isEmpty()) return
+        db.withTransaction {
+            pendingGroup?.let { db.tagGroupDao().insert(it.toEntity()) }
+            db.tagDao().setGroup(tagIds, groupId)
+        }
+        widgetUpdater.notifyTasksChanged()
+    }
+
     override suspend fun deleteTag(tag: Tag) {
         db.tagDao().delete(tag.toEntity())
         widgetUpdater.notifyTasksChanged()
@@ -615,11 +665,30 @@ class YataRepositoryImpl @Inject constructor(
         }
     }
 
-    private fun sanitizeTaskForWrite(task: Task): Task {
-        val safeListId = task.listId?.takeIf { db.listDao().getByIdDirect(it) != null }
-        val safeProjectId = task.projectId?.takeIf { db.projectDao().getByIdDirect(it) != null }
-        val safeAssigneeIds = task.assigneeIds.distinct().filter { db.personDao().getByIdDirect(it) != null }
-        val safeTagIds = task.tagIds.distinct().filter { db.tagDao().getByIdDirect(it) != null }
+    /** Which list/project/person/tag ids referenced anywhere in a write batch actually exist —
+     * one query per table for the whole batch. Sanitizing used to look each reference up on its
+     * own, 4+ queries per task, which a restore or sync of a few thousand tasks multiplied into
+     * tens of thousands of point lookups inside one transaction. */
+    private class ExistingReferences(
+        val listIds: Set<String>,
+        val projectIds: Set<String>,
+        val personIds: Set<String>,
+        val tagIds: Set<String>
+    )
+
+    private suspend fun existingReferences(tasks: List<Task>): ExistingReferences =
+        ExistingReferences(
+            listIds = chunkedIn(tasks.mapNotNullTo(HashSet()) { it.listId }) { db.listDao().getExistingIds(it) }.toSet(),
+            projectIds = chunkedIn(tasks.mapNotNullTo(HashSet()) { it.projectId }) { db.projectDao().getExistingIds(it) }.toSet(),
+            personIds = chunkedIn(tasks.flatMapTo(HashSet()) { it.assigneeIds }) { db.personDao().getExistingIds(it) }.toSet(),
+            tagIds = chunkedIn(tasks.flatMapTo(HashSet()) { it.tagIds }) { db.tagDao().getExistingIds(it) }.toSet()
+        )
+
+    private fun sanitizeTaskForWrite(task: Task, references: ExistingReferences): Task {
+        val safeListId = task.listId?.takeIf { it in references.listIds }
+        val safeProjectId = task.projectId?.takeIf { it in references.projectIds }
+        val safeAssigneeIds = task.assigneeIds.distinct().filter { it in references.personIds }
+        val safeTagIds = task.tagIds.distinct().filter { it in references.tagIds }
         val safeReminder = task.reminder?.takeIf { task.due != null }
         val safeEstimate = task.estimateMinutes?.takeIf { it >= 0 }
 
@@ -645,6 +714,13 @@ class YataRepositoryImpl @Inject constructor(
             ?.distinct()
             ?.takeIf { it.isNotEmpty() }
         val bymonthday = recurrence.bymonthday?.takeIf { it == -1 || it in 1..31 }
+        val sanitizedWeekday = recurrence.byweekday?.uppercase()?.takeIf { it in VALID_RECURRENCE_DAYS }
+        val sanitizedSetPos = recurrence.bysetpos?.takeIf { it == -1 || it in 1..4 }
+        // Both-or-neither: a valid nth-weekday-of-month needs the weekday and its position
+        // together, so a partially malformed pair (e.g. an out-of-range position surviving with
+        // a valid weekday) degrades to "neither" rather than a half-specified recurrence.
+        val byweekday = sanitizedWeekday.takeIf { sanitizedSetPos != null }
+        val bysetpos = sanitizedSetPos.takeIf { sanitizedWeekday != null }
         val ends = when (val ends = recurrence.ends) {
             is RecurrenceEnds.After -> ends.takeIf { it.count > 0 } ?: RecurrenceEnds.Never
             is RecurrenceEnds.On -> ends.takeIf {
@@ -656,6 +732,8 @@ class YataRepositoryImpl @Inject constructor(
             interval = interval,
             byday = byday,
             bymonthday = bymonthday,
+            byweekday = byweekday,
+            bysetpos = bysetpos,
             ends = ends
         )
     }
@@ -678,7 +756,20 @@ class YataRepositoryImpl @Inject constructor(
     companion object {
         private val VALID_RECURRENCE_FREQUENCIES = setOf("daily", "weekly", "monthly", "yearly")
         private val VALID_RECURRENCE_DAYS = setOf("MO", "TU", "WE", "TH", "FR", "SA", "SU")
+
+        /** Under SQLite's 999-parameter cap on older Android, with room to spare. */
+        private const val MAX_BIND_ARGS = 900
     }
+
+    /** Runs an `IN (:ids)` query in slices: SQLite before 3.32 — Android 11 and below — rejects a
+     * statement with more than 999 bound parameters, which a backup with that many tasks reaches. */
+    private suspend fun <T> chunkedIn(ids: Collection<String>, query: suspend (List<String>) -> List<T>): List<T> =
+        when {
+            ids.isEmpty() -> emptyList()
+            ids.size <= MAX_BIND_ARGS -> query(ids.toList())
+            else -> ids.chunked(MAX_BIND_ARGS).flatMap { query(it) }
+        }
+
+    private fun Flow<List<TaskWithRelations>>.mapTasksOffMain(): Flow<List<Task>> =
+        map { list -> list.map { it.toDomain() } }.flowOn(Dispatchers.Default)
 }
-
-

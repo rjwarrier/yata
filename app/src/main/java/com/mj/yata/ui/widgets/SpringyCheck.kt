@@ -29,6 +29,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.mj.yata.domain.model.MotionMode
+import com.mj.yata.ui.theme.YataDur
 
 import kotlinx.coroutines.launch
 
@@ -41,22 +43,27 @@ fun SpringyCheck(
     color: Color = MaterialTheme.colorScheme.primary,
     size: Dp = 24.dp
 ) {
-    val scale = remember { Animatable(1f) }
+    val scale = remember { Animatable(if (checked) 1f else 1f) }
     val iconScale = remember { Animatable(if (checked) 1f else 0f) }
     val rippleScale = remember { Animatable(0f) }
     val rippleAlpha = remember { Animatable(0f) }
     val soundEnabled = com.mj.yata.ui.theme.LocalCompletionSoundEnabled.current
-    var isFirstComposition by remember { mutableStateOf(true) }
+    var initialCheckedState by remember { mutableStateOf(checked) }
 
     LaunchedEffect(checked) {
-        if (isFirstComposition) {
-            isFirstComposition = false
+        if (checked == initialCheckedState) {
             return@LaunchedEffect
         }
+        initialCheckedState = checked
+
+        if (YataDur.modeState == MotionMode.OFF) {
+            scale.snapTo(1f)
+            iconScale.snapTo(if (checked) 1f else 0f)
+            rippleAlpha.snapTo(0f)
+            return@LaunchedEffect
+        }
+
         if (checked) {
-            if (soundEnabled) {
-                com.mj.yata.ui.util.CompletionSoundPlayer.playCompletionChime()
-            }
             rippleScale.snapTo(1f)
             rippleAlpha.snapTo(0.45f)
             scale.snapTo(0.4f)
@@ -86,6 +93,9 @@ fun SpringyCheck(
             .clickable {
                 if (hapticsEnabled) {
                     haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                }
+                if (!checked && soundEnabled) {
+                    com.mj.yata.ui.util.CompletionSoundPlayer.playCompletionChime()
                 }
                 onCheckedChange(!checked)
             },
@@ -122,7 +132,7 @@ fun SpringyCheck(
                 ),
             contentAlignment = Alignment.Center
         ) {
-            if (checked) {
+            if (checked || iconScale.value > 0f) {
                 Icon(
                     imageVector = Icons.Default.Check,
                     contentDescription = stringResource(R.string.springy_check_check),

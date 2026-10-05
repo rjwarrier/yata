@@ -21,6 +21,10 @@ interface PersonDao {
     @Query("SELECT * FROM people WHERE id = :id")
     fun getByIdDirect(id: String): PersonEntity?
 
+    /** Which of [ids] exist — batch form of [getByIdDirect] != null, for sanitizing a write. */
+    @Query("SELECT id FROM people WHERE id IN (:ids)")
+    suspend fun getExistingIds(ids: List<String>): List<String>
+
     @Upsert
     suspend fun insert(person: PersonEntity)
 
@@ -50,6 +54,10 @@ interface ProjectDao {
 
     @Query("SELECT * FROM projects WHERE id = :id")
     fun getByIdDirect(id: String): ProjectEntity?
+
+    /** Which of [ids] exist — batch form of [getByIdDirect] != null, for sanitizing a write. */
+    @Query("SELECT id FROM projects WHERE id IN (:ids)")
+    suspend fun getExistingIds(ids: List<String>): List<String>
 
     @Upsert
     suspend fun insert(project: ProjectEntity)
@@ -81,6 +89,10 @@ interface ListDao {
     @Query("SELECT * FROM lists WHERE id = :id")
     fun getByIdDirect(id: String): ListEntity?
 
+    /** Which of [ids] exist — batch form of [getByIdDirect] != null, for sanitizing a write. */
+    @Query("SELECT id FROM lists WHERE id IN (:ids)")
+    suspend fun getExistingIds(ids: List<String>): List<String>
+
     @Upsert
     suspend fun insert(list: ListEntity)
 
@@ -105,6 +117,10 @@ interface TagDao {
     @Query("SELECT * FROM tags WHERE id = :id")
     fun getByIdDirect(id: String): TagEntity?
 
+    /** Which of [ids] exist — batch form of [getByIdDirect] != null, for sanitizing a write. */
+    @Query("SELECT id FROM tags WHERE id IN (:ids)")
+    suspend fun getExistingIds(ids: List<String>): List<String>
+
     @Upsert
     suspend fun insert(tag: TagEntity)
 
@@ -113,6 +129,9 @@ interface TagDao {
 
     @Delete
     suspend fun delete(tag: TagEntity)
+
+    @Query("UPDATE tags SET groupId = :groupId WHERE id IN (:tagIds)")
+    suspend fun setGroup(tagIds: List<String>, groupId: String?)
 
     @Query("UPDATE tags SET groupId = NULL WHERE groupId = :groupId")
     suspend fun clearGroup(groupId: String)
@@ -154,6 +173,36 @@ interface TaskDao {
     fun getTasksWithRelations(): Flow<List<TaskWithRelations>>
 
     @Transaction
+    @Query("""
+        SELECT * FROM tasks
+        WHERE deletedAt IS NULL
+            AND archived = 0
+            AND done = 0
+            AND (
+                dueDate IS NULL
+                OR estimateMinutes IS NULL
+                OR (projectId IS NULL AND listId IS NULL)
+                OR NOT EXISTS (
+                    SELECT 1 FROM task_person_cross_ref r
+                    WHERE r.taskId = tasks.id
+                )
+            )
+        ORDER BY COALESCE(dueDate, '9999-99-99') ASC, COALESCE(createdAt, 9223372036854775807) ASC, sortOrder ASC
+    """)
+    fun getInboxCandidateTasksWithRelations(): Flow<List<TaskWithRelations>>
+
+    @Transaction
+    @Query("""
+        SELECT * FROM tasks
+        WHERE deletedAt IS NULL
+            AND archived = 0
+            AND done = 0
+            AND recurrenceJson IS NOT NULL
+        ORDER BY COALESCE(dueDate, '9999-99-99') ASC, LOWER(title) ASC
+    """)
+    fun getRecurringTasksWithRelations(): Flow<List<TaskWithRelations>>
+
+    @Transaction
     @Query("SELECT * FROM tasks WHERE deletedAt IS NULL AND archived = 1 ORDER BY sortOrder ASC")
     fun getArchivedTasksWithRelations(): Flow<List<TaskWithRelations>>
 
@@ -164,6 +213,12 @@ interface TaskDao {
     @Transaction
     @Query("SELECT * FROM tasks WHERE id = :id")
     fun getTaskWithRelationsById(id: String): Flow<TaskDetailWithRelations?>
+
+    /** The live (not trashed, not archived) tasks among [ids] — the same rows [getTasksWithRelations]
+     * would return for them, without loading every other task to find them. */
+    @Transaction
+    @Query("SELECT * FROM tasks WHERE id IN (:ids) AND deletedAt IS NULL AND archived = 0")
+    suspend fun getLiveTasksWithRelationsByIds(ids: List<String>): List<TaskWithRelations>
 
     @Transaction
     @Query("SELECT * FROM tasks WHERE listId = :listId AND deletedAt IS NULL AND archived = 0 ORDER BY sortOrder ASC")
@@ -187,23 +242,6 @@ interface TaskDao {
      * rows come to exist. */
     @Query("SELECT * FROM tasks WHERE seriesId = :seriesId AND done = 1 ORDER BY completedAt DESC")
     suspend fun getCompletedTasksBySeriesId(seriesId: String): List<TaskEntity>
-
-    @Transaction
-    @Query("""
-        SELECT DISTINCT t.* FROM tasks t
-        LEFT JOIN task_person_cross_ref pRef ON t.id = pRef.taskId
-        LEFT JOIN people p ON pRef.personId = p.id
-        LEFT JOIN task_tag_cross_ref tRef ON t.id = tRef.taskId
-        LEFT JOIN tags tag ON tRef.tagId = tag.id
-        LEFT JOIN subtasks s ON t.id = s.taskId
-        WHERE (
-            t.rowid IN (SELECT rowid FROM tasks_fts WHERE tasks_fts MATCH :searchQuery)
-            OR p.name LIKE '%' || :rawQuery || '%'
-            OR tag.name LIKE '%' || :rawQuery || '%'
-            OR s.title LIKE '%' || :rawQuery || '%'
-        ) AND t.deletedAt IS NULL AND t.archived = 0
-    """)
-    fun searchTasksWithRelations(searchQuery: String, rawQuery: String): Flow<List<TaskWithRelations>>
 
     @Query("SELECT * FROM tasks")
     fun getAll(): Flow<List<TaskEntity>>
@@ -232,6 +270,9 @@ interface TaskDao {
     @Query("SELECT id, createdAt FROM tasks WHERE id IN (:taskIds)")
     suspend fun getCreatedAtForTasks(taskIds: List<String>): List<TaskCreatedAt>
 
+    @Query("SELECT id, dueDate, createdAt, postponementCount FROM tasks WHERE id IN (:taskIds)")
+    suspend fun getWriteSnapshotsForTasks(taskIds: List<String>): List<TaskWriteSnapshot>
+
     @Upsert
     suspend fun insert(task: TaskEntity)
 
@@ -246,6 +287,21 @@ interface TaskDao {
 
     @Query("UPDATE tasks SET projectId = NULL WHERE projectId = :projectId")
     suspend fun clearProject(projectId: String)
+
+    @Query("UPDATE tasks SET listId = NULL WHERE listId = :listId")
+    suspend fun clearList(listId: String)
+
+    /** Used when a project (not just its own row) is deleted, in place of relying on the FK's
+     * CASCADE — that hard-deletes the rows outright with no Trash/undo. This soft-deletes them
+     * and clears projectId in the same statement, since the CASCADE would still hard-delete them
+     * a moment later otherwise once the project row itself is removed. Skips rows already in
+     * Trash so an earlier deletedAt timestamp isn't overwritten. */
+    @Query("UPDATE tasks SET deletedAt = :timestamp, projectId = NULL WHERE projectId = :projectId AND deletedAt IS NULL")
+    suspend fun softDeleteByProjectId(projectId: String, timestamp: Long)
+
+    /** List equivalent of [softDeleteByProjectId]. */
+    @Query("UPDATE tasks SET deletedAt = :timestamp, listId = NULL WHERE listId = :listId AND deletedAt IS NULL")
+    suspend fun softDeleteByListId(listId: String, timestamp: Long)
 
     @Query("UPDATE tasks SET done = :done, completedAt = :completedAt WHERE id = :id")
     suspend fun updateDone(id: String, done: Boolean, completedAt: Long?)

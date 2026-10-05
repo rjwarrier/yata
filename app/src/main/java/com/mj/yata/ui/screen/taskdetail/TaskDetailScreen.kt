@@ -35,20 +35,32 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mj.yata.ui.widgets.showUndoSnackbar
 import com.mj.yata.R
+import com.mj.yata.domain.model.Person
+import com.mj.yata.domain.model.Project
 import com.mj.yata.domain.model.Recurrence
 import com.mj.yata.domain.model.Subtask
+import com.mj.yata.domain.model.SubtaskCompletionAction
+import com.mj.yata.domain.model.Tag
 import com.mj.yata.domain.model.Task
+import com.mj.yata.domain.model.YataList
+import com.mj.yata.domain.model.activeLists
+import com.mj.yata.domain.model.activePeople
+import com.mj.yata.domain.model.activeProjects
+import com.mj.yata.domain.model.effectiveDue
 import com.mj.yata.domain.model.inheritedTagIds
 import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.theme.LocalYataAccents
@@ -60,7 +72,25 @@ import kotlinx.coroutines.launch
 import androidx.compose.animation.animateColorAsState
 import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.YataEase
+import com.mj.yata.ui.util.AdaptiveContentBox
+import com.mj.yata.ui.util.rememberAdaptiveLayoutInfo
+import com.mj.yata.ui.util.rememberAdaptiveSheetMaxWidth
+import com.mj.yata.util.NaturalLanguageParser
+import com.mj.yata.util.ParsedQuickAdd
+import com.mj.yata.util.TaskScheduleUtils
+import com.mj.yata.util.findBestEntityMatch
+import com.mj.yata.util.withParsedQuickAdd
 import java.util.UUID
+
+/** One smart-add preview chip. [matched] is false for a project/list/tag/person mention that was
+ * typed but didn't resolve to an existing entity — see the smart-add chip row below for why that
+ * needs its own visual state instead of looking identical to a successful match. */
+private data class DetectedQuickAddChip(
+    val label: String,
+    val onClick: () -> Unit,
+    val onDismiss: () -> Unit,
+    val matched: Boolean = true
+)
 
 /** Equal-width rectangular (not pill-shaped) toggle for the Subtasks/Notes/Comments chip row —
  * highlighted while its section is visible, plain otherwise. While collapsed, [count] (if
@@ -75,12 +105,12 @@ private fun SectionToggleChip(
     count: Int? = null
 ) {
     val bgColor by animateColorAsState(
-        targetValue = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHigh,
+        targetValue = if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.16f) else MaterialTheme.colorScheme.surfaceContainerHigh,
         animationSpec = tween(durationMillis = YataDur.micro, easing = YataEase.emphasized),
         label = "sectionToggleBg"
     )
     val textColor by animateColorAsState(
-        targetValue = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+        targetValue = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
         animationSpec = tween(durationMillis = YataDur.micro, easing = YataEase.emphasized),
         label = "sectionToggleText"
     )
@@ -96,10 +126,37 @@ private fun SectionToggleChip(
     ) {
         Text(
             text = displayLabel,
-            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium),
             color = textColor
         )
     }
+}
+
+@Composable
+private fun DetailCountdownBadge(text: String, isOverdue: Boolean) {
+    val containerColor = if (isOverdue) {
+        MaterialTheme.colorScheme.error.copy(alpha = 0.12f)
+    } else {
+        MaterialTheme.colorScheme.primary.copy(alpha = 0.10f)
+    }
+    val contentColor = if (isOverdue) {
+        MaterialTheme.colorScheme.error
+    } else {
+        MaterialTheme.colorScheme.primary
+    }
+
+    Text(
+        text = text,
+        color = contentColor,
+        style = MaterialTheme.typography.labelSmall.copy(
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Medium
+        ),
+        modifier = Modifier
+            .clip(RoundedCornerShape(6.dp))
+            .background(containerColor)
+            .padding(horizontal = 6.dp, vertical = 2.dp)
+    )
 }
 
 private fun List<Subtask>.toExportSubtaskRows(): List<com.mj.yata.util.export.ExportSubtaskRow> {
@@ -141,6 +198,7 @@ fun TaskDetailScreen(
     taskId: String,
     onNavigateBack: () -> Unit,
     onNavigateToTab: (Int) -> Unit,
+    onNavigateToTaskDetail: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val taskState by remember(taskId) { viewModel.getTaskById(taskId) }.collectAsStateWithLifecycle(initialValue = null)
@@ -149,6 +207,9 @@ fun TaskDetailScreen(
     val people by viewModel.people.collectAsStateWithLifecycle()
     val tags by viewModel.tags.collectAsStateWithLifecycle()
     val allTasks by viewModel.tasks.collectAsStateWithLifecycle()
+    val dueDatePickerContext = com.mj.yata.ui.widgets.rememberDueDatePickerContext(viewModel)
+    val observeNonWorkingDays by viewModel.observeNonWorkingDays.collectAsStateWithLifecycle()
+    val useWideDetail = rememberAdaptiveLayoutInfo().isWide
 
     val accents = LocalYataAccents.current
 
@@ -162,6 +223,7 @@ fun TaskDetailScreen(
     var showTimePicker by remember { mutableStateOf(false) }
     var showReminderTimePicker by remember { mutableStateOf(false) }
     var showFollowUpPicker by remember { mutableStateOf(false) }
+    var pendingParentCompletionSubtasks by remember(taskId) { mutableStateOf<List<Subtask>?>(null) }
 
     val task = taskState
     val showMissingTask = com.mj.yata.ui.widgets.rememberMissingContentVisible(taskId, task == null)
@@ -237,10 +299,38 @@ fun TaskDetailScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val undoWindowSeconds = com.mj.yata.ui.widgets.LocalUndoWindowSeconds.current
+    val dueCountdownEnabled = com.mj.yata.ui.theme.LocalDueCountdownEnabled.current
+    var showSyntaxDialog by remember { mutableStateOf(false) }
     val clipboardManager = LocalClipboardManager.current
     val context = LocalContext.current
     var exportFormatPending by remember { mutableStateOf<com.mj.yata.util.export.ExportFormat?>(null) }
     var exportInProgress by remember { mutableStateOf(false) }
+    val longTaskLinkWarningGate = com.mj.yata.util.export.rememberLongTaskLinkWarningGate()
+
+    LaunchedEffect(Unit) {
+        viewModel.postponementWarnings.collect { warning ->
+            snackbarHostState.showSnackbar(
+                context.getString(
+                    R.string.task_postponement_warning,
+                    warning.taskTitle,
+                    warning.postponementCount
+                )
+            )
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.weekendRescheduleWarnings.collect { warning ->
+            snackbarHostState.showSnackbar(
+                context.getString(
+                    if (warning.isHoliday) R.string.task_holiday_reschedule_warning
+                    else R.string.task_weekend_reschedule_warning,
+                    warning.taskTitle,
+                    warning.dayLabel
+                )
+            )
+        }
+    }
 
     val todayBadgeCount by viewModel.todayRemainingCount.collectAsStateWithLifecycle()
     val peopleFeatureEnabled by viewModel.peopleFeatureEnabled.collectAsStateWithLifecycle()
@@ -248,13 +338,15 @@ fun TaskDetailScreen(
     val projectsFeatureEnabled by viewModel.projectsFeatureEnabled.collectAsStateWithLifecycle()
     val todayTabEnabled by viewModel.todayTabEnabled.collectAsStateWithLifecycle()
     val upcomingTabEnabled by viewModel.upcomingTabEnabled.collectAsStateWithLifecycle()
+    val subtaskCompletionAction by viewModel.subtaskCompletionAction.collectAsStateWithLifecycle()
+    val profileUserName by viewModel.userName.collectAsStateWithLifecycle()
 
     Scaffold(
         snackbarHost = {
             SnackbarHost(snackbarHostState) { data -> YataSnackbar(data) }
         },
         bottomBar = {
-            com.mj.yata.ui.screen.main.CustomBottomNav(
+            com.mj.yata.ui.screen.main.AdaptiveBottomNav(
                 selectedTab = -1,
                 todayBadgeCount = todayBadgeCount,
                 peopleEnabled = peopleFeatureEnabled,
@@ -270,8 +362,10 @@ fun TaskDetailScreen(
                 title = {
                     AnimatedVisibility(
                         visible = showToolbarTitle,
-                        enter = fadeIn() + expandVertically(),
-                        exit = fadeOut() + shrinkVertically()
+                        enter = fadeIn(tween(YataDur.fade, easing = YataEase.emphasized)) +
+                            expandVertically(tween(YataDur.fade, easing = YataEase.emphasized)),
+                        exit = fadeOut(tween(YataDur.micro, easing = YataEase.emphasized)) +
+                            shrinkVertically(tween(YataDur.micro, easing = YataEase.emphasized))
                     ) {
                         Text(
                             text = task.title,
@@ -297,6 +391,15 @@ fun TaskDetailScreen(
                             tint = if (task.flag) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                         )
                     }
+                    // Beside the flag rather than buried in the overflow: the title field here
+                    // takes the same #/@/+/= and backslash syntax the New Task sheet does, and that
+                    // sheet surfaces the reference from its own header.
+                    IconButton(onClick = { showSyntaxDialog = true }) {
+                        Icon(
+                            Icons.Default.Info,
+                            contentDescription = stringResource(R.string.syntax_dialog_title)
+                        )
+                    }
                     // Duplicate — clones the task (new id, done reset), keeps everything else
                     // Export as PDF/Image — options (include notes/comments) are confirmed via
                     // TaskExportOptionsDialog before the off-screen render actually happens.
@@ -304,9 +407,9 @@ fun TaskDetailScreen(
                     IconButton(onClick = { showExportMenu = true }) {
                         Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.cd_more_options))
                     }
-                    DropdownMenu(expanded = showExportMenu, onDismissRequest = { showExportMenu = false }) {
+                    YataDropdownMenu(expanded = showExportMenu, onDismissRequest = { showExportMenu = false }) {
                         if (task.recurrence != null && !task.done) {
-                            DropdownMenuItem(
+                            YataDropdownMenuItem(
                                 text = { Text(stringResource(R.string.task_detail_skip_this_occurrence)) },
                                 onClick = {
                                     showExportMenu = false
@@ -318,16 +421,18 @@ fun TaskDetailScreen(
                                 leadingIcon = { Icon(Icons.Default.SkipNext, contentDescription = null) }
                             )
                         }
-                        DropdownMenuItem(
+                        YataDropdownMenuItem(
                             text = { Text(stringResource(R.string.task_detail_duplicate_task)) },
                             onClick = {
                                 showExportMenu = false
-                                viewModel.duplicateTask(task.id)
+                                viewModel.duplicateTask(task.id) { duplicated ->
+                                    onNavigateToTaskDetail(duplicated.id)
+                                }
                                 scope.launch { snackbarHostState.showSuccess(context.getString(R.string.task_duplicated)) }
                             },
                             leadingIcon = { Icon(Icons.Default.ContentCopy, contentDescription = null) }
                         )
-                        DropdownMenuItem(
+                        YataDropdownMenuItem(
                             text = { Text(stringResource(R.string.action_export_as_image)) },
                             onClick = {
                                 showExportMenu = false
@@ -335,7 +440,7 @@ fun TaskDetailScreen(
                             },
                             leadingIcon = { Icon(Icons.Default.Image, contentDescription = null) }
                         )
-                        DropdownMenuItem(
+                        YataDropdownMenuItem(
                             text = { Text(stringResource(R.string.action_export_as_pdf)) },
                             onClick = {
                                 showExportMenu = false
@@ -345,7 +450,7 @@ fun TaskDetailScreen(
                         )
                         // Archive is not delete: the task keeps everything and simply leaves the
                         // normal listings until unarchived from Settings -> Archive.
-                        DropdownMenuItem(
+                        YataDropdownMenuItem(
                             text = { Text(if (task.archived) stringResource(R.string.task_unarchive_action) else stringResource(R.string.task_archive_action)) },
                             onClick = {
                                 showExportMenu = false
@@ -371,7 +476,7 @@ fun TaskDetailScreen(
                         )
                         // Deep link back to this task — paste into a note, a message, or an
                         // automation and it reopens exactly here.
-                        DropdownMenuItem(
+                        YataDropdownMenuItem(
                             text = { Text(stringResource(R.string.task_detail_copy_link_to_task)) },
                             onClick = {
                                 showExportMenu = false
@@ -383,7 +488,7 @@ fun TaskDetailScreen(
                             leadingIcon = { Icon(Icons.Default.Link, contentDescription = null) }
                         )
                         HorizontalDivider()
-                        DropdownMenuItem(
+                        YataDropdownMenuItem(
                             text = { Text(stringResource(R.string.task_detail_delete_task), color = MaterialTheme.colorScheme.error) },
                             onClick = {
                                 showExportMenu = false
@@ -405,16 +510,20 @@ fun TaskDetailScreen(
             )
         }
     ) { innerPadding ->
-        LazyColumn(
-            state = listState,
+        AdaptiveContentBox(
             modifier = modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
                 .padding(innerPadding)
-                .padding(horizontal = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            contentPadding = PaddingValues(bottom = 32.dp)
         ) {
+            LazyColumn(
+                state = listState,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                contentPadding = PaddingValues(bottom = 32.dp)
+            ) {
             // 1. Check + Title Row — tap the title to rename it in place. Also the one place
             // this screen recognizes inline #tag/@person mentions while editing (matching
             // NewTaskSheet's own title field) — previously silently ignored here entirely.
@@ -422,6 +531,10 @@ fun TaskDetailScreen(
                 Column {
                     var isEditingTitle by remember(task.id) { mutableStateOf(false) }
                     var titleHasFocusedOnce by remember(task.id) { mutableStateOf(false) }
+                    var titleEdited by remember(task.id) { mutableStateOf(false) }
+                    var titleQuickAddDismissed by remember(task.id) { mutableStateOf(false) }
+                    var ignoredTitleQuickAddFields by remember(task.id) { mutableStateOf(setOf<String>()) }
+                    var titleEditBaseline by remember(task.id) { mutableStateOf<Task?>(null) }
                     val titleFocusRequester = remember(task.id) { FocusRequester() }
                     val titleColor = if (task.done) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f) else MaterialTheme.colorScheme.onSurface
                     val titleStyle = MaterialTheme.typography.titleLarge.copy(
@@ -438,15 +551,65 @@ fun TaskDetailScreen(
                     // A TextFieldValue (not a plain String) so the mention detector below knows
                     // where the cursor actually is, not just the end of the string.
                     var titleBuffer by remember(task.id) {
-                        mutableStateOf(androidx.compose.ui.text.input.TextFieldValue(task.title, androidx.compose.ui.text.TextRange(task.title.length)))
+                        mutableStateOf(TextFieldValue(task.title, TextRange(task.title.length)))
                     }
-                    val mention = remember(titleBuffer, tagsFeatureEnabled, peopleFeatureEnabled) {
+                    val quickAdd = remember(titleBuffer.text) { NaturalLanguageParser.parse(titleBuffer.text) }
+                    val quickAddMatched = isEditingTitle && titleEdited && !titleQuickAddDismissed &&
+                        quickAdd.title != titleBuffer.text.trim()
+                    val quickAddVisualTransformation = rememberQuickAddHighlightTransformation(
+                        spans = quickAdd.highlightSpans,
+                        enabled = quickAddMatched
+                    )
+                    val mention = remember(titleBuffer, tagsFeatureEnabled, peopleFeatureEnabled, projectsFeatureEnabled) {
                         if (!isEditingTitle) {
                             null
                         } else {
                             detectMentionToken(titleBuffer.text, titleBuffer.selection.end)
-                                ?.takeIf { (it.trigger == '#' && tagsFeatureEnabled) || (it.trigger == '@' && peopleFeatureEnabled) }
+                                ?.takeIf {
+                                    when (it.trigger) {
+                                        TRIGGER_TAG -> tagsFeatureEnabled
+                                        TRIGGER_PERSON -> peopleFeatureEnabled
+                                        TRIGGER_PROJECT -> projectsFeatureEnabled
+                                        TRIGGER_LIST -> true
+                                        else -> false
+                                    }
+                                }
                         }
+                    }
+                    val effectiveIgnoredTitleQuickAddFields = remember(ignoredTitleQuickAddFields, mention) {
+                        ignoredTitleQuickAddFields + quickAddFieldsOwnedByMention(mention)
+                    }
+                    fun upsertTitleEdit(value: TextFieldValue, parsed: ParsedQuickAdd = quickAdd) {
+                        val rawTitle = value.text
+                        if (rawTitle.isBlank()) return
+                        val activeMentionIgnoredFields = quickAddFieldsOwnedByMention(
+                            detectMentionToken(rawTitle, value.selection.end)
+                        )
+                        val updated = task.copy(title = rawTitle).withParsedQuickAdd(
+                            quickAdd = parsed,
+                            ignoredFields = ignoredTitleQuickAddFields + activeMentionIgnoredFields,
+                            lists = lists,
+                            projects = projects,
+                            people = people,
+                            tags = tags,
+                            projectsEnabled = projectsFeatureEnabled,
+                            tagsEnabled = tagsFeatureEnabled,
+                            peopleEnabled = peopleFeatureEnabled
+                        )
+                        viewModel.upsertTask(updated)
+                    }
+                    fun finishTitleEdit() {
+                        if (titleEdited && quickAddMatched && quickAdd.title.isNotBlank()) {
+                            val finalTitleValue = TextFieldValue(quickAdd.title, TextRange(quickAdd.title.length))
+                            titleBuffer = finalTitleValue
+                            upsertTitleEdit(finalTitleValue, quickAdd)
+                        }
+                        isEditingTitle = false
+                        titleEditBaseline = null
+                    }
+                    fun restoreSmartField(field: String, restoredTask: (Task, Task?) -> Task) {
+                        ignoredTitleQuickAddFields = ignoredTitleQuickAddFields + field
+                        viewModel.upsertTask(restoredTask(task.copy(title = titleBuffer.text), titleEditBaseline))
                     }
 
                     Row(
@@ -470,7 +633,10 @@ fun TaskDetailScreen(
                                 value = titleBuffer,
                                 onValueChange = { newValue ->
                                     titleBuffer = newValue
-                                    if (newValue.text.isNotBlank()) viewModel.upsertTask(task.copy(title = newValue.text))
+                                    titleEdited = true
+                                    titleQuickAddDismissed = false
+                                    ignoredTitleQuickAddFields = emptySet()
+                                    upsertTitleEdit(newValue, NaturalLanguageParser.parse(newValue.text))
                                 },
                                 textStyle = titleStyle,
                                 // Wraps rather than scrolling off to the right. This is the field
@@ -478,6 +644,7 @@ fun TaskDetailScreen(
                                 // already hold text longer than the line — as a single line the
                                 // start of it was unreachable.
                                 maxLines = 4,
+                                visualTransformation = quickAddVisualTransformation,
                                 cursorBrush = androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.primary),
                                 modifier = Modifier
                                     .weight(1f)
@@ -486,7 +653,7 @@ fun TaskDetailScreen(
                                         if (it.isFocused) {
                                             titleHasFocusedOnce = true
                                         } else if (titleHasFocusedOnce) {
-                                            isEditingTitle = false
+                                            finishTitleEdit()
                                         }
                                     }
                             )
@@ -496,7 +663,14 @@ fun TaskDetailScreen(
                                 style = titleStyle,
                                 modifier = Modifier
                                     .weight(1f)
-                                    .clickable { isEditingTitle = true }
+                                    .clickable {
+                                        titleBuffer = TextFieldValue(task.title, TextRange(task.title.length))
+                                        titleEdited = false
+                                        titleQuickAddDismissed = false
+                                        ignoredTitleQuickAddFields = emptySet()
+                                        titleEditBaseline = task
+                                        isEditingTitle = true
+                                    }
                             )
                         }
                     }
@@ -540,30 +714,347 @@ fun TaskDetailScreen(
                                 val newTitleValue = consumeMentionToken(titleBuffer, mention)
                                 titleBuffer = newTitleValue
                                 viewModel.upsertTask(task.copy(title = newTitleValue.text, assigneeIds = task.assigneeIds + id))
+                            },
+                            projects = projects,
+                            lists = lists,
+                            onSelectProject = { project ->
+                                val newTitleValue = consumeMentionToken(titleBuffer, mention)
+                                titleBuffer = newTitleValue
+                                viewModel.upsertTask(
+                                    task.copy(
+                                        title = newTitleValue.text,
+                                        projectId = project.id,
+                                        listId = null,
+                                        due = project.due ?: task.due
+                                    )
+                                )
+                            },
+                            onSelectList = { list ->
+                                val newTitleValue = consumeMentionToken(titleBuffer, mention)
+                                titleBuffer = newTitleValue
+                                viewModel.upsertTask(task.copy(title = newTitleValue.text, listId = list.id, projectId = null))
                             }
                         )
                     }
+
+                    if (quickAddMatched) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        // Resolved once here so the chip shows what actually matched rather than
+                        // the raw typed text — see DetectedQuickAddChip.
+                        val projectMatch = quickAdd.projectName?.let { name ->
+                            findBestEntityMatch(name, projects.activeProjects(), { it.name })
+                        }
+                        val listMatch = quickAdd.listName?.let { name ->
+                            findBestEntityMatch(name, lists.activeLists(), { it.name })
+                        }
+                        val matchedTagCount = quickAdd.tagNames.count { name ->
+                            findBestEntityMatch(name, tags, { tag -> tag.name }) != null
+                        }
+                        val matchedAssigneeCount = quickAdd.assigneeNames.count { name ->
+                            findBestEntityMatch(name, people.activePeople(includeIds = task.assigneeIds.toSet()), { person -> person.name }) != null
+                        }
+                        val detectedItems = listOfNotNull<DetectedQuickAddChip>(
+                            quickAdd.due?.takeIf { "due" !in effectiveIgnoredTitleQuickAddFields }?.let {
+                                DetectedQuickAddChip("Due ${TaskScheduleUtils.formatDueDate(it)}", { activeSheet = DetailSheetType.ScheduleEditor }, {
+                                    restoreSmartField("due") { current, baseline -> current.copy(due = baseline?.due) }
+                                })
+                            },
+                            quickAdd.startDate?.takeIf { "start" !in effectiveIgnoredTitleQuickAddFields }?.let {
+                                DetectedQuickAddChip(stringResource(R.string.smart_add_starts, TaskScheduleUtils.formatDueDate(it)), { activeSheet = DetailSheetType.ScheduleEditor }, {
+                                    restoreSmartField("start") { current, baseline -> current.copy(startDate = baseline?.startDate) }
+                                })
+                            },
+                            quickAdd.time?.takeIf { "time" !in effectiveIgnoredTitleQuickAddFields }?.let {
+                                DetectedQuickAddChip("Time $it", { activeSheet = DetailSheetType.ScheduleEditor }, {
+                                    restoreSmartField("time") { current, baseline -> current.copy(time = baseline?.time) }
+                                })
+                            },
+                            quickAdd.recurrence?.takeIf { "recurrence" !in effectiveIgnoredTitleQuickAddFields }?.let {
+                                DetectedQuickAddChip("Repeat ${com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it, dueDatePickerContext.weekendDays)}", { activeSheet = DetailSheetType.RecurrenceBuilder }, {
+                                    restoreSmartField("recurrence") { current, baseline -> current.copy(recurrence = baseline?.recurrence) }
+                                })
+                            },
+                            quickAdd.reminder?.takeIf { "reminder" !in effectiveIgnoredTitleQuickAddFields }?.let {
+                                DetectedQuickAddChip("Remind $it", { activeSheet = DetailSheetType.ReminderPicker }, {
+                                    restoreSmartField("reminder") { current, baseline -> current.copy(reminder = baseline?.reminder) }
+                                })
+                            },
+                            quickAdd.priority?.takeIf { "priority" !in effectiveIgnoredTitleQuickAddFields }?.let {
+                                DetectedQuickAddChip("${it.uppercase()} priority", { }, {
+                                    restoreSmartField("priority") { current, baseline -> current.copy(priority = baseline?.priority ?: "none") }
+                                })
+                            },
+                            "Flagged".takeIf { quickAdd.flag && "flag" !in effectiveIgnoredTitleQuickAddFields }?.let {
+                                DetectedQuickAddChip(it, { viewModel.toggleTaskFlag(task.id) }, {
+                                    restoreSmartField("flag") { current, baseline -> current.copy(flag = baseline?.flag ?: false) }
+                                })
+                            },
+                            quickAdd.projectName?.takeIf { projectsFeatureEnabled && "project" !in effectiveIgnoredTitleQuickAddFields }?.let { typed ->
+                                DetectedQuickAddChip(
+                                    label = "Project ${projectMatch?.name ?: typed}",
+                                    onClick = { activeSheet = DetailSheetType.ProjectPicker },
+                                    onDismiss = {
+                                        restoreSmartField("project") { current, baseline ->
+                                            current.copy(projectId = baseline?.projectId, listId = baseline?.listId, due = baseline?.due)
+                                        }
+                                    },
+                                    matched = projectMatch != null
+                                )
+                            },
+                            quickAdd.listName?.takeIf { "list" !in effectiveIgnoredTitleQuickAddFields }?.let { typed ->
+                                DetectedQuickAddChip(
+                                    label = "List ${listMatch?.name ?: typed}",
+                                    onClick = { activeSheet = DetailSheetType.ListPicker },
+                                    onDismiss = {
+                                        restoreSmartField("list") { current, baseline ->
+                                            current.copy(listId = baseline?.listId, projectId = baseline?.projectId)
+                                        }
+                                    },
+                                    matched = listMatch != null
+                                )
+                            },
+                            quickAdd.tagNames.takeIf { tagsFeatureEnabled && it.isNotEmpty() && "tags" !in effectiveIgnoredTitleQuickAddFields }?.joinToString(", ") { "#$it" }?.let {
+                                DetectedQuickAddChip(
+                                    label = "Tags $it",
+                                    onClick = { activeSheet = DetailSheetType.TagPicker },
+                                    onDismiss = {
+                                        restoreSmartField("tags") { current, baseline -> current.copy(tagIds = baseline?.tagIds ?: current.tagIds) }
+                                    },
+                                    matched = matchedTagCount > 0
+                                )
+                            },
+                            quickAdd.assigneeNames.takeIf { peopleFeatureEnabled && it.isNotEmpty() && "people" !in effectiveIgnoredTitleQuickAddFields }?.joinToString(", ") { "@$it" }?.let {
+                                DetectedQuickAddChip(
+                                    label = "People $it",
+                                    onClick = { activeSheet = DetailSheetType.AssigneePicker },
+                                    onDismiss = {
+                                        restoreSmartField("people") { current, baseline -> current.copy(assigneeIds = baseline?.assigneeIds ?: current.assigneeIds) }
+                                    },
+                                    matched = matchedAssigneeCount > 0
+                                )
+                            }
+                        )
+                        if (detectedItems.isNotEmpty()) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(14.dp))
+                                    .background(MaterialTheme.colorScheme.primaryContainer)
+                                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Default.Today,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                    Text(
+                                        text = stringResource(R.string.new_task_smart_add_summary),
+                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    Icon(
+                                        Icons.Default.Close,
+                                        contentDescription = stringResource(R.string.new_task_ignore_detected_date_time),
+                                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        modifier = Modifier
+                                            .size(16.dp)
+                                            .clip(CircleShape)
+                                            .clickable { titleQuickAddDismissed = true }
+                                    )
+                                }
+                                Text(
+                                    text = stringResource(R.string.new_task_detected_title, quickAdd.title),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                                FlowRow(
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    detectedItems.forEach { chip ->
+                                        InputChip(
+                                            selected = true,
+                                            onClick = chip.onClick,
+                                            label = { Text(chip.label) },
+                                            // An unmatched project/list/tag/person mention tints
+                                            // error instead, so a typo that silently attached
+                                            // nothing looks different from a chip that worked —
+                                            // see DetectedQuickAddChip.
+                                            colors = if (chip.matched) {
+                                                InputChipDefaults.inputChipColors(
+                                                    selectedContainerColor = MaterialTheme.colorScheme.surface,
+                                                    selectedLabelColor = MaterialTheme.colorScheme.onSurface,
+                                                    selectedTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            } else {
+                                                InputChipDefaults.inputChipColors(
+                                                    selectedContainerColor = MaterialTheme.colorScheme.errorContainer,
+                                                    selectedLabelColor = MaterialTheme.colorScheme.onErrorContainer,
+                                                    selectedTrailingIconColor = MaterialTheme.colorScheme.onErrorContainer
+                                                )
+                                            },
+                                            leadingIcon = if (!chip.matched) {
+                                                {
+                                                    Icon(
+                                                        Icons.Default.ErrorOutline,
+                                                        contentDescription = null,
+                                                        tint = MaterialTheme.colorScheme.onErrorContainer,
+                                                        modifier = Modifier.size(16.dp)
+                                                    )
+                                                }
+                                            } else null,
+                                            trailingIcon = {
+                                                Icon(
+                                                    Icons.Default.Close,
+                                                    contentDescription = stringResource(R.string.new_task_ignore_field, chip.label),
+                                                    modifier = Modifier
+                                                        .size(16.dp)
+                                                        .clickable { chip.onDismiss() }
+                                                )
+                                            }
+                                        )
+                                    }
+                            }
+                        }
+                    }
+                }
                 }
             }
 
             // 2. Meta rows — each its own surfaceContainerLow card (per handoff's MetaRow)
             item {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                @Composable
+                fun CoreMetaRows(itemModifier: Modifier = Modifier) {
+                    // Keyed on AppClock.minute so it actually ticks — see TaskRow for the same
+                    // note. This screen has no Overdue badge competing with it, so unlike the row
+                    // it renders the overdue case here rather than folding it into one.
+                    val dueCountdown = if (dueCountdownEnabled && !task.done) {
+                        val nowMinute = com.mj.yata.util.AppClock.minute
+                        remember(task.due, task.time, nowMinute) {
+                            com.mj.yata.util.TaskScheduleUtils.dueCountdown(task.due, task.time, nowMinute)
+                        }
+                    } else null
                     MetaRowItem(
                         icon = Icons.Default.Today,
-                        label = "Due Date",
+                        label = stringResource(R.string.task_detail_due_date),
                         value = com.mj.yata.util.TaskScheduleUtils.formatDueDateTime(task.due, task.time),
                         accentColor = MaterialTheme.colorScheme.primary,
+                        modifier = itemModifier,
+                        rightContent = dueCountdown?.let { countdown ->
+                            {
+                                DetailCountdownBadge(
+                                    text = if (countdown.isOverdue) {
+                                        stringResource(R.string.countdown_overdue_by, countdown.span)
+                                    } else {
+                                        stringResource(R.string.countdown_in, countdown.span)
+                                    },
+                                    isOverdue = countdown.isOverdue
+                                )
+                            }
+                        },
                         onClick = { activeSheet = DetailSheetType.ScheduleEditor }
                     )
 
+                    // Only shown once a start date exists. An always-present "No start date" row
+                    // would put a field most tasks never use above Reminder and Repeat, which
+                    // nearly all of them do — it's set from the schedule editor instead.
+                    if (task.startDate != null) {
+                        MetaRowItem(
+                            icon = Icons.Default.EventAvailable,
+                            label = stringResource(R.string.task_start_date),
+                            value = com.mj.yata.util.TaskScheduleUtils.formatDueDate(task.startDate),
+                            accentColor = MaterialTheme.colorScheme.secondary,
+                            modifier = itemModifier,
+                            onClick = { activeSheet = DetailSheetType.ScheduleEditor }
+                        )
+                    }
+
+                    MetaRowItem(
+                        icon = Icons.Default.Notifications,
+                        label = stringResource(R.string.task_detail_reminder),
+                        value = com.mj.yata.util.TaskScheduleUtils.formatReminder(task.reminder),
+                        accentColor = if (task.reminder != null) MaterialTheme.colorScheme.secondary else null,
+                        defaultValue = task.reminder == null,
+                        modifier = itemModifier,
+                        onClick = { activeSheet = DetailSheetType.ReminderPicker }
+                    )
+
+                    val repeatsVal = task.recurrence?.let {
+                        com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it, dueDatePickerContext.weekendDays)
+                    } ?: "Does not repeat"
+                    MetaRowItem(
+                        icon = Icons.Default.Repeat,
+                        label = stringResource(R.string.task_detail_repeats),
+                        value = repeatsVal,
+                        accentColor = if (task.recurrence != null) MaterialTheme.colorScheme.tertiary else null,
+                        defaultValue = task.recurrence == null,
+                        modifier = itemModifier,
+                        onClick = { activeSheet = DetailSheetType.RecurrenceBuilder }
+                    )
+                    if (projectsFeatureEnabled) {
+                        MetaRowItem(
+                            icon = Icons.Default.Layers,
+                            label = stringResource(R.string.entity_project),
+                            value = project?.name ?: stringResource(R.string.task_detail_none),
+                            defaultValue = project == null,
+                            modifier = itemModifier,
+                            onClick = { activeSheet = DetailSheetType.ProjectPicker }
+                        )
+                    }
+
+                    MetaRowItem(
+                        icon = Icons.Default.Folder,
+                        label = stringResource(R.string.entity_list),
+                        value = taskList?.name ?: stringResource(R.string.task_detail_none),
+                        swatchColor = if (taskList != null) listColor else null,
+                        defaultValue = taskList == null,
+                        modifier = itemModifier,
+                        onClick = { activeSheet = DetailSheetType.ListPicker }
+                    )
+
+                    // Priority
+                    MetaRowItem(
+                        icon = Icons.Default.Flag,
+                        label = stringResource(R.string.new_task_priority),
+                        value = task.priority.uppercase(),
+                        rightContent = { PriorityBars(priority = task.priority) },
+                        defaultValue = task.priority == "none",
+                        modifier = itemModifier,
+                        onClick = { viewModel.cycleTaskPriority(task.id) }
+                    )
+                }
+
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (useWideDetail) {
+                        FlowRow(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            maxItemsInEachRow = 2
+                        ) {
+                            CoreMetaRows(Modifier.weight(1f))
+                        }
+                    } else {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            CoreMetaRows()
+                        }
+                    }
+
                     // Carry forward — only makes sense for an open task that's already due
                     // today or overdue, not one that's done or scheduled for the future.
-                    val canCarryForward = !task.done && task.due != null &&
-                        task.due <= java.time.LocalDate.now().toString()
+                    val canCarryForward = !task.done &&
+                        task.effectiveDue(dueDatePickerContext.weekendDays, dueDatePickerContext.holidays, observeNonWorkingDays)
+                            ?.let { it <= java.time.LocalDate.now().toString() } == true
                     if (canCarryForward) {
                         YataSelectChip(
-                            label = "Carry forward to next day",
+                            label = stringResource(R.string.task_detail_carry_forward),
                             selected = true,
                             onClick = {
                                 viewModel.upsertTask(task.copy(due = java.time.LocalDate.now().plusDays(1).toString()))
@@ -580,38 +1071,6 @@ fun TaskDetailScreen(
                         )
                     }
 
-                    // Only shown once a start date exists. An always-present "No start date" row
-                    // would put a field most tasks never use above Reminder and Repeat, which
-                    // nearly all of them do — it's set from the schedule editor instead.
-                    if (task.startDate != null) {
-                        MetaRowItem(
-                            icon = Icons.Default.EventAvailable,
-                            label = stringResource(R.string.task_start_date),
-                            value = com.mj.yata.util.TaskScheduleUtils.formatDueDate(task.startDate),
-                            accentColor = MaterialTheme.colorScheme.secondary,
-                            onClick = { activeSheet = DetailSheetType.ScheduleEditor }
-                        )
-                    }
-
-                    MetaRowItem(
-                        icon = Icons.Default.Notifications,
-                        label = "Reminder",
-                        value = com.mj.yata.util.TaskScheduleUtils.formatReminder(task.reminder),
-                        accentColor = if (task.reminder != null) MaterialTheme.colorScheme.secondary else null,
-                        onClick = { activeSheet = DetailSheetType.ReminderPicker }
-                    )
-
-                    val repeatsVal = task.recurrence?.let {
-                        com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it)
-                    } ?: "Does not repeat"
-                    MetaRowItem(
-                        icon = Icons.Default.Repeat,
-                        label = "Repeats",
-                        value = repeatsVal,
-                        accentColor = if (task.recurrence != null) MaterialTheme.colorScheme.tertiary else null,
-                        onClick = { activeSheet = DetailSheetType.RecurrenceBuilder }
-                    )
-
                     // Reliable streak (linked via TaskEntity.seriesId, not the title-heuristic
                     // recurrenceHistory below) — only counts completions since seriesId tracking
                     // was added, so a brand-new streak isn't itself a bug.
@@ -625,7 +1084,7 @@ fun TaskDetailScreen(
                     }
                     if (task.recurrence != null && streak >= 2) {
                         Text(
-                            text = "🔥 $streak-day streak",
+                            text = stringResource(R.string.task_detail_streak_days, streak),
                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.tertiary,
                             modifier = Modifier.padding(start = 4.dp)
@@ -642,7 +1101,7 @@ fun TaskDetailScreen(
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Text(
-                                text = "Recurring history",
+                                text = stringResource(R.string.task_detail_recurring_history),
                                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -666,32 +1125,6 @@ fun TaskDetailScreen(
                             }
                         }
                     }
-
-                    if (projectsFeatureEnabled) {
-                        MetaRowItem(
-                            icon = Icons.Default.Layers,
-                            label = "Project",
-                            value = project?.name ?: "None",
-                            onClick = { activeSheet = DetailSheetType.ProjectPicker }
-                        )
-                    }
-
-                    MetaRowItem(
-                        icon = Icons.Default.Folder,
-                        label = "List",
-                        value = taskList?.name ?: "None",
-                        swatchColor = listColor,
-                        onClick = { activeSheet = DetailSheetType.ListPicker }
-                    )
-
-                    // Priority
-                    MetaRowItem(
-                        icon = Icons.Default.Flag,
-                        label = "Priority",
-                        value = task.priority.uppercase(),
-                        rightContent = { PriorityBars(priority = task.priority) },
-                        onClick = { viewModel.cycleTaskPriority(task.id) }
-                    )
                 }
             }
 
@@ -699,7 +1132,7 @@ fun TaskDetailScreen(
             if (peopleFeatureEnabled) item {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        text = "Assigned to",
+                        text = stringResource(R.string.new_task_assigned_to),
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -794,66 +1227,11 @@ fun TaskDetailScreen(
                 }
             }
 
-            // 3.6 Estimate — planned effort, feeding Today's "X planned" capacity line. Always
-            // offered (unlike Section), since any task can carry one.
-            item {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        text = stringResource(R.string.task_estimate),
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Row(
-                        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        LocalScheduleChip(stringResource(R.string.task_estimate_none), task.estimateMinutes == null) {
-                            viewModel.setTaskEstimate(task.id, null)
-                        }
-                        com.mj.yata.util.EstimateUtils.PRESETS.forEach { minutes ->
-                            LocalScheduleChip(
-                                com.mj.yata.util.EstimateUtils.format(minutes),
-                                task.estimateMinutes == minutes
-                            ) {
-                                viewModel.setTaskEstimate(task.id, minutes)
-                            }
-                        }
-                    }
-                    LocalPanelHint(stringResource(R.string.task_estimate_hint))
-                }
-            }
-
-            // 3.7 Section — only shown once the task's own project has defined sections
-            // (Project.sectionNames); otherwise there's nothing meaningful to pick from and this
-            // row would just be clutter. See ManageSectionsSheet for defining them.
-            if (project != null && project.sectionNames.isNotEmpty()) item {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        text = stringResource(R.string.task_section),
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Row(
-                        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        LocalScheduleChip(stringResource(R.string.task_section_none), task.section !in project.sectionNames) {
-                            viewModel.upsertTask(task.copy(section = ""))
-                        }
-                        project.sectionNames.forEach { sectionName ->
-                            LocalScheduleChip(sectionName, task.section == sectionName) {
-                                viewModel.upsertTask(task.copy(section = sectionName))
-                            }
-                        }
-                    }
-                }
-            }
-
-            // 4. Tags section
+            // 3.6 Tags section
             if (tagsFeatureEnabled) item {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        text = "Tags",
+                        text = stringResource(R.string.tab_tags),
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -886,10 +1264,65 @@ fun TaskDetailScreen(
                     }
                     if (inheritedTags.isNotEmpty()) {
                         Text(
-                            text = "Tags with no ✕ come from this task's project and stay in sync automatically.",
+                            text = stringResource(R.string.task_detail_tags_sync_hint),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                    }
+                }
+            }
+
+            // 3.7 Estimate — planned effort, feeding Today's "X planned" capacity line. Always
+            // offered (unlike Section), since any task can carry one.
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = stringResource(R.string.task_estimate),
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        LocalScheduleChip(stringResource(R.string.task_estimate_none), task.estimateMinutes == null) {
+                            viewModel.setTaskEstimate(task.id, null)
+                        }
+                        com.mj.yata.util.EstimateUtils.PRESETS.forEach { minutes ->
+                            LocalScheduleChip(
+                                com.mj.yata.util.EstimateUtils.format(minutes),
+                                task.estimateMinutes == minutes
+                            ) {
+                                viewModel.setTaskEstimate(task.id, minutes)
+                            }
+                        }
+                    }
+                    LocalPanelHint(stringResource(R.string.task_estimate_hint))
+                }
+            }
+
+            // 3.8 Section — only shown once the task's own project has defined sections
+            // (Project.sectionNames); otherwise there's nothing meaningful to pick from and this
+            // row would just be clutter. See ManageSectionsSheet for defining them.
+            if (project != null && project.sectionNames.isNotEmpty()) item {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = stringResource(R.string.task_section),
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        LocalScheduleChip(stringResource(R.string.task_section_none), task.section !in project.sectionNames) {
+                            viewModel.upsertTask(task.copy(section = ""))
+                        }
+                        project.sectionNames.forEach { sectionName ->
+                            LocalScheduleChip(sectionName, task.section == sectionName) {
+                                viewModel.upsertTask(task.copy(section = sectionName))
+                            }
+                        }
                     }
                 }
             }
@@ -901,9 +1334,9 @@ fun TaskDetailScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    SectionToggleChip("Subtasks", showSubtasks, { showSubtasks = !showSubtasks }, Modifier.weight(1f), count = task.subtasks.size)
-                    SectionToggleChip("Notes", showNotes, { showNotes = !showNotes }, Modifier.weight(1f), count = if (!task.notes.isNullOrBlank()) 1 else 0)
-                    SectionToggleChip("Comments", showComments, { showComments = !showComments; userToggledComments = true }, Modifier.weight(1f), count = comments.size)
+                    SectionToggleChip(stringResource(R.string.new_task_subtasks), showSubtasks, { showSubtasks = !showSubtasks }, Modifier.weight(1f), count = task.subtasks.size)
+                    SectionToggleChip(stringResource(R.string.new_task_notes), showNotes, { showNotes = !showNotes }, Modifier.weight(1f), count = if (!task.notes.isNullOrBlank()) 1 else 0)
+                    SectionToggleChip(stringResource(R.string.task_detail_comments), showComments, { showComments = !showComments; userToggledComments = true }, Modifier.weight(1f), count = comments.size)
                 }
             }
 
@@ -911,8 +1344,8 @@ fun TaskDetailScreen(
             item {
                 AnimatedVisibility(
                     visible = showSubtasks,
-                    enter = expandVertically(animationSpec = tween(220)) + fadeIn(animationSpec = tween(220)),
-                    exit = shrinkVertically(animationSpec = tween(180)) + fadeOut(animationSpec = tween(150))
+                    enter = expandVertically(animationSpec = tween(com.mj.yata.ui.theme.YataDur.fade)) + fadeIn(animationSpec = tween(com.mj.yata.ui.theme.YataDur.fade)),
+                    exit = shrinkVertically(animationSpec = tween(com.mj.yata.ui.theme.YataDur.fade)) + fadeOut(animationSpec = tween(com.mj.yata.ui.theme.YataDur.micro))
                 ) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     val subtasks = task.subtasks
@@ -931,12 +1364,12 @@ fun TaskDetailScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Subtasks",
+                            text = stringResource(R.string.new_task_subtasks),
                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            text = "$subDone/$subTotal done",
+                            text = stringResource(R.string.task_detail_subtasks_progress, subDone, subTotal),
                             style = MaterialTheme.typography.labelSmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
                         )
                     }
@@ -955,8 +1388,25 @@ fun TaskDetailScreen(
                     val childrenByParent = remember(subtasks) { subtasks.filter { it.parentSubtaskId != null }.groupBy { it.parentSubtaskId } }
 
                     fun toggleSubtask(id: String, done: Boolean) {
+                        val wasAllDone = subtasks.isNotEmpty() && subtasks.all { it.done }
                         val updated = subtasks.map { if (it.id == id) it.copy(done = done) else it }
-                        viewModel.upsertTask(task.copy(subtasks = updated))
+                        val isAllDone = updated.isNotEmpty() && updated.all { it.done }
+                        if (done && !task.done && !wasAllDone && isAllDone) {
+                            when (subtaskCompletionAction) {
+                                SubtaskCompletionAction.AUTO_COMPLETE -> {
+                                    viewModel.completeTaskAfterSavingSubtasks(task, updated) {}
+                                }
+                                SubtaskCompletionAction.ASK -> {
+                                    viewModel.upsertTask(task.copy(subtasks = updated))
+                                    pendingParentCompletionSubtasks = updated
+                                }
+                                SubtaskCompletionAction.NOTHING -> {
+                                    viewModel.upsertTask(task.copy(subtasks = updated))
+                                }
+                            }
+                        } else {
+                            viewModel.upsertTask(task.copy(subtasks = updated))
+                        }
                     }
 
                     fun deleteSubtask(id: String) {
@@ -1106,8 +1556,8 @@ fun TaskDetailScreen(
             item {
                 AnimatedVisibility(
                     visible = showNotes,
-                    enter = expandVertically(animationSpec = tween(220)) + fadeIn(animationSpec = tween(220)),
-                    exit = shrinkVertically(animationSpec = tween(180)) + fadeOut(animationSpec = tween(150))
+                    enter = expandVertically(animationSpec = tween(com.mj.yata.ui.theme.YataDur.fade)) + fadeIn(animationSpec = tween(com.mj.yata.ui.theme.YataDur.fade)),
+                    exit = shrinkVertically(animationSpec = tween(com.mj.yata.ui.theme.YataDur.fade)) + fadeOut(animationSpec = tween(com.mj.yata.ui.theme.YataDur.micro))
                 ) {
                 var isEditingNotes by remember(task.id) { mutableStateOf(false) }
                 // onFocusChanged fires once immediately on mount reporting isFocused=false (before
@@ -1118,7 +1568,7 @@ fun TaskDetailScreen(
                 val notesFocusRequester = remember(task.id) { FocusRequester() }
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        text = "Notes",
+                        text = stringResource(R.string.new_task_notes),
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -1185,15 +1635,15 @@ fun TaskDetailScreen(
             item {
                 AnimatedVisibility(
                     visible = showComments,
-                    enter = expandVertically(animationSpec = tween(220)) + fadeIn(animationSpec = tween(220)),
-                    exit = shrinkVertically(animationSpec = tween(180)) + fadeOut(animationSpec = tween(150))
+                    enter = expandVertically(animationSpec = tween(com.mj.yata.ui.theme.YataDur.fade)) + fadeIn(animationSpec = tween(com.mj.yata.ui.theme.YataDur.fade)),
+                    exit = shrinkVertically(animationSpec = tween(com.mj.yata.ui.theme.YataDur.fade)) + fadeOut(animationSpec = tween(com.mj.yata.ui.theme.YataDur.micro))
                 ) {
                 var newComment by remember { mutableStateOf("") }
                 val peopleById = remember(people) { people.associateBy { it.id } }
 
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        text = "Comments",
+                        text = stringResource(R.string.task_detail_comments),
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -1205,6 +1655,58 @@ fun TaskDetailScreen(
                         if (newComment.isNotBlank()) {
                             viewModel.addComment(task.id, newComment.trim())
                             newComment = ""
+                        }
+                    }
+                    comments.forEach { comment ->
+                        val author = comment.authorId?.let { peopleById[it] }
+                        Surface(
+                            color = MaterialTheme.colorScheme.surfaceContainerLow,
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(start = 12.dp, top = 10.dp, bottom = 10.dp, end = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = comment.body,
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                    Text(
+                                        text = listOfNotNull(
+                                            author?.let { if (it.isMe) "You" else it.name },
+                                            com.mj.yata.util.TaskScheduleUtils.formatDueDate(
+                                                java.time.Instant.ofEpochMilli(comment.createdAt)
+                                                    .atZone(java.time.ZoneId.systemDefault()).toLocalDate().toString()
+                                            )
+                                        ).joinToString(" · "),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                // Compact tonal pill instead of a full 48dp IconButton — the default
+                                // touch target was taller than this row's two lines of text, which
+                                // padded the card out with visible empty space beneath the content.
+                                FilledTonalIconButton(
+                                    onClick = { viewModel.deleteComment(comment) },
+                                    modifier = Modifier
+                                        .padding(start = 4.dp)
+                                        .size(28.dp),
+                                    colors = IconButtonDefaults.filledTonalIconButtonColors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                ) {
+                                    Icon(
+                                        Icons.Default.Close,
+                                        contentDescription = stringResource(R.string.task_detail_delete_comment),
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                }
+                            }
                         }
                     }
                     TextField(
@@ -1224,45 +1726,10 @@ fun TaskDetailScreen(
                             }
                         }
                     )
-                    comments.forEach { comment ->
-                        val author = comment.authorId?.let { peopleById[it] }
-                        Surface(
-                            color = MaterialTheme.colorScheme.surfaceContainerLow,
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(start = 12.dp, top = 10.dp, bottom = 10.dp, end = 4.dp),
-                                verticalAlignment = Alignment.Top
-                            ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = comment.body,
-                                        style = MaterialTheme.typography.bodyMedium
-                                    )
-                                    Text(
-                                        text = listOfNotNull(
-                                            author?.let { if (it.isMe) "You" else it.name },
-                                            com.mj.yata.util.TaskScheduleUtils.formatDueDate(
-                                                java.time.Instant.ofEpochMilli(comment.createdAt)
-                                                    .atZone(java.time.ZoneId.systemDefault()).toLocalDate().toString()
-                                            )
-                                        ).joinToString(" · "),
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                                IconButton(onClick = { viewModel.deleteComment(comment) }) {
-                                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.task_detail_delete_comment), modifier = Modifier.size(16.dp))
-                                }
-                            }
-                        }
-                    }
                 }
                 }
             }
+        }
         }
     }
 
@@ -1271,7 +1738,8 @@ fun TaskDetailScreen(
         ModalBottomSheet(
             onDismissRequest = { activeSheet = DetailSheetType.None },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = rememberAdaptiveSheetMaxWidth()
         ) {
             when (activeSheet) {
                 DetailSheetType.ScheduleEditor -> {
@@ -1337,7 +1805,7 @@ fun TaskDetailScreen(
                             LocalPanelHint("Pick a due date to unlock time and reminder options.")
                         } else {
                             Text(
-                                text = "Time",
+                                text = stringResource(R.string.new_task_time),
                                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -1409,7 +1877,11 @@ fun TaskDetailScreen(
                         viewModel.upsertTask(task.copy(recurrence = rec))
                         activeSheet = DetailSheetType.None
                     },
-                    onDismiss = { activeSheet = DetailSheetType.None }
+                    onDismiss = { activeSheet = DetailSheetType.None },
+                    // The task's own due date anchors both the new-rule defaults (weekday, day of
+                    // month) and the next-dates preview; without it both counted from today.
+                    referenceDate = task.due,
+                    weekendDays = dueDatePickerContext.weekendDays
                 )
                 DetailSheetType.ListPicker -> {
                     Column(modifier = Modifier.padding(24.dp).navigationBarsPadding(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -1419,7 +1891,7 @@ fun TaskDetailScreen(
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             YataSelectChip(
-                                label = "None",
+                                label = stringResource(R.string.task_detail_none),
                                 selected = task.listId == null,
                                 onClick = {
                                     viewModel.upsertTask(task.copy(listId = null))
@@ -1450,7 +1922,7 @@ fun TaskDetailScreen(
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             YataSelectChip(
-                                label = "None",
+                                label = stringResource(R.string.task_detail_none),
                                 selected = task.projectId == null,
                                 onClick = {
                                     viewModel.upsertTask(task.copy(projectId = null))
@@ -1537,11 +2009,12 @@ fun TaskDetailScreen(
         }
     }
     if (showDatePicker) {
-        YataDatePickerDialog(
+        com.mj.yata.ui.widgets.DueDateCalendarDialog(
             initialDate = task.due,
+            context = dueDatePickerContext,
             onDismiss = { showDatePicker = false },
             onConfirm = {
-                viewModel.upsertTask(task.copy(due = it))
+                viewModel.upsertTask(task.copy(due = it), skipRescheduleWarning = true)
                 showDatePicker = false
             }
         )
@@ -1580,8 +2053,10 @@ fun TaskDetailScreen(
         val hasSubtasks = task.subtasks.isNotEmpty()
         val hasScheduleDetails = task.recurrence != null || task.reminder != null
         val exportAccentColor = project?.let { accents.getAccent(it.color) } ?: listColor
-        val exportOverdue = task.due != null && !task.done &&
-            com.mj.yata.util.TaskScheduleUtils.parseDate(task.due)?.isBefore(java.time.LocalDate.now()) == true
+        val exportOverdue = !task.done &&
+            com.mj.yata.util.TaskScheduleUtils.parseDate(
+                task.effectiveDue(dueDatePickerContext.weekendDays, dueDatePickerContext.holidays, observeNonWorkingDays)
+            )?.isBefore(java.time.LocalDate.now()) == true
         val exportTagChips = (inheritedTags + ownTags).distinctBy { it.id }.map { tag ->
             com.mj.yata.util.export.ExportTagChip(
                 tag.name,
@@ -1589,25 +2064,52 @@ fun TaskDetailScreen(
             )
         }
         val peopleById = remember(people) { people.associateBy { it.id } }
-        val exportComments = remember(comments, people) {
+        // The People-tab "me" row is literally named "You" by default (see
+        // YataRepositoryImpl.seedInitialDataIfNeeded) — that reads fine on-screen but is
+        // meaningless to whoever receives the shared image/PDF. Prefer the Settings > Profile
+        // name when it's been filled in, since that's the field actually meant to be your name.
+        fun exportNameFor(person: com.mj.yata.domain.model.Person): String =
+            if (person.isMe && profileUserName.isNotBlank()) profileUserName else person.name
+        val exportComments = remember(comments, people, profileUserName) {
             comments.map { comment ->
                 val author = comment.authorId?.let { peopleById[it] }
                 com.mj.yata.util.export.ExportCommentRow(
-                    authorLabel = author?.let { if (it.isMe) "You" else it.name },
+                    authorLabel = author?.let { exportNameFor(it) },
                     timestampLabel = com.mj.yata.util.TaskScheduleUtils.formatDueDate(
                         java.time.Instant.ofEpochMilli(comment.createdAt)
                             .atZone(java.time.ZoneId.systemDefault()).toLocalDate().toString()
                     ),
-                    body = comment.body
+                    body = comment.body,
+                    authorInitials = author?.initials,
+                    authorAccentKey = author?.color,
+                    authorPhotoUri = author?.photoUri
                 )
             }
         }
 
         val exportSubtasks = remember(task.subtasks) { task.subtasks.toExportSubtaskRows() }
+        val exportedBy = remember(people) { people.firstOrNull { it.isMe } }
+        val exportDarkTheme = MaterialTheme.colorScheme.surface.luminance() < 0.5f
 
         fun runExport(options: com.mj.yata.util.export.TaskExportOptions) {
-            exportFormatPending = null
-            scope.launch {
+            val transferLink = if (options.includeImportLink) {
+                com.mj.yata.util.export.buildTaskTransferLink(
+                    title = task.title,
+                    tasks = listOf(task),
+                    listsById = listsById,
+                    projectsById = projectsById,
+                    tagsById = tagsById,
+                    peopleById = peopleById,
+                    includeStructure = !options.privacyMode,
+                    includeNotes = !options.privacyMode && options.includeNotes
+                )
+            } else {
+                null
+            }
+
+            fun startExport() {
+                exportFormatPending = null
+                scope.launch {
                 exportInProgress = true
                 val exportResult = runCatching {
                     com.mj.yata.util.export.exportTaskReport(
@@ -1622,23 +2124,44 @@ fun TaskDetailScreen(
                         completedAtLabel = if (task.done) com.mj.yata.util.TaskScheduleUtils.formatCompletedAt(task.completedAt) else null,
                         projectName = project?.name,
                         listName = taskList?.name,
-                        assigneeNames = if (options.privacyMode) emptyList() else taskAssignees.map { if (it.isMe) "You" else it.name },
+                        assignees = if (options.privacyMode) {
+                            emptyList()
+                        } else {
+                            taskAssignees.map { person ->
+                                com.mj.yata.util.export.ExportPersonChip(
+                                    name = exportNameFor(person),
+                                    initials = person.initials,
+                                    accentKey = person.color,
+                                    photoUri = person.photoUri
+                                )
+                            }
+                        },
                         tagChips = if (options.privacyMode) emptyList() else exportTagChips,
                         notes = task.notes,
                         includeNotes = options.includeNotes,
                         comments = exportComments,
                         includeComments = options.includeComments,
-                        recurrenceLabel = task.recurrence?.let { com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it) },
+                        recurrenceLabel = task.recurrence?.let { com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it, dueDatePickerContext.weekendDays) },
                         reminderLabel = task.reminder?.let { com.mj.yata.util.TaskScheduleUtils.formatReminder(it) },
                         subtasks = exportSubtasks,
                         includeSubtasks = options.includeSubtasks,
                         includeScheduleDetails = options.includeScheduleDetails,
+                        sharedByName = if (options.privacyMode) {
+                            "You"
+                        } else {
+                            exportedBy?.let { exportNameFor(it) } ?: profileUserName.ifBlank { "You" }
+                        },
+                        sharedByInitials = exportedBy?.initials ?: "Y",
+                        sharedByAccentKey = exportedBy?.color ?: "accentA",
+                        sharedByPhotoUri = if (options.privacyMode) null else exportedBy?.photoUri,
+                        darkTheme = options.imageDarkTheme,
                         accentColor = exportAccentColor,
                         showMadeWithFooter = options.showMadeWithFooter,
                         destination = options.destination,
                         fileNameBase = options.fileNameBase,
                         pdfPageSize = options.pdfPageSize,
-                        imageScale = options.imageScale
+                        imageScale = options.imageScale,
+                        transferText = transferLink?.asShareText(task.title, 1)
                     )
                 }
                 exportInProgress = false
@@ -1647,6 +2170,13 @@ fun TaskDetailScreen(
                 }.onFailure { error ->
                     snackbarHostState.showError(error.message ?: context.getString(R.string.export_failed))
                 }
+            }
+            }
+
+            if (options.destination == com.mj.yata.util.export.ExportDestination.SHARE) {
+                longTaskLinkWarningGate.runOrConfirm(transferLink, taskCount = 1, action = ::startExport)
+            } else {
+                startExport()
             }
         }
 
@@ -1657,6 +2187,7 @@ fun TaskDetailScreen(
             hasComments = hasComments,
             hasSubtasks = hasSubtasks,
             hasScheduleDetails = hasScheduleDetails,
+            systemDarkTheme = exportDarkTheme,
             onDismiss = { exportFormatPending = null },
             onConfirm = { options ->
                 runExport(options)
@@ -1665,6 +2196,34 @@ fun TaskDetailScreen(
     }
     if (exportInProgress) {
         com.mj.yata.util.export.ExportProgressDialog()
+    }
+    com.mj.yata.util.export.LongTaskLinkWarningDialog(longTaskLinkWarningGate)
+
+    if (showSyntaxDialog) {
+        com.mj.yata.ui.sheets.QuickAddSyntaxDialog(onDismiss = { showSyntaxDialog = false })
+    }
+
+    pendingParentCompletionSubtasks?.let { completedSubtasks ->
+        AlertDialog(
+            onDismissRequest = { pendingParentCompletionSubtasks = null },
+            title = { Text(stringResource(R.string.task_detail_all_subtasks_done_title)) },
+            text = { Text(stringResource(R.string.task_detail_all_subtasks_done_body, task.title)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        pendingParentCompletionSubtasks = null
+                        viewModel.completeTaskAfterSavingSubtasks(task, completedSubtasks) {}
+                    }
+                ) {
+                    Text(stringResource(R.string.task_detail_mark_task_done))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingParentCompletionSubtasks = null }) {
+                    Text(stringResource(R.string.action_not_now))
+                }
+            }
+        )
     }
 
     YataTimePickerLauncher(
@@ -1708,7 +2267,13 @@ private fun LocalScheduleChip(
     FilterChip(
         selected = selected,
         onClick = onClick,
-        label = { Text(label) }
+        label = { Text(label) },
+        colors = FilterChipDefaults.filterChipColors(
+            selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
+            selectedLabelColor = MaterialTheme.colorScheme.primary,
+            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0f),
+            labelColor = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     )
 }
 
@@ -1732,9 +2297,21 @@ fun MetaRowItem(
     modifier: Modifier = Modifier,
     accentColor: Color? = null,
     swatchColor: Color? = null,
+    defaultValue: Boolean = false,
     rightContent: (@Composable () -> Unit)? = null,
     onClick: () -> Unit
 ) {
+    val iconTileColor = if (defaultValue) {
+        MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.56f)
+    } else {
+        MaterialTheme.colorScheme.surfaceContainerHigh
+    }
+    val iconTint = when {
+        accentColor != null -> accentColor
+        defaultValue -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.68f)
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         shape = RoundedCornerShape(16.dp),
@@ -1750,13 +2327,13 @@ fun MetaRowItem(
                 modifier = Modifier
                     .size(32.dp)
                     .clip(RoundedCornerShape(8.dp))
-                    .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+                    .background(iconTileColor),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = label,
-                    tint = accentColor ?: MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint = iconTint,
                     modifier = Modifier.size(18.dp)
                 )
             }
@@ -1778,8 +2355,15 @@ fun MetaRowItem(
                     }
                     Text(
                         text = value,
-                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium, fontSize = 15.sp),
-                        color = accentColor ?: MaterialTheme.colorScheme.onSurface,
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = if (defaultValue) FontWeight.Normal else FontWeight.Medium,
+                            fontSize = 15.sp
+                        ),
+                        color = accentColor ?: if (defaultValue) {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        },
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -1800,8 +2384,3 @@ fun MetaRowItem(
         }
     }
 }
-
-
-
-
-

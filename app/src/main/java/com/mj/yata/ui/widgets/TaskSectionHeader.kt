@@ -7,8 +7,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.animation.core.tween
+import com.mj.yata.ui.theme.YataDur
+import com.mj.yata.ui.theme.YataEase
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
@@ -38,8 +42,10 @@ fun TaskSectionHeader(title: String, count: Int, modifier: Modifier = Modifier, 
         AnimatedContent(
             targetState = count,
             transitionSpec = {
-                (slideInVertically { height -> height } + fadeIn()).togetherWith(
-                    slideOutVertically { height -> -height } + fadeOut()
+                val spec = tween<IntOffset>(durationMillis = YataDur.micro, easing = YataEase.emphasized)
+                val fadeSpec = tween<Float>(durationMillis = YataDur.micro, easing = YataEase.emphasized)
+                (slideInVertically(spec) { height -> height } + fadeIn(fadeSpec)).togetherWith(
+                    slideOutVertically(spec) { height -> -height } + fadeOut(fadeSpec)
                 )
             },
             label = "headerCountAnim"

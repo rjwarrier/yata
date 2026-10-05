@@ -9,7 +9,10 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import com.mj.yata.data.local.datastore.UserPreferences
 import com.mj.yata.data.local.operationhistory.OperationHistoryStore
+import com.mj.yata.domain.model.Holiday
+import com.mj.yata.domain.model.effectiveDue
 import com.mj.yata.domain.repository.YataRepository
 import com.mj.yata.widget.resolveNotificationAccentColor
 import dagger.assisted.Assisted
@@ -29,7 +32,8 @@ class OverdueEscalationWorker @AssistedInject constructor(
     @Assisted context: Context,
     @Assisted params: WorkerParameters,
     private val repository: YataRepository,
-    private val operationHistoryStore: OperationHistoryStore
+    private val operationHistoryStore: OperationHistoryStore,
+    private val userPreferences: UserPreferences
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result = runOperationSafely(
@@ -41,11 +45,15 @@ class OverdueEscalationWorker @AssistedInject constructor(
         val tasks = repository.getTasks().first()
         val people = repository.getPeople().first()
         val today = LocalDate.now()
+        val weekendDays = userPreferences.weekendDaysFlow.first()
+        val holidays = userPreferences.holidaysFlow.first().mapNotNull(Holiday::decode)
+        val observeNonWorkingDays = userPreferences.observeNonWorkingDaysFlow.first()
 
         val lines = people.mapNotNull { person ->
             val overdueCount = tasks.count { task ->
                 if (task.done || person.id !in task.assigneeIds) return@count false
-                val due = task.due?.let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: return@count false
+                val due = task.effectiveDue(weekendDays, holidays, observeNonWorkingDays)
+                    ?.let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: return@count false
                 due.isBefore(today.minusDays(ESCALATION_THRESHOLD_DAYS - 1))
             }
             if (overdueCount > 0) "${person.name}: $overdueCount overdue" else null
@@ -54,6 +62,31 @@ class OverdueEscalationWorker @AssistedInject constructor(
         if (lines.isEmpty()) {
             operationHistoryStore.recordSuccess(OperationHistoryStore.REMINDERS_OVERDUE_ESCALATION, "No overdue escalations")
             return@runOperationSafely Result.success()
+        }
+
+        // This worker has no fixed time of day (it's a plain 24h periodic job), so unlike
+        // per-task due reminders it can't defer to the end of quiet hours — the next cycle is
+        // a day away, not a few hours. Skipping this cycle entirely rather than posting through
+        // quiet hours is the safer tradeoff for a non-urgent digest; the escalation itself is
+        // still there tomorrow if it recurs.
+        val now = System.currentTimeMillis()
+        val quietHoursEnabled = userPreferences.quietHoursEnabledFlow.first()
+        if (quietHoursEnabled) {
+            val deferred = com.mj.yata.util.QuietHours.deferIfWithinQuietHours(
+                now,
+                enabled = true,
+                startHour = userPreferences.quietHoursStartHourFlow.first(),
+                startMinute = userPreferences.quietHoursStartMinuteFlow.first(),
+                endHour = userPreferences.quietHoursEndHourFlow.first(),
+                endMinute = userPreferences.quietHoursEndMinuteFlow.first()
+            )
+            if (deferred != now) {
+                operationHistoryStore.recordSkipped(
+                    OperationHistoryStore.REMINDERS_OVERDUE_ESCALATION,
+                    "Skipped — within quiet hours"
+                )
+                return@runOperationSafely Result.success()
+            }
         }
 
         NotificationHelper.createChannels(applicationContext)

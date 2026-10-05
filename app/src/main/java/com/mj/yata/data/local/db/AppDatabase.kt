@@ -24,7 +24,7 @@ import org.json.JSONArray
         SubtaskEntity::class,
         TaskCommentEntity::class
     ],
-    version = 31,
+    version = 33,
     // Exported to app/schemas — gives migration tests real historical schemas to open, and lets
     // purely-additive future changes use Room auto-migrations instead of hand-written ones.
     exportSchema = true
@@ -364,6 +364,18 @@ abstract class AppDatabase : RoomDatabase() {
                             "WHERE taskId = tasks.id ORDER BY rowid ASC LIMIT 1)"
                     )
                 }
+            }
+        }
+
+        val MIGRATION_31_32 = object : Migration(31, 32) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE tags ADD COLUMN description TEXT DEFAULT NULL")
+            }
+        }
+
+        val MIGRATION_32_33 = object : Migration(32, 33) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE tasks ADD COLUMN postponementCount INTEGER NOT NULL DEFAULT 0")
             }
         }
     }

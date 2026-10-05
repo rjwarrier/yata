@@ -222,7 +222,7 @@ private fun SingleListWidgetContent(
                             style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Medium, color = GlanceTheme.colors.onSurface)
                         )
                         Text(
-                            text = "$done/${tasks.size} done",
+                            text = context.getString(R.string.widget_done_ratio, done, tasks.size),
                             style = TextStyle(fontSize = 11.sp, color = GlanceTheme.colors.onSurfaceVariant)
                         )
                     }
@@ -244,7 +244,7 @@ private fun SingleListWidgetContent(
                 Spacer(modifier = GlanceModifier.height(4.dp))
                 if (tasks.isEmpty()) {
                     Text(
-                        text = "No tasks here.",
+                        text = context.getString(R.string.widget_no_tasks_here),
                         style = TextStyle(fontSize = 13.sp, color = GlanceTheme.colors.onSurfaceVariant)
                     )
                 } else {
@@ -263,7 +263,7 @@ private fun SingleListWidgetContent(
                         if (tasks.size > visibleTasks.size) {
                             item {
                                 Text(
-                                    text = "+${tasks.size - visibleTasks.size} more in the app",
+                                    text = context.getString(R.string.widget_more_in_app, tasks.size - visibleTasks.size),
                                     style = TextStyle(fontSize = 11.sp, color = GlanceTheme.colors.onSurfaceVariant),
                                     modifier = GlanceModifier.padding(top = 4.dp)
                                 )

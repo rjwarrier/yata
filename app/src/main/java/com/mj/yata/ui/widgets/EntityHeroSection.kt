@@ -20,10 +20,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.mj.yata.R
+import com.mj.yata.domain.model.Holiday
 import com.mj.yata.domain.model.Task
+import com.mj.yata.domain.model.effectiveDue
 import java.time.LocalDate
 
 /** The three stats every entity-detail hero (and Today's header) show — kept in one place so
@@ -31,12 +35,21 @@ import java.time.LocalDate
 enum class HeroStatKind {
     OVERDUE, HIGH_PRIORITY, DUE_TODAY;
 
-    fun matches(task: Task, today: LocalDate): Boolean {
+    /** [weekendDays]/[holidays]/[observeNonWorkingDays] default to off, so every caller that
+     * hasn't been updated to pass real values compiles and behaves exactly as before. */
+    fun matches(
+        task: Task,
+        today: LocalDate,
+        weekendDays: Set<String> = emptySet(),
+        holidays: List<Holiday> = emptyList(),
+        observeNonWorkingDays: Boolean = false
+    ): Boolean {
         if (task.done) return false
+        val effective = task.effectiveDue(weekendDays, holidays, observeNonWorkingDays)
         return when (this) {
-            OVERDUE -> task.due != null && runCatching { LocalDate.parse(task.due) }.getOrNull()?.isBefore(today) == true
+            OVERDUE -> effective != null && runCatching { LocalDate.parse(effective) }.getOrNull()?.isBefore(today) == true
             HIGH_PRIORITY -> task.priority == "high"
-            DUE_TODAY -> task.due == today.toString()
+            DUE_TODAY -> effective == today.toString()
         }
     }
 }
@@ -113,7 +126,7 @@ fun EntityHeroSection(
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             HeroStatCell(
-                label = "Overdue",
+                label = HeroStatKind.OVERDUE.label(),
                 value = overdueCount,
                 valueColor = if (overdueCount > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
                 active = activeFilter == HeroStatKind.OVERDUE,
@@ -122,7 +135,7 @@ fun EntityHeroSection(
                 modifier = Modifier.weight(1f)
             )
             HeroStatCell(
-                label = "High priority",
+                label = HeroStatKind.HIGH_PRIORITY.label(),
                 value = highPriorityCount,
                 active = activeFilter == HeroStatKind.HIGH_PRIORITY,
                 accentColor = accentColor,
@@ -130,7 +143,7 @@ fun EntityHeroSection(
                 modifier = Modifier.weight(1f)
             )
             HeroStatCell(
-                label = "Due today",
+                label = HeroStatKind.DUE_TODAY.label(),
                 value = dueTodayCount,
                 active = activeFilter == HeroStatKind.DUE_TODAY,
                 accentColor = accentColor,
@@ -186,10 +199,11 @@ fun HeroStatCell(
     }
 }
 
+@Composable
 private fun HeroStatKind.label(): String = when (this) {
-    HeroStatKind.OVERDUE -> "Overdue"
-    HeroStatKind.HIGH_PRIORITY -> "High priority"
-    HeroStatKind.DUE_TODAY -> "Due today"
+    HeroStatKind.OVERDUE -> stringResource(R.string.search_filter_overdue)
+    HeroStatKind.HIGH_PRIORITY -> stringResource(R.string.search_filter_high_priority)
+    HeroStatKind.DUE_TODAY -> stringResource(R.string.search_filter_due_today)
 }
 
 /** Dismissible banner shown above a task list while a [HeroStatKind] filter (tapped from
@@ -204,12 +218,12 @@ fun ActiveFilterBanner(kind: HeroStatKind, onClear: () -> Unit, modifier: Modifi
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = "Showing: ${kind.label()}",
+            text = stringResource(R.string.entity_hero_showing_filter, kind.label()),
             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
             color = MaterialTheme.colorScheme.primary
         )
         Text(
-            text = "Clear ✕",
+            text = stringResource(R.string.entity_hero_clear_filter),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier

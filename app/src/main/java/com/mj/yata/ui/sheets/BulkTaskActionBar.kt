@@ -2,7 +2,9 @@ package com.mj.yata.ui.sheets
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -12,10 +14,16 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.PersonAdd
+import androidx.compose.material.icons.filled.PriorityHigh
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
@@ -25,17 +33,22 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mj.yata.R
+import com.mj.yata.domain.model.Holiday
 import com.mj.yata.domain.model.Person
 import com.mj.yata.domain.model.Project
 import com.mj.yata.domain.model.QuickSnoozePreset
 import com.mj.yata.domain.model.Task
+import com.mj.yata.domain.model.effectiveDue
+import com.mj.yata.ui.widgets.quickSnoozeAvailable
 import com.mj.yata.ui.widgets.quickSnoozeLabel
+import com.mj.yata.ui.widgets.quickSnoozePreview
 import com.mj.yata.domain.model.Tag
 import com.mj.yata.domain.model.YataList
 import com.mj.yata.domain.model.activePeople
 import com.mj.yata.domain.model.activeProjects
 import com.mj.yata.ui.theme.LocalYataAccents
 import com.mj.yata.ui.widgets.PersonAvatar
+import com.mj.yata.ui.widgets.PriorityBars
 
 /** Top bar shown in place of the normal header once one or more tasks are selected. */
 @Composable
@@ -49,6 +62,8 @@ fun TaskSelectionTopBar(
     onDuplicate: () -> Unit,
     onDelete: () -> Unit,
     onAssign: () -> Unit = {},
+    onFlag: () -> Unit = {},
+    onSetPriority: () -> Unit = {},
     tagsEnabled: Boolean = true,
     peopleEnabled: Boolean = true,
     modifier: Modifier = Modifier
@@ -69,9 +84,18 @@ fun TaskSelectionTopBar(
                 style = MaterialTheme.typography.titleMedium
             )
         }
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier = Modifier.horizontalScroll(rememberScrollState()),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             IconButton(onClick = onComplete) {
                 Icon(Icons.Default.Check, contentDescription = stringResource(R.string.cd_bulk_mark_done), tint = MaterialTheme.colorScheme.onSurface)
+            }
+            IconButton(onClick = onFlag) {
+                Icon(Icons.Default.Flag, contentDescription = stringResource(R.string.cd_bulk_flag), tint = MaterialTheme.colorScheme.onSurface)
+            }
+            IconButton(onClick = onSetPriority) {
+                Icon(Icons.Default.PriorityHigh, contentDescription = stringResource(R.string.cd_bulk_set_priority), tint = MaterialTheme.colorScheme.onSurface)
             }
             if (tagsEnabled) {
                 IconButton(onClick = onAddTag) {
@@ -101,10 +125,14 @@ fun TaskSelectionTopBar(
 
 @Composable
 fun TaskBulkRescheduleSheet(
-    onSelectPreset: (QuickSnoozePreset) -> Unit,
+    /** The chosen preset, and whether each task keeps its own time (only the date moves). */
+    onSelectPreset: (preset: QuickSnoozePreset, keepExistingTime: Boolean) -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // Saveable rather than a preference: it's a per-reschedule choice, and a stored default would
+    // need its own Settings row and backup handling for very little.
+    var keepExistingTime by rememberSaveable { mutableStateOf(false) }
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -118,18 +146,51 @@ fun TaskBulkRescheduleSheet(
             modifier = Modifier.padding(bottom = 12.dp)
         )
         QuickSnoozePreset.entries.forEach { preset ->
+            val available = quickSnoozeAvailable(preset)
+            val contentAlpha = if (available) 1f else 0.38f
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(12.dp))
-                    .clickable { onSelectPreset(preset) }
+                    .clickable(enabled = available) { onSelectPreset(preset, keepExistingTime) }
                     .padding(vertical = 12.dp, horizontal = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Icon(Icons.Default.Schedule, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(quickSnoozeLabel(preset), style = MaterialTheme.typography.bodyLarge)
+                Icon(
+                    Icons.Default.Schedule,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = contentAlpha)
+                )
+                Column {
+                    Text(
+                        quickSnoozeLabel(preset),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = contentAlpha)
+                    )
+                    Text(
+                        text = quickSnoozePreview(preset, includeTime = !keepExistingTime),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = contentAlpha)
+                    )
+                }
             }
+        }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp))
+                .clickable { keepExistingTime = !keepExistingTime }
+                .padding(vertical = 8.dp, horizontal = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.bulk_reschedule_keep_time),
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.weight(1f)
+            )
+            Switch(checked = keepExistingTime, onCheckedChange = { keepExistingTime = it })
         }
         TextButton(onClick = onDismiss, modifier = Modifier.align(Alignment.End)) {
             Text(stringResource(R.string.action_cancel))
@@ -278,6 +339,49 @@ fun TaskBulkTagPickerSheet(
     }
 }
 
+/** Bottom sheet: set the priority of every currently-selected task. */
+@Composable
+fun TaskBulkPrioritySheet(
+    onSelectPriority: (String) -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .navigationBarsPadding()
+            .padding(24.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Text(
+            text = stringResource(R.string.bulk_set_priority_title),
+            style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp),
+            modifier = Modifier.padding(bottom = 12.dp)
+        )
+        listOf(
+            "none" to R.string.settings_priority_none,
+            "low" to R.string.settings_priority_low,
+            "med" to R.string.settings_priority_med,
+            "high" to R.string.settings_priority_high
+        ).forEach { (priority, labelRes) ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .clickable { onSelectPriority(priority) }
+                    .padding(vertical = 12.dp, horizontal = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Box(modifier = Modifier.width(20.dp), contentAlignment = Alignment.Center) {
+                    PriorityBars(priority = priority)
+                }
+                Text(stringResource(labelRes), style = MaterialTheme.typography.bodyLarge)
+            }
+        }
+    }
+}
+
 /**
  * Bottom sheet: assign every currently-selected task to a person (delegation).
  *
@@ -293,7 +397,10 @@ fun TaskBulkAssignPersonSheet(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
     tasks: List<Task> = emptyList(),
-    todayStr: String? = null
+    todayStr: String? = null,
+    weekendDays: Set<String> = emptySet(),
+    holidays: List<Holiday> = emptyList(),
+    observeNonWorkingDays: Boolean = false
 ) {
     val activePeople = people.activePeople()
     Column(
@@ -317,7 +424,12 @@ fun TaskBulkAssignPersonSheet(
         }
         activePeople.forEach { person ->
             val openTasks = tasks.filter { !it.done && person.id in it.assigneeIds }
-            val overdueCount = todayStr?.let { today -> openTasks.count { it.due != null && it.due < today } }
+            val overdueCount = todayStr?.let { today ->
+                openTasks.count { task ->
+                    val due = task.effectiveDue(weekendDays, holidays, observeNonWorkingDays)
+                    due != null && due < today
+                }
+            }
             Row(
                 modifier = Modifier
                     .fillMaxWidth()

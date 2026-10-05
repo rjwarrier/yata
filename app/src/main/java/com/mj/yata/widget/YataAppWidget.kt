@@ -2,6 +2,7 @@ package com.mj.yata.widget
 
 import android.content.Context
 import androidx.compose.runtime.Composable
+import com.mj.yata.R
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -147,9 +148,9 @@ private fun TodayWidgetContent(
     ) {
         Row(verticalAlignment = Alignment.Vertical.CenterVertically, modifier = GlanceModifier.fillMaxWidth()) {
             Column(modifier = GlanceModifier.defaultWeight()) {
-                WidgetSectionHeader(customLabel ?: "Today", ColorProvider(chromeColor))
+                WidgetSectionHeader(customLabel ?: context.getString(R.string.tab_today), ColorProvider(chromeColor))
                 Text(
-                    text = "$remaining to go",
+                    text = context.resources.getQuantityString(R.plurals.today_to_go, remaining, remaining),
                     style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Medium, color = GlanceTheme.colors.onSurface)
                 )
             }
@@ -171,7 +172,7 @@ private fun TodayWidgetContent(
         Spacer(modifier = GlanceModifier.height(4.dp))
         if (tasks.isEmpty()) {
             Text(
-                text = "Nothing due today.",
+                text = context.getString(R.string.widget_nothing_due_today),
                 style = TextStyle(fontSize = 13.sp, color = GlanceTheme.colors.onSurfaceVariant)
             )
         } else {
@@ -188,7 +189,7 @@ private fun TodayWidgetContent(
                 if (tasks.size > visibleTasks.size) {
                     item {
                         Text(
-                            text = "+${tasks.size - visibleTasks.size} more in the app",
+                            text = context.getString(R.string.widget_more_in_app, tasks.size - visibleTasks.size),
                             style = TextStyle(fontSize = 11.sp, color = GlanceTheme.colors.onSurfaceVariant),
                             modifier = GlanceModifier.padding(top = 4.dp)
                         )

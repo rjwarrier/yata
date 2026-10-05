@@ -45,7 +45,10 @@ import com.mj.yata.domain.repository.YataRepository
 import com.mj.yata.ui.theme.ALL_ACCENT_KEYS
 import com.mj.yata.ui.theme.LocalYataAccents
 import com.mj.yata.ui.theme.YataTheme
+import com.mj.yata.ui.util.AdaptiveContentBox
 import com.mj.yata.ui.widgets.SegmentedControl
+import com.mj.yata.ui.widgets.YataCompactFieldShape
+import com.mj.yata.ui.widgets.yataFieldColors
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -98,8 +101,6 @@ class WidgetCustomizerConfigActivity : ComponentActivity() {
                 appWidgetInfo?.provider?.className
             }
         }
-        Log.d("WidgetConfig", "Configuring widget $appWidgetId of type $providerClass")
-
         val listsState = repository.getLists().stateIn(lifecycleScope, SharingStarted.Eagerly, emptyList())
         val projectsState = repository.getProjects().stateIn(lifecycleScope, SharingStarted.Eagerly, emptyList())
         val tagsState = repository.getTags().stateIn(lifecycleScope, SharingStarted.Eagerly, emptyList())
@@ -194,7 +195,6 @@ class WidgetCustomizerConfigActivity : ComponentActivity() {
         opacity: Float,
         accentOverride: String?
     ) {
-        Log.d("WidgetConfig", "onConfigSaved: radius=$radius, label=$label, useM3=$useM3Colors, sourceId=$sourceId, sourceType=$sourceType, opacity=$opacity, accentOverride=$accentOverride, providerClass=$providerClass")
         lifecycleScope.launch {
             // Resolving the id and writing prefs is the part that must succeed for the save to
             // count as successful at all — kept in its own try/catch, distinct from the refresh
@@ -208,8 +208,6 @@ class WidgetCustomizerConfigActivity : ComponentActivity() {
                 finish()
                 return@launch
             }
-            Log.d("WidgetConfig", "glanceId: $glanceId")
-
             try {
                 updateAppWidgetState(this@WidgetCustomizerConfigActivity, glanceId) { prefs ->
                     prefs[WIDGET_CORNER_RADIUS_KEY] = radius
@@ -241,7 +239,6 @@ class WidgetCustomizerConfigActivity : ComponentActivity() {
                         }
                     }
                 }
-                Log.d("WidgetConfig", "prefs written, forcing update for providerClass=$providerClass")
             } catch (e: Exception) {
                 Log.e("WidgetConfig", "onConfigSaved: prefs write failed for widget $appWidgetId (glanceId=$glanceId)", e)
                 showSaveFailedToast()
@@ -383,11 +380,8 @@ private fun WidgetCustomizerScreen(
             TopAppBar(title = { Text(stringResource(R.string.widget_config_widget_customizer), fontWeight = FontWeight.Bold) })
         }
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-        ) {
+        AdaptiveContentBox(modifier = Modifier.padding(innerPadding), contentMaxWidth = 760.dp) {
+            Column(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
                 .weight(1f)
@@ -422,11 +416,13 @@ private fun WidgetCustomizerScreen(
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(stringResource(R.string.widget_config_custom_header_label), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(
+                    TextField(
                         value = label,
                         onValueChange = { label = it },
                         placeholder = { Text(stringResource(R.string.widget_config_e_g_work_today_quick_add)) },
                         singleLine = true,
+                        shape = YataCompactFieldShape,
+                        colors = yataFieldColors(),
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -697,6 +693,7 @@ private fun WidgetCustomizerScreen(
             ) {
                 Text(stringResource(R.string.widget_config_save_changes), fontWeight = FontWeight.Bold)
             }
+        }
         }
     }
 }

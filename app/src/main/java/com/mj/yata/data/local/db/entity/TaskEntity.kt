@@ -71,5 +71,7 @@ data class TaskEntity(
     val estimateMinutes: Int? = null,
     // The junction table is a set and Room does not guarantee relation order. Persist the owner
     // separately so assigneeIds[0] survives backup/sync/import and remains semantic.
-    val ownerId: String? = null
+    val ownerId: String? = null,
+    // Counts due-date pushes to a later date; see Task.postponementCount.
+    val postponementCount: Int = 0
 )

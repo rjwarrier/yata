@@ -90,4 +90,91 @@ class RecurrenceEvaluatorTest {
         val next = RecurrenceEvaluator.calculateNextOccurrence(r, "2026-07-10")
         assertEquals("2026-07-13", next)
     }
+
+    @Test
+    fun testMonthlyNthWeekdayRecurrenceWithinSameMonth() {
+        // 2026-07-02 is a Thursday; July's 2nd Tuesday (2026-07-14) is still ahead of it.
+        val r = Recurrence(freq = "monthly", interval = 1, byweekday = "TU", bysetpos = 2)
+        val next = RecurrenceEvaluator.calculateNextOccurrence(r, "2026-07-02")
+        assertEquals("2026-07-14", next)
+    }
+
+    @Test
+    fun testMonthlyNthWeekdayRecurrenceRollsToNextMonth() {
+        // Past July's 2nd Tuesday (2026-07-14) — the next one is August's (2026-08-11).
+        val r = Recurrence(freq = "monthly", interval = 1, byweekday = "TU", bysetpos = 2)
+        val next = RecurrenceEvaluator.calculateNextOccurrence(r, "2026-07-20")
+        assertEquals("2026-08-11", next)
+    }
+
+    @Test
+    fun testMonthlyLastWeekdayRecurrence() {
+        // July 2026's last Friday is 2026-07-31, still ahead of the 2nd.
+        val r = Recurrence(freq = "monthly", interval = 1, byweekday = "FR", bysetpos = -1)
+        val next = RecurrenceEvaluator.calculateNextOccurrence(r, "2026-07-02")
+        assertEquals("2026-07-31", next)
+    }
+
+    @Test
+    fun testMonthlyLastWeekdayRecurrenceRollsToNextMonth() {
+        // Already on July's last Friday — the next one is August's (2026-08-28).
+        val r = Recurrence(freq = "monthly", interval = 1, byweekday = "FR", bysetpos = -1)
+        val next = RecurrenceEvaluator.calculateNextOccurrence(r, "2026-07-31")
+        assertEquals("2026-08-28", next)
+    }
+
+    @Test
+    fun testMonthlyNthWeekdaySummaryAndRRule() {
+        val r = Recurrence(freq = "monthly", interval = 1, byweekday = "TU", bysetpos = 2)
+        assertEquals("Monthly on the 2nd Tue", RecurrenceEvaluator.recurrenceSummary(r))
+        assertEquals("RRULE:FREQ=MONTHLY;BYDAY=2TU", RecurrenceEvaluator.toRRULE(r))
+
+        val r2 = Recurrence(freq = "monthly", interval = 1, byweekday = "FR", bysetpos = -1)
+        assertEquals("Monthly on the last Fri", RecurrenceEvaluator.recurrenceSummary(r2))
+        assertEquals("RRULE:FREQ=MONTHLY;BYDAY=-1FR", RecurrenceEvaluator.toRRULE(r2))
+    }
+
+    // previewNextOccurrences — the next-dates preview in RecurrenceSheet.
+
+    @Test
+    fun previewListsNextThreeWeeklyDates() {
+        val r = Recurrence("weekly", 1, listOf("MO"), null, RecurrenceEnds.Never)
+        // 2026-10-05 is a Monday.
+        assertEquals(
+            listOf("2026-10-12", "2026-10-19", "2026-10-26"),
+            RecurrenceEvaluator.previewNextOccurrences(r, "2026-10-05")
+        )
+    }
+
+    @Test
+    fun previewFollowsLastWeekdayOfMonthAcrossYearEnd() {
+        val r = Recurrence("monthly", 1, null, null, RecurrenceEnds.Never, byweekday = "FR", bysetpos = -1)
+        // 2026-10-30 is the last Friday of October.
+        assertEquals(
+            listOf("2026-11-27", "2026-12-25", "2027-01-29"),
+            RecurrenceEvaluator.previewNextOccurrences(r, "2026-10-30")
+        )
+    }
+
+    @Test
+    fun previewStopsWhereAnEndCountEndsTheSeries() {
+        // "Ends after 3" counts the current occurrence, so only two more follow — the same
+        // decrement toggleTaskDone applies on each completion.
+        val afterThree = Recurrence("daily", 1, null, null, RecurrenceEnds.After(3))
+        assertEquals(
+            listOf("2026-10-05", "2026-10-06"),
+            RecurrenceEvaluator.previewNextOccurrences(afterThree, "2026-10-04")
+        )
+        val afterOne = Recurrence("daily", 1, null, null, RecurrenceEnds.After(1))
+        assertTrue(RecurrenceEvaluator.previewNextOccurrences(afterOne, "2026-10-04").isEmpty())
+    }
+
+    @Test
+    fun previewStopsAtAnEndDate() {
+        val r = Recurrence("weekly", 1, null, null, RecurrenceEnds.On("2026-10-20"))
+        assertEquals(
+            listOf("2026-10-11", "2026-10-18"),
+            RecurrenceEvaluator.previewNextOccurrences(r, "2026-10-04")
+        )
+    }
 }

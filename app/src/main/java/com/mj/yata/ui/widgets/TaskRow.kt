@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.Comment
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.Delete
@@ -49,6 +48,7 @@ import com.mj.yata.R
 import com.mj.yata.domain.model.Person
 import com.mj.yata.domain.model.QuickSnoozePreset
 import com.mj.yata.domain.model.SwipeAction
+import com.mj.yata.domain.model.effectiveDue
 import com.mj.yata.domain.model.isDeferredOn
 import com.mj.yata.domain.model.Tag
 import com.mj.yata.domain.model.Task
@@ -89,6 +89,38 @@ private fun TaskHealthBadge(label: String) {
     )
 }
 
+@Composable
+private fun CountdownBadge(text: String, isOverdue: Boolean) {
+    val containerColor = if (isOverdue) {
+        MaterialTheme.colorScheme.error.copy(alpha = 0.12f)
+    } else {
+        MaterialTheme.colorScheme.primary.copy(alpha = 0.10f)
+    }
+    val contentColor = if (isOverdue) {
+        MaterialTheme.colorScheme.error
+    } else {
+        MaterialTheme.colorScheme.primary
+    }
+
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(3.dp),
+        modifier = Modifier
+            .clip(RoundedCornerShape(6.dp))
+            .background(containerColor)
+            .padding(horizontal = 6.dp, vertical = 2.dp)
+    ) {
+        Text(
+            text = text,
+            color = contentColor,
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Medium
+            )
+        )
+    }
+}
+
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun TaskRow(
@@ -115,13 +147,21 @@ fun TaskRow(
     // grouping context to imply one (unlike Today/Upcoming/NextDays, which already group by
     // date, or Tag/Person/Search, which mix tasks from many places at once).
     showDueDate: Boolean = false,
+    showDueTodayBadge: Boolean = true,
     onQuickSnooze: ((QuickSnoozePreset) -> Unit)? = null,
-    onRenameTask: ((String) -> Unit)? = null
+    onRenameTask: ((String) -> Unit)? = null,
+    // "Observe non-working days" (Settings → Task Defaults → Holidays). Default off so every
+    // existing caller compiles and renders exactly as before until explicitly updated.
+    weekendDays: Set<String> = emptySet(),
+    holidays: List<com.mj.yata.domain.model.Holiday> = emptyList(),
+    observeNonWorkingDays: Boolean = false
 ) {
     val accents = LocalYataAccents.current
     val listColor = list?.let { accents.getAccent(it.color) } ?: MaterialTheme.colorScheme.primary
     val hapticsEnabled = com.mj.yata.ui.theme.LocalHapticsEnabled.current
+    val soundEnabled = com.mj.yata.ui.theme.LocalCompletionSoundEnabled.current
     val taskSwipeActionsEnabled = com.mj.yata.ui.theme.LocalTaskSwipeActionsEnabled.current
+    val dueCountdownEnabled = com.mj.yata.ui.theme.LocalDueCountdownEnabled.current
     val swipeRightAction = com.mj.yata.ui.theme.LocalSwipeRightAction.current
     val swipeLeftAction = com.mj.yata.ui.theme.LocalSwipeLeftAction.current
     val haptics = androidx.compose.ui.platform.LocalHapticFeedback.current
@@ -185,6 +225,7 @@ fun TaskRow(
         // dots. IntrinsicSize.Min on this Box lets fillMaxHeight() below resolve against the
         // Row's own (otherwise unbounded, LazyColumn-item) height.
         val isEnhancedM3 = com.mj.yata.ui.theme.LocalEnhancedM3Theming.current
+        val soundEnabled = com.mj.yata.ui.theme.LocalCompletionSoundEnabled.current
         if (!task.done && task.priority != "none") {
             val priorityStripeColor = when (task.priority) {
                 "low" -> accents.accentE
@@ -286,8 +327,14 @@ fun TaskRow(
                     visible = task.flag,
                     enter = androidx.compose.animation.scaleIn(
                         animationSpec = spring(dampingRatio = 0.5f, stiffness = Spring.StiffnessMediumLow)
-                    ) + fadeIn(),
-                    exit = androidx.compose.animation.scaleOut() + fadeOut()
+                    ) + fadeIn(
+                        animationSpec = spring(dampingRatio = 0.5f, stiffness = Spring.StiffnessMediumLow)
+                    ),
+                    exit = androidx.compose.animation.scaleOut(
+                        animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow)
+                    ) + fadeOut(
+                        animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow)
+                    )
                 ) {
                     Icon(
                         imageVector = Icons.Default.Flag,
@@ -304,16 +351,34 @@ fun TaskRow(
             // preference, so it surfaces on every screen (Today, Upcoming, Tag, Person, Search)
             // rather than only the manual-order List/Project detail screens.
             val today = com.mj.yata.util.AppClock.today
-            val overdue = task.due != null && !task.done && TaskScheduleUtils.parseDate(task.due)?.isBefore(today) == true
+            val effectiveDue = remember(task, weekendDays, holidays, observeNonWorkingDays) {
+                task.effectiveDue(weekendDays, holidays, observeNonWorkingDays)
+            }
+            val overdue = effectiveDue != null && !task.done && TaskScheduleUtils.parseDate(effectiveDue)?.isBefore(today) == true
             // A deferred task is filtered out of Today, but still listed in its project/list and
             // in search. Without a marker it reads as an ordinary task that Today is inexplicably
             // ignoring, so it gets a badge naming the date it becomes actionable. Takes precedence
             // over "Overdue": a task that is both is waiting, not late — the start date is the
             // reason it hasn't been done, and showing red here would be blaming the user for it.
             val deferred = remember(task, today) { task.isDeferredOn(today.toString()) }
-            val healthBadges = remember(task, overdue, today) {
+            // Counts down to effectiveDue, not the raw due date: when "observe non-working days"
+            // has pushed a weekend due date to Monday, the row must not call a task overdue that
+            // its own Overdue badge — computed off the same effectiveDue — says isn't yet.
+            // Keyed on AppClock.minute so it actually counts down; a plain remember(due, time)
+            // froze at whatever was true when the row first composed and never reached zero.
+            val dueCountdown = if (dueCountdownEnabled && !task.done) {
+                val nowMinute = com.mj.yata.util.AppClock.minute
+                remember(effectiveDue, task.time, nowMinute) {
+                    TaskScheduleUtils.dueCountdown(effectiveDue, task.time, nowMinute)
+                }
+            } else null
+            // Mirrors the if/else chain in the meta row below, whose earlier branches (completed,
+            // deferred) win over the Overdue badge — the standalone countdown keys off this so the
+            // two can't both claim the same overdue state.
+            val overdueBadgeShown = !(task.done && task.completedAt != null) && !deferred && overdue
+            val healthBadges = remember(task, overdue, today, effectiveDue, showDueTodayBadge) {
                 buildList {
-                    if (!task.done && task.due == today.toString()) add("Due today")
+                    if (showDueTodayBadge && !task.done && effectiveDue == today.toString()) add("Due today")
                     if (!task.done && task.due == null && task.priority == "high") add("Needs date")
                     if (!task.done && task.due == null && task.flag) add("Flagged no date")
                     if (!task.done && task.due == null && task.time == null && task.recurrence == null && task.priority == "none" && !task.flag) add("Unplanned")
@@ -321,7 +386,7 @@ fun TaskRow(
             }
 
             // Meta row below
-            if (task.time != null || (showList && list != null) || task.recurrence != null || task.subtasks.isNotEmpty() || task.estimateMinutes != null || tags.isNotEmpty() || overdue || deferred || healthBadges.isNotEmpty() || (showDueDate && task.due != null) || (task.done && task.completedAt != null)) {
+            if (task.time != null || (showList && list != null) || task.recurrence != null || task.subtasks.isNotEmpty() || task.estimateMinutes != null || tags.isNotEmpty() || overdue || deferred || healthBadges.isNotEmpty() || (showDueDate && task.due != null) || (task.done && task.completedAt != null) || dueCountdown != null) {
                 Spacer(modifier = Modifier.height(4.dp))
                 // FlowRow, not Row: the number of things in here varies (completed-at or due date,
                 // time, list, recurrence, up to two health badges, up to two tags) and a plain Row
@@ -371,7 +436,14 @@ fun TaskRow(
                                 .padding(horizontal = 6.dp, vertical = 2.dp)
                         ) {
                             Text(
-                                text = "Overdue",
+                                // Carries the countdown when there is one ("Overdue by 3d")
+                                // rather than a bare "Overdue" beside a separate countdown chip
+                                // saying the same word twice — same badge, same space, more
+                                // information. Falls back to the plain label when the countdown
+                                // is switched off.
+                                text = dueCountdown?.takeIf { it.isOverdue }
+                                    ?.let { stringResource(R.string.countdown_overdue_by, it.span) }
+                                    ?: stringResource(R.string.search_filter_overdue),
                                 color = MaterialTheme.colorScheme.error,
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontSize = 10.sp,
@@ -395,6 +467,21 @@ fun TaskRow(
                             text = com.mj.yata.util.TaskScheduleUtils.displayTime(time) ?: time,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp)
+                        )
+                    }
+
+                    // Skipped when the Overdue badge above is the thing rendering, since that
+                    // badge now carries the countdown itself. Note an overdue countdown can still
+                    // land here: the badge is date-only (`isBefore(today)`), so a task due today
+                    // at 09:00 read at 15:00 is past its time without the badge showing.
+                    dueCountdown?.takeIf { !overdueBadgeShown }?.let { countdown ->
+                        CountdownBadge(
+                            text = if (countdown.isOverdue) {
+                                stringResource(R.string.countdown_overdue_by, countdown.span)
+                            } else {
+                                stringResource(R.string.countdown_in, countdown.span)
+                            },
+                            isOverdue = countdown.isOverdue
                         )
                     }
 
@@ -424,7 +511,7 @@ fun TaskRow(
                     }
 
                     task.recurrence?.let {
-                        RecurrenceBadge(recurrence = it, compact = true)
+                        RecurrenceBadge(recurrence = it, compact = true, weekendDays = weekendDays)
                     }
 
                     // Subtask progress. Only worth the space once there is actually a checklist
@@ -443,7 +530,7 @@ fun TaskRow(
                                 modifier = Modifier.size(12.dp)
                             )
                             Text(
-                                text = "$doneSubtasks/${task.subtasks.size}",
+                                text = stringResource(R.string.analytics_ratio, doneSubtasks, task.subtasks.size),
                                 color = if (allDone) listColor else MaterialTheme.colorScheme.onSurfaceVariant,
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontWeight = FontWeight.Medium,
@@ -490,41 +577,10 @@ fun TaskRow(
             }
         }
 
-        if (onCommentClick != null) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Outlined.Comment,
-                contentDescription = stringResource(R.string.cd_task_add_comment),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                modifier = Modifier
-                    .padding(start = 4.dp)
-                    .size(28.dp)
-                    .clip(CircleShape)
-                    .clickable { onCommentClick() }
-                    .padding(6.dp)
-            )
-        }
-
-        if (onRenameTask != null && !selectionMode) {
-            IconButton(
-                onClick = { showRenameDialog = true },
-                modifier = Modifier.size(32.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Edit,
-                    contentDescription = stringResource(R.string.cd_task_edit_title),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                    modifier = Modifier.size(18.dp)
-                )
-            }
-        }
-
         if (onQuickSnooze != null && !task.done) {
             var showSnoozeMenu by remember { mutableStateOf(false) }
             Box {
-                IconButton(
-                    onClick = { showSnoozeMenu = true },
-                    modifier = Modifier.size(32.dp)
-                ) {
+                IconButton(onClick = { showSnoozeMenu = true }) {
                     Icon(
                         imageVector = Icons.Default.Schedule,
                         contentDescription = stringResource(R.string.cd_task_snooze),
@@ -532,13 +588,28 @@ fun TaskRow(
                         modifier = Modifier.size(18.dp)
                     )
                 }
-                DropdownMenu(
+                YataDropdownMenu(
                     expanded = showSnoozeMenu,
                     onDismissRequest = { showSnoozeMenu = false }
                 ) {
                     QuickSnoozePreset.entries.forEach { preset ->
-                        DropdownMenuItem(
-                            text = { Text(quickSnoozeLabel(preset)) },
+                        val available = quickSnoozeAvailable(preset)
+                        YataDropdownMenuItem(
+                            text = {
+                                Column {
+                                    Text(quickSnoozeLabel(preset))
+                                    Text(
+                                        text = quickSnoozePreview(preset),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = if (available) {
+                                            MaterialTheme.colorScheme.onSurfaceVariant
+                                        } else {
+                                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                                        }
+                                    )
+                                }
+                            },
+                            enabled = available,
                             onClick = {
                                 showSnoozeMenu = false
                                 onQuickSnooze(preset)
@@ -595,13 +666,16 @@ fun TaskRow(
                 // scrolling with a thumb that grazes a row) settle back instead of registering.
                 positionalThreshold = { totalDistance -> totalDistance * 0.75f },
                 confirmValueChange = { value ->
-                    val handler = when (value) {
-                        SwipeToDismissBoxValue.EndToStart -> leftHandler
-                        SwipeToDismissBoxValue.StartToEnd -> rightHandler
-                        SwipeToDismissBoxValue.Settled -> null
+                    val (action, handler) = when (value) {
+                        SwipeToDismissBoxValue.EndToStart -> swipeLeftAction to leftHandler
+                        SwipeToDismissBoxValue.StartToEnd -> swipeRightAction to rightHandler
+                        SwipeToDismissBoxValue.Settled -> SwipeAction.NONE to null
                     }
                     if (handler != null) {
                         if (hapticsEnabled) haptics.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                        if (action == SwipeAction.COMPLETE && soundEnabled) {
+                            com.mj.yata.ui.util.CompletionSoundPlayer.playCompletionChime()
+                        }
                         handler()
                     }
                     false
@@ -673,10 +747,12 @@ fun TaskRow(
             onDismissRequest = { showRenameDialog = false },
             title = { Text(stringResource(R.string.task_row_edit_title)) },
             text = {
-                OutlinedTextField(
+                TextField(
                     value = title,
                     onValueChange = { title = it },
                     singleLine = true,
+                    shape = YataCompactFieldShape,
+                    colors = yataFieldColors(),
                     modifier = Modifier.fillMaxWidth()
                 )
             },

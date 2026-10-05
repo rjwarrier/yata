@@ -35,8 +35,10 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
+import com.mj.yata.domain.model.Holiday
 import com.mj.yata.domain.model.Task
 import com.mj.yata.domain.model.YataList
+import com.mj.yata.domain.model.effectiveDue
 import com.mj.yata.domain.model.hiddenFromMainTaskListIds
 import com.mj.yata.domain.model.hiddenFromMainTaskProjectIds
 import com.mj.yata.domain.model.isActionableToday
@@ -68,12 +70,17 @@ class UpcomingWidget : GlanceAppWidget() {
         val accentOverrideKey = prefs[WIDGET_ACCENT_OVERRIDE_KEY]
         val health = WidgetHealthStore.read(context, UpcomingWidget::class.java.name)
 
-        val repository = EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java).repository()
+        val entryPoint = EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java)
+        val repository = entryPoint.repository()
+        val userPreferences = entryPoint.userPreferences()
         val allTasks = repository.getTasks().first()
         val lists = repository.getLists().first()
         val people = repository.getPeople().first()
         val peopleById = people.associateBy { it.id }
         val myId = people.firstOrNull { it.isMe }?.id
+        val weekendDays = userPreferences.weekendDaysFlow.first()
+        val holidays = userPreferences.holidaysFlow.first().mapNotNull(Holiday::decode)
+        val observeNonWorkingDays = userPreferences.observeNonWorkingDaysFlow.first()
         // Applied only to the widget's "Today" row, matching the in-app Today tab — the
         // future-dated groups below it deliberately keep showing an excluded container's tasks
         // on their due date, same as the Upcoming/Calendar tab does.
@@ -91,6 +98,9 @@ class UpcomingWidget : GlanceAppWidget() {
                     myId = myId,
                     excludedProjectIds = excludedProjectIds,
                     excludedListIds = excludedListIds,
+                    weekendDays = weekendDays,
+                    holidays = holidays,
+                    observeNonWorkingDays = observeNonWorkingDays,
                     colors = theme.colorScheme,
                     accents = theme.accents,
                     widgetBackground = theme.widgetBackground,
@@ -116,6 +126,9 @@ private fun UpcomingWidgetContent(
     myId: String?,
     excludedProjectIds: Set<String>,
     excludedListIds: Set<String>,
+    weekendDays: Set<String>,
+    holidays: List<Holiday>,
+    observeNonWorkingDays: Boolean,
     colors: androidx.compose.material3.ColorScheme,
     accents: com.mj.yata.ui.theme.YataAccents,
     widgetBackground: androidx.compose.ui.graphics.Color,
@@ -148,7 +161,7 @@ private fun UpcomingWidgetContent(
             Spacer(modifier = GlanceModifier.height(8.dp))
 
             if (isLarge) {
-                val days = upcomingAgendaDays(allTasks, today, myId, excludedProjectIds, excludedListIds)
+                val days = upcomingAgendaDays(allTasks, today, myId, excludedProjectIds, excludedListIds, weekendDays, holidays, observeNonWorkingDays)
                 if (days.isEmpty()) {
                     Text(
                         text = "Nothing coming up.",
@@ -176,11 +189,13 @@ private fun UpcomingWidgetContent(
                 }
             } else {
                 val todayTasks = allTasks.filter {
-                    !it.done && it.isActionableToday(todayStr, System.currentTimeMillis(), myId) &&
+                    !it.done && it.isActionableToday(todayStr, System.currentTimeMillis(), myId, weekendDays, holidays, observeNonWorkingDays) &&
                         it.projectId !in excludedProjectIds && it.listId !in excludedListIds
                 }
                 val tomorrowStr = today.plusDays(1).toString()
-                val tomorrowTasks = allTasks.filter { !it.done && it.due == tomorrowStr }
+                val tomorrowTasks = allTasks.filter {
+                    !it.done && it.effectiveDue(weekendDays, holidays, observeNonWorkingDays) == tomorrowStr
+                }
 
                 Column(
                     modifier = GlanceModifier.fillMaxSize(),
@@ -246,7 +261,10 @@ private fun upcomingAgendaDays(
     today: LocalDate,
     myId: String?,
     excludedProjectIds: Set<String>,
-    excludedListIds: Set<String>
+    excludedListIds: Set<String>,
+    weekendDays: Set<String>,
+    holidays: List<Holiday>,
+    observeNonWorkingDays: Boolean
 ): List<AgendaDay> {
     val todayStr = today.toString()
     val byDate = allTasks
@@ -255,7 +273,7 @@ private fun upcomingAgendaDays(
         .groupBy({ it.first }, { it.second })
 
     val todayTasks = allTasks.filter {
-        !it.done && it.isActionableToday(todayStr, System.currentTimeMillis(), myId) &&
+        !it.done && it.isActionableToday(todayStr, System.currentTimeMillis(), myId, weekendDays, holidays, observeNonWorkingDays) &&
             it.projectId !in excludedProjectIds && it.listId !in excludedListIds
     }
     val futureDates = byDate.keys

@@ -8,7 +8,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
-import androidx.activity.compose.BackHandler
+import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableLongStateOf
@@ -28,12 +28,16 @@ import android.widget.Toast
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mj.yata.R
 import com.mj.yata.ui.screen.analytics.AnalyticsScreen
+import com.mj.yata.ui.screen.inbox.InboxScreen
 import com.mj.yata.ui.screen.main.MainScreen
 import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.screen.nextdays.NextDaysScreen
+import com.mj.yata.ui.screen.recurring.RecurringTasksScreen
 import com.mj.yata.ui.screen.taskdetail.TaskDetailScreen
 import com.mj.yata.ui.screen.project.ProjectDetailScreen
+import com.mj.yata.ui.screen.person.PersonAnalyticsScreen
 import com.mj.yata.ui.screen.person.PersonDetailScreen
+import com.mj.yata.ui.screen.person.StaffAnalyticsScreen
 import com.mj.yata.ui.screen.tag.TagDetailScreen
 import com.mj.yata.ui.screen.list.ListDetailScreen
 import com.mj.yata.ui.screen.search.SearchScreen
@@ -41,10 +45,12 @@ import com.mj.yata.ui.screen.settings.HelpAboutScreen
 import com.mj.yata.ui.screen.settings.SettingsDestination
 import com.mj.yata.ui.screen.settings.SettingsScreen
 import com.mj.yata.ui.screen.archive.ArchiveScreen
+import com.mj.yata.ui.screen.remotesync.RemoteSyncScreen
 import com.mj.yata.ui.screen.trash.TrashScreen
 import com.mj.yata.ui.screen.welcome.WelcomeScreen
 import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.YataEase
+import com.mj.yata.util.export.TaskTransferImporter
 
 private const val MAIN_TAB_REQUEST_KEY = "main_tab_request"
 private const val EXIT_BACK_PRESS_WINDOW_MS = 2_000L
@@ -56,19 +62,31 @@ fun AppNavigation(
     onImportRequested: () -> Unit,
     onImportPlainTextRequested: () -> Unit,
     onExportCsvRequested: () -> Unit,
-    onExportIcsRequested: () -> Unit
+    onExportIcsRequested: () -> Unit,
+    taskTransferImporter: TaskTransferImporter
 ) {
     val context = LocalContext.current
     val currentBackStackEntry = navController.currentBackStackEntryAsState().value
     val lastExitBackPressAt = remember { mutableLongStateOf(0L) }
 
-    BackHandler(enabled = currentBackStackEntry?.destination?.route == Screen.Main.route) {
-        val now = System.currentTimeMillis()
-        if (now - lastExitBackPressAt.longValue <= EXIT_BACK_PRESS_WINDOW_MS) {
-            context.findActivity()?.finish()
-        } else {
-            lastExitBackPressAt.longValue = now
-            Toast.makeText(context, context.getString(R.string.press_back_again_to_exit), Toast.LENGTH_SHORT).show()
+    // PredictiveBackHandler instead of plain BackHandler so Android 14+'s back-to-home preview
+    // still renders during the swipe on Main (the app's primary screen, and the one destination
+    // this callback intercepts) - a non-progress-aware BackHandler consumes the gesture outright
+    // and suppresses that preview. The double-tap-to-exit decision itself only fires once the
+    // gesture actually completes; a swipe the user lets go of partway through (surfaced as
+    // CancellationException from the progress collection) does nothing, same as before.
+    PredictiveBackHandler(enabled = currentBackStackEntry?.destination?.route == Screen.Main.route) { progress ->
+        try {
+            progress.collect { }
+            val now = System.currentTimeMillis()
+            if (now - lastExitBackPressAt.longValue <= EXIT_BACK_PRESS_WINDOW_MS) {
+                context.findActivity()?.finish()
+            } else {
+                lastExitBackPressAt.longValue = now
+                Toast.makeText(context, context.getString(R.string.press_back_again_to_exit), Toast.LENGTH_SHORT).show()
+            }
+        } catch (_: kotlinx.coroutines.CancellationException) {
+            // Gesture released before crossing the back threshold - no state change.
         }
     }
 
@@ -93,6 +111,8 @@ fun AppNavigation(
         navController    = navController,
         startDestination = Screen.Main.route,
         // Push: incoming slides 100%->0; outgoing shifts to -28% + fades to 0.5 (handoff m3-widgets.jsx nav motion)
+        // Pops use a shorter duration so committed back gestures feel decisive after the system
+        // preview, without changing the established easing or push motion.
         enterTransition  = {
             if (reduceMotion) fadeIn(tween(YataDur.nav, easing = YataEase.emphDecel))
             else slideInHorizontally(tween(YataDur.nav, easing = YataEase.emphasized)) { it } + fadeIn(tween(YataDur.nav, easing = YataEase.emphDecel))
@@ -102,12 +122,12 @@ fun AppNavigation(
             else slideOutHorizontally(tween(YataDur.nav, easing = YataEase.emphasized)) { -(it * 28 / 100) } + fadeOut(targetAlpha = 0.5f, animationSpec = tween(YataDur.nav))
         },
         popEnterTransition  = {
-            if (reduceMotion) fadeIn(tween(YataDur.nav, easing = YataEase.emphDecel))
-            else slideInHorizontally(tween(YataDur.nav, easing = YataEase.emphasized)) { -(it * 28 / 100) } + fadeIn(tween(YataDur.nav, easing = YataEase.emphDecel))
+            if (reduceMotion) fadeIn(tween(YataDur.pop, easing = YataEase.emphDecel))
+            else slideInHorizontally(tween(YataDur.pop, easing = YataEase.emphasized)) { -(it * 28 / 100) } + fadeIn(tween(YataDur.pop, easing = YataEase.emphDecel))
         },
         popExitTransition   = {
             if (reduceMotion) fadeOut(tween(YataDur.fade))
-            else slideOutHorizontally(tween(YataDur.nav, easing = YataEase.emphasized)) { it } + fadeOut(tween(YataDur.fade))
+            else slideOutHorizontally(tween(YataDur.pop, easing = YataEase.emphasized)) { it } + fadeOut(tween(YataDur.fade))
         }
     ) {
         // ── Main Shell (5-tab navigation) ───────────────────────────────────
@@ -116,12 +136,14 @@ fun AppNavigation(
             arguments = listOf(
                 navArgument("tab") { type = NavType.IntType; defaultValue = -1 },
                 navArgument("quickAdd") { type = NavType.BoolType; defaultValue = false },
-                navArgument("quickAddListId") { type = NavType.StringType; nullable = true; defaultValue = null }
+                navArgument("quickAddListId") { type = NavType.StringType; nullable = true; defaultValue = null },
+                navArgument("quickCapture") { type = NavType.BoolType; defaultValue = false }
             )
         ) { backStackEntry ->
             val initialTab = backStackEntry.arguments?.getInt("tab") ?: -1
             val initialShowNewTaskSheet = backStackEntry.arguments?.getBoolean("quickAdd") ?: false
             val initialQuickAddListId = backStackEntry.arguments?.getString("quickAddListId")
+            val initialQuickCapture = backStackEntry.arguments?.getBoolean("quickCapture") ?: false
             val requestedTab = backStackEntry.savedStateHandle
                 .getStateFlow(MAIN_TAB_REQUEST_KEY, -1)
                 .collectAsStateWithLifecycle()
@@ -137,8 +159,15 @@ fun AppNavigation(
                 },
                 initialShowNewTaskSheet = initialShowNewTaskSheet,
                 initialQuickAddListId = initialQuickAddListId,
+                initialQuickCapture = initialQuickCapture,
                 onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
+                onNavigateToHelpAbout = {
+                    navController.navigate(Screen.SettingsSection.createRoute(SettingsDestination.HELP_ABOUT.routeSegment))
+                },
                 onNavigateToAnalytics = { navController.navigate(Screen.Analytics.route) },
+                onNavigateToStaffAnalytics = { navController.navigate(Screen.StaffAnalytics.route) },
+                onNavigateToInbox = { navController.navigate(Screen.Inbox.route) },
+                onNavigateToRecurringTasks = { navController.navigate(Screen.RecurringTasks.route) },
                 onNavigateToNextDays = { navController.navigate(Screen.NextDays.route) },
                 onNavigateToSearch = { navController.navigate(Screen.Search.createRoute()) },
                 onNavigateToSavedSearch = { filters -> navController.navigate(Screen.Search.createRoute(filters)) },
@@ -175,7 +204,12 @@ fun AppNavigation(
                 viewModel = viewModel,
                 taskId = taskId,
                 onNavigateBack = { navController.popBackStack() },
-                onNavigateToTab = onNavigateToTab
+                onNavigateToTab = onNavigateToTab,
+                onNavigateToTaskDetail = { newTaskId ->
+                    navController.navigate(Screen.TaskDetail.createRoute(newTaskId)) {
+                        popUpTo(Screen.TaskDetail.route) { inclusive = true }
+                    }
+                }
             )
         }
 
@@ -213,11 +247,43 @@ fun AppNavigation(
                 onNavigateToTaskDetail = { taskId ->
                     navController.navigate(Screen.TaskDetail.createRoute(taskId))
                 },
+                onNavigateToPersonAnalytics = {
+                    navController.navigate(Screen.PersonAnalytics.createRoute(personId))
+                },
                 onNavigateToTab = onNavigateToTab
             )
         }
 
         // ── Tag Detail ───────────────────────────────────────────────────────
+        composable(
+            route = Screen.PersonAnalytics.route,
+            arguments = listOf(navArgument("personId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val personId = backStackEntry.arguments?.getString("personId") ?: ""
+            val viewModel: MainViewModel = backStackEntry.sharedViewModel(navController)
+            PersonAnalyticsScreen(
+                viewModel = viewModel,
+                personId = personId,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToTaskDetail = { taskId ->
+                    navController.navigate(Screen.TaskDetail.createRoute(taskId))
+                },
+                onNavigateToTab = onNavigateToTab
+            )
+        }
+
+        composable(Screen.StaffAnalytics.route) { backStackEntry ->
+            val viewModel: MainViewModel = backStackEntry.sharedViewModel(navController)
+            StaffAnalyticsScreen(
+                viewModel = viewModel,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToPerson = { personId ->
+                    navController.navigate(Screen.PersonAnalytics.createRoute(personId))
+                },
+                onNavigateToTab = onNavigateToTab
+            )
+        }
+
         composable(
             route = Screen.TagDetail.route,
             arguments = listOf(navArgument("tagId") { type = NavType.StringType }),
@@ -259,6 +325,7 @@ fun AppNavigation(
         composable(Screen.Welcome.route) { backStackEntry ->
             val viewModel: MainViewModel = backStackEntry.sharedViewModel(navController)
             WelcomeScreen(
+                viewModel = viewModel,
                 onFinish = {
                     viewModel.setHasSeenWelcome()
                     navController.popBackStack()
@@ -284,6 +351,35 @@ fun AppNavigation(
             )
         }
 
+        // ── Shared task import ──────────────────────────────────────────────
+        composable(
+            route = Screen.SharedTaskImport.route,
+            arguments = listOf(navArgument("link") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val viewModel: MainViewModel = backStackEntry.sharedViewModel(navController)
+            val link = backStackEntry.arguments?.getString("link").orEmpty()
+            com.mj.yata.ui.screen.sharedimport.SharedTaskImportScreen(
+                viewModel = viewModel,
+                link = link,
+                taskTransferImporter = taskTransferImporter,
+                onDismiss = { navController.popBackStack() },
+                onImported = { result ->
+                    Toast.makeText(
+                        context,
+                        context.resources.getQuantityString(
+                            R.plurals.task_transfer_imported,
+                            result.taskCount,
+                            result.taskCount
+                        ),
+                        Toast.LENGTH_LONG
+                    ).show()
+                    navController.navigate(Screen.Inbox.route) {
+                        popUpTo(Screen.SharedTaskImport.route) { inclusive = true }
+                    }
+                }
+            )
+        }
+
         // ── Settings ─────────────────────────────────────────────────────────
         composable(Screen.Settings.route) { backStackEntry ->
             val viewModel: MainViewModel = backStackEntry.sharedViewModel(navController)
@@ -301,6 +397,9 @@ fun AppNavigation(
                 onNavigateToWelcome = { navController.navigate(Screen.Welcome.route) },
                 onNavigateToHelpAbout = { navController.navigate(Screen.HelpAbout.route) },
                 onNavigateToCrashLog = { navController.navigate(Screen.CrashLog.route) },
+                onNavigateToShareApp = { navController.navigate(Screen.ShareApp.route) },
+                onNavigateToRemoteSync = { navController.navigate(Screen.RemoteSync.route) },
+                onNavigateToHolidayCalendar = { navController.navigate(Screen.HolidayCalendar.route) },
                 onNavigateToSettingsDestination = { destination ->
                     navController.navigate(Screen.SettingsSection.createRoute(destination.routeSegment))
                 }
@@ -328,6 +427,9 @@ fun AppNavigation(
                 onNavigateToWelcome = { navController.navigate(Screen.Welcome.route) },
                 onNavigateToHelpAbout = { navController.navigate(Screen.HelpAbout.route) },
                 onNavigateToCrashLog = { navController.navigate(Screen.CrashLog.route) },
+                onNavigateToShareApp = { navController.navigate(Screen.ShareApp.route) },
+                onNavigateToRemoteSync = { navController.navigate(Screen.RemoteSync.route) },
+                onNavigateToHolidayCalendar = { navController.navigate(Screen.HolidayCalendar.route) },
                 settingsDestination = destination
             )
         }
@@ -337,6 +439,13 @@ fun AppNavigation(
             val viewModel: MainViewModel = backStackEntry.sharedViewModel(navController)
             com.mj.yata.ui.screen.crashlog.CrashLogScreen(
                 viewModel = viewModel,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        // -- Share app --------------------------------------------------------
+        composable(Screen.ShareApp.route) {
+            com.mj.yata.ui.screen.settings.ShareAppScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
         }
@@ -357,7 +466,25 @@ fun AppNavigation(
             AnalyticsScreen(
                 viewModel = viewModel,
                 onNavigateBack = { navController.popBackStack() },
-                onNavigateToTab = onNavigateToTab
+                onNavigateToTab = onNavigateToTab,
+                onNavigateToSearch = { filters ->
+                    navController.navigate(Screen.Search.createRoute(filters))
+                },
+                onNavigateToProject = { projectId ->
+                    navController.navigate(Screen.ProjectDetail.createRoute(projectId))
+                },
+                onNavigateToPerson = { personId ->
+                    navController.navigate(Screen.PersonDetail.createRoute(personId))
+                },
+                onNavigateToTag = { tagId ->
+                    navController.navigate(Screen.TagDetail.createRoute(tagId))
+                },
+                onNavigateToList = { listId ->
+                    navController.navigate(Screen.ListDetail.createRoute(listId))
+                },
+                onNavigateToTaskDetail = { taskId ->
+                    navController.navigate(Screen.TaskDetail.createRoute(taskId))
+                }
             )
         }
 
@@ -387,6 +514,51 @@ fun AppNavigation(
             )
         }
 
+        // -- Inbox / triage --------------------------------------------------
+        composable(Screen.Inbox.route) { backStackEntry ->
+            val viewModel: MainViewModel = backStackEntry.sharedViewModel(navController)
+            InboxScreen(
+                viewModel = viewModel,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToTab = onNavigateToTab,
+                onNavigateToTaskDetail = { taskId ->
+                    navController.navigate(Screen.TaskDetail.createRoute(taskId))
+                }
+            )
+        }
+
+        // -- Recurring task manager -----------------------------------------
+        composable(Screen.RecurringTasks.route) { backStackEntry ->
+            val viewModel: MainViewModel = backStackEntry.sharedViewModel(navController)
+            RecurringTasksScreen(
+                viewModel = viewModel,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToTab = onNavigateToTab,
+                onNavigateToTaskDetail = { taskId ->
+                    navController.navigate(Screen.TaskDetail.createRoute(taskId))
+                }
+            )
+        }
+
+        // ── Remote sync ──────────────────────────────────────────────────────
+        composable(Screen.RemoteSync.route) { backStackEntry ->
+            val viewModel: MainViewModel = backStackEntry.sharedViewModel(navController)
+            RemoteSyncScreen(
+                viewModel = viewModel,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToSyncHistory = { navController.navigate(Screen.SyncHistory.route) }
+            )
+        }
+
+        // ── Sync history ─────────────────────────────────────────────────────
+        composable(Screen.SyncHistory.route) { backStackEntry ->
+            val viewModel: MainViewModel = backStackEntry.sharedViewModel(navController)
+            com.mj.yata.ui.screen.synchistory.SyncHistoryScreen(
+                viewModel = viewModel,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
         // ── Next 10 Days ─────────────────────────────────────────────────────
         composable(Screen.NextDays.route) { backStackEntry ->
             val viewModel: MainViewModel = backStackEntry.sharedViewModel(navController)
@@ -397,6 +569,15 @@ fun AppNavigation(
                     navController.navigate(Screen.TaskDetail.createRoute(taskId))
                 },
                 onNavigateToTab = onNavigateToTab
+            )
+        }
+
+        // ── Custom holidays calendar ─────────────────────────────────────────
+        composable(Screen.HolidayCalendar.route) { backStackEntry ->
+            val viewModel: MainViewModel = backStackEntry.sharedViewModel(navController)
+            com.mj.yata.ui.screen.holidaycalendar.HolidayCalendarScreen(
+                viewModel = viewModel,
+                onNavigateBack = { navController.popBackStack() }
             )
         }
     }

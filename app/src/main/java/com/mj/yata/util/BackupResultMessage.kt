@@ -2,6 +2,8 @@ package com.mj.yata.util
 
 import android.content.Context
 import com.mj.yata.R
+import com.mj.yata.data.sync.EmptyLocalDataConfirmationRequiredException
+import com.mj.yata.data.sync.InitialSyncConfirmationRequiredException
 import com.mj.yata.domain.model.BackupDestination
 import com.mj.yata.domain.model.BackupRunResult
 
@@ -28,7 +30,7 @@ fun backupResultMessage(results: List<BackupRunResult>, context: Context): Backu
             isError = false
         )
     }
-    val failedNames = failed.joinToString(", ") { context.getString(backupDestinationLabel(it.destination)) }
+    val failedNames = failed.joinToString(", ") { failedLabel(it, context) }
     return if (failed.size == results.size) {
         BackupResultMessage(context.getString(R.string.settings_backup_all_failed, failedNames), isError = true)
     } else {
@@ -42,4 +44,19 @@ fun backupResultMessage(results: List<BackupRunResult>, context: Context): Backu
 fun backupDestinationLabel(destination: BackupDestination): Int = when (destination) {
     BackupDestination.LOCAL -> R.string.settings_backup_dest_local
     BackupDestination.SELF_HOSTED -> R.string.settings_backup_dest_self_hosted
+}
+
+fun List<BackupRunResult>.initialSyncConfirmationRequired(): InitialSyncConfirmationRequiredException? =
+    firstNotNullOfOrNull { it.error as? InitialSyncConfirmationRequiredException }
+
+fun List<BackupRunResult>.emptyLocalDataConfirmationRequired(): EmptyLocalDataConfirmationRequiredException? =
+    firstNotNullOfOrNull { it.error as? EmptyLocalDataConfirmationRequiredException }
+
+private fun failedLabel(result: BackupRunResult, context: Context): String {
+    val destination = context.getString(backupDestinationLabel(result.destination))
+    val reason = result.error?.message
+        ?.takeIf { it.isNotBlank() }
+        ?.replace(Regex("\\s+"), " ")
+        ?.take(180)
+    return if (reason == null) destination else "$destination: $reason"
 }

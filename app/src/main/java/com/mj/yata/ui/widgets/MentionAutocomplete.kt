@@ -22,7 +22,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
+import com.mj.yata.R
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
@@ -93,6 +95,43 @@ internal fun consumeMentionToken(value: TextFieldValue, mention: MentionToken): 
     return TextFieldValue(before + after, TextRange(before.length))
 }
 
+/**
+ * While a mention is still under the cursor, the autocomplete owns that entity choice. Quick-add
+ * may also parse the same partial token (for example "@a"), but applying it before the row click
+ * can attach the wrong matching entity as each typed character changes the best fuzzy match.
+ */
+internal fun quickAddFieldsOwnedByMention(mention: MentionToken?): Set<String> =
+    when (mention?.trigger) {
+        TRIGGER_TAG -> setOf("tags")
+        TRIGGER_PERSON -> setOf("people")
+        TRIGGER_PROJECT -> setOf("project")
+        TRIGGER_LIST -> setOf("list")
+        else -> emptySet()
+    }
+
+/**
+ * Ranks mention candidates by how well they match the typed query: exact match first, then
+ * name-starts-with-query, then contains-elsewhere, alphabetical within each group. Plain
+ * alphabetical sorting let an early unrelated contains-match push a strong prefix match (typing
+ * "w" for "Work") out of the take(5) cutoff before the user finished typing it.
+ */
+internal fun <T> rankedMentionMatches(query: String, candidates: List<T>, nameOf: (T) -> String): List<T> {
+    val q = query.trim().lowercase()
+    if (q.isEmpty()) return candidates.sortedBy { nameOf(it).lowercase() }
+    return candidates
+        .filter { nameOf(it).contains(q, ignoreCase = true) }
+        .sortedWith(
+            compareBy<T> { candidate ->
+                val name = nameOf(candidate).lowercase()
+                when {
+                    name == q -> 0
+                    name.startsWith(q) -> 1
+                    else -> 2
+                }
+            }.thenBy { nameOf(it).lowercase() }
+        )
+}
+
 @Composable
 internal fun MentionSuggestions(
     mention: MentionToken,
@@ -123,9 +162,7 @@ internal fun MentionSuggestions(
     ) {
         Column(modifier = Modifier.padding(8.dp)) {
             if (mention.trigger == TRIGGER_PROJECT) {
-                val matches = projects.activeProjects()
-                    .filter { it.name.contains(query, ignoreCase = true) }
-                    .sortedBy { it.name.lowercase() }
+                val matches = rankedMentionMatches(query, projects.activeProjects(), { it.name })
                 if (matches.isEmpty() && query.isBlank()) {
                     MentionPanelHint("Type to search projects")
                 }
@@ -152,9 +189,7 @@ internal fun MentionSuggestions(
                     MentionPanelHint("No project matches \"$query\"")
                 }
             } else if (mention.trigger == TRIGGER_LIST) {
-                val matches = lists.activeLists()
-                    .filter { it.name.contains(query, ignoreCase = true) }
-                    .sortedBy { it.name.lowercase() }
+                val matches = rankedMentionMatches(query, lists.activeLists(), { it.name })
                 if (matches.isEmpty() && query.isBlank()) {
                     MentionPanelHint("Type to search lists")
                 }
@@ -177,9 +212,9 @@ internal fun MentionSuggestions(
                     MentionPanelHint("No list matches \"$query\"")
                 }
             } else if (mention.trigger == TRIGGER_TAG) {
-                val matches = tags.filter { it.name.contains(query, ignoreCase = true) }.sortedBy { it.name.lowercase() }
+                val matches = rankedMentionMatches(query, tags, { it.name })
                 if (matches.isEmpty() && query.isBlank()) {
-                    MentionPanelHint("Type to search or create a tag")
+                    MentionPanelHint(stringResource(R.string.mention_hint_tag))
                 }
                 matches.take(5).forEach { tag ->
                     val color = accents.getAccent(tag.color)
@@ -191,20 +226,20 @@ internal fun MentionSuggestions(
                 }
                 if (query.isNotBlank() && matches.none { it.name.equals(query, ignoreCase = true) }) {
                     MentionRow(
-                        label = "Create tag \"$query\"",
+                        label = stringResource(R.string.mention_create_tag, query),
                         onClick = { onCreateTag(query) },
                         leading = { Icon(Icons.Default.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp)) },
                         labelColor = MaterialTheme.colorScheme.primary
                     )
                 }
             } else {
-                val matches = people.filter { it.name.contains(query, ignoreCase = true) }.sortedBy { it.name.lowercase() }
+                val matches = rankedMentionMatches(query, people, { it.name })
                 if (matches.isEmpty() && query.isBlank()) {
-                    MentionPanelHint("Type to search or create a person")
+                    MentionPanelHint(stringResource(R.string.mention_hint_person))
                 }
                 matches.take(5).forEach { person ->
                     MentionRow(
-                        label = if (person.isMe) "You" else person.name,
+                        label = if (person.isMe) stringResource(R.string.mention_you) else person.name,
                         onClick = { onSelectPerson(person) },
                         leading = {
                             com.mj.yata.ui.widgets.PersonAvatar(
@@ -218,7 +253,7 @@ internal fun MentionSuggestions(
                 }
                 if (query.isNotBlank() && matches.none { it.name.equals(query, ignoreCase = true) }) {
                     MentionRow(
-                        label = "Create person \"$query\"",
+                        label = stringResource(R.string.mention_create_person, query),
                         onClick = { onCreatePerson(query) },
                         leading = { Icon(Icons.Default.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp)) },
                         labelColor = MaterialTheme.colorScheme.primary

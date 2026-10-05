@@ -53,6 +53,7 @@ fun ProjectsTab(
     userName: String,
     userPhotoUri: String? = null,
     onMenuClick: () -> Unit,
+    showMenuButton: Boolean = true,
     onSearchClick: () -> Unit,
     onProfileClick: () -> Unit,
     onProjectClick: (String) -> Unit,
@@ -61,6 +62,9 @@ fun ProjectsTab(
     onProjectsReordered: (List<Project>) -> Unit = {},
     onBulkArchiveProjects: (List<String>) -> Unit = {},
     peopleEnabled: Boolean = true,
+    useWideLayout: Boolean = false,
+    /** See TodayTab's parameter of the same name. */
+    initialDataLoaded: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     val activeProjects = remember(projects) { projects.activeProjects() }
@@ -99,7 +103,8 @@ fun ProjectsTab(
                 onMenuClick = onMenuClick,
                 userName = userName,
                 userPhotoUri = userPhotoUri,
-                onProfileClick = onProfileClick
+                onProfileClick = onProfileClick,
+                showNavigationIcon = showMenuButton
             ) {
                 com.mj.yata.ui.widgets.YataTopBarIconButton(onClick = { selectModeOn = true }) {
                     Icon(
@@ -123,9 +128,16 @@ fun ProjectsTab(
             onMove = { from, to -> localOrder = localOrder.toMutableList().apply { add(to, removeAt(from)) } },
             onDragEnd = { onProjectsReordered(localOrder) },
             onDragStateChanged = { isDragging = it },
-            contentPadding = PaddingValues(start = 20.dp, top = 8.dp, end = 20.dp, bottom = 88.dp),
+            contentPadding = PaddingValues(
+                start = if (useWideLayout) 24.dp else 20.dp,
+                top = 8.dp,
+                end = if (useWideLayout) 24.dp else 20.dp,
+                bottom = 88.dp
+            ),
             headerItemCount = if (activeProjects.isEmpty()) 1 else 0,
-            header = if (activeProjects.isEmpty()) {
+            header = if (activeProjects.isEmpty() && !initialDataLoaded) {
+                { item(key = "loading_shimmer") { com.mj.yata.ui.widgets.ListRowsShimmer(modifier = Modifier.fillMaxWidth()) } }
+            } else if (activeProjects.isEmpty()) {
                 {
                     item {
                         com.mj.yata.ui.widgets.TabEmptyState(
@@ -293,7 +305,7 @@ fun ProjectCard(
                             overflow = TextOverflow.Ellipsis
                         )
                         Text(
-                            text = "$doneTasks/$totalTasks done",
+                            text = stringResource(R.string.widget_done_ratio, doneTasks, totalTasks),
                             style = MaterialTheme.typography.bodyMedium.copy(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 13.sp

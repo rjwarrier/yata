@@ -22,6 +22,12 @@ fun serializeRecurrence(r: Recurrence?): String? {
     if (r.bymonthday != null) {
         obj.put("bymonthday", r.bymonthday)
     }
+    if (r.byweekday != null) {
+        obj.put("byweekday", r.byweekday)
+    }
+    if (r.bysetpos != null) {
+        obj.put("bysetpos", r.bysetpos)
+    }
     val endsObj = JSONObject()
     when (val ends = r.ends) {
         is RecurrenceEnds.Never -> endsObj.put("type", "never")
@@ -59,6 +65,9 @@ fun deserializeRecurrence(json: String?): Recurrence? {
             obj.getInt("bymonthday")
         } else null
 
+        val byweekday = if (obj.has("byweekday")) obj.getString("byweekday") else null
+        val bysetpos = if (obj.has("bysetpos")) obj.getInt("bysetpos") else null
+
         val endsObj = obj.getJSONObject("ends")
         val endsType = endsObj.getString("type")
         val ends = when (endsType) {
@@ -69,7 +78,7 @@ fun deserializeRecurrence(json: String?): Recurrence? {
 
         val basedOnCompletion = obj.optBoolean("basedOnCompletion", false)
 
-        Recurrence(freq, interval, byday, bymonthday, ends, basedOnCompletion)
+        Recurrence(freq, interval, byday, bymonthday, ends, basedOnCompletion, byweekday, bysetpos)
     } catch (e: Exception) {
         null
     }
@@ -135,8 +144,8 @@ fun Project.toEntity() = ProjectEntity(
 fun ListEntity.toDomain() = YataList(id, name, color, icon, starred, excludeFromToday, sortOrder, archived)
 fun YataList.toEntity() = ListEntity(id, name, color, icon, starred, excludeFromToday, sortOrder, archived)
 
-fun TagEntity.toDomain() = Tag(id, name, color, groupId, starred, hideCompletedByDefault)
-fun Tag.toEntity() = TagEntity(id, name, color, groupId, starred, hideCompletedByDefault)
+fun TagEntity.toDomain() = Tag(id, name, color, groupId, starred, hideCompletedByDefault, description)
+fun Tag.toEntity() = TagEntity(id, name, color, groupId, starred, hideCompletedByDefault, description)
 
 fun TagGroupEntity.toDomain() = TagGroup(id, name, color)
 fun TagGroup.toEntity() = TagGroupEntity(id, name, color)
@@ -168,7 +177,8 @@ fun TaskEntity.toDomain(assigneeIds: List<String>, tagIds: List<String>, subtask
     seriesId = seriesId,
     archived = archived,
     followUpAt = followUpAt,
-    estimateMinutes = estimateMinutes
+    estimateMinutes = estimateMinutes,
+    postponementCount = postponementCount
 )
 
 fun Task.toEntity() = TaskEntity(
@@ -194,7 +204,8 @@ fun Task.toEntity() = TaskEntity(
     archived = archived,
     followUpAt = followUpAt,
     estimateMinutes = estimateMinutes,
-    ownerId = assigneeIds.firstOrNull()
+    ownerId = assigneeIds.firstOrNull(),
+    postponementCount = postponementCount
 )
 
 fun TaskWithRelations.toDomain() = task.toDomain(

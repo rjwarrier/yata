@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Groups
@@ -42,6 +43,7 @@ import com.mj.yata.ui.sheets.GroupAssignSheet
 import com.mj.yata.ui.theme.LocalYataAccents
 import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.YataEase
+import com.mj.yata.ui.util.rememberAdaptiveSheetMaxWidth
 import com.mj.yata.ui.widgets.PersonAvatar
 import com.mj.yata.ui.widgets.ProgressRing
 
@@ -54,9 +56,11 @@ fun PeopleTab(
     userName: String,
     userPhotoUri: String? = null,
     onMenuClick: () -> Unit,
+    showMenuButton: Boolean = true,
     onSearchClick: () -> Unit,
     onProfileClick: () -> Unit,
     onPersonClick: (String) -> Unit,
+    onAnalyticsClick: () -> Unit,
     onAddPersonClick: () -> Unit,
     onAssignGroup: (personIds: List<String>, groupId: String) -> Unit,
     onCreateGroupAndAssign: (id: String, name: String, personIds: List<String>) -> Unit,
@@ -64,6 +68,9 @@ fun PeopleTab(
     onDeleteGroup: (PersonGroup) -> Unit = {},
     sortMode: com.mj.yata.util.EntitySortMode = com.mj.yata.util.EntitySortMode.NAME_ASC,
     onSortModeChange: (com.mj.yata.util.EntitySortMode) -> Unit = {},
+    useWideLayout: Boolean = false,
+    /** See TodayTab's parameter of the same name. */
+    initialDataLoaded: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     val tasksByPerson = remember(tasks) {
@@ -79,6 +86,7 @@ fun PeopleTab(
     var selectModeOn by remember { mutableStateOf(false) }
     val selectionMode = selectModeOn
     var showGroupPicker by remember { mutableStateOf(false) }
+    val adaptiveSheetMaxWidth = rememberAdaptiveSheetMaxWidth()
 
     Column(
         modifier = modifier
@@ -101,7 +109,8 @@ fun PeopleTab(
                 onMenuClick = onMenuClick,
                 userName = userName,
                 userPhotoUri = userPhotoUri,
-                onProfileClick = onProfileClick
+                onProfileClick = onProfileClick,
+                showNavigationIcon = showMenuButton
             ) {
                 com.mj.yata.ui.widgets.EntitySortMenuButton(
                     current = sortMode,
@@ -109,6 +118,12 @@ fun PeopleTab(
                     contentDescription = stringResource(R.string.people_sort_people),
                     filledContainer = true
                 )
+                com.mj.yata.ui.widgets.YataTopBarIconButton(onClick = onAnalyticsClick) {
+                    Icon(
+                        imageVector = Icons.Default.Analytics,
+                        contentDescription = stringResource(R.string.staff_analytics_title)
+                    )
+                }
                 com.mj.yata.ui.widgets.YataTopBarIconButton(onClick = { selectModeOn = true }) {
                     Icon(
                         imageVector = Icons.Default.Check,
@@ -140,13 +155,22 @@ fun PeopleTab(
 
         LazyColumn(
             modifier = Modifier.weight(1f),
-            contentPadding = PaddingValues(start = 20.dp, top = 8.dp, end = 20.dp, bottom = 88.dp),
+            contentPadding = PaddingValues(
+                start = if (useWideLayout) 24.dp else 20.dp,
+                top = 8.dp,
+                end = if (useWideLayout) 24.dp else 20.dp,
+                bottom = 88.dp
+            ),
             // Single source of spacing between cards. The rows used to carry a 12dp bottom padding
             // of their own on top of this, so every gap was really 24dp — twice what either value
             // suggested when read on its own. 10dp matches the tag rows on the Tags tab.
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            if (people.isEmpty()) {
+            if (people.isEmpty() && !initialDataLoaded) {
+                item(key = "loading_shimmer") {
+                    com.mj.yata.ui.widgets.ListRowsShimmer(modifier = Modifier.fillMaxWidth())
+                }
+            } else if (people.isEmpty()) {
                 item {
                     com.mj.yata.ui.widgets.TabEmptyState(
                         icon = Icons.Default.Groups,
@@ -170,15 +194,26 @@ fun PeopleTab(
                         )
                     }
                     if (expanded) {
-                        items(groupPeople, key = { "person_${it.id}" }) { person ->
-                            PersonListRow(
-                                person = person,
-                                tasksByPerson = tasksByPerson,
-                                selectionMode = selectionMode,
-                                selectedIds = selectedIds,
-                                onPersonClick = onPersonClick,
-                                onToggleStar = onToggleStar
+                        items(groupPeople.chunked(if (useWideLayout) 2 else 1), key = { row -> row.joinToString { "person_${it.id}" } }) { row ->
+                            PersonRowGroup(
+                            row = row,
+                            useWideLayout = useWideLayout,
+                            modifier = Modifier.animateItem(
+                                fadeInSpec = com.mj.yata.ui.theme.yataItemFade,
+                                placementSpec = com.mj.yata.ui.theme.yataItemPlacement,
+                                fadeOutSpec = com.mj.yata.ui.theme.yataItemFade
                             )
+                        ) { person, itemModifier ->
+                                PersonListRow(
+                                    person = person,
+                                    tasksByPerson = tasksByPerson,
+                                    selectionMode = selectionMode,
+                                    selectedIds = selectedIds,
+                                    onPersonClick = onPersonClick,
+                                    onToggleStar = onToggleStar,
+                                    modifier = itemModifier
+                                )
+                            }
                         }
                     }
                 }
@@ -196,15 +231,26 @@ fun PeopleTab(
                     }
                 }
                 if (ungroupedExpanded) {
-                    items(ungrouped, key = { "person_${it.id}" }) { person ->
-                        PersonListRow(
-                            person = person,
-                            tasksByPerson = tasksByPerson,
-                            selectionMode = selectionMode,
-                            selectedIds = selectedIds,
-                            onPersonClick = onPersonClick,
-                            onToggleStar = onToggleStar
-                        )
+                    items(ungrouped.chunked(if (useWideLayout) 2 else 1), key = { row -> row.joinToString { "person_${it.id}" } }) { row ->
+                        PersonRowGroup(
+                            row = row,
+                            useWideLayout = useWideLayout,
+                            modifier = Modifier.animateItem(
+                                fadeInSpec = com.mj.yata.ui.theme.yataItemFade,
+                                placementSpec = com.mj.yata.ui.theme.yataItemPlacement,
+                                fadeOutSpec = com.mj.yata.ui.theme.yataItemFade
+                            )
+                        ) { person, itemModifier ->
+                            PersonListRow(
+                                person = person,
+                                tasksByPerson = tasksByPerson,
+                                selectionMode = selectionMode,
+                                selectedIds = selectedIds,
+                                onPersonClick = onPersonClick,
+                                onToggleStar = onToggleStar,
+                                modifier = itemModifier
+                            )
+                        }
                     }
                 }
             }
@@ -219,14 +265,25 @@ fun PeopleTab(
                     )
                 }
                 if (archivedExpanded) {
-                    items(archivedPeople.sorted(), key = { "archived_${it.id}" }) { person ->
-                        PersonRow(
-                            person = person,
-                            totalTasks = 0,
-                            doneTasks = 0,
-                            progress = 0f,
-                            onClick = { onPersonClick(person.id) }
-                        )
+                    items(archivedPeople.sorted().chunked(if (useWideLayout) 2 else 1), key = { row -> row.joinToString { "archived_${it.id}" } }) { row ->
+                        PersonRowGroup(
+                            row = row,
+                            useWideLayout = useWideLayout,
+                            modifier = Modifier.animateItem(
+                                fadeInSpec = com.mj.yata.ui.theme.yataItemFade,
+                                placementSpec = com.mj.yata.ui.theme.yataItemPlacement,
+                                fadeOutSpec = com.mj.yata.ui.theme.yataItemFade
+                            )
+                        ) { person, itemModifier ->
+                            PersonRow(
+                                person = person,
+                                totalTasks = 0,
+                                doneTasks = 0,
+                                progress = 0f,
+                                onClick = { onPersonClick(person.id) },
+                                modifier = itemModifier
+                            )
+                        }
                     }
                 }
             }
@@ -237,7 +294,8 @@ fun PeopleTab(
         ModalBottomSheet(
             onDismissRequest = { showGroupPicker = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             GroupAssignSheet(
                 title = pluralStringResource(R.plurals.people_add_to_group_title, selectedIds.size, selectedIds.size),
@@ -255,7 +313,8 @@ fun PeopleTab(
                     selectedIds.clear()
                     showGroupPicker = false
                 },
-                onDismiss = { showGroupPicker = false }
+                onDismiss = { showGroupPicker = false },
+                newGroupIdPrefix = "pg_"
             )
         }
     }
@@ -269,7 +328,8 @@ private fun PersonListRow(
     selectionMode: Boolean,
     selectedIds: MutableList<String>,
     onPersonClick: (String) -> Unit,
-    onToggleStar: (String) -> Unit
+    onToggleStar: (String) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val personTasks = remember(tasksByPerson, person.id) {
         tasksByPerson[person.id] ?: emptyList()
@@ -291,8 +351,33 @@ private fun PersonListRow(
                 onPersonClick(person.id)
             }
         },
-        onToggleStar = { onToggleStar(person.id) }
+        onToggleStar = { onToggleStar(person.id) },
+        modifier = modifier
     )
+}
+
+@Composable
+private fun PersonRowGroup(
+    row: List<Person>,
+    useWideLayout: Boolean,
+    modifier: Modifier = Modifier,
+    content: @Composable (Person, Modifier) -> Unit
+) {
+    if (!useWideLayout) {
+        content(row.first(), modifier.fillMaxWidth())
+        return
+    }
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        row.forEach { person ->
+            content(person, Modifier.weight(1f))
+        }
+        if (row.size == 1) {
+            Spacer(modifier = Modifier.weight(1f))
+        }
+    }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -390,7 +475,7 @@ fun PersonRow(
                 }
 
                 Text(
-                    text = "$totalTasks assigned · $doneTasks done",
+                    text = stringResource(R.string.people_tab_assigned_done, totalTasks, doneTasks),
                     style = MaterialTheme.typography.bodyMedium.copy(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 13.sp
@@ -398,7 +483,7 @@ fun PersonRow(
                 )
                 if (overdueTasks > 0) {
                     Text(
-                        text = "$overdueTasks overdue",
+                        text = stringResource(R.string.people_tab_overdue_count, overdueTasks),
                         style = MaterialTheme.typography.bodyMedium.copy(
                             color = MaterialTheme.colorScheme.error,
                             fontWeight = FontWeight.SemiBold,
@@ -429,6 +514,7 @@ fun PersonRow(
                     size = 32.dp,
                     strokeWidth = 3.dp,
                     activeColor = accentColor,
+                    quietWhenEmpty = true,
                     centerLabel = when {
                         openTasks <= 0 -> null
                         openTasks > 99 -> "99+"

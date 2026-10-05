@@ -1,0 +1,13 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.mj.yata",
+      "sha256_cert_fingerprints": [
+        "53:2C:F4:07:D5:F0:D1:21:58:8A:5C:F1:6E:61:12:C8:F1:BB:3B:7E:D9:CF:F1:39:80:6A:7B:63:C6:43:96:C7",
+        "CA:90:38:C7:1E:82:4D:65:F6:69:47:11:69:5C:34:A2:E5:FF:92:00:4C:B5:D4:E6:FB:2B:FE:0D:56:CB:B8:18"
+      ]
+    }
+  }
+]

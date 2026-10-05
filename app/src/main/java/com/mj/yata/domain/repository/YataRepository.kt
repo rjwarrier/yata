@@ -7,9 +7,16 @@ interface YataRepository {
     // Tasks
     fun getTasks(): Flow<List<Task>>
     fun getTaskById(id: String): Flow<Task?>
+    fun getInboxCandidateTasks(): Flow<List<Task>>
+    fun getRecurringTasks(): Flow<List<Task>>
     fun getTasksForList(listId: String): Flow<List<Task>>
     fun getTasksForProject(projectId: String): Flow<List<Task>>
     fun getTasksForPerson(personId: String): Flow<List<Task>>
+
+    /** The live (not trashed, not archived) tasks among [ids], in no particular order — what
+     * `getTasks().first()` filtered to [ids] would give, without loading every other task. For
+     * actions on a known selection (snooze, bulk edits, duplicate). */
+    suspend fun getTasksByIds(ids: Collection<String>): List<Task>
 
     /** Consecutive on-time completions for [taskId]'s recurring series (0 if the task isn't
      * recurring, or has never completed since seriesId tracking was added). See
@@ -30,11 +37,11 @@ interface YataRepository {
         tasks: List<Task>,
         notify: Boolean = true,
         resyncReminder: Boolean = true,
-        preserveExistingCreatedAt: Boolean = true
+        preserveExistingCreatedAt: Boolean = true,
+        trackPostponements: Boolean = true
     )
     suspend fun toggleTaskDone(id: String, notify: Boolean = true)
     suspend fun skipTaskOccurrence(id: String)
-    fun searchTasks(query: String): Flow<List<Task>>
     suspend fun setTaskFlag(id: String, flag: Boolean, notify: Boolean = true)
     suspend fun setTaskPriority(id: String, priority: String, notify: Boolean = true)
     suspend fun setTaskContainer(id: String, listId: String?, projectId: String?, sortOrder: Int, notify: Boolean = true)
@@ -88,6 +95,7 @@ interface YataRepository {
     fun getListById(id: String): Flow<YataList?>
     suspend fun upsertList(list: YataList)
     suspend fun deleteList(list: YataList)
+    suspend fun deleteListOnly(list: YataList)
     suspend fun setListsArchived(ids: List<String>, archived: Boolean)
 
     // People
@@ -107,6 +115,8 @@ interface YataRepository {
     fun getTags(): Flow<List<Tag>>
     fun getTagById(id: String): Flow<Tag?>
     suspend fun upsertTag(tag: Tag)
+    suspend fun upsertTags(tags: List<Tag>, pendingGroup: TagGroup?)
+    suspend fun setTagsGroup(tagIds: List<String>, groupId: String?, pendingGroup: TagGroup?)
     suspend fun deleteTag(tag: Tag)
 
     // Tag groups

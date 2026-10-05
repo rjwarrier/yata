@@ -54,9 +54,9 @@ fun EntitySortMenuButton(
             )
         }
     }
-    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+    YataDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
         EntitySortMode.entries.forEach { mode ->
-            DropdownMenuItem(
+            YataDropdownMenuItem(
                 text = { Text(mode.label()) },
                 onClick = { onSelect(mode); expanded = false }
             )

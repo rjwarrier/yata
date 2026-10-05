@@ -28,22 +28,38 @@ class DemoRepository @Inject constructor() : YataRepository {
 
     override fun getTasks(): Flow<List<Task>> = dataset.map { it.tasks }
     override fun getTaskById(id: String): Flow<Task?> = dataset.map { d -> d.tasks.find { it.id == id } }
+    override fun getInboxCandidateTasks(): Flow<List<Task>> = dataset.map { d ->
+        d.tasks.filter { task ->
+            !task.done && (
+                task.due == null ||
+                    task.estimateMinutes == null ||
+                    (task.projectId == null && task.listId == null) ||
+                    task.assigneeIds.isEmpty()
+                )
+        }
+    }
+    override fun getRecurringTasks(): Flow<List<Task>> = dataset.map { d ->
+        d.tasks.filter { !it.done && it.recurrence != null }
+    }
     override fun getTasksForList(listId: String): Flow<List<Task>> = dataset.map { d -> d.tasks.filter { it.listId == listId } }
     override fun getTasksForProject(projectId: String): Flow<List<Task>> = dataset.map { d -> d.tasks.filter { it.projectId == projectId } }
     override fun getTasksForPerson(personId: String): Flow<List<Task>> = dataset.map { d -> d.tasks.filter { personId in it.assigneeIds } }
     override suspend fun getTaskStreak(taskId: String): Int = 0
+    override suspend fun getTasksByIds(ids: Collection<String>): List<Task> {
+        val wanted = ids.toSet()
+        return dataset.value.tasks.filter { it.id in wanted }
+    }
 
     override suspend fun upsertTask(task: Task, notify: Boolean, resyncReminder: Boolean) = Unit
     override suspend fun upsertTasks(
         tasks: List<Task>,
         notify: Boolean,
         resyncReminder: Boolean,
-        preserveExistingCreatedAt: Boolean
+        preserveExistingCreatedAt: Boolean,
+        trackPostponements: Boolean
     ) = Unit
     override suspend fun toggleTaskDone(id: String, notify: Boolean) = Unit
     override suspend fun skipTaskOccurrence(id: String) = Unit
-    override fun searchTasks(query: String): Flow<List<Task>> =
-        dataset.map { d -> d.tasks.filter { it.title.contains(query, ignoreCase = true) } }
     override suspend fun setTaskFlag(id: String, flag: Boolean, notify: Boolean) = Unit
     override suspend fun setTaskPriority(id: String, priority: String, notify: Boolean) = Unit
     override suspend fun setTaskContainer(id: String, listId: String?, projectId: String?, sortOrder: Int, notify: Boolean) = Unit
@@ -82,6 +98,7 @@ class DemoRepository @Inject constructor() : YataRepository {
     override fun getListById(id: String): Flow<YataList?> = dataset.map { d -> d.lists.find { it.id == id } }
     override suspend fun upsertList(list: YataList) = Unit
     override suspend fun deleteList(list: YataList) = Unit
+    override suspend fun deleteListOnly(list: YataList) = Unit
     override suspend fun setListsArchived(ids: List<String>, archived: Boolean) = Unit
 
     override fun getPeople(): Flow<List<Person>> = dataset.map { it.people }
@@ -98,6 +115,8 @@ class DemoRepository @Inject constructor() : YataRepository {
     override fun getTags(): Flow<List<Tag>> = dataset.map { it.tags }
     override fun getTagById(id: String): Flow<Tag?> = dataset.map { d -> d.tags.find { it.id == id } }
     override suspend fun upsertTag(tag: Tag) = Unit
+    override suspend fun upsertTags(tags: List<Tag>, pendingGroup: TagGroup?) = Unit
+    override suspend fun setTagsGroup(tagIds: List<String>, groupId: String?, pendingGroup: TagGroup?) = Unit
     override suspend fun deleteTag(tag: Tag) = Unit
 
     override fun getTagGroups(): Flow<List<TagGroup>> = dataset.map { it.tagGroups }

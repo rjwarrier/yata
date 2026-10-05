@@ -88,7 +88,8 @@ data class Tag(
     val color: String, // accentA - accentP or "error"
     val groupId: String? = null,
     val starred: Boolean = false,
-    val hideCompletedByDefault: Boolean = false
+    val hideCompletedByDefault: Boolean = false,
+    val description: String? = null
 )
 
 data class TagGroup(
@@ -116,7 +117,7 @@ data class Subtask(
 enum class QuickSnoozePreset(val label: String) {
     TONIGHT("Tonight"),
     TOMORROW_MORNING("Tomorrow morning"),
-    NEXT_WEEKDAY("Next weekday")
+    NEXT_WEEKDAY("Next business day")
 }
 
 data class Recurrence(
@@ -125,7 +126,16 @@ data class Recurrence(
     val byday: List<String>? = null, // e.g. ["MO", "TU", ...]
     val bymonthday: Int? = null, // 1..31, or -1 to mean "last day of month"
     val ends: RecurrenceEnds = RecurrenceEnds.Never,
-    val basedOnCompletion: Boolean = false // true: next occurrence counts from completion date, not due date
+    val basedOnCompletion: Boolean = false, // true: next occurrence counts from completion date, not due date
+    // Monthly-by-weekday-position, e.g. "2nd Tuesday" (byweekday="TU", bysetpos=2) or "last Friday"
+    // (byweekday="FR", bysetpos=-1). Only meaningful when freq=="monthly"; when both are non-null
+    // they take priority over [bymonthday] for that month's occurrence — set at most one of the two
+    // monthly modes via the RecurrenceSheet UI, never both. Appended at the end (rather than next to
+    // [bymonthday], which would read more naturally) specifically so every pre-existing positional
+    // `Recurrence(freq, interval, byday, bymonthday, RecurrenceEnds...)` call site — the NL parser's
+    // recurrence rules build hundreds of these — keeps binding correctly instead of silently shifting.
+    val byweekday: String? = null, // "MO".."SU"
+    val bysetpos: Int? = null // 1..4, or -1 for "last"
 )
 
 sealed interface RecurrenceEnds {
@@ -175,7 +185,10 @@ data class Task(
     // "no idea yet" and "this takes no time" are different answers and only the former should be
     // excluded from a day's planned total. Never inferred or auto-filled: a guessed estimate is
     // worse than none, because it makes the capacity figure look authoritative when it isn't.
-    val estimateMinutes: Int? = null
+    val estimateMinutes: Int? = null,
+    // Number of times this task's due date has been moved later. First assigning a due date,
+    // clearing it, or moving it earlier does not count as a postponement.
+    val postponementCount: Int = 0
 )
 
 /**
@@ -208,6 +221,27 @@ fun Task.isWaitingOn(nowMillis: Long, myId: String?): Boolean {
 }
 
 /**
+ * The date this task should be compared against as "due", for filtering/overdue purposes only —
+ * never written back to [due]. For a recurring task whose [due] lands on a weekend or configured
+ * holiday, when [observeNonWorkingDays] is on, that's the previous working day instead
+ * ([previousBusinessDay]) — the "observe non-working days" setting (Settings → Task Defaults →
+ * Holidays). A non-recurring task, a disabled setting, or a [due] that already falls on a working
+ * day all return [due] unchanged, which is the common case and kept cheap.
+ */
+fun Task.effectiveDue(
+    weekendDays: Set<String>,
+    holidays: List<Holiday>,
+    observeNonWorkingDays: Boolean
+): String? {
+    val dueDate = due ?: return null
+    if (!observeNonWorkingDays || recurrence == null) return dueDate
+    val parsed = runCatching { LocalDate.parse(dueDate) }.getOrNull() ?: return dueDate
+    val holidayLookup = Holiday.index(holidays)
+    if (!isWeekendDate(parsed, weekendDays) && holidayLookup(dueDate) == null) return dueDate
+    return previousBusinessDay(parsed, weekendDays, holidays).toString()
+}
+
+/**
  * True when this task belongs on a "your Today" surface — due or overdue as of [today], and
  * neither deferred ([isDeferredOn]) nor snoozed waiting on someone else ([isWaitingOn]).
  *
@@ -220,9 +254,22 @@ fun Task.isWaitingOn(nowMillis: Long, myId: String?): Boolean {
  * Callers still apply their own scoping on top (excludeFromToday containers, archived projects,
  * `wasPendingAsOf` for progress counts) — this covers the two task-level "not yet mine to do"
  * rules alone.
+ *
+ * [weekendDays]/[holidays]/[observeNonWorkingDays] default to off so every existing call site
+ * compiles and behaves exactly as before; only callers that explicitly opt in (currently: this
+ * StateFlow's own badge count and the Today tab) see [effectiveDue] applied.
  */
-fun Task.isActionableToday(today: String, nowMillis: Long, myId: String?): Boolean =
-    due != null && due <= today && !isDeferredOn(today) && !isWaitingOn(nowMillis, myId)
+fun Task.isActionableToday(
+    today: String,
+    nowMillis: Long,
+    myId: String?,
+    weekendDays: Set<String> = emptySet(),
+    holidays: List<Holiday> = emptyList(),
+    observeNonWorkingDays: Boolean = false
+): Boolean {
+    val effective = effectiveDue(weekendDays, holidays, observeNonWorkingDays) ?: return false
+    return effective <= today && !isDeferredOn(today) && !isWaitingOn(nowMillis, myId)
+}
 
 /**
  * Tag IDs this task carries, including tag IDs its project live-syncs to every task

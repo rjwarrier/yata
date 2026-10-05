@@ -9,5 +9,6 @@ package com.mj.yata.domain.model
  */
 enum class RemoteBackupProtocol {
     SFTP,
-    FTP
+    FTP,
+    GITHUB
 }

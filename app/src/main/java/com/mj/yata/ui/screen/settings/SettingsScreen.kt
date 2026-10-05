@@ -1,11 +1,14 @@
 package com.mj.yata.ui.screen.settings
 
+import android.os.Build
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -27,6 +30,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.CompareArrows
 import androidx.compose.material.icons.automirrored.filled.HelpOutline
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material.icons.filled.IosShare
+import androidx.compose.material.icons.filled.LocalCafe
 // Section-heading icons.
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.CloudSync
@@ -41,15 +48,17 @@ import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.TaskAlt
 import androidx.compose.material.icons.filled.Tune
-import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Alarm
 import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.TaskAlt
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.ChildCare
@@ -87,6 +96,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -94,12 +104,15 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mj.yata.R
 import com.mj.yata.data.backup.BackupDiff
 import com.mj.yata.domain.model.AppFont
+import com.mj.yata.domain.model.postponementWarningThresholdFor
 import com.mj.yata.domain.model.BackgroundTint
 import com.mj.yata.domain.model.ColorIntensity
 import com.mj.yata.domain.model.DateAliasDefinition
@@ -110,11 +123,13 @@ import com.mj.yata.domain.model.FabPosition
 import com.mj.yata.domain.model.MotionMode
 import com.mj.yata.domain.model.SavedThemePreset
 import com.mj.yata.domain.model.StartupTab
+import com.mj.yata.domain.model.SubtaskCompletionAction
 import com.mj.yata.domain.model.SwipeAction
 import com.mj.yata.domain.model.TaskRowDensity
 import com.mj.yata.domain.model.TimeFormat
 import com.mj.yata.domain.model.ThemeMode
 import com.mj.yata.domain.model.YataList
+import com.mj.yata.domain.sync.RestorePoint
 import kotlin.math.roundToInt
 import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.YataEase
@@ -123,11 +138,18 @@ import com.mj.yata.ui.theme.colorSchemeFromSeed
 import com.mj.yata.notification.DailyAgendaWorker
 import com.mj.yata.notification.OverdueEscalationWorker
 import com.mj.yata.notification.NotificationPermissionUtils
+import com.mj.yata.ui.screen.lock.hasAppLockUnlockPath
 import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.theme.LocalYataAccents
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.mj.yata.ui.widgets.YataDropdownMenu
+import com.mj.yata.ui.widgets.YataDropdownMenuItem
 import com.mj.yata.ui.widgets.CircularImageCropper
 import com.mj.yata.ui.widgets.CustomColorPickerDialog
+import com.mj.yata.ui.widgets.PresetAvatarChoice
 import com.mj.yata.ui.widgets.SegmentedControl
+import com.mj.yata.ui.widgets.YataCompactFieldShape
+import com.mj.yata.ui.widgets.yataFieldColors
 import com.mj.yata.ui.widgets.YataTimePickerLauncher
 import com.mj.yata.ui.widgets.showSuccess
 import com.mj.yata.ui.widgets.showError
@@ -136,15 +158,24 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.toArgb
 import com.mj.yata.util.ProfilePhotoUtils
+import com.mj.yata.util.EstimateUtils
+import com.mj.yata.util.emptyLocalDataConfirmationRequired
+import com.mj.yata.util.initialSyncConfirmationRequired
 import com.mj.yata.util.selfHostedSyncLockFailure
 import com.mj.yata.util.syncLockClearPrompt
 import com.mj.yata.util.TaskScheduleUtils
 import com.mj.yata.util.localized
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.mj.yata.BuildConfig
+import com.mj.yata.BuildInfo
+import com.mj.yata.ui.theme.BodoniModaFamily
+import com.mj.yata.ui.util.AdaptiveContentBox
+import com.mj.yata.ui.util.rememberAdaptiveLayoutInfo
 
 private data class SettingsSearchTarget(
     val key: String,
@@ -226,6 +257,9 @@ fun SettingsScreen(
     onNavigateToWelcome: () -> Unit,
     onNavigateToHelpAbout: () -> Unit,
     onNavigateToCrashLog: () -> Unit,
+    onNavigateToShareApp: () -> Unit,
+    onNavigateToRemoteSync: () -> Unit,
+    onNavigateToHolidayCalendar: () -> Unit,
     settingsDestination: SettingsDestination? = null,
     onNavigateToSettingsDestination: (SettingsDestination) -> Unit = {},
     modifier: Modifier = Modifier
@@ -238,6 +272,9 @@ fun SettingsScreen(
     val userEmail = uiState.userEmail
     val userPhotoUri = uiState.userPhotoUri
     val defaultListId = uiState.defaultListId
+    val defaultProjectId = uiState.defaultProjectId
+    val defaultTagIds = uiState.defaultTagIds
+    val defaultEstimateMinutes = uiState.defaultEstimateMinutes
     val startOfWeekSunday = uiState.startOfWeekSunday
     val defaultReminderHour = uiState.defaultReminderHour
     val defaultReminderMinute = uiState.defaultReminderMinute
@@ -265,10 +302,16 @@ fun SettingsScreen(
     val taskCardBackground by viewModel.taskCardBackground.collectAsStateWithLifecycle()
     val trashRetentionDays by viewModel.trashRetentionDays.collectAsStateWithLifecycle()
     val autoArchiveDays by viewModel.autoArchiveDays.collectAsStateWithLifecycle()
+    val demoModeEnabled by viewModel.demoModeEnabled.collectAsStateWithLifecycle()
     val dailyAgendaEnabled by viewModel.dailyAgendaEnabled.collectAsStateWithLifecycle()
     val dailyAgendaHour by viewModel.dailyAgendaHour.collectAsStateWithLifecycle()
     val dailyAgendaMinute by viewModel.dailyAgendaMinute.collectAsStateWithLifecycle()
     val overdueNudgesEnabled by viewModel.overdueNudgesEnabled.collectAsStateWithLifecycle()
+    val quietHoursEnabled by viewModel.quietHoursEnabled.collectAsStateWithLifecycle()
+    val quietHoursStartHour by viewModel.quietHoursStartHour.collectAsStateWithLifecycle()
+    val quietHoursStartMinute by viewModel.quietHoursStartMinute.collectAsStateWithLifecycle()
+    val quietHoursEndHour by viewModel.quietHoursEndHour.collectAsStateWithLifecycle()
+    val quietHoursEndMinute by viewModel.quietHoursEndMinute.collectAsStateWithLifecycle()
     val undoWindowSeconds by viewModel.undoWindowSeconds.collectAsStateWithLifecycle()
     val snoozeTonightHour by viewModel.snoozeTonightHour.collectAsStateWithLifecycle()
     val snoozeTonightMinute by viewModel.snoozeTonightMinute.collectAsStateWithLifecycle()
@@ -276,12 +319,17 @@ fun SettingsScreen(
     val snoozeTomorrowMinute by viewModel.snoozeTomorrowMinute.collectAsStateWithLifecycle()
     val defaultDueDate by viewModel.defaultDueDate.collectAsStateWithLifecycle()
     val defaultPriority by viewModel.defaultPriority.collectAsStateWithLifecycle()
+    val postponementWarningThreshold by viewModel.postponementWarningThreshold.collectAsStateWithLifecycle()
+    val subtaskCompletionAction by viewModel.subtaskCompletionAction.collectAsStateWithLifecycle()
     val autoAssignToMe by viewModel.autoAssignToMe.collectAsStateWithLifecycle()
     val todayShowUpcomingWhenEmpty by viewModel.todayShowUpcomingWhenEmpty.collectAsStateWithLifecycle()
+    val dueCountdownEnabled by viewModel.dueCountdownEnabled.collectAsStateWithLifecycle()
     val peopleFeatureEnabled = uiState.peopleFeatureEnabled
     val tagsFeatureEnabled = uiState.tagsFeatureEnabled
     val projectsFeatureEnabled = uiState.projectsFeatureEnabled
     val lists = uiState.lists
+    val activeProjects = uiState.activeProjects
+    val tags = uiState.tags
     val backupIntervalMinutes = uiState.backupIntervalMinutes
     val localBackupEnabled = uiState.localBackupEnabled
     val localBackupLastAt = uiState.localBackupLastAt
@@ -298,6 +346,17 @@ fun SettingsScreen(
     val ftpUseTls = uiState.ftpUseTls
     val sftpKeepCount = uiState.sftpKeepCount
     val isFtpProtocol = remoteBackupProtocol == com.mj.yata.domain.model.RemoteBackupProtocol.FTP
+    val isGitHubProtocol = remoteBackupProtocol == com.mj.yata.domain.model.RemoteBackupProtocol.GITHUB
+    val githubOwner = uiState.githubOwner
+    val githubRepo = uiState.githubRepo
+    val githubBranch = uiState.githubBranch
+    val githubApiBase = uiState.githubApiBase
+    val githubTokenExpiresAt = uiState.githubTokenExpiresAt
+    val remoteConfigured = if (isGitHubProtocol) {
+        githubOwner.isNotBlank() && githubRepo.isNotBlank()
+    } else {
+        sftpHost.isNotBlank()
+    }
     val dateAliasDefinitions = uiState.dateAliasDefinitions
     val savedThemePresetDefinitions = uiState.savedThemePresetDefinitions
     val taskerIntegrationEnabled = uiState.taskerIntegrationEnabled
@@ -305,6 +364,15 @@ fun SettingsScreen(
     val voiceLanguage by viewModel.voiceRecognitionLanguage.collectAsStateWithLifecycle()
     var showVoiceLanguageMenu by remember { mutableStateOf(false) }
     var showDefaultListMenu by remember { mutableStateOf(false) }
+    var showDefaultProjectMenu by remember { mutableStateOf(false) }
+    var showDefaultTagsMenu by remember { mutableStateOf(false) }
+    var showDefaultEstimateDialog by remember { mutableStateOf(false) }
+    var defaultEstimateText by rememberSaveable { mutableStateOf("") }
+    val defaultListMenuScrollState = rememberScrollState()
+    val defaultProjectMenuScrollState = rememberScrollState()
+    val defaultTagsMenuScrollState = rememberScrollState()
+    val voiceLanguageMenuScrollState = rememberScrollState()
+    val dateAliasTargetMenuScrollState = rememberScrollState()
     var showStartupTabMenu by remember { mutableStateOf(false) }
     var showSwipeRightMenu by remember { mutableStateOf(false) }
     var showSwipeLeftMenu by remember { mutableStateOf(false) }
@@ -316,10 +384,10 @@ fun SettingsScreen(
     val confettiEnabled by viewModel.confettiEnabled.collectAsStateWithLifecycle()
     val timeFormat by viewModel.timeFormat.collectAsStateWithLifecycle()
     val dateFormat by viewModel.dateFormat.collectAsStateWithLifecycle()
-    var showTrashRetentionMenu by remember { mutableStateOf(false) }
-    var showAutoArchiveMenu by remember { mutableStateOf(false) }
     var showAgendaTimePicker by remember { mutableStateOf(false) }
     var showReminderTimePicker by remember { mutableStateOf(false) }
+    var showQuietHoursStartPicker by remember { mutableStateOf(false) }
+    var showQuietHoursEndPicker by remember { mutableStateOf(false) }
     var showSnoozeTonightPicker by remember { mutableStateOf(false) }
     var showSnoozeTomorrowPicker by remember { mutableStateOf(false) }
     var newDateAlias by rememberSaveable { mutableStateOf("") }
@@ -339,29 +407,37 @@ fun SettingsScreen(
     var isDeletingAll by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
 
-    var showSftpConfigDialog by remember { mutableStateOf(false) }
     var showSftpRestoreDialog by remember { mutableStateOf(false) }
     var showClearSyncLockDialog by remember { mutableStateOf(false) }
     var clearSyncLockDialogMessage by remember { mutableStateOf<String?>(null) }
+    var initialSyncMergeMessage by remember { mutableStateOf<String?>(null) }
+    var emptyLocalSyncMessage by remember { mutableStateOf<String?>(null) }
+    var demoModeFeedback by remember { mutableStateOf<Int?>(null) }
     var isLoadingSftpBackups by remember { mutableStateOf(false) }
-    var sftpBackupList by remember { mutableStateOf<List<String>>(emptyList()) }
+    var sftpBackupList by remember { mutableStateOf<List<RestorePoint>>(emptyList()) }
     var isRestoringSftpBackup by remember { mutableStateOf(false) }
     var isClearingSyncLock by remember { mutableStateOf(false) }
-    var pendingSftpRestoreFilename by remember { mutableStateOf<String?>(null) }
+    var pendingSftpRestorePoint by remember { mutableStateOf<RestorePoint?>(null) }
     var sftpBackupSummary by remember { mutableStateOf<com.mj.yata.domain.model.BackupSummary?>(null) }
     var isInspectingSftpBackup by remember { mutableStateOf(false) }
     var sftpInspectError by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     val settingsListState = rememberLazyListState()
+    LaunchedEffect(demoModeFeedback) {
+        if (demoModeFeedback != null) {
+            kotlinx.coroutines.delay(3_000)
+            demoModeFeedback = null
+        }
+    }
     var settingsSearchQuery by rememberSaveable { mutableStateOf("") }
     var showSettingsMenu by remember { mutableStateOf(false) }
     var showResetSettingsDialog by remember { mutableStateOf(false) }
 
     val settingsHubDestinations = listOf(
         SettingsHubDestination(stringResource(R.string.settings_section_appearance_display), stringResource(R.string.settings_search_appearance_display_summary), SettingsDestination.APPEARANCE_DISPLAY, Icons.Default.Palette),
-        SettingsHubDestination(stringResource(R.string.settings_section_navigation_features), stringResource(R.string.settings_search_navigation_features_summary), SettingsDestination.NAVIGATION_FEATURES, Icons.Default.Navigation),
-        SettingsHubDestination(stringResource(R.string.settings_section_sound_feedback), stringResource(R.string.settings_search_feedback_summary), SettingsDestination.SOUND_FEEDBACK, Icons.Default.VolumeUp),
         SettingsHubDestination(stringResource(R.string.settings_section_task_defaults), stringResource(R.string.settings_search_defaults_summary), SettingsDestination.TASK_DEFAULTS, Icons.Default.TaskAlt),
+        SettingsHubDestination(stringResource(R.string.settings_section_navigation_features), stringResource(R.string.settings_search_navigation_features_summary), SettingsDestination.NAVIGATION_FEATURES, Icons.Default.Navigation),
+        SettingsHubDestination(stringResource(R.string.settings_section_sound_feedback), stringResource(R.string.settings_search_feedback_summary), SettingsDestination.SOUND_FEEDBACK, Icons.AutoMirrored.Filled.VolumeUp),
         SettingsHubDestination(stringResource(R.string.settings_section_notifications), stringResource(R.string.settings_search_notifications_summary), SettingsDestination.NOTIFICATIONS, Icons.Default.Notifications),
         SettingsHubDestination(stringResource(R.string.settings_section_privacy), stringResource(R.string.settings_search_privacy_summary), SettingsDestination.PRIVACY_SECURITY, Icons.Default.Lock),
         SettingsHubDestination(stringResource(R.string.settings_section_data_management), stringResource(R.string.settings_search_data_summary), SettingsDestination.DATA_MANAGEMENT, Icons.Default.Storage),
@@ -379,15 +455,15 @@ fun SettingsScreen(
         SettingsSearchTarget("features", stringResource(R.string.settings_section_features), stringResource(R.string.settings_search_features_summary), "today upcoming projects people tags", SettingsDestination.NAVIGATION_FEATURES, Icons.Default.Extension),
         SettingsSearchTarget("manage", stringResource(R.string.settings_section_manage), stringResource(R.string.settings_search_manage_summary), "manage projects people tags", SettingsDestination.NAVIGATION_FEATURES, Icons.Default.Build),
         SettingsSearchTarget("tasker", "Tasker", "Automation access for creating tasks", "tasker automation plugin create task", SettingsDestination.NAVIGATION_FEATURES, Icons.Default.Extension),
-        SettingsSearchTarget("sound_feedback", stringResource(R.string.settings_section_sound_feedback), stringResource(R.string.settings_search_feedback_summary), "sound haptic swipe undo", SettingsDestination.SOUND_FEEDBACK, Icons.Default.VolumeUp),
-        SettingsSearchTarget("task_defaults", stringResource(R.string.settings_section_task_defaults), stringResource(R.string.settings_search_defaults_summary), "due priority list reminder week voice assign assignee me", SettingsDestination.TASK_DEFAULTS, Icons.Default.TaskAlt),
+        SettingsSearchTarget("sound_feedback", stringResource(R.string.settings_section_sound_feedback), stringResource(R.string.settings_search_feedback_summary), "sound haptic voice language speech recognition", SettingsDestination.SOUND_FEEDBACK, Icons.AutoMirrored.Filled.VolumeUp),
+        SettingsSearchTarget("task_defaults", stringResource(R.string.settings_section_task_defaults), stringResource(R.string.settings_search_defaults_summary), "due priority list reminder week assign assignee me subtask complete completion auto ask undo window swipe confetti postponement postpone warning threshold", SettingsDestination.TASK_DEFAULTS, Icons.Default.TaskAlt),
         SettingsSearchTarget("date_aliases", "Date aliases", "Custom quick-add words for due dates", "quick add natural language date aliases keywords today tomorrow", SettingsDestination.TASK_DEFAULTS, Icons.Default.CalendarMonth),
         SettingsSearchTarget("notifications", stringResource(R.string.settings_section_notifications), stringResource(R.string.settings_search_notifications_summary), "alarm battery agenda overdue snooze delivery", SettingsDestination.NOTIFICATIONS, Icons.Default.Notifications),
         SettingsSearchTarget("privacy_security", stringResource(R.string.settings_section_privacy), stringResource(R.string.settings_search_privacy_summary), "privacy lock pin timeout security", SettingsDestination.PRIVACY_SECURITY, Icons.Default.Lock),
         SettingsSearchTarget("data_management", stringResource(R.string.settings_section_data_management), stringResource(R.string.settings_search_data_summary), "export import csv calendar trash archive delete data", SettingsDestination.DATA_MANAGEMENT, Icons.Default.Storage),
-        SettingsSearchTarget("remote_backup", stringResource(R.string.settings_section_cloud_backup), stringResource(R.string.settings_search_cloud_summary), "self hosted server sync backup sftp ftp restore frequency", SettingsDestination.BACKUP_SYNC, Icons.Default.CloudSync),
+        SettingsSearchTarget("remote_backup", stringResource(R.string.settings_section_cloud_backup), stringResource(R.string.settings_search_cloud_summary), "self hosted server sync backup sftp ftp restore frequency manual backup to file", SettingsDestination.BACKUP_SYNC, Icons.Default.CloudSync),
         SettingsSearchTarget("local_backup", stringResource(R.string.settings_section_local_backup), stringResource(R.string.settings_search_local_summary), "local backup restore", SettingsDestination.BACKUP_SYNC, Icons.Default.Save),
-        SettingsSearchTarget("help_about", stringResource(R.string.settings_section_help_about), stringResource(R.string.settings_search_help_summary), "help about version guide crash logs", SettingsDestination.HELP_ABOUT, Icons.AutoMirrored.Filled.HelpOutline)
+        SettingsSearchTarget("help_about", stringResource(R.string.settings_section_help_about), stringResource(R.string.settings_search_help_summary), "help about version guide crash logs welcome tour onboarding", SettingsDestination.HELP_ABOUT, Icons.AutoMirrored.Filled.HelpOutline)
     )
     val normalizedSettingsQuery = settingsSearchQuery.trim().lowercase()
     val filteredSettingsTargets = remember(normalizedSettingsQuery, settingsSearchTargets) {
@@ -405,53 +481,13 @@ fun SettingsScreen(
     var backupDiffError by remember { mutableStateOf<String?>(null) }
 
     val context = LocalContext.current
-    val profileAvatarPresets = listOf(
-        ProfilePhotoUtils.PresetAvatar.LOOP,
-        ProfilePhotoUtils.PresetAvatar.PERSON,
-        ProfilePhotoUtils.PresetAvatar.SMILE,
-        ProfilePhotoUtils.PresetAvatar.GLASSES,
-        ProfilePhotoUtils.PresetAvatar.FRIENDS,
-        ProfilePhotoUtils.PresetAvatar.TEAM,
-        ProfilePhotoUtils.PresetAvatar.FAMILY,
-        ProfilePhotoUtils.PresetAvatar.HELPER,
-        ProfilePhotoUtils.PresetAvatar.THINKER,
-        ProfilePhotoUtils.PresetAvatar.CHILD,
-        ProfilePhotoUtils.PresetAvatar.GUIDE,
-        ProfilePhotoUtils.PresetAvatar.CREATOR,
-        ProfilePhotoUtils.PresetAvatar.LISTENER,
-        ProfilePhotoUtils.PresetAvatar.LEADER,
-        ProfilePhotoUtils.PresetAvatar.FOCUS,
-        ProfilePhotoUtils.PresetAvatar.STAR,
-        ProfilePhotoUtils.PresetAvatar.HEART,
-        ProfilePhotoUtils.PresetAvatar.ROCKET,
-        ProfilePhotoUtils.PresetAvatar.WORK,
-        ProfilePhotoUtils.PresetAvatar.LEAF,
-        ProfilePhotoUtils.PresetAvatar.SPARK,
-        ProfilePhotoUtils.PresetAvatar.HOME,
-        ProfilePhotoUtils.PresetAvatar.STUDY,
-        ProfilePhotoUtils.PresetAvatar.TRAVEL,
-        ProfilePhotoUtils.PresetAvatar.FITNESS,
-        ProfilePhotoUtils.PresetAvatar.FOOD,
-        ProfilePhotoUtils.PresetAvatar.BOOK,
-        ProfilePhotoUtils.PresetAvatar.MUSIC,
-        ProfilePhotoUtils.PresetAvatar.CODE,
-        ProfilePhotoUtils.PresetAvatar.ART,
-        ProfilePhotoUtils.PresetAvatar.CAMERA,
-        ProfilePhotoUtils.PresetAvatar.IDEA,
-        ProfilePhotoUtils.PresetAvatar.SHIELD,
-        ProfilePhotoUtils.PresetAvatar.CLOUD,
-        ProfilePhotoUtils.PresetAvatar.CHECK,
-        ProfilePhotoUtils.PresetAvatar.COFFEE,
-        ProfilePhotoUtils.PresetAvatar.CALENDAR,
-        ProfilePhotoUtils.PresetAvatar.WAVE,
-        ProfilePhotoUtils.PresetAvatar.ORBIT,
-        ProfilePhotoUtils.PresetAvatar.BLOOM
-    )
+    val profileAvatarPresets = ProfilePhotoUtils.PROFILE_AVATAR_PRESETS
     val currentSettingsTitle =
         settingsDestination?.let { destination ->
             settingsHubDestinations.firstOrNull { it.destination == destination }?.title
         } ?: stringResource(R.string.settings_settings)
     val isSettingsRoot = settingsDestination == null
+    val useWideSettings = rememberAdaptiveLayoutInfo().isWide
     var pickedPhotoBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
     val photoPickerLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
         contract = androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia()
@@ -474,7 +510,7 @@ fun SettingsScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) { data -> com.mj.yata.ui.widgets.YataSnackbar(data) } },
         bottomBar = {
             if (isSettingsRoot) {
-                com.mj.yata.ui.screen.main.CustomBottomNav(
+                com.mj.yata.ui.screen.main.AdaptiveBottomNav(
                     selectedTab = -1,
                     todayBadgeCount = todayBadgeCount,
                     peopleEnabled = peopleFeatureEnabled,
@@ -506,8 +542,8 @@ fun SettingsScreen(
                         IconButton(onClick = { showSettingsMenu = true }) {
                             Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.cd_more_options))
                         }
-                        DropdownMenu(expanded = showSettingsMenu, onDismissRequest = { showSettingsMenu = false }) {
-                            DropdownMenuItem(
+                        YataDropdownMenu(expanded = showSettingsMenu, onDismissRequest = { showSettingsMenu = false }) {
+                            YataDropdownMenuItem(
                                 text = { Text(stringResource(R.string.settings_reset_settings)) },
                                 leadingIcon = { Icon(Icons.Default.RestartAlt, contentDescription = null) },
                                 onClick = {
@@ -521,16 +557,20 @@ fun SettingsScreen(
             )
         }
     ) { innerPadding ->
-        LazyColumn(
-            state = settingsListState,
+        AdaptiveContentBox(
             modifier = modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
                 .padding(innerPadding)
-                .padding(horizontal = 20.dp),
-            contentPadding = PaddingValues(top = 20.dp, bottom = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
+            LazyColumn(
+                state = settingsListState,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 20.dp),
+                contentPadding = PaddingValues(top = 20.dp, bottom = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(20.dp)
+            ) {
             if (isSettingsRoot) {
                 item(key = "settings_search") {
                     SettingsSearchField(
@@ -691,13 +731,35 @@ fun SettingsScreen(
                     }
                 }
             }
-            items(settingsHubDestinations, key = { it.destination.routeSegment }) { target ->
-                SettingsDestinationCard(
-                    icon = target.icon,
-                    title = target.title,
-                    summary = target.summary,
-                    onClick = { onNavigateToSettingsDestination(target.destination) }
-                )
+            if (useWideSettings) {
+                items(settingsHubDestinations.chunked(2), key = { row -> row.joinToString { it.destination.routeSegment } }) { row ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        row.forEach { target ->
+                            SettingsDestinationCard(
+                                icon = target.icon,
+                                title = target.title,
+                                summary = target.summary,
+                                onClick = { onNavigateToSettingsDestination(target.destination) },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                        if (row.size == 1) {
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
+                    }
+                }
+            } else {
+                items(settingsHubDestinations, key = { it.destination.routeSegment }) { target ->
+                    SettingsDestinationCard(
+                        icon = target.icon,
+                        title = target.title,
+                        summary = target.summary,
+                        onClick = { onNavigateToSettingsDestination(target.destination) }
+                    )
+                }
             }
             }
         if (settingsDestination == SettingsDestination.APPEARANCE_DISPLAY) {
@@ -739,6 +801,30 @@ fun SettingsScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
+                    }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = stringResource(R.string.settings_enhanced_theming),
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                            )
+                            Text(
+                                text = stringResource(R.string.settings_enhanced_theming_desc),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Switch(
+                            checked = enhancedM3ThemingEnabled,
+                            onCheckedChange = { viewModel.setEnhancedM3ThemingEnabled(it) }
+                        )
                     }
 
                     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
@@ -791,11 +877,11 @@ fun SettingsScreen(
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "Theme presets",
+                                    text = stringResource(R.string.settings_theme_presets),
                                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
                                 )
                                 Text(
-                                    text = "Save this color, font, and theme combination.",
+                                    text = stringResource(R.string.settings_theme_presets_summary),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -804,7 +890,7 @@ fun SettingsScreen(
                                 themePresetName = ""
                                 showThemePresetDialog = true
                             }) {
-                                Text("Save")
+                                Text(stringResource(R.string.action_save))
                             }
                         }
                         val savedPresets = savedThemePresetDefinitions.mapNotNull(SavedThemePreset::decode).sortedBy { it.name }
@@ -821,7 +907,7 @@ fun SettingsScreen(
                                             ) {
                                                 Icon(
                                                     imageVector = Icons.Default.Close,
-                                                    contentDescription = "Remove ${preset.name}",
+                                                    contentDescription = stringResource(R.string.cd_remove_preset, preset.name),
                                                     modifier = Modifier.size(16.dp)
                                                 )
                                             }
@@ -872,28 +958,6 @@ fun SettingsScreen(
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = stringResource(R.string.settings_enhanced_theming),
-                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
-                            )
-                            Text(
-                                text = stringResource(R.string.settings_enhanced_theming_desc),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        Switch(
-                            checked = enhancedM3ThemingEnabled,
-                            onCheckedChange = { viewModel.setEnhancedM3ThemingEnabled(it) }
-                        )
-                    }
-
                 }
             }
         }
@@ -908,139 +972,66 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(
-                        text = stringResource(R.string.settings_ui_size),
-                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
-                    )
-                    Text(
-                        text = stringResource(R.string.settings_ui_size_desc),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
                     var sliderPosition by remember(uiScale) { mutableFloatStateOf(uiScale) }
                     val presets = listOf("Small" to 0.85f, "Normal" to 1.0f, "Large" to 1.3f)
-
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = stringResource(R.string.settings_font_sample),
-                            fontSize = (28 * sliderPosition).sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-
-                    Slider(
+                    CompactScaleSliderSetting(
+                        title = stringResource(R.string.settings_ui_size),
+                        description = stringResource(R.string.settings_ui_size_desc),
                         value = sliderPosition,
                         onValueChange = { sliderPosition = it },
                         onValueChangeFinished = { viewModel.setUiScale(sliderPosition) },
                         valueRange = 0.85f..1.3f,
-                        steps = 8 // 10 stops total (min + 8 + max), 0.05 apart
-                    )
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        presets.forEach { (label, value) ->
-                            TextButton(onClick = {
-                                sliderPosition = value
-                                viewModel.setUiScale(value)
-                            }) {
-                                Text(
-                                    text = label,
-                                    style = MaterialTheme.typography.labelMedium.copy(
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                )
-                            }
+                        steps = 8,
+                        presets = presets,
+                        onPresetSelected = { value ->
+                            sliderPosition = value
+                            viewModel.setUiScale(value)
                         }
-                    }
+                    )
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
-                    Text(
-                        text = stringResource(R.string.settings_text_size),
-                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
-                    )
-                    Text(
-                        text = stringResource(R.string.settings_text_size_desc),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
                     var textSliderPosition by remember(textScale) { mutableFloatStateOf(textScale) }
                     val textPresets = listOf("Small" to 0.85f, "Normal" to 1.0f, "Large" to 1.3f)
-
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = stringResource(R.string.settings_font_sample),
-                            fontSize = (28 * textSliderPosition).sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-
-                    Slider(
+                    CompactScaleSliderSetting(
+                        title = stringResource(R.string.settings_text_size),
+                        description = stringResource(R.string.settings_text_size_desc),
                         value = textSliderPosition,
                         onValueChange = { textSliderPosition = it },
                         onValueChangeFinished = { viewModel.setTextScale(textSliderPosition) },
                         valueRange = 0.85f..1.3f,
-                        steps = 8
-                    )
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        textPresets.forEach { (label, value) ->
-                            TextButton(onClick = {
-                                textSliderPosition = value
-                                viewModel.setTextScale(value)
-                            }) {
-                                Text(
-                                    text = label,
-                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
-                                )
-                            }
+                        steps = 8,
+                        presets = textPresets,
+                        onPresetSelected = { value ->
+                            textSliderPosition = value
+                            viewModel.setTextScale(value)
                         }
-                    }
+                    )
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(
-                            text = "Motion mode",
+                            text = stringResource(R.string.settings_motion_mode),
                             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
                         )
                         Text(
-                            text = "Control app animations without changing other visual settings.",
+                            text = stringResource(R.string.settings_motion_mode_summary),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                        val motionFullLabel = stringResource(R.string.motion_mode_full)
+                        val motionReducedLabel = stringResource(R.string.motion_mode_reduced)
+                        val motionOffLabel = stringResource(R.string.motion_mode_off)
                         SegmentedControl(
                             items = listOf(MotionMode.FULL, MotionMode.REDUCED, MotionMode.OFF),
                             selectedItem = motionMode,
                             onItemSelected = { viewModel.setMotionMode(it) },
                             labelProvider = {
                                 when (it) {
-                                    MotionMode.FULL -> "Full"
-                                    MotionMode.REDUCED -> "Reduced"
-                                    MotionMode.OFF -> "Off"
+                                    MotionMode.FULL -> motionFullLabel
+                                    MotionMode.REDUCED -> motionReducedLabel
+                                    MotionMode.OFF -> motionOffLabel
                                 }
                             }
                         )
@@ -1053,15 +1044,18 @@ fun SettingsScreen(
                             text = stringResource(R.string.settings_task_row_density),
                             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
                         )
+                        val densityCompactLabel = stringResource(R.string.task_row_density_compact)
+                        val densityComfortableLabel = stringResource(R.string.task_row_density_comfortable)
+                        val densitySpaciousLabel = stringResource(R.string.task_row_density_spacious)
                         SegmentedControl(
                             items = listOf(TaskRowDensity.COMPACT, TaskRowDensity.COMFORTABLE, TaskRowDensity.SPACIOUS),
                             selectedItem = taskRowDensity,
                             onItemSelected = { viewModel.setTaskRowDensity(it) },
                             labelProvider = {
                                 when (it) {
-                                    TaskRowDensity.COMPACT -> "Compact"
-                                    TaskRowDensity.COMFORTABLE -> "Comfortable"
-                                    TaskRowDensity.SPACIOUS -> "Spacious"
+                                    TaskRowDensity.COMPACT -> densityCompactLabel
+                                    TaskRowDensity.COMFORTABLE -> densityComfortableLabel
+                                    TaskRowDensity.SPACIOUS -> densitySpaciousLabel
                                 }
                             }
                         )
@@ -1097,9 +1091,9 @@ fun SettingsScreen(
                             value = timeFormatLabels[timeFormat].orEmpty(),
                             onClick = { showTimeFormatMenu = true }
                         )
-                        DropdownMenu(expanded = showTimeFormatMenu, onDismissRequest = { showTimeFormatMenu = false }) {
+                        YataDropdownMenu(expanded = showTimeFormatMenu, onDismissRequest = { showTimeFormatMenu = false }) {
                             TimeFormat.entries.forEach { format ->
-                                DropdownMenuItem(
+                                YataDropdownMenuItem(
                                     text = { Text(timeFormatLabels[format].orEmpty()) },
                                     onClick = {
                                         viewModel.setTimeFormat(format)
@@ -1124,9 +1118,9 @@ fun SettingsScreen(
                             value = dateFormatLabels[dateFormat].orEmpty(),
                             onClick = { showDateFormatMenu = true }
                         )
-                        DropdownMenu(expanded = showDateFormatMenu, onDismissRequest = { showDateFormatMenu = false }) {
+                        YataDropdownMenu(expanded = showDateFormatMenu, onDismissRequest = { showDateFormatMenu = false }) {
                             DateFormat.entries.forEach { format ->
-                                DropdownMenuItem(
+                                YataDropdownMenuItem(
                                     text = { Text(dateFormatLabels[format].orEmpty()) },
                                     onClick = {
                                         viewModel.setDateFormat(format)
@@ -1201,9 +1195,9 @@ fun SettingsScreen(
                         value = startupLabels[startupTab] ?: startupLastUsed,
                         onClick = { showStartupTabMenu = true }
                     )
-                    DropdownMenu(expanded = showStartupTabMenu, onDismissRequest = { showStartupTabMenu = false }) {
+                    YataDropdownMenu(expanded = showStartupTabMenu, onDismissRequest = { showStartupTabMenu = false }) {
                         StartupTab.entries.forEach { tab ->
-                            DropdownMenuItem(
+                            YataDropdownMenuItem(
                                 text = { Text(startupLabels[tab] ?: tab.name) },
                                 onClick = {
                                     viewModel.setStartupTab(tab)
@@ -1218,10 +1212,15 @@ fun SettingsScreen(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+            }
+        }
+        item {
+            // Tasker is an automation/integration toggle, not something that changes the nav's
+            // shape — kept in its own card rather than mixed into the nav-shape card above.
+            SettingsSectionCard {
                 SettingsToggleRow(
-                    title = "Tasker integration",
-                    subtitle = "Allow Tasker profiles to create tasks through the Yata plugin.",
+                    title = stringResource(R.string.settings_tasker_integration),
+                    subtitle = stringResource(R.string.settings_tasker_integration_summary),
                     checked = taskerIntegrationEnabled,
                     onCheckedChange = { viewModel.setTaskerIntegrationEnabled(it) }
                 )
@@ -1247,99 +1246,46 @@ fun SettingsScreen(
                     onCheckedChange = { viewModel.setHapticsEnabled(it) }
                 )
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-                SettingsToggleRow(
-                    title = stringResource(R.string.settings_swipe_actions),
-                    subtitle = stringResource(R.string.settings_swipe_actions_desc),
-                    checked = taskSwipeActionsEnabled,
-                    onCheckedChange = { viewModel.setTaskSwipeActionsEnabled(it) }
-                )
 
-                // Only worth showing when swiping is on at all — otherwise these two configure
-                // something that can't happen.
-                if (taskSwipeActionsEnabled) {
-                    val swipeActionLabels = mapOf(
-                        SwipeAction.NONE to stringResource(R.string.settings_swipe_action_none),
-                        SwipeAction.COMPLETE to stringResource(R.string.settings_swipe_action_complete),
-                        SwipeAction.DELETE to stringResource(R.string.settings_swipe_action_delete),
-                        SwipeAction.SNOOZE_TOMORROW to stringResource(R.string.settings_swipe_action_snooze),
-                        SwipeAction.EDIT_TITLE to stringResource(R.string.settings_swipe_action_edit)
+                val systemDefaultVoiceLabel = stringResource(R.string.settings_voice_system_default)
+                val voiceLanguages = remember(systemDefaultVoiceLabel) {
+                    listOf(
+                        "default" to systemDefaultVoiceLabel,
+                        "en-US" to "English (US)",
+                        "en-IN" to "English (India)",
+                        "en-GB" to "English (UK)",
+                        "es-ES" to "Spanish",
+                        "fr-FR" to "French",
+                        "de-DE" to "German",
+                        "hi-IN" to "Hindi",
+                        "ja-JP" to "Japanese",
+                        "zh-CN" to "Chinese",
+                        "pt-BR" to "Portuguese"
                     )
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-                    Box {
-                        SettingsRow(
-                            label = stringResource(R.string.settings_swipe_right_action),
-                            value = swipeActionLabels[swipeRightAction].orEmpty(),
-                            onClick = { showSwipeRightMenu = true }
-                        )
-                        DropdownMenu(expanded = showSwipeRightMenu, onDismissRequest = { showSwipeRightMenu = false }) {
-                            SwipeAction.entries.forEach { action ->
-                                DropdownMenuItem(
-                                    text = { Text(swipeActionLabels[action].orEmpty()) },
-                                    onClick = {
-                                        viewModel.setSwipeRightAction(action)
-                                        showSwipeRightMenu = false
-                                    }
-                                )
-                            }
-                        }
-                    }
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-                    Box {
-                        SettingsRow(
-                            label = stringResource(R.string.settings_swipe_left_action),
-                            value = swipeActionLabels[swipeLeftAction].orEmpty(),
-                            onClick = { showSwipeLeftMenu = true }
-                        )
-                        DropdownMenu(expanded = showSwipeLeftMenu, onDismissRequest = { showSwipeLeftMenu = false }) {
-                            SwipeAction.entries.forEach { action ->
-                                DropdownMenuItem(
-                                    text = { Text(swipeActionLabels[action].orEmpty()) },
-                                    onClick = {
-                                        viewModel.setSwipeLeftAction(action)
-                                        showSwipeLeftMenu = false
-                                    }
-                                )
-                            }
-                        }
-                    }
                 }
-
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-                SettingsToggleRow(
-                    title = stringResource(R.string.settings_confetti),
-                    subtitle = stringResource(R.string.settings_confetti_desc),
-                    checked = confettiEnabled,
-                    onCheckedChange = { viewModel.setConfettiEnabled(it) }
-                )
-
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        text = stringResource(R.string.settings_undo_window),
-                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                Box {
+                    SettingsPickerSurface(
+                        label = stringResource(R.string.settings_voice_input_language),
+                        value = voiceLanguages.find { it.first == voiceLanguage }?.second ?: systemDefaultVoiceLabel,
+                        onClick = { showVoiceLanguageMenu = true }
                     )
-                    Text(
-                        text = stringResource(R.string.settings_undo_window_desc),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    // Resolved outside the lambda: labelProvider is not a composable scope.
-                    val undoShort = pluralStringResource(R.plurals.settings_undo_window_value, 4, 4)
-                    val undoMedium = pluralStringResource(R.plurals.settings_undo_window_value, 8, 8)
-                    val undoLong = pluralStringResource(R.plurals.settings_undo_window_value, 15, 15)
-                    SegmentedControl(
-                        items = listOf(4, 8, 15),
-                        selectedItem = undoWindowSeconds,
-                        onItemSelected = { viewModel.setUndoWindowSeconds(it) },
-                        labelProvider = { secs ->
-                            when (secs) {
-                                4 -> undoShort
-                                8 -> undoMedium
-                                else -> undoLong
+                    YataDropdownMenu(
+                        expanded = showVoiceLanguageMenu,
+                        onDismissRequest = { showVoiceLanguageMenu = false },
+                        modifier = Modifier.widthIn(min = 220.dp)
+                    ) {
+                        SettingsScrollableDropdownContent(scrollState = voiceLanguageMenuScrollState) {
+                            voiceLanguages.forEach { (code, label) ->
+                                YataDropdownMenuItem(
+                                    text = { Text(label) },
+                                    onClick = {
+                                        viewModel.setVoiceRecognitionLanguage(code)
+                                        showVoiceLanguageMenu = false
+                                    }
+                                )
                             }
                         }
-                    )
+                    }
                 }
             }
         }
@@ -1371,6 +1317,156 @@ fun SettingsScreen(
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
+                SettingsToggleRow(
+                    title = stringResource(R.string.settings_due_countdown),
+                    subtitle = stringResource(R.string.settings_due_countdown_desc),
+                    checked = dueCountdownEnabled,
+                    onCheckedChange = { viewModel.setDueCountdownEnabled(it) }
+                )
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                SettingsToggleRow(
+                    title = stringResource(R.string.settings_start_week_sunday),
+                    subtitle = stringResource(R.string.settings_start_week_sunday_desc),
+                    checked = startOfWeekSunday,
+                    onCheckedChange = { viewModel.setStartOfWeekSunday(it) }
+                )
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = stringResource(R.string.settings_undo_window),
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                    )
+                    Text(
+                        text = stringResource(R.string.settings_undo_window_desc),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    // Resolved outside the lambda: labelProvider is not a composable scope.
+                    val undoShort = pluralStringResource(R.plurals.settings_undo_window_value, 4, 4)
+                    val undoMedium = pluralStringResource(R.plurals.settings_undo_window_value, 8, 8)
+                    val undoLong = pluralStringResource(R.plurals.settings_undo_window_value, 15, 15)
+                    SegmentedControl(
+                        items = listOf(4, 8, 15),
+                        selectedItem = undoWindowSeconds,
+                        onItemSelected = { viewModel.setUndoWindowSeconds(it) },
+                        labelProvider = { secs ->
+                            when (secs) {
+                                4 -> undoShort
+                                8 -> undoMedium
+                                else -> undoLong
+                            }
+                        }
+                    )
+                }
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                SettingsToggleRow(
+                    title = stringResource(R.string.settings_swipe_actions),
+                    subtitle = stringResource(R.string.settings_swipe_actions_desc),
+                    checked = taskSwipeActionsEnabled,
+                    onCheckedChange = { viewModel.setTaskSwipeActionsEnabled(it) }
+                )
+
+                // Only worth showing when swiping is on at all — otherwise these two configure
+                // something that can't happen.
+                if (taskSwipeActionsEnabled) {
+                    val swipeActionLabels = mapOf(
+                        SwipeAction.NONE to stringResource(R.string.settings_swipe_action_none),
+                        SwipeAction.COMPLETE to stringResource(R.string.settings_swipe_action_complete),
+                        SwipeAction.DELETE to stringResource(R.string.settings_swipe_action_delete),
+                        SwipeAction.SNOOZE_TOMORROW to stringResource(R.string.settings_swipe_action_snooze),
+                        SwipeAction.EDIT_TITLE to stringResource(R.string.settings_swipe_action_edit)
+                    )
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                    Box {
+                        SettingsRow(
+                            label = stringResource(R.string.settings_swipe_right_action),
+                            value = swipeActionLabels[swipeRightAction].orEmpty(),
+                            onClick = { showSwipeRightMenu = true }
+                        )
+                        YataDropdownMenu(expanded = showSwipeRightMenu, onDismissRequest = { showSwipeRightMenu = false }) {
+                            SwipeAction.entries.forEach { action ->
+                                YataDropdownMenuItem(
+                                    text = { Text(swipeActionLabels[action].orEmpty()) },
+                                    onClick = {
+                                        viewModel.setSwipeRightAction(action)
+                                        showSwipeRightMenu = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                    Box {
+                        SettingsRow(
+                            label = stringResource(R.string.settings_swipe_left_action),
+                            value = swipeActionLabels[swipeLeftAction].orEmpty(),
+                            onClick = { showSwipeLeftMenu = true }
+                        )
+                        YataDropdownMenu(expanded = showSwipeLeftMenu, onDismissRequest = { showSwipeLeftMenu = false }) {
+                            SwipeAction.entries.forEach { action ->
+                                YataDropdownMenuItem(
+                                    text = { Text(swipeActionLabels[action].orEmpty()) },
+                                    onClick = {
+                                        viewModel.setSwipeLeftAction(action)
+                                        showSwipeLeftMenu = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                SettingsToggleRow(
+                    title = stringResource(R.string.settings_confetti),
+                    subtitle = stringResource(R.string.settings_confetti_desc),
+                    checked = confettiEnabled,
+                    onCheckedChange = { viewModel.setConfettiEnabled(it) }
+                )
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = stringResource(R.string.settings_subtask_completion_action),
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                    )
+                    Text(
+                        text = stringResource(R.string.settings_subtask_completion_action_desc),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    val askLabel = stringResource(R.string.settings_subtask_completion_ask)
+                    val autoLabel = stringResource(R.string.settings_subtask_completion_auto)
+                    val nothingLabel = stringResource(R.string.settings_subtask_completion_nothing)
+                    SegmentedControl(
+                        items = listOf(
+                            SubtaskCompletionAction.ASK,
+                            SubtaskCompletionAction.AUTO_COMPLETE,
+                            SubtaskCompletionAction.NOTHING
+                        ),
+                        selectedItem = subtaskCompletionAction,
+                        onItemSelected = { viewModel.setSubtaskCompletionAction(it) },
+                        labelProvider = {
+                            when (it) {
+                                SubtaskCompletionAction.ASK -> askLabel
+                                SubtaskCompletionAction.AUTO_COMPLETE -> autoLabel
+                                SubtaskCompletionAction.NOTHING -> nothingLabel
+                            }
+                        }
+                    )
+                }
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                SettingsSubsectionHeader(text = stringResource(R.string.settings_defaults_group))
+
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
                         text = stringResource(R.string.settings_default_due_date),
@@ -1396,85 +1492,6 @@ fun SettingsScreen(
                             }
                         }
                     )
-                }
-
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text(
-                        text = "Date aliases",
-                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
-                    )
-                    Text(
-                        text = "Teach quick add your own date words.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        OutlinedTextField(
-                            value = newDateAlias,
-                            onValueChange = { newDateAlias = it },
-                            modifier = Modifier.weight(1f),
-                            singleLine = true,
-                            label = { Text("Word") }
-                        )
-                        Box {
-                            AssistChip(
-                                onClick = { showDateAliasTargetMenu = true },
-                                label = { Text(selectedDateAliasTarget.label) }
-                            )
-                            DropdownMenu(
-                                expanded = showDateAliasTargetMenu,
-                                onDismissRequest = { showDateAliasTargetMenu = false }
-                            ) {
-                                DateAliasTarget.entries.forEach { target ->
-                                    DropdownMenuItem(
-                                        text = { Text(target.label) },
-                                        onClick = {
-                                            selectedDateAliasTarget = target
-                                            showDateAliasTargetMenu = false
-                                        }
-                                    )
-                                }
-                            }
-                        }
-                    }
-                    Button(
-                        onClick = {
-                            viewModel.addDateAlias(newDateAlias, selectedDateAliasTarget)
-                            newDateAlias = ""
-                        },
-                        enabled = newDateAlias.isNotBlank()
-                    ) {
-                        Text("Add alias")
-                    }
-                    val aliases = dateAliasDefinitions.mapNotNull(DateAliasDefinition::decode).sortedBy { it.alias }
-                    if (aliases.isNotEmpty()) {
-                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            items(aliases, key = { it.encode() }) { alias ->
-                                AssistChip(
-                                    onClick = {},
-                                    label = { Text("${alias.alias} -> ${alias.target.label}") },
-                                    trailingIcon = {
-                                        IconButton(
-                                            onClick = { viewModel.removeDateAlias(alias.encode()) },
-                                            modifier = Modifier.size(24.dp)
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Close,
-                                                contentDescription = "Remove ${alias.alias}",
-                                                modifier = Modifier.size(16.dp)
-                                            )
-                                        }
-                                    }
-                                )
-                            }
-                        }
-                    }
                 }
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
@@ -1505,26 +1522,189 @@ fun SettingsScreen(
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = stringResource(R.string.settings_default_estimate),
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                    )
+                    Text(
+                        text = stringResource(R.string.settings_default_estimate_desc),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    val estimateNoneLabel = stringResource(R.string.task_estimate_none)
+                    val estimateCustomLabel = defaultEstimateMinutes
+                        ?.takeIf { it !in setOf(15, 30, 60) }
+                        ?.let(EstimateUtils::format)
+                        ?: stringResource(R.string.settings_custom)
+                    val selectedEstimateItem = when (defaultEstimateMinutes) {
+                        null -> null
+                        15, 30, 60 -> defaultEstimateMinutes
+                        else -> -1
+                    }
+                    SegmentedControl(
+                        items = listOf<Int?>(null, 15, 30, 60, -1),
+                        selectedItem = selectedEstimateItem,
+                        onItemSelected = { minutes ->
+                            when (minutes) {
+                                null -> viewModel.setDefaultEstimateMinutes(null)
+                                -1 -> {
+                                    defaultEstimateText = defaultEstimateMinutes?.toString() ?: "45"
+                                    showDefaultEstimateDialog = true
+                                }
+                                else -> viewModel.setDefaultEstimateMinutes(minutes)
+                            }
+                        },
+                        labelProvider = { minutes ->
+                            when (minutes) {
+                                null -> estimateNoneLabel
+                                -1 -> estimateCustomLabel
+                                else -> EstimateUtils.format(minutes)
+                            }
+                        }
+                    )
+                }
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
                 Box {
-                    SettingsRow(
+                    SettingsPickerSurface(
                         label = stringResource(R.string.settings_default_list),
                         value = lists.find { it.id == defaultListId }?.name ?: stringResource(R.string.settings_none),
                         onClick = { showDefaultListMenu = true }
                     )
-                    DropdownMenu(expanded = showDefaultListMenu, onDismissRequest = { showDefaultListMenu = false }) {
-                        lists.forEach { list ->
-                            DropdownMenuItem(
-                                text = { Text(list.name) },
+                    YataDropdownMenu(
+                        expanded = showDefaultListMenu,
+                        onDismissRequest = { showDefaultListMenu = false },
+                        modifier = Modifier.widthIn(min = 220.dp)
+                    ) {
+                        SettingsScrollableDropdownContent(scrollState = defaultListMenuScrollState) {
+                            YataDropdownMenuItem(
+                                text = { Text(stringResource(R.string.settings_none)) },
                                 onClick = {
-                                    viewModel.setDefaultListId(list.id)
+                                    viewModel.setDefaultListId("")
                                     showDefaultListMenu = false
                                 }
                             )
+                            lists.forEach { list ->
+                                YataDropdownMenuItem(
+                                    text = { Text(list.name) },
+                                    onClick = {
+                                        viewModel.setDefaultListId(list.id)
+                                        showDefaultListMenu = false
+                                    }
+                                )
+                            }
                         }
                     }
                 }
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                if (projectsFeatureEnabled) {
+                    Box {
+                        SettingsPickerSurface(
+                            label = stringResource(R.string.settings_default_project),
+                            value = activeProjects.find { it.id == defaultProjectId }?.name ?: stringResource(R.string.settings_none),
+                            onClick = { showDefaultProjectMenu = true }
+                        )
+                        YataDropdownMenu(
+                            expanded = showDefaultProjectMenu,
+                            onDismissRequest = { showDefaultProjectMenu = false },
+                            modifier = Modifier.widthIn(min = 220.dp)
+                        ) {
+                            SettingsScrollableDropdownContent(scrollState = defaultProjectMenuScrollState) {
+                                YataDropdownMenuItem(
+                                    text = { Text(stringResource(R.string.settings_none)) },
+                                    onClick = {
+                                        viewModel.setDefaultProjectId("")
+                                        showDefaultProjectMenu = false
+                                    }
+                                )
+                                activeProjects.forEach { project ->
+                                    YataDropdownMenuItem(
+                                        text = { Text(project.name) },
+                                        onClick = {
+                                            viewModel.setDefaultProjectId(project.id)
+                                            showDefaultProjectMenu = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                }
+
+                if (tagsFeatureEnabled) {
+                    val selectedDefaultTags = tags.filter { it.id in defaultTagIds }
+                    val defaultTagsValue = when {
+                        tags.isEmpty() -> stringResource(R.string.settings_default_tags_empty)
+                        selectedDefaultTags.isEmpty() -> stringResource(R.string.settings_none)
+                        selectedDefaultTags.size <= 2 -> selectedDefaultTags.joinToString(", ") { it.name }
+                        else -> stringResource(
+                            R.string.settings_default_tags_value_many,
+                            selectedDefaultTags.take(2).joinToString(", ") { it.name },
+                            selectedDefaultTags.size - 2
+                        )
+                    }
+
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Box {
+                            SettingsPickerSurface(
+                                label = stringResource(R.string.settings_default_tags),
+                                value = defaultTagsValue,
+                                onClick = {
+                                    if (tags.isNotEmpty()) {
+                                        showDefaultTagsMenu = true
+                                    }
+                                }
+                            )
+                            YataDropdownMenu(
+                                expanded = showDefaultTagsMenu,
+                                onDismissRequest = { showDefaultTagsMenu = false },
+                                modifier = Modifier.widthIn(min = 240.dp)
+                            ) {
+                                SettingsScrollableDropdownContent(scrollState = defaultTagsMenuScrollState) {
+                                    YataDropdownMenuItem(
+                                        text = { Text(stringResource(R.string.settings_default_tags_clear)) },
+                                        onClick = {
+                                            viewModel.setDefaultTagIds(emptySet())
+                                        }
+                                    )
+                                    tags.forEach { tag ->
+                                        val selected = tag.id in defaultTagIds
+                                        YataDropdownMenuItem(
+                                            text = { Text(tag.name) },
+                                            leadingIcon = {
+                                                Checkbox(
+                                                    checked = selected,
+                                                    onCheckedChange = null
+                                                )
+                                            },
+                                            onClick = {
+                                                val updated = if (selected) {
+                                                    defaultTagIds - tag.id
+                                                } else {
+                                                    defaultTagIds + tag.id
+                                                }
+                                                viewModel.setDefaultTagIds(updated)
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        Text(
+                            text = stringResource(R.string.settings_default_tags_desc),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                }
 
                 SettingsRow(
                     label = stringResource(R.string.settings_default_reminder_time),
@@ -1534,46 +1714,164 @@ fun SettingsScreen(
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
-                SettingsToggleRow(
-                    title = stringResource(R.string.settings_start_week_sunday),
-                    subtitle = stringResource(R.string.settings_start_week_sunday_desc),
-                    checked = startOfWeekSunday,
-                    onCheckedChange = { viewModel.setStartOfWeekSunday(it) }
-                )
+                run {
+                    val postponementOptions = (1..10).toList()
+                    val postponementLabels = postponementOptions.map { count ->
+                        pluralStringResource(R.plurals.settings_postponement_threshold_value, count, count)
+                    }
+                    var sliderThreshold by remember(postponementWarningThreshold) {
+                        mutableIntStateOf(postponementWarningThreshold)
+                    }
+                    val medThreshold = postponementWarningThresholdFor("med", sliderThreshold)
+                    val highThreshold = postponementWarningThresholdFor("high", sliderThreshold)
+                    StopSliderSetting(
+                        title = stringResource(R.string.settings_postponement_warning_threshold),
+                        description = stringResource(
+                            R.string.settings_postponement_warning_threshold_desc,
+                            medThreshold,
+                            highThreshold
+                        ),
+                        stopLabels = postponementLabels,
+                        selectedIndex = postponementOptions.indexOf(sliderThreshold).coerceAtLeast(0),
+                        onSelect = {
+                            val selected = postponementOptions[it]
+                            sliderThreshold = selected
+                            viewModel.setPostponementWarningThreshold(selected)
+                        }
+                    )
+                }
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
-                val systemDefaultVoiceLabel = stringResource(R.string.settings_voice_system_default)
-                val voiceLanguages = remember(systemDefaultVoiceLabel) {
-                    listOf(
-                        "default" to systemDefaultVoiceLabel,
-                        "en-US" to "English (US)",
-                        "en-IN" to "English (India)",
-                        "en-GB" to "English (UK)",
-                        "es-ES" to "Spanish",
-                        "fr-FR" to "French",
-                        "de-DE" to "German",
-                        "hi-IN" to "Hindi",
-                        "ja-JP" to "Japanese",
-                        "zh-CN" to "Chinese",
-                        "pt-BR" to "Portuguese"
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onNavigateToHolidayCalendar() }
+                        .padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.settings_holidays),
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                        )
+                        Text(
+                            text = stringResource(R.string.settings_holidays_desc),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Icon(
+                        imageVector = Icons.Default.ChevronRight,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                     )
                 }
-                Box {
-                    SettingsRow(
-                        label = stringResource(R.string.settings_voice_input_language),
-                        value = voiceLanguages.find { it.first == voiceLanguage }?.second ?: systemDefaultVoiceLabel,
-                        onClick = { showVoiceLanguageMenu = true }
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        text = stringResource(R.string.settings_date_aliases),
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
                     )
-                    DropdownMenu(expanded = showVoiceLanguageMenu, onDismissRequest = { showVoiceLanguageMenu = false }) {
-                        voiceLanguages.forEach { (code, label) ->
-                            DropdownMenuItem(
-                                text = { Text(label) },
-                                onClick = {
-                                    viewModel.setVoiceRecognitionLanguage(code)
-                                    showVoiceLanguageMenu = false
+                    Text(
+                        text = stringResource(R.string.settings_date_aliases_summary),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        TextField(
+                            value = newDateAlias,
+                            onValueChange = { newDateAlias = it },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(64.dp),
+                            singleLine = true,
+                            label = { Text(stringResource(R.string.settings_date_alias_word_label)) },
+                            shape = YataCompactFieldShape,
+                            colors = yataFieldColors()
+                        )
+                        Box(
+                            modifier = Modifier.height(64.dp)
+                        ) {
+                            Surface(
+                                modifier = Modifier
+                                    .height(64.dp)
+                                    .clickable { showDateAliasTargetMenu = true },
+                                shape = YataCompactFieldShape,
+                                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                border = BorderStroke(
+                                    width = 1.dp,
+                                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.7f)
+                                )
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxHeight()
+                                        .padding(horizontal = 18.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = selectedDateAliasTarget.label,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
                                 }
-                            )
+                            }
+                            YataDropdownMenu(
+                                expanded = showDateAliasTargetMenu,
+                                onDismissRequest = { showDateAliasTargetMenu = false },
+                                modifier = Modifier.widthIn(min = 168.dp)
+                            ) {
+                                SettingsScrollableDropdownContent(scrollState = dateAliasTargetMenuScrollState) {
+                                    DateAliasTarget.entries.forEach { target ->
+                                        YataDropdownMenuItem(
+                                            text = { Text(target.label) },
+                                            onClick = {
+                                                selectedDateAliasTarget = target
+                                                showDateAliasTargetMenu = false
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    Button(
+                        onClick = {
+                            viewModel.addDateAlias(newDateAlias, selectedDateAliasTarget)
+                            newDateAlias = ""
+                        },
+                        enabled = newDateAlias.isNotBlank()
+                    ) {
+                        Text(stringResource(R.string.settings_add_alias))
+                    }
+                    val aliases = dateAliasDefinitions.mapNotNull(DateAliasDefinition::decode).sortedBy { it.alias }
+                    if (aliases.isNotEmpty()) {
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            items(aliases, key = { it.encode() }) { alias ->
+                                AssistChip(
+                                    onClick = {},
+                                    label = { Text(stringResource(R.string.settings_date_alias_mapping, alias.alias, alias.target.label)) },
+                                    trailingIcon = {
+                                        IconButton(
+                                            onClick = { viewModel.removeDateAlias(alias.encode()) },
+                                            modifier = Modifier.size(24.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Close,
+                                                contentDescription = stringResource(R.string.cd_remove_alias, alias.alias),
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
+                                    }
+                                )
+                            }
                         }
                     }
                 }
@@ -1598,7 +1896,7 @@ fun SettingsScreen(
 
                     // Re-check when coming back from system settings (the app doesn't get a
                     // callback for these — only a lifecycle resume).
-                    val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+                    val lifecycleOwner = LocalLifecycleOwner.current
                     DisposableEffect(lifecycleOwner) {
                         val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
                             if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
@@ -1695,6 +1993,30 @@ fun SettingsScreen(
                             }
                         }
                     )
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                    SettingsToggleRow(
+                        title = stringResource(R.string.settings_quiet_hours),
+                        subtitle = stringResource(R.string.settings_quiet_hours_desc),
+                        checked = quietHoursEnabled,
+                        onCheckedChange = { viewModel.setQuietHoursEnabled(it) }
+                    )
+
+                    AnimatedVisibility(visible = quietHoursEnabled) {
+                        Column {
+                            SettingsRow(
+                                label = stringResource(R.string.settings_quiet_hours_start),
+                                value = TaskScheduleUtils.displayTime(quietHoursStartHour, quietHoursStartMinute),
+                                onClick = { showQuietHoursStartPicker = true }
+                            )
+                            SettingsRow(
+                                label = stringResource(R.string.settings_quiet_hours_end),
+                                value = TaskScheduleUtils.displayTime(quietHoursEndHour, quietHoursEndMinute),
+                                onClick = { showQuietHoursEndPicker = true }
+                            )
+                        }
+                    }
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
@@ -1810,19 +2132,19 @@ fun SettingsScreen(
                         Column(modifier = Modifier.padding(horizontal = 16.dp)) {
                             AnimatedManageRow(
                                 visible = projectsFeatureEnabled,
-                                title = "Projects",
+                                title = stringResource(R.string.tab_projects),
                                 onClick = { onNavigateToTab(1) }
                             )
                             AnimatedDivider(visible = projectsFeatureEnabled && (peopleFeatureEnabled || tagsFeatureEnabled))
                             AnimatedManageRow(
                                 visible = peopleFeatureEnabled,
-                                title = "People",
+                                title = stringResource(R.string.tab_people),
                                 onClick = { onNavigateToTab(2) }
                             )
                             AnimatedDivider(visible = peopleFeatureEnabled && tagsFeatureEnabled)
                             AnimatedManageRow(
                                 visible = tagsFeatureEnabled,
-                                title = "Tags",
+                                title = stringResource(R.string.tab_tags),
                                 onClick = { onNavigateToTab(3) }
                             )
                         }
@@ -1835,12 +2157,18 @@ fun SettingsScreen(
         item {
             // Privacy & Security Section
             val context = LocalContext.current
-            val biometricAvailable = remember {
-                androidx.biometric.BiometricManager.from(context).canAuthenticate(
+            val platformCredentialAvailable = remember {
+                val authenticators = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                     androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_WEAK or
                         androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
+                } else {
+                    androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_WEAK
+                }
+                androidx.biometric.BiometricManager.from(context).canAuthenticate(
+                    authenticators
                 ) == androidx.biometric.BiometricManager.BIOMETRIC_SUCCESS
             }
+            val appLockHasUnlockPath = hasAppLockUnlockPath(platformCredentialAvailable, appLockPinSet)
             var showPinDialog by remember { mutableStateOf(false) }
 
             Surface(
@@ -1860,22 +2188,26 @@ fun SettingsScreen(
                                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
                             )
                             Text(
-                                text = if (biometricAvailable)
-                                    "Require biometric or device unlock to open YATA."
-                                else
-                                    "No screen lock set up on this device.",
+                                text = when {
+                                    platformCredentialAvailable ->
+                                        "Require biometric or device unlock to open YATA."
+                                    appLockPinSet ->
+                                        "Require your YATA PIN to open YATA."
+                                    else ->
+                                        "No screen lock set up on this device."
+                                },
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                         Switch(
-                            checked = appLockEnabled && biometricAvailable,
-                            enabled = biometricAvailable,
+                            checked = appLockEnabled && appLockHasUnlockPath,
+                            enabled = appLockHasUnlockPath,
                             onCheckedChange = { viewModel.setAppLockEnabled(it) }
                         )
                     }
 
-                    if (appLockEnabled && biometricAvailable) {
+                    if (appLockEnabled && appLockHasUnlockPath) {
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
                         Row(
@@ -1945,380 +2277,281 @@ fun SettingsScreen(
         }
         if (settingsDestination == SettingsDestination.DATA_MANAGEMENT) {
         item {
-            // 5. Backup/Data Section
-            Surface(
-                color = MaterialTheme.colorScheme.surfaceContainerLow,
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onExportRequested() }
-                            .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.CloudUpload,
-                            contentDescription = stringResource(R.string.settings_export_data),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column {
-                            Text(
-                                text = stringResource(R.string.settings_backup_to_file),
-                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
-                            )
-                            Text(
-                                text = stringResource(R.string.settings_backup_to_file_summary),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
+            // Import & Export — bringing data in from, or sending it out to, another format/app.
+            // Manual whole-app backup/restore lives in Backup & Sync next to the automatic kind.
+            SettingsSectionCard {
+                SettingsSubsectionHeader(text = stringResource(R.string.settings_import_export_group))
 
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onImportRequested() }
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CloudDownload,
+                        contentDescription = stringResource(R.string.settings_import_data),
+                        tint = MaterialTheme.colorScheme.tertiary
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column {
                         Text(
-                            text = stringResource(R.string.settings_task_lifecycle),
-                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
+                            text = stringResource(R.string.settings_restore_from_file),
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
                         )
                         Text(
-                            text = stringResource(R.string.settings_task_lifecycle_desc),
+                            text = stringResource(R.string.settings_restore_from_file_summary),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
+                }
 
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onImportRequested() }
-                            .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.CloudDownload,
-                            contentDescription = stringResource(R.string.settings_import_data),
-                            tint = MaterialTheme.colorScheme.tertiary
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onImportPlainTextRequested() }
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CloudDownload,
+                        contentDescription = stringResource(R.string.settings_import_csv_or_text),
+                        tint = MaterialTheme.colorScheme.tertiary
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column {
+                        Text(
+                            text = stringResource(R.string.settings_import_csv),
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
                         )
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column {
-                            Text(
-                                text = stringResource(R.string.settings_restore_from_file),
-                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
-                            )
-                            Text(
-                                text = stringResource(R.string.settings_restore_from_file_summary),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onImportPlainTextRequested() }
-                            .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.CloudDownload,
-                            contentDescription = stringResource(R.string.settings_import_csv_or_text),
-                            tint = MaterialTheme.colorScheme.tertiary
+                        Text(
+                            text = stringResource(R.string.settings_import_csv_summary),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column {
-                            Text(
-                                text = stringResource(R.string.settings_import_csv),
-                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
-                            )
-                            Text(
-                                text = stringResource(R.string.settings_import_csv_summary),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
                     }
+                }
 
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onExportCsvRequested() }
-                            .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.CloudUpload,
-                            contentDescription = stringResource(R.string.settings_export_csv),
-                            tint = MaterialTheme.colorScheme.primary
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onExportCsvRequested() }
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CloudUpload,
+                        contentDescription = stringResource(R.string.settings_export_csv),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column {
+                        Text(
+                            text = stringResource(R.string.settings_export_csv),
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
                         )
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column {
-                            Text(
-                                text = stringResource(R.string.settings_export_csv),
-                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
-                            )
-                            Text(
-                                text = stringResource(R.string.settings_export_csv_summary),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onExportIcsRequested() }
-                            .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.CalendarMonth,
-                            contentDescription = stringResource(R.string.settings_export_to_calendar),
-                            tint = MaterialTheme.colorScheme.secondary
+                        Text(
+                            text = stringResource(R.string.settings_export_csv_summary),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column {
-                            Text(
-                                text = stringResource(R.string.settings_export_calendar),
-                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
-                            )
-                            Text(
-                                text = stringResource(R.string.settings_export_calendar_summary),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
                     }
+                }
 
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onNavigateToWelcome() }
-                            .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.TaskAlt,
-                            contentDescription = stringResource(R.string.settings_show_welcome_tour),
-                            tint = MaterialTheme.colorScheme.secondary
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onExportIcsRequested() }
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CalendarMonth,
+                        contentDescription = stringResource(R.string.settings_export_to_calendar),
+                        tint = MaterialTheme.colorScheme.secondary
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column {
+                        Text(
+                            text = stringResource(R.string.settings_export_calendar),
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
                         )
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column {
-                            Text(
-                                text = stringResource(R.string.settings_show_welcome_tour),
-                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
-                            )
-                            Text(
-                                text = stringResource(R.string.settings_show_welcome_tour_summary),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onNavigateToTrash() }
-                            .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = stringResource(R.string.trash_title),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        Text(
+                            text = stringResource(R.string.settings_export_calendar_summary),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column {
-                            Text(
-                                text = stringResource(R.string.trash_title),
-                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
-                            )
-                            Text(
-                                // Reflects the configured retention rather than claiming a fixed
-                                // 30 days, which stopped being true once this became a setting.
-                                text = if (trashRetentionDays <= 0) {
-                                    stringResource(R.string.settings_trash_kept_forever)
-                                } else {
-                                    pluralStringResource(
-                                        R.plurals.settings_trash_kept_days,
-                                        trashRetentionDays,
-                                        trashRetentionDays
-                                    )
-                                },
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
                     }
+                }
+            }
+        }
+        item {
+            // Task Lifecycle — where completed/deleted tasks go and how long they stay there.
+            SettingsSectionCard {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.settings_task_lifecycle),
+                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
+                    )
+                    Text(
+                        text = stringResource(R.string.settings_task_lifecycle_desc),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
 
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
-                    Box {
-                        val retentionOptions = listOf(7, 30, 90, 0)
-                        SettingsRow(
-                            label = stringResource(R.string.settings_trash_retention),
-                            value = if (trashRetentionDays <= 0) {
-                                stringResource(R.string.settings_trash_forever)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onNavigateToTrash() }
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = stringResource(R.string.trash_title),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column {
+                        Text(
+                            text = stringResource(R.string.trash_title),
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                        )
+                        Text(
+                            // Reflects the configured retention rather than claiming a fixed
+                            // 30 days, which stopped being true once this became a setting.
+                            text = if (trashRetentionDays <= 0) {
+                                stringResource(R.string.settings_trash_kept_forever)
                             } else {
                                 pluralStringResource(
-                                    R.plurals.settings_trash_days_value,
+                                    R.plurals.settings_trash_kept_days,
                                     trashRetentionDays,
                                     trashRetentionDays
                                 )
                             },
-                            onClick = { showTrashRetentionMenu = true }
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        DropdownMenu(
-                            expanded = showTrashRetentionMenu,
-                            onDismissRequest = { showTrashRetentionMenu = false }
-                        ) {
-                            retentionOptions.forEach { days ->
-                                DropdownMenuItem(
-                                    text = {
-                                        Text(
-                                            if (days <= 0) {
-                                                stringResource(R.string.settings_trash_forever)
-                                            } else {
-                                                pluralStringResource(R.plurals.settings_trash_days_value, days, days)
-                                            }
-                                        )
-                                    },
-                                    onClick = {
-                                        viewModel.setTrashRetentionDays(days)
-                                        showTrashRetentionMenu = false
-                                    }
-                                )
-                            }
+                    }
+                }
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                run {
+                    val trashRetentionOptions = listOf(1, 3, 7, 14, 30, 60, 90, 180, 0)
+                    val trashRetentionLabels = trashRetentionOptions.map { days ->
+                        if (days <= 0) {
+                            stringResource(R.string.settings_trash_forever)
+                        } else {
+                            pluralStringResource(R.plurals.settings_trash_days_value, days, days)
                         }
                     }
+                    StopSliderSetting(
+                        title = stringResource(R.string.settings_trash_retention),
+                        stopLabels = trashRetentionLabels,
+                        selectedIndex = trashRetentionOptions.indexOf(trashRetentionDays).coerceAtLeast(0),
+                        onSelect = { viewModel.setTrashRetentionDays(trashRetentionOptions[it]) }
+                    )
+                }
 
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onNavigateToArchive() }
-                            .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Archive,
-                            contentDescription = stringResource(R.string.archive_title),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onNavigateToArchive() }
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Archive,
+                        contentDescription = stringResource(R.string.archive_title),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column {
+                        Text(
+                            text = stringResource(R.string.archive_title),
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
                         )
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column {
-                            Text(
-                                text = stringResource(R.string.archive_title),
-                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
-                            )
-                            Text(
-                                text = stringResource(R.string.settings_archive_desc),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                        Text(
+                            text = stringResource(R.string.settings_archive_desc),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                run {
+                    // Off by default — silently shelving a user's completed tasks without
+                    // them asking would look like data loss.
+                    val autoArchiveOptions = listOf(0, 1, 3, 7, 14, 30, 60, 90)
+                    val autoArchiveLabels = autoArchiveOptions.map { days ->
+                        if (days <= 0) {
+                            stringResource(R.string.settings_auto_archive_off)
+                        } else {
+                            pluralStringResource(R.plurals.settings_auto_archive_value, days, days)
                         }
                     }
+                    StopSliderSetting(
+                        title = stringResource(R.string.settings_auto_archive),
+                        stopLabels = autoArchiveLabels,
+                        selectedIndex = autoArchiveOptions.indexOf(autoArchiveDays).coerceAtLeast(0),
+                        onSelect = { viewModel.setAutoArchiveDays(autoArchiveOptions[it]) }
+                    )
+                }
+            }
+        }
+        item {
+            // Danger Zone — irreversible. Kept as its own card so it isn't scanned past as just
+            // another row in the middle of routine import/export/lifecycle settings.
+            SettingsSectionCard {
+                SettingsSubsectionHeader(text = stringResource(R.string.settings_danger_zone_group))
 
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                    Box {
-                        // Off by default — silently shelving a user's completed tasks without
-                        // them asking would look like data loss.
-                        val autoArchiveOptions = listOf(0, 7, 30, 90)
-                        SettingsRow(
-                            label = stringResource(R.string.settings_auto_archive),
-                            value = if (autoArchiveDays <= 0) {
-                                stringResource(R.string.settings_auto_archive_off)
-                            } else {
-                                pluralStringResource(
-                                    R.plurals.settings_auto_archive_value,
-                                    autoArchiveDays,
-                                    autoArchiveDays
-                                )
-                            },
-                            onClick = { showAutoArchiveMenu = true }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(enabled = !isDeletingAll) { showDeleteAllDialog = true }
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.DeleteForever,
+                        contentDescription = stringResource(R.string.settings_delete_all_data),
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.settings_delete_all_data),
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.error
                         )
-                        DropdownMenu(
-                            expanded = showAutoArchiveMenu,
-                            onDismissRequest = { showAutoArchiveMenu = false }
-                        ) {
-                            autoArchiveOptions.forEach { days ->
-                                DropdownMenuItem(
-                                    text = {
-                                        Text(
-                                            if (days <= 0) {
-                                                stringResource(R.string.settings_auto_archive_off)
-                                            } else {
-                                                pluralStringResource(R.plurals.settings_auto_archive_value, days, days)
-                                            }
-                                        )
-                                    },
-                                    onClick = {
-                                        viewModel.setAutoArchiveDays(days)
-                                        showAutoArchiveMenu = false
-                                    }
-                                )
-                            }
-                        }
-                    }
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable(enabled = !isDeletingAll) { showDeleteAllDialog = true }
-                            .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.DeleteForever,
-                            contentDescription = stringResource(R.string.settings_delete_all_data),
-                            tint = MaterialTheme.colorScheme.error
+                        Text(
+                            text = stringResource(R.string.settings_delete_all_data_summary),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = stringResource(R.string.settings_delete_all_data),
-                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.error
-                            )
-                            Text(
-                                text = stringResource(R.string.settings_delete_all_data_summary),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        if (isDeletingAll) {
-                            CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                        }
                     }
-
+                    if (isDeletingAll) {
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                    }
                 }
             }
         }
@@ -2380,8 +2613,10 @@ fun SettingsScreen(
                                         style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
                                     )
                                     Text(
-                                        text = if (sftpHost.isBlank()) {
+                                        text = if (!remoteConfigured) {
                                             stringResource(R.string.settings_sftp_backup_summary)
+                                        } else if (isGitHubProtocol) {
+                                            "GitHub: $githubOwner/$githubRepo${githubBranch.takeIf { it.isNotBlank() }?.let { " @ $it" } ?: ""}"
                                         } else {
                                             val protocolLabel = when {
                                                 isFtpProtocol && ftpUseTls -> "FTPS"
@@ -2401,13 +2636,13 @@ fun SettingsScreen(
                             )
                         }
 
-                        if (sftpBackupEnabled) {
+                        run {
                             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable { showSftpConfigDialog = true }
+                                    .clickable { onNavigateToRemoteSync() }
                                     .padding(vertical = 4.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
@@ -2417,8 +2652,10 @@ fun SettingsScreen(
                                         style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
                                     )
                                     Text(
-                                        text = if (sftpHost.isBlank()) {
+                                        text = if (!remoteConfigured) {
                                             stringResource(R.string.settings_sftp_not_configured)
+                                        } else if (isGitHubProtocol) {
+                                            "GitHub: $githubOwner/$githubRepo${githubBranch.takeIf { it.isNotBlank() }?.let { " @ $it" } ?: ""}"
                                         } else {
                                             val protocolLabel = when {
                                                 isFtpProtocol && ftpUseTls -> "FTPS"
@@ -2438,13 +2675,18 @@ fun SettingsScreen(
                                 )
                             }
 
+                            // Compare/restore/clear-lock are gated on the toggle, not just on being
+                            // configured -- when it's off, cloud sync is meant to be fully paused,
+                            // not just "no longer automatic." Configure server above stays reachable
+                            // either way so turning it on doesn't require re-entering credentials.
+                            if (sftpBackupEnabled) {
                             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clickable(
-                                        enabled = sftpHost.isNotBlank() && !isLoadingBackupDiff
+                                        enabled = remoteConfigured && !isLoadingBackupDiff
                                     ) {
                                         showBackupDiffDialog = true
                                         isLoadingBackupDiff = true
@@ -2466,7 +2708,7 @@ fun SettingsScreen(
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Filled.CompareArrows,
                                     contentDescription = stringResource(R.string.settings_compare_with_backup_2),
-                                    tint = if (sftpHost.isNotBlank()) {
+                                    tint = if (remoteConfigured) {
                                         MaterialTheme.colorScheme.tertiary
                                     } else {
                                         MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
@@ -2477,13 +2719,13 @@ fun SettingsScreen(
                                     Text(
                                         text = stringResource(R.string.settings_compare_with_backup),
                                         style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                                        color = if (sftpHost.isNotBlank()) {
+                                        color = if (remoteConfigured) {
                                             MaterialTheme.colorScheme.onSurface
                                         } else {
                                             MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f)
                                         }
                                     )
-                                    if (sftpHost.isBlank()) {
+                                    if (!remoteConfigured) {
                                         Text(
                                             text = stringResource(R.string.settings_sftp_not_configured),
                                             style = MaterialTheme.typography.bodySmall,
@@ -2493,7 +2735,7 @@ fun SettingsScreen(
                                 }
                             }
 
-                            if (sftpHost.isNotBlank()) {
+                            if (remoteConfigured) {
                                 Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
                                     Text(
                                         text = stringResource(R.string.settings_last_sftp_backup, formatRelativeBackupTime(sftpLastBackupAt)),
@@ -2503,7 +2745,7 @@ fun SettingsScreen(
                                     // Host-key trust is an SFTP concept only -- FTPS validates
                                     // certificates through the platform trust store instead, with
                                     // no separate pin/confirm step to report status on here.
-                                    if (!isFtpProtocol) {
+                                    if (!isFtpProtocol && !isGitHubProtocol) {
                                         Text(
                                             text = stringResource(
                                                 if (sftpHostKeyFingerprint != null) {
@@ -2530,8 +2772,7 @@ fun SettingsScreen(
                                         .clickable {
                                             showSftpRestoreDialog = true
                                             isLoadingSftpBackups = true
-                                            val listBackups = if (isFtpProtocol) viewModel::listFtpBackups else viewModel::listSftpBackups
-                                            listBackups { result ->
+                                            viewModel.listRemoteRestorePoints { result ->
                                                 isLoadingSftpBackups = false
                                                 sftpBackupList = result.getOrDefault(emptyList())
                                                 result.exceptionOrNull()?.let { error ->
@@ -2551,40 +2792,43 @@ fun SettingsScreen(
                                     )
                                 }
 
-                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                                if (!isGitHubProtocol) {
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable(enabled = !isClearingSyncLock) {
-                                            clearSyncLockDialogMessage = null
-                                            showClearSyncLockDialog = true
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable(enabled = !isClearingSyncLock) {
+                                                clearSyncLockDialogMessage = null
+                                                showClearSyncLockDialog = true
+                                            }
+                                            .padding(vertical = 4.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.DeleteForever,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.error
+                                        )
+                                        Spacer(modifier = Modifier.width(16.dp))
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                text = stringResource(R.string.settings_clear_sync_lock),
+                                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                                                color = MaterialTheme.colorScheme.error
+                                            )
+                                            Text(
+                                                text = stringResource(R.string.settings_clear_sync_lock_summary),
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
                                         }
-                                        .padding(vertical = 4.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.DeleteForever,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.error
-                                    )
-                                    Spacer(modifier = Modifier.width(16.dp))
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(
-                                            text = stringResource(R.string.settings_clear_sync_lock),
-                                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-                                            color = MaterialTheme.colorScheme.error
-                                        )
-                                        Text(
-                                            text = stringResource(R.string.settings_clear_sync_lock_summary),
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                    if (isClearingSyncLock) {
-                                        CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                                        if (isClearingSyncLock) {
+                                            CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                                        }
                                     }
                                 }
+                            }
                             }
                         }
                     }
@@ -2618,27 +2862,29 @@ fun SettingsScreen(
                         )
                     }
 
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                    if (!isGitHubProtocol) {
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
-                    Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-                        val remoteKeepCount = sftpKeepCount
-                        var keepCountPosition by remember(remoteKeepCount) { mutableFloatStateOf(remoteKeepCount.toFloat()) }
-                        Text(
-                            text = stringResource(R.string.settings_backups_to_keep),
-                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
-                        )
-                        Text(
-                            text = stringResource(R.string.settings_remote_backups_to_keep_summary, keepCountPosition.toInt()),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Slider(
-                            value = keepCountPosition,
-                            onValueChange = { keepCountPosition = it },
-                            onValueChangeFinished = { viewModel.setRemoteBackupKeepCount(keepCountPosition.toInt()) },
-                            valueRange = 2f..15f,
-                            steps = 12 // 14 stops total (min + 12 + max), 1 apart
-                        )
+                        Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                            val remoteKeepCount = sftpKeepCount
+                            var keepCountPosition by remember(remoteKeepCount) { mutableFloatStateOf(remoteKeepCount.toFloat()) }
+                            Text(
+                                text = stringResource(R.string.settings_backups_to_keep),
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                            )
+                            Text(
+                                text = stringResource(R.string.settings_remote_backups_to_keep_summary, keepCountPosition.toInt()),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Slider(
+                                value = keepCountPosition,
+                                onValueChange = { keepCountPosition = it },
+                                onValueChangeFinished = { viewModel.setRemoteBackupKeepCount(keepCountPosition.toInt()) },
+                                valueRange = 2f..15f,
+                                steps = 12 // 14 stops total (min + 12 + max), 1 apart
+                            )
+                        }
                     }
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
@@ -2651,9 +2897,15 @@ fun SettingsScreen(
                                 viewModel.backupAllNow { results ->
                                     isBackingUp = false
                                     val syncLockFailure = results.selfHostedSyncLockFailure()
+                                    val initialJoinFailure = results.initialSyncConfirmationRequired()
+                                    val emptyLocalFailure = results.emptyLocalDataConfirmationRequired()
                                     if (syncLockFailure != null) {
                                         clearSyncLockDialogMessage = syncLockClearPrompt(context, syncLockFailure)
                                         showClearSyncLockDialog = true
+                                    } else if (initialJoinFailure != null) {
+                                        initialSyncMergeMessage = initialJoinFailure.message
+                                    } else if (emptyLocalFailure != null) {
+                                        emptyLocalSyncMessage = emptyLocalFailure.message
                                     } else {
                                         scope.launch {
                                             reportBackupResults(results, snackbarHostState, context)
@@ -2749,6 +3001,65 @@ fun SettingsScreen(
                 }
             }
         }
+        item {
+            // Manual, one-off backup/restore to a file the user picks — distinct from the
+            // automatic Local Backup card above and the Remote Backup card further up.
+            SettingsSectionCard {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onExportRequested() }
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CloudUpload,
+                        contentDescription = stringResource(R.string.settings_export_data),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column {
+                        Text(
+                            text = stringResource(R.string.settings_backup_to_file),
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                        )
+                        Text(
+                            text = stringResource(R.string.settings_backup_to_file_summary),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onImportRequested() }
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CloudDownload,
+                        contentDescription = stringResource(R.string.settings_import_data),
+                        tint = MaterialTheme.colorScheme.tertiary
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column {
+                        Text(
+                            text = stringResource(R.string.settings_restore_from_file),
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                        )
+                        Text(
+                            text = stringResource(R.string.settings_restore_from_file_summary),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        }
         }
         if (settingsDestination == SettingsDestination.HELP_ABOUT) {
         item {
@@ -2830,6 +3141,63 @@ fun SettingsScreen(
             }
         }
         }
+        if (settingsDestination == SettingsDestination.HELP_ABOUT) {
+        item {
+            SettingsSectionCard {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onNavigateToWelcome() }
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.TaskAlt,
+                        contentDescription = stringResource(R.string.settings_show_welcome_tour),
+                        tint = MaterialTheme.colorScheme.secondary
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column {
+                        Text(
+                            text = stringResource(R.string.settings_show_welcome_tour),
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                        )
+                        Text(
+                            text = stringResource(R.string.settings_show_welcome_tour_summary),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        }
+        }
+        if (settingsDestination == SettingsDestination.HELP_ABOUT) {
+        item {
+            AboutYataCard(
+                demoModeEnabled = demoModeEnabled,
+                demoModeFeedback = demoModeFeedback,
+                onToggleDemoMode = {
+                    viewModel.toggleDemoMode()
+                    demoModeFeedback = if (demoModeEnabled) {
+                        R.string.help_demo_mode_off
+                    } else {
+                        R.string.help_demo_mode_on
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+        item {
+            AboutEntrance(delayMillis = 0) {
+                GitHubAndShareRow(onNavigateToShareApp = onNavigateToShareApp, modifier = Modifier.fillMaxWidth())
+            }
+        }
+        item {
+            AboutEntrance(delayMillis = 60) {
+                OtherAppsCard(modifier = Modifier.fillMaxWidth())
+            }
+        }
     }
 }
 
@@ -2841,31 +3209,35 @@ fun SettingsScreen(
         }
         AlertDialog(
             onDismissRequest = { showProfileDialog = false },
-            title = { Text("Edit profile") },
+            title = { Text(stringResource(R.string.settings_edit_profile)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    OutlinedTextField(
+                    TextField(
                         value = profileDraftName,
                         onValueChange = { profileDraftName = it },
                         singleLine = true,
-                        label = { Text("Name") },
+                        label = { Text(stringResource(R.string.settings_profile_name_label)) },
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                        shape = YataCompactFieldShape,
+                        colors = yataFieldColors(),
                         modifier = Modifier.fillMaxWidth()
                     )
-                    OutlinedTextField(
+                    TextField(
                         value = profileDraftEmail,
                         onValueChange = { profileDraftEmail = it },
                         singleLine = true,
-                        label = { Text("Email") },
+                        label = { Text(stringResource(R.string.settings_profile_email_label)) },
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Email,
                             imeAction = ImeAction.Done
                         ),
                         keyboardActions = KeyboardActions(onDone = { saveProfile() }),
+                        shape = YataCompactFieldShape,
+                        colors = yataFieldColors(),
                         modifier = Modifier.fillMaxWidth()
                     )
                     Text(
-                        text = "Avatar",
+                        text = stringResource(R.string.settings_profile_avatar_label),
                         style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
                     )
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -2884,7 +3256,7 @@ fun SettingsScreen(
             },
             confirmButton = {
                 TextButton(onClick = saveProfile) {
-                    Text("Save")
+                    Text(stringResource(R.string.action_save))
                 }
             },
             dismissButton = {
@@ -2898,13 +3270,15 @@ fun SettingsScreen(
     if (showThemePresetDialog) {
         AlertDialog(
             onDismissRequest = { showThemePresetDialog = false },
-            title = { Text("Save theme preset") },
+            title = { Text(stringResource(R.string.settings_save_theme_preset)) },
             text = {
-                OutlinedTextField(
+                TextField(
                     value = themePresetName,
                     onValueChange = { themePresetName = it },
                     singleLine = true,
-                    label = { Text("Name") },
+                    label = { Text(stringResource(R.string.settings_theme_preset_name_label)) },
+                    shape = YataCompactFieldShape,
+                    colors = yataFieldColors(),
                     modifier = Modifier.fillMaxWidth()
                 )
             },
@@ -2924,7 +3298,7 @@ fun SettingsScreen(
                     },
                     enabled = themePresetName.isNotBlank()
                 ) {
-                    Text("Save")
+                    Text(stringResource(R.string.action_save))
                 }
             },
             dismissButton = {
@@ -2986,7 +3360,14 @@ fun SettingsScreen(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteAllDialog = false }) { Text(stringResource(R.string.action_cancel)) }
+                AssistChip(
+                    onClick = { showDeleteAllDialog = false },
+                    label = { Text(stringResource(R.string.action_cancel)) },
+                    colors = AssistChipDefaults.assistChipColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
+                    ),
+                    border = null
+                )
             }
         )
     }
@@ -3016,6 +3397,90 @@ fun SettingsScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showRestoreLocalDialog = false }) { Text(stringResource(R.string.action_cancel)) }
+            }
+        )
+    }
+
+    if (initialSyncMergeMessage != null) {
+        AlertDialog(
+            onDismissRequest = { initialSyncMergeMessage = null },
+            title = { Text(stringResource(R.string.settings_initial_sync_merge_title)) },
+            text = { Text(initialSyncMergeMessage ?: stringResource(R.string.settings_initial_sync_merge_body)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        initialSyncMergeMessage = null
+                        isBackingUp = true
+                        viewModel.backupAllNow(allowInitialJoinMerge = true) { results ->
+                            isBackingUp = false
+                            scope.launch {
+                                reportBackupResults(results, snackbarHostState, context)
+                            }
+                        }
+                    }
+                ) {
+                    Text(stringResource(R.string.settings_initial_sync_merge_action))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { initialSyncMergeMessage = null }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            }
+        )
+    }
+
+    if (emptyLocalSyncMessage != null) {
+        AlertDialog(
+            onDismissRequest = { emptyLocalSyncMessage = null },
+            title = { Text(stringResource(R.string.settings_empty_local_sync_title)) },
+            text = { Text(emptyLocalSyncMessage ?: stringResource(R.string.settings_empty_local_sync_body)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        emptyLocalSyncMessage = null
+                        viewModel.restoreLatestRemoteSnapshot { result ->
+                            scope.launch {
+                                snackbarHostState.showSnackbar(
+                                    if (result.isSuccess) {
+                                        context.getString(R.string.settings_remote_restore_success)
+                                    } else {
+                                        context.getString(
+                                            R.string.settings_remote_restore_failed,
+                                            result.exceptionOrNull()?.message ?: ""
+                                        )
+                                    }
+                                )
+                            }
+                        }
+                    }
+                ) {
+                    Text(stringResource(R.string.settings_empty_local_sync_restore_action))
+                }
+            },
+            dismissButton = {
+                Row {
+                    TextButton(onClick = { emptyLocalSyncMessage = null }) {
+                        Text(stringResource(R.string.action_cancel))
+                    }
+                    TextButton(
+                        onClick = {
+                            emptyLocalSyncMessage = null
+                            isBackingUp = true
+                            viewModel.backupAllNow(allowEmptyLocalOverwrite = true) { results ->
+                                isBackingUp = false
+                                scope.launch {
+                                    reportBackupResults(results, snackbarHostState, context)
+                                }
+                            }
+                        }
+                    ) {
+                        Text(
+                            stringResource(R.string.settings_empty_local_sync_overwrite_action),
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
             }
         )
     }
@@ -3073,362 +3538,10 @@ fun SettingsScreen(
         )
     }
 
-    if (showSftpConfigDialog) {
-        var draftProtocol by remember { mutableStateOf(remoteBackupProtocol) }
-        var draftHost by remember { mutableStateOf(sftpHost) }
-        var draftPort by remember { mutableStateOf(sftpPort.toString()) }
-        var draftUsername by remember { mutableStateOf(sftpUsername) }
-        var draftRemoteDir by remember { mutableStateOf(sftpRemoteDir) }
-        var draftAuthMethod by remember { mutableStateOf(sftpAuthMethod) }
-        var draftPassword by remember { mutableStateOf("") }
-        var draftPrivateKey by remember { mutableStateOf("") }
-        var draftPassphrase by remember { mutableStateOf("") }
-        var draftFtpUseTls by remember { mutableStateOf(ftpUseTls) }
-        // Never pre-filled with the stored value — the passphrase is write-only from the UI's
-        // point of view, same as the password fields. Blank therefore means "leave as-is".
-        var draftBackupPassphrase by remember { mutableStateOf("") }
-        val passwordAlreadySet = remember { viewModel.hasRemoteBackupPassword() }
-        val keyPassphraseAlreadySet = remember { viewModel.hasSftpKeyPassphrase() }
-        val backupPassphraseAlreadySet = remember { viewModel.hasRemoteBackupPassphrase() }
-        val savedSecretPlaceholder = "••••••••"
-        var isTestingConnection by remember { mutableStateOf(false) }
-        // null = untested this session, true/false = last test's outcome. A successful SFTP test
-        // with no fingerprint pinned yet, or a failed one where the failure is a host-key
-        // mismatch, both surface a trust prompt via pendingTrustFingerprint instead of a plain
-        // result line. FTP/FTPS has no equivalent -- pendingTrustFingerprint stays null there and
-        // every test outcome goes straight to testResultMessage.
-        var testResultOk by remember { mutableStateOf<Boolean?>(null) }
-        var testResultMessage by remember { mutableStateOf<String?>(null) }
-        var pendingTrustFingerprint by remember { mutableStateOf<String?>(null) }
-        var isHostKeyMismatch by remember { mutableStateOf(false) }
-        val draftIsFtp = draftProtocol == com.mj.yata.domain.model.RemoteBackupProtocol.FTP
-
-        fun saveServerConfiguration(onSaved: () -> Unit = {}) {
-            if (draftIsFtp) {
-                if (draftPassword.isNotBlank()) viewModel.setSftpPassword(draftPassword)
-                // Blank means "keep whatever is stored" rather than "remove encryption" — silently
-                // dropping to unencrypted uploads because a field was left empty is not a default
-                // anyone would want.
-                if (draftBackupPassphrase.isNotBlank()) {
-                    viewModel.setRemoteBackupPassphrase(draftBackupPassphrase)
-                }
-            } else {
-                viewModel.setSftpAuthMethod(draftAuthMethod)
-                if (draftAuthMethod == "PRIVATE_KEY") {
-                    if (draftPrivateKey.isNotBlank() || draftPassphrase.isNotBlank()) {
-                        viewModel.setSftpPrivateKey(draftPrivateKey, draftPassphrase)
-                    }
-                } else {
-                    if (draftPassword.isNotBlank()) viewModel.setSftpPassword(draftPassword)
-                }
-            }
-            viewModel.saveRemoteBackupConfiguration(
-                protocol = draftProtocol,
-                useTls = draftFtpUseTls,
-                host = draftHost,
-                port = draftPort.toIntOrNull() ?: sftpPort,
-                username = draftUsername,
-                remoteDir = draftRemoteDir,
-                authMethod = draftAuthMethod,
-                onSaved = onSaved
-            )
-        }
-
-        AlertDialog(
-            onDismissRequest = { showSftpConfigDialog = false },
-            title = { Text(stringResource(R.string.settings_sftp_config_title)) },
-            text = {
-                Column(
-                    modifier = Modifier.verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    val protocolSftpLabel = stringResource(R.string.settings_sftp_protocol_sftp)
-                    val protocolFtpLabel = stringResource(R.string.settings_sftp_protocol_ftp)
-                    SegmentedControl(
-                        items = listOf(com.mj.yata.domain.model.RemoteBackupProtocol.SFTP, com.mj.yata.domain.model.RemoteBackupProtocol.FTP),
-                        selectedItem = draftProtocol,
-                        onItemSelected = { newProtocol ->
-                            // Only nudge the port if it's still sitting at the *other* protocol's
-                            // default -- a custom port the user already typed must survive a
-                            // protocol switch.
-                            if (newProtocol == com.mj.yata.domain.model.RemoteBackupProtocol.FTP && draftPort == "22") {
-                                draftPort = "21"
-                            } else if (newProtocol == com.mj.yata.domain.model.RemoteBackupProtocol.SFTP && draftPort == "21") {
-                                draftPort = "22"
-                            }
-                            draftProtocol = newProtocol
-                        },
-                        labelProvider = { if (it == com.mj.yata.domain.model.RemoteBackupProtocol.SFTP) protocolSftpLabel else protocolFtpLabel }
-                    )
-                    OutlinedTextField(
-                        value = draftHost,
-                        onValueChange = { draftHost = it },
-                        label = { Text(stringResource(R.string.settings_sftp_host)) },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    OutlinedTextField(
-                        value = draftPort,
-                        onValueChange = { new -> if (new.length <= 5 && new.all { it.isDigit() }) draftPort = new },
-                        label = { Text(stringResource(R.string.settings_sftp_port)) },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    OutlinedTextField(
-                        value = draftUsername,
-                        onValueChange = { draftUsername = it },
-                        label = { Text(stringResource(R.string.settings_sftp_username)) },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    OutlinedTextField(
-                        value = draftRemoteDir,
-                        onValueChange = { draftRemoteDir = it },
-                        label = { Text(stringResource(R.string.settings_sftp_remote_dir)) },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    if (draftIsFtp) {
-                        OutlinedTextField(
-                            value = draftPassword,
-                            onValueChange = { draftPassword = it },
-                            label = { Text(stringResource(R.string.settings_sftp_password)) },
-                            placeholder = {
-                                if (passwordAlreadySet) Text(savedSecretPlaceholder)
-                            },
-                            singleLine = true,
-                            visualTransformation = PasswordVisualTransformation(),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = stringResource(R.string.settings_ftp_use_tls),
-                                style = MaterialTheme.typography.bodyMedium,
-                                modifier = Modifier.weight(1f)
-                            )
-                            Switch(checked = draftFtpUseTls, onCheckedChange = { draftFtpUseTls = it })
-                        }
-                        if (!draftFtpUseTls) {
-                            Surface(
-                                color = MaterialTheme.colorScheme.errorContainer,
-                                shape = RoundedCornerShape(12.dp),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.settings_ftp_plain_warning),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onErrorContainer,
-                                    modifier = Modifier.padding(10.dp)
-                                )
-                            }
-                        }
-                        OutlinedTextField(
-                            value = draftBackupPassphrase,
-                            onValueChange = { draftBackupPassphrase = it },
-                            label = { Text(stringResource(R.string.settings_backup_passphrase)) },
-                            placeholder = {
-                                if (backupPassphraseAlreadySet) Text(savedSecretPlaceholder)
-                            },
-                            singleLine = true,
-                            visualTransformation = PasswordVisualTransformation(),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Text(
-                            text = if (backupPassphraseAlreadySet) {
-                                stringResource(R.string.settings_backup_passphrase_set)
-                            } else {
-                                stringResource(R.string.settings_backup_passphrase_hint)
-                            },
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    } else {
-                        val authPasswordLabel = stringResource(R.string.settings_sftp_auth_password)
-                        val authKeyLabel = stringResource(R.string.settings_sftp_auth_key)
-                        SegmentedControl(
-                            items = listOf("PASSWORD", "PRIVATE_KEY"),
-                            selectedItem = draftAuthMethod,
-                            onItemSelected = { draftAuthMethod = it },
-                            labelProvider = { if (it == "PASSWORD") authPasswordLabel else authKeyLabel }
-                        )
-                        if (draftAuthMethod == "PRIVATE_KEY") {
-                            OutlinedTextField(
-                                value = draftPrivateKey,
-                                onValueChange = { draftPrivateKey = it },
-                                label = { Text(stringResource(R.string.settings_sftp_private_key)) },
-                                placeholder = { Text(stringResource(R.string.settings_sftp_private_key_placeholder), style = MaterialTheme.typography.bodySmall) },
-                                minLines = 3,
-                                maxLines = 6,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                            OutlinedTextField(
-                                value = draftPassphrase,
-                                onValueChange = { draftPassphrase = it },
-                                label = { Text(stringResource(R.string.settings_sftp_passphrase)) },
-                                placeholder = {
-                                    if (keyPassphraseAlreadySet) Text(savedSecretPlaceholder)
-                                },
-                                singleLine = true,
-                                visualTransformation = PasswordVisualTransformation(),
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        } else {
-                            OutlinedTextField(
-                                value = draftPassword,
-                                onValueChange = { draftPassword = it },
-                                label = { Text(stringResource(R.string.settings_sftp_password)) },
-                                placeholder = {
-                                    if (passwordAlreadySet) Text(savedSecretPlaceholder)
-                                },
-                                singleLine = true,
-                                visualTransformation = PasswordVisualTransformation(),
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
-                    }
-
-                    OutlinedButton(
-                        onClick = {
-                            testResultOk = null
-                            testResultMessage = null
-                            pendingTrustFingerprint = null
-                            isHostKeyMismatch = false
-                            isTestingConnection = true
-                            saveServerConfiguration {
-                                if (draftIsFtp) {
-                                    viewModel.testFtpConnection { result ->
-                                        isTestingConnection = false
-                                        testResultOk = result.isSuccess
-                                        testResultMessage = if (result.isSuccess) {
-                                            context.getString(R.string.settings_sftp_connection_ok)
-                                        } else {
-                                            result.exceptionOrNull()?.message ?: context.getString(R.string.export_failed)
-                                        }
-                                    }
-                                } else {
-                                    viewModel.testSftpConnection { result ->
-                                        isTestingConnection = false
-                                        testResultOk = result.success
-                                        val firstObservedKey = sftpHostKeyFingerprint == null &&
-                                            result.fingerprint != null &&
-                                            result.fingerprint.isNotBlank()
-                                        if (firstObservedKey) {
-                                            // The transport intentionally stopped before authentication.
-                                            // Confirming below pins the key, then runs the real auth test.
-                                            pendingTrustFingerprint = result.fingerprint
-                                        } else if (result.success) {
-                                            testResultMessage = context.getString(R.string.settings_sftp_connection_ok)
-                                        } else {
-                                            val mismatch = sftpHostKeyFingerprint != null &&
-                                                result.fingerprint != null &&
-                                                result.fingerprint != sftpHostKeyFingerprint
-                                            if (mismatch) {
-                                                isHostKeyMismatch = true
-                                                pendingTrustFingerprint = result.fingerprint
-                                            } else {
-                                                testResultMessage = result.error?.message
-                                                    ?: context.getString(R.string.export_failed)
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        enabled = !isTestingConnection,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(
-                            if (isTestingConnection) {
-                                stringResource(R.string.settings_sftp_testing_connection)
-                            } else {
-                                stringResource(R.string.settings_sftp_test_connection)
-                            }
-                        )
-                    }
-
-                    pendingTrustFingerprint?.let { fingerprint ->
-                        Surface(
-                            color = if (isHostKeyMismatch) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Text(
-                                    text = stringResource(
-                                        if (isHostKeyMismatch) R.string.settings_sftp_host_key_changed else R.string.settings_sftp_trust_prompt,
-                                        fingerprint
-                                    ),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = if (isHostKeyMismatch) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Button(
-                                    onClick = {
-                                        pendingTrustFingerprint = null
-                                        isHostKeyMismatch = false
-                                        testResultMessage = null
-                                        isTestingConnection = true
-                                        viewModel.pinAndTestSftpConnection(fingerprint) { result ->
-                                            isTestingConnection = false
-                                            testResultOk = result.success
-                                            if (result.success) {
-                                                testResultMessage = context.getString(R.string.settings_sftp_connection_ok)
-                                            } else {
-                                                val changedAgain = result.fingerprint != null &&
-                                                    result.fingerprint != fingerprint
-                                                if (changedAgain) {
-                                                    isHostKeyMismatch = true
-                                                    pendingTrustFingerprint = result.fingerprint
-                                                } else {
-                                                    testResultMessage = result.error?.message
-                                                        ?: context.getString(R.string.export_failed)
-                                                }
-                                            }
-                                        }
-                                    },
-                                    colors = if (isHostKeyMismatch) ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error) else ButtonDefaults.buttonColors()
-                                ) {
-                                    Text(
-                                        stringResource(
-                                            if (isHostKeyMismatch) R.string.settings_sftp_trust_new_key else R.string.settings_sftp_trust_and_save
-                                        )
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    testResultMessage?.let { message ->
-                        Text(
-                            text = message,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = if (testResultOk == true) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
-                        )
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    saveServerConfiguration()
-                    showSftpConfigDialog = false
-                }) {
-                    Text(stringResource(R.string.action_save))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showSftpConfigDialog = false }) { Text(stringResource(R.string.action_cancel)) }
-            }
-        )
-    }
-
     if (showSftpRestoreDialog) {
         AlertDialog(
             onDismissRequest = { if (!isRestoringSftpBackup) showSftpRestoreDialog = false },
-            title = { Text(stringResource(R.string.settings_sftp_restore_title)) },
+            title = { Text(if (isGitHubProtocol) "Restore from GitHub" else stringResource(R.string.settings_sftp_restore_title)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     when {
@@ -3444,11 +3557,11 @@ fun SettingsScreen(
                             )
                         }
                         else -> {
-                            sftpBackupList.forEach { filename ->
+                            sftpBackupList.forEach { restorePoint ->
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .clickable(enabled = !isRestoringSftpBackup) { pendingSftpRestoreFilename = filename }
+                                        .clickable(enabled = !isRestoringSftpBackup) { pendingSftpRestorePoint = restorePoint }
                                         .padding(vertical = 10.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
@@ -3458,7 +3571,16 @@ fun SettingsScreen(
                                         tint = MaterialTheme.colorScheme.tertiary
                                     )
                                     Spacer(modifier = Modifier.width(12.dp))
-                                    Text(filename, style = MaterialTheme.typography.bodyMedium)
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(restorePoint.label, style = MaterialTheme.typography.bodyMedium)
+                                        restorePoint.createdAt?.let {
+                                            Text(
+                                                formatBackupTimestamp(it.toString()),
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
                                 }
                             }
                             if (isRestoringSftpBackup) {
@@ -3478,16 +3600,15 @@ fun SettingsScreen(
         )
     }
 
-    pendingSftpRestoreFilename?.let { filename ->
+    pendingSftpRestorePoint?.let { restorePoint ->
         // Read the backup before offering to restore it. Restore overwrites live data, and the
         // filename alone can't tell a full backup from one taken while the database was nearly
         // empty — the counts are what make this a checkable decision.
-        LaunchedEffect(filename) {
+        LaunchedEffect(restorePoint.id) {
             isInspectingSftpBackup = true
             sftpBackupSummary = null
             sftpInspectError = null
-            val inspect = if (isFtpProtocol) viewModel::inspectFtpBackup else viewModel::inspectSftpBackup
-            inspect(filename) { result ->
+            viewModel.inspectRemoteSnapshot(restorePoint.id) { result ->
                 isInspectingSftpBackup = false
                 result
                     .onSuccess { sftpBackupSummary = it }
@@ -3495,11 +3616,11 @@ fun SettingsScreen(
             }
         }
         AlertDialog(
-            onDismissRequest = { pendingSftpRestoreFilename = null },
+            onDismissRequest = { pendingSftpRestorePoint = null },
             title = { Text(stringResource(R.string.settings_sftp_restore_confirm_title)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(filename, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(restorePoint.label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     when {
                         isInspectingSftpBackup -> {
                             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -3562,10 +3683,9 @@ fun SettingsScreen(
                     // better to block here than to fail halfway through overwriting live data.
                     enabled = !isInspectingSftpBackup && sftpInspectError == null,
                     onClick = {
-                    pendingSftpRestoreFilename = null
+                    pendingSftpRestorePoint = null
                     isRestoringSftpBackup = true
-                    val restoreBackup = if (isFtpProtocol) viewModel::restoreFtpBackup else viewModel::restoreSftpBackup
-                    restoreBackup(filename) { result ->
+                    viewModel.restoreRemoteSnapshot(restorePoint.id) { result ->
                         isRestoringSftpBackup = false
                         showSftpRestoreDialog = false
                         scope.launch {
@@ -3581,7 +3701,7 @@ fun SettingsScreen(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { pendingSftpRestoreFilename = null }) { Text(stringResource(R.string.action_cancel)) }
+                TextButton(onClick = { pendingSftpRestorePoint = null }) { Text(stringResource(R.string.action_cancel)) }
             }
 
         )
@@ -3692,6 +3812,61 @@ fun SettingsScreen(
         )
     }
 
+    if (showDefaultEstimateDialog) {
+        val estimateMinutes = defaultEstimateText.toIntOrNull()
+        val estimateValid = estimateMinutes != null && estimateMinutes in 1..1440
+        AlertDialog(
+            onDismissRequest = { showDefaultEstimateDialog = false },
+            title = { Text(stringResource(R.string.settings_default_estimate_custom_title)) },
+            text = {
+                OutlinedTextField(
+                    value = defaultEstimateText,
+                    onValueChange = { value ->
+                        defaultEstimateText = value.filter { it.isDigit() }.take(4)
+                    },
+                    label = { Text(stringResource(R.string.settings_default_estimate_custom_label)) },
+                    singleLine = true,
+                    isError = defaultEstimateText.isNotBlank() && !estimateValid,
+                    supportingText = {
+                        if (defaultEstimateText.isNotBlank() && !estimateValid) {
+                            Text(stringResource(R.string.settings_default_estimate_custom_error))
+                        }
+                    },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Number,
+                        imeAction = ImeAction.Done
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onDone = {
+                            if (estimateValid) {
+                                viewModel.setDefaultEstimateMinutes(estimateMinutes)
+                                showDefaultEstimateDialog = false
+                            }
+                        }
+                    )
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = estimateValid,
+                    onClick = {
+                        if (estimateMinutes != null) {
+                            viewModel.setDefaultEstimateMinutes(estimateMinutes)
+                            showDefaultEstimateDialog = false
+                        }
+                    }
+                ) {
+                    Text(stringResource(R.string.action_done))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDefaultEstimateDialog = false }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            }
+        )
+    }
+
     YataTimePickerLauncher(
         show = showAgendaTimePicker,
         initialTime = TaskScheduleUtils.formatTime(dailyAgendaHour, dailyAgendaMinute),
@@ -3717,6 +3892,30 @@ fun SettingsScreen(
                 viewModel.setDefaultReminderTime(parsed.hour, parsed.minute)
             }
             showReminderTimePicker = false
+        }
+    )
+
+    YataTimePickerLauncher(
+        show = showQuietHoursStartPicker,
+        initialTime = TaskScheduleUtils.formatTime(quietHoursStartHour, quietHoursStartMinute),
+        onDismiss = { showQuietHoursStartPicker = false },
+        onConfirm = { formatted ->
+            TaskScheduleUtils.parseTime(formatted)?.let { parsed ->
+                viewModel.setQuietHoursStart(parsed.hour, parsed.minute)
+            }
+            showQuietHoursStartPicker = false
+        }
+    )
+
+    YataTimePickerLauncher(
+        show = showQuietHoursEndPicker,
+        initialTime = TaskScheduleUtils.formatTime(quietHoursEndHour, quietHoursEndMinute),
+        onDismiss = { showQuietHoursEndPicker = false },
+        onConfirm = { formatted ->
+            TaskScheduleUtils.parseTime(formatted)?.let { parsed ->
+                viewModel.setQuietHoursEnd(parsed.hour, parsed.minute)
+            }
+            showQuietHoursEndPicker = false
         }
     )
 
@@ -3775,6 +3974,10 @@ fun SettingsScreen(
             }
         )
     }
+}
+
+}
+
 }
 
 private fun formatRelativeBackupTime(epochMillis: Long?): String {
@@ -3881,6 +4084,318 @@ private fun BackupDiffTaskSection(label: String, titles: List<String>, totalCoun
         }
     }
 }
+@Composable
+private fun AboutYataCard(
+    demoModeEnabled: Boolean,
+    demoModeFeedback: Int?,
+    onToggleDemoMode: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        shape = RoundedCornerShape(16.dp),
+        modifier = modifier
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(64.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primaryContainer)
+                    .clickable(onClick = onToggleDemoMode),
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.rj_logo_mark),
+                    contentDescription = null,
+                    colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onPrimaryContainer),
+                    modifier = Modifier.size(width = 44.dp, height = 29.dp)
+                )
+            }
+            if (demoModeEnabled) {
+                Text(
+                    text = stringResource(R.string.help_demo_mode_active),
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+            demoModeFeedback?.let { messageRes ->
+                Text(
+                    text = stringResource(messageRes),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = stringResource(R.string.app_name),
+                style = MaterialTheme.typography.headlineSmall.copy(
+                    fontFamily = BodoniModaFamily,
+                    fontWeight = FontWeight.Bold
+                ),
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = stringResource(R.string.settings_about_tagline),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                shape = CircleShape
+            ) {
+                Text(
+                    text = stringResource(
+                        R.string.settings_about_version,
+                        BuildConfig.VERSION_NAME,
+                        "${BuildConfig.VERSION_CODE}.${BuildInfo.BUILD_DATE}"
+                    ),
+                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                )
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = stringResource(R.string.settings_about_credit),
+                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = stringResource(R.string.settings_about_made_in),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+private data class OtherApp(
+    val name: String,
+    val tagline: String,
+    val playStoreUrl: String,
+    val icon: ImageVector
+)
+
+private val otherApps = listOf(
+    OtherApp("yaja", "Journaling app", "https://play.google.com/store/apps/details?id=com.mj.yaja", Icons.Default.Book),
+    OtherApp("Assetrack", "Track your assets", "https://play.google.com/store/apps/details?id=com.mj.assetrack", Icons.Default.Inventory2),
+    OtherApp("Ultra", "Smart reminders", "https://play.google.com/store/apps/details?id=com.ultra.reminders", Icons.Default.Alarm)
+)
+
+/** Fades and rises the About screen's new link cards into place on first composition, staggered
+ * by [delayMillis] so the two rows settle one after another rather than popping in together. */
+@Composable
+private fun AboutEntrance(delayMillis: Int, content: @Composable () -> Unit) {
+    var visible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        delay(delayMillis.toLong())
+        visible = true
+    }
+    AnimatedVisibility(
+        visible = visible,
+        enter = fadeIn(tween(YataDur.nav, easing = YataEase.emphDecel)) +
+            slideInVertically(tween(YataDur.nav, easing = YataEase.emphDecel)) { it / 4 }
+    ) {
+        content()
+    }
+}
+
+@Composable
+private fun OtherAppsCard(modifier: Modifier = Modifier) {
+    val uriHandler = LocalUriHandler.current
+    val accents = LocalYataAccents.current
+    val tileAccents = listOf(accents.accentA, accents.accentB, accents.accentC)
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
+        modifier = modifier
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.AutoAwesome,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(16.dp)
+                )
+                Text(
+                    text = stringResource(R.string.settings_about_other_apps),
+                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(IntrinsicSize.Max),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                otherApps.forEachIndexed { index, app ->
+                    val tint = tileAccents[index % tileAccents.size]
+                    Surface(
+                        color = tint.copy(alpha = 0.12f),
+                        shape = RoundedCornerShape(14.dp),
+                        border = BorderStroke(1.dp, tint.copy(alpha = 0.3f)),
+                        onClick = { uriHandler.openUri(app.playStoreUrl) },
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 8.dp, vertical = 12.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(CircleShape)
+                                    .background(tint.copy(alpha = 0.22f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = app.icon,
+                                    contentDescription = null,
+                                    tint = tint,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                            Text(
+                                text = app.name,
+                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.onSurface,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            )
+                            Text(
+                                text = app.tagline,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+private const val YATA_GITHUB_URL = "https://github.com/rjwarrier/yata"
+private const val YATA_WEBSITE_URL = "https://ranjithj.in/yata/"
+private const val YATA_SUPPORT_URL = "https://www.buymeacoffee.com/ranjithj"
+private val BuyMeACoffeeYellow = Color(0xFFFFDD00)
+
+@Composable
+private fun GitHubAndShareRow(onNavigateToShareApp: () -> Unit, modifier: Modifier = Modifier) {
+    val uriHandler = LocalUriHandler.current
+    val shareTitle = stringResource(R.string.settings_about_share)
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Row(
+            modifier = Modifier.height(IntrinsicSize.Max),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            OutlinedButton(
+                onClick = { uriHandler.openUri(YATA_GITHUB_URL) },
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.OpenInNew,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = stringResource(R.string.settings_about_github),
+                    style = MaterialTheme.typography.labelLarge,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+            }
+            OutlinedButton(
+                onClick = onNavigateToShareApp,
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+            ) {
+                Icon(
+                    imageVector = Icons.Default.IosShare,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = shareTitle,
+                    style = MaterialTheme.typography.labelLarge,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+            }
+        }
+        FilledTonalButton(
+            onClick = { uriHandler.openUri(YATA_WEBSITE_URL) },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.OpenInNew,
+                contentDescription = null,
+                modifier = Modifier.size(16.dp)
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+                text = stringResource(R.string.settings_about_website),
+                style = MaterialTheme.typography.labelLarge,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+        }
+        // Buy Me a Coffee's own brand colors (yellow fill, black outline and text) rather than theme
+        // colors, so it reads as the familiar BMC button in every theme.
+        Button(
+            onClick = { uriHandler.openUri(YATA_SUPPORT_URL) },
+            colors = ButtonDefaults.buttonColors(
+                containerColor = BuyMeACoffeeYellow,
+                contentColor = Color.Black
+            ),
+            border = BorderStroke(1.dp, Color.Black),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Icon(
+                imageVector = Icons.Default.LocalCafe,
+                contentDescription = null,
+                modifier = Modifier.size(16.dp)
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+                text = stringResource(R.string.settings_about_support_dev),
+                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+        }
+    }
+}
 
 private fun formatBackupInterval(minutes: Long): String {
     val (value, unit) = minutesToIntervalDisplay(minutes)
@@ -3902,21 +4417,25 @@ private fun PinSetupDialog(onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
         title = { Text(stringResource(R.string.settings_set_pin)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedTextField(
+                TextField(
                     value = newPin,
                     onValueChange = { if (it.length <= 8 && it.all(Char::isDigit)) { newPin = it; error = null } },
                     label = { Text(stringResource(R.string.settings_new_pin_4_8_digits)) },
                     visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-                    singleLine = true
+                    singleLine = true,
+                    shape = YataCompactFieldShape,
+                    colors = yataFieldColors()
                 )
-                OutlinedTextField(
+                TextField(
                     value = confirmPin,
                     onValueChange = { if (it.length <= 8 && it.all(Char::isDigit)) { confirmPin = it; error = null } },
                     label = { Text(stringResource(R.string.action_confirm_pin)) },
                     visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-                    singleLine = true
+                    singleLine = true,
+                    shape = YataCompactFieldShape,
+                    colors = yataFieldColors()
                 )
                 error?.let {
                     Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
@@ -4013,12 +4532,13 @@ private fun SettingsDestinationCard(
     icon: ImageVector,
     title: String,
     summary: String,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         shape = RoundedCornerShape(16.dp),
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
     ) {
@@ -4104,6 +4624,91 @@ private fun SettingsSectionHeader(text: String, icon: ImageVector? = null) {
     }
 }
 
+@Composable
+private fun CompactScaleSliderSetting(
+    title: String,
+    description: String,
+    value: Float,
+    onValueChange: (Float) -> Unit,
+    onValueChangeFinished: () -> Unit,
+    valueRange: ClosedFloatingPointRange<Float>,
+    steps: Int,
+    presets: List<Pair<String, Float>>,
+    onPresetSelected: (Float) -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.Top,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                )
+                Text(
+                    text = description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Surface(
+                shape = RoundedCornerShape(percent = 50),
+                color = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            ) {
+                Text(
+                    text = "${(value * 100).toInt()}%",
+                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                )
+            }
+        }
+
+        Slider(
+            value = value,
+            onValueChange = onValueChange,
+            onValueChangeFinished = onValueChangeFinished,
+            valueRange = valueRange,
+            steps = steps,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            presets.forEach { (label, presetValue) ->
+                FilterChip(
+                    selected = value in (presetValue - 0.01f)..(presetValue + 0.01f),
+                    onClick = { onPresetSelected(presetValue) },
+                    label = {
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
+                        )
+                    },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SettingsSubsectionHeader(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(top = 2.dp)
+    )
+}
+
 /** The rounded card every settings group sits in. Was copy-pasted per section. */
 @Composable
 private fun SettingsSectionCard(content: @Composable ColumnScope.() -> Unit) {
@@ -4179,6 +4784,103 @@ fun SettingsRow(
             contentDescription = stringResource(R.string.settings_edit),
             tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
         )
+    }
+}
+
+@Composable
+private fun SettingsPickerSurface(
+    label: String,
+    value: String,
+    onClick: () -> Unit
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        shape = YataCompactFieldShape,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        border = BorderStroke(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.45f)
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 64.dp)
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = value,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+            Icon(
+                imageVector = Icons.Default.KeyboardArrowDown,
+                contentDescription = stringResource(R.string.settings_edit),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun SettingsScrollableDropdownContent(
+    scrollState: androidx.compose.foundation.ScrollState,
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    val density = LocalDensity.current
+    val viewportHeight = 288.dp
+    val scrollbarTrackHeight = viewportHeight - 16.dp
+    Box(modifier = modifier.heightIn(max = viewportHeight)) {
+        Column(
+            modifier = Modifier
+                .verticalScroll(scrollState)
+                .padding(end = if (scrollState.maxValue > 0) 10.dp else 0.dp),
+            content = content
+        )
+        if (scrollState.maxValue > 0) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .height(scrollbarTrackHeight)
+                    .width(8.dp)
+                    .padding(horizontal = 2.dp)
+            ) {
+                val trackHeightPx = with(density) { scrollbarTrackHeight.toPx() }
+                val minThumbPx = with(density) { 36.dp.toPx() }
+                val thumbHeightPx = (
+                    trackHeightPx * trackHeightPx /
+                        (trackHeightPx + scrollState.maxValue)
+                    ).coerceIn(minThumbPx, trackHeightPx)
+                val thumbOffsetPx = (
+                    (trackHeightPx - thumbHeightPx) *
+                        scrollState.value /
+                        scrollState.maxValue
+                    ).coerceAtLeast(0f)
+                Box(
+                    modifier = Modifier
+                        .offset(y = with(density) { thumbOffsetPx.toDp() })
+                        .width(4.dp)
+                        .height(with(density) { thumbHeightPx.toDp() })
+                        .clip(RoundedCornerShape(percent = 50))
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.72f))
+                )
+            }
+        }
     }
 }
 
@@ -4324,7 +5026,7 @@ private const val MAX_INLINE_STOP_LABELS = 5
 @Composable
 private fun StopSliderSetting(
     title: String,
-    description: String,
+    description: String = "",
     stopLabels: List<String>,
     selectedIndex: Int,
     onSelect: (Int) -> Unit
@@ -4347,11 +5049,13 @@ private fun StopSliderSetting(
                 color = MaterialTheme.colorScheme.primary
             )
         }
-        Text(
-            text = description,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        if (description.isNotBlank()) {
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
         Slider(
             value = selectedIndex.toFloat(),
             onValueChange = { onSelect(it.roundToInt().coerceIn(0, lastStop)) },
@@ -4441,43 +5145,6 @@ private fun ThemeColorPicker(selectedSeedArgb: Int?, onSelect: (Int?) -> Unit) {
                 onSelect(color.toArgb())
                 showCustomPicker = false
             }
-        )
-    }
-}
-
-@Composable
-private fun PresetAvatarChoice(
-    preset: ProfilePhotoUtils.PresetAvatar,
-    label: String,
-    context: android.content.Context,
-    onClick: () -> Unit
-) {
-    val imageBitmap = remember(context, preset) {
-        ProfilePhotoUtils.presetAvatarBitmap(context, preset).asImageBitmap()
-    }
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(5.dp)
-    ) {
-        Surface(
-            onClick = onClick,
-            shape = CircleShape,
-            color = MaterialTheme.colorScheme.primaryContainer,
-            modifier = Modifier.size(54.dp)
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Image(
-                    bitmap = imageBitmap,
-                    contentDescription = label,
-                    colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onPrimaryContainer),
-                    modifier = Modifier.size(34.dp)
-                )
-            }
-        }
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }

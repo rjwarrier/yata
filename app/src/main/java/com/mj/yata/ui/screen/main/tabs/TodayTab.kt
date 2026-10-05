@@ -1,6 +1,10 @@
 package com.mj.yata.ui.screen.main.tabs
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -10,8 +14,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyItemScope
@@ -42,6 +44,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mj.yata.R
@@ -51,8 +55,10 @@ import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.yataItemFade
 import com.mj.yata.ui.theme.yataItemPlacement
 import com.mj.yata.ui.theme.YataEase
+import com.mj.yata.ui.util.rememberAdaptiveSheetMaxWidth
 import com.mj.yata.ui.widgets.PersonAvatar
 import com.mj.yata.ui.widgets.ProgressRing
+import com.mj.yata.ui.widgets.TaskPreviewPane
 import com.mj.yata.ui.widgets.TaskRow
 import com.mj.yata.ui.widgets.TaskSectionHeader
 import com.mj.yata.util.sortedByMode
@@ -74,6 +80,7 @@ fun TodayTab(
     userName: String,
     userPhotoUri: String? = null,
     onMenuClick: () -> Unit,
+    showMenuButton: Boolean = true,
     onSearchClick: () -> Unit,
     onNextDaysClick: () -> Unit = {},
     onNewTaskClick: () -> Unit = {},
@@ -89,7 +96,9 @@ fun TodayTab(
     onBulkSetList: (List<String>, String?) -> Unit = { _, _ -> },
     onBulkDuplicate: (List<String>) -> Unit = {},
     onBulkAssignPerson: (List<String>, String) -> Unit = { _, _ -> },
-    onBulkReschedule: (List<String>, QuickSnoozePreset) -> Unit = { _, _ -> },
+    onBulkReschedule: (List<String>, QuickSnoozePreset, Boolean) -> Unit = { _, _, _ -> },
+    onBulkSetPriority: (List<String>, String) -> Unit = { _, _ -> },
+    onBulkSetFlag: (List<String>, Boolean) -> Unit = { _, _ -> },
     onRenameTask: (String, String) -> Unit = { _, _ -> },
     onAddComment: (taskId: String, body: String) -> Unit = { _, _ -> },
     sortMode: com.mj.yata.util.TaskSortMode = com.mj.yata.util.TaskSortMode.MANUAL,
@@ -112,6 +121,18 @@ fun TodayTab(
      * clickable/completable) instead of requiring the empty state's "Show upcoming tasks" button
      * to be tapped each time. Settings → Task Defaults. */
     showUpcomingWhenEmpty: Boolean = false,
+    /** "Observe non-working days" (Settings → Task Defaults → Holidays): when on, a recurring
+     * task whose due date lands on a weekend/holiday is treated as due the previous working day
+     * for the purposes of this screen's due/overdue split — see Task.effectiveDue. Off by default. */
+    weekendDays: Set<String> = emptySet(),
+    holidays: List<Holiday> = emptyList(),
+    observeNonWorkingDays: Boolean = false,
+    useWideLayout: Boolean = false,
+    /** False only for the brief window before Room's first query lands on cold start - see
+     * MainViewModel.initialDataLoaded. An empty list here is ambiguous between "genuinely no
+     * tasks" and "haven't loaded yet"; this disambiguates so the former's empty state doesn't
+     * flash before the latter resolves. */
+    initialDataLoaded: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     val selectedIds = remember { mutableStateListOf<String>() }
@@ -120,8 +141,11 @@ fun TodayTab(
     var showBulkMoveSheet by remember { mutableStateOf(false) }
     var showBulkAssignSheet by remember { mutableStateOf(false) }
     var showBulkRescheduleSheet by remember { mutableStateOf(false) }
+    var showBulkPrioritySheet by remember { mutableStateOf(false) }
     var showBulkDeleteDialog by remember { mutableStateOf(false) }
     var pendingCommentTask by remember { mutableStateOf<Task?>(null) }
+    var previewTaskId by remember { mutableStateOf<String?>(null) }
+    val adaptiveSheetMaxWidth = rememberAdaptiveSheetMaxWidth()
 
     val today = com.mj.yata.util.AppClock.today
     val todayStr = com.mj.yata.util.AppClock.todayString
@@ -139,10 +163,10 @@ fun TodayTab(
     // Due-or-overdue, minus anything deferred or being waited on — see Task.isActionableToday,
     // which the home-screen widgets and the daily agenda digest share so they can't drift from
     // this screen. The container exclusions stay here since they're specific to the in-app view.
-    val todayTasks = remember(tasks, todayStr, excludedProjectIds, excludedListIds, myId) {
+    val todayTasks = remember(tasks, todayStr, excludedProjectIds, excludedListIds, myId, weekendDays, holidays, observeNonWorkingDays) {
         val nowMillis = System.currentTimeMillis()
         tasks.filter {
-            it.isActionableToday(todayStr, nowMillis, myId) &&
+            it.isActionableToday(todayStr, nowMillis, myId, weekendDays, holidays, observeNonWorkingDays) &&
                 it.projectId !in excludedProjectIds && it.listId !in excludedListIds
         }
     }
@@ -183,9 +207,20 @@ fun TodayTab(
     val unestimatedCount = remember(openTodayTasks) { com.mj.yata.util.EstimateUtils.unestimatedCount(openTodayTasks) }
 
     var activeStatFilter by remember { mutableStateOf<com.mj.yata.ui.widgets.HeroStatKind?>(null) }
-    val overdueCount = remember(progressBaseTasks) { com.mj.yata.util.AnalyticsUtils.overdueCount(progressBaseTasks) }
+    val overdueCount = remember(progressBaseTasks, today, weekendDays, holidays, observeNonWorkingDays) {
+        com.mj.yata.util.AnalyticsUtils.overdueCount(progressBaseTasks, today, weekendDays, holidays, observeNonWorkingDays)
+    }
     val highPriorityCount = remember(progressBaseTasks) { progressBaseTasks.count { !it.done && it.priority == "high" } }
-    val dueTodayCount = remember(progressBaseTasks, todayStr) { progressBaseTasks.count { !it.done && it.due == todayStr } }
+    val dueTodayCount = remember(progressBaseTasks, todayStr, weekendDays, holidays, observeNonWorkingDays) {
+        progressBaseTasks.count {
+            !it.done && it.effectiveDue(weekendDays, holidays, observeNonWorkingDays) == todayStr
+        }
+    }
+    val showHeroStats = overdueCount > 0 || highPriorityCount > 0 || dueTodayCount > 0
+
+    LaunchedEffect(showHeroStats) {
+        if (!showHeroStats) activeStatFilter = null
+    }
 
     // Flat list, no more Morning/Afternoon grouping — split into Pending/Completed instead of
     // interleaving them in raw sortOrder. Hiding completed drops both the tasks and the section
@@ -240,6 +275,98 @@ fun TodayTab(
         }
     }
 
+    @Composable
+    fun TodayHeader(modifier: Modifier = Modifier) {
+        Row(
+            modifier = modifier,
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = todayDateLabel,
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                        letterSpacing = 0.5.sp
+                    )
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = if (remainingCount == 0 && totalCount > 0) {
+                        stringResource(R.string.today_all_caught_up_bang)
+                    } else {
+                        pluralStringResource(R.plurals.today_to_go, remainingCount, remainingCount)
+                    },
+                    style = MaterialTheme.typography.displaySmall.copy(
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSynthesis = androidx.compose.ui.text.font.FontSynthesis.All,
+                        fontSize = 26.sp,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                )
+                if (plannedMinutes != null) {
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = if (unestimatedCount > 0) {
+                            stringResource(
+                                R.string.today_planned_with_unestimated,
+                                com.mj.yata.util.EstimateUtils.format(plannedMinutes),
+                                unestimatedCount
+                            )
+                        } else {
+                            stringResource(
+                                R.string.today_planned,
+                                com.mj.yata.util.EstimateUtils.format(plannedMinutes)
+                            )
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            ProgressRing(
+                progress = progress,
+                size = 56.dp,
+                strokeWidth = 5.dp
+            )
+        }
+    }
+
+    @Composable
+    fun TodayStats(modifier: Modifier = Modifier) {
+        Row(
+            modifier = modifier,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            com.mj.yata.ui.widgets.HeroStatCell(
+                label = stringResource(R.string.today_stat_overdue),
+                value = overdueCount,
+                accentColor = MaterialTheme.colorScheme.primary,
+                valueColor = if (overdueCount > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+                active = activeStatFilter == com.mj.yata.ui.widgets.HeroStatKind.OVERDUE,
+                onClick = { activeStatFilter = if (activeStatFilter == com.mj.yata.ui.widgets.HeroStatKind.OVERDUE) null else com.mj.yata.ui.widgets.HeroStatKind.OVERDUE },
+                modifier = Modifier.weight(1f)
+            )
+            com.mj.yata.ui.widgets.HeroStatCell(
+                label = stringResource(R.string.today_stat_high_priority),
+                value = highPriorityCount,
+                accentColor = MaterialTheme.colorScheme.primary,
+                active = activeStatFilter == com.mj.yata.ui.widgets.HeroStatKind.HIGH_PRIORITY,
+                onClick = { activeStatFilter = if (activeStatFilter == com.mj.yata.ui.widgets.HeroStatKind.HIGH_PRIORITY) null else com.mj.yata.ui.widgets.HeroStatKind.HIGH_PRIORITY },
+                modifier = Modifier.weight(1f)
+            )
+            com.mj.yata.ui.widgets.HeroStatCell(
+                label = stringResource(R.string.today_stat_due_today),
+                value = dueTodayCount,
+                accentColor = MaterialTheme.colorScheme.primary,
+                active = activeStatFilter == com.mj.yata.ui.widgets.HeroStatKind.DUE_TODAY,
+                onClick = { activeStatFilter = if (activeStatFilter == com.mj.yata.ui.widgets.HeroStatKind.DUE_TODAY) null else com.mj.yata.ui.widgets.HeroStatKind.DUE_TODAY },
+                modifier = Modifier.weight(1f)
+            )
+        }
+    }
+
     Box(modifier = modifier.fillMaxSize()) {
     Column(
         modifier = Modifier
@@ -258,6 +385,8 @@ fun TodayTab(
                 onDuplicate = { onBulkDuplicate(selectedIds.toList()); selectedIds.clear() },
                 onDelete = { showBulkDeleteDialog = true },
                 onAssign = { showBulkAssignSheet = true },
+                onFlag = { onBulkSetFlag(selectedIds.toList(), true); selectedIds.clear() },
+                onSetPriority = { showBulkPrioritySheet = true },
                 tagsEnabled = tagsEnabled,
                 peopleEnabled = peopleEnabled,
                 modifier = Modifier.statusBarsPadding()
@@ -274,11 +403,25 @@ fun TodayTab(
             // Gets the container too — it's the same class of control in the same bar, and
             // leaving it flat would make the one button on the left look unfinished next to the
             // filled cluster on the right.
-            com.mj.yata.ui.widgets.YataTopBarIconButton(onClick = onMenuClick) {
-                Icon(
-                    imageVector = Icons.Default.Menu,
-                    contentDescription = stringResource(R.string.cd_open_drawer)
-                )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                if (showMenuButton) {
+                    com.mj.yata.ui.widgets.YataTopBarIconButton(onClick = onMenuClick) {
+                        Icon(
+                            imageVector = Icons.Default.Menu,
+                            contentDescription = stringResource(R.string.cd_open_drawer)
+                        )
+                    }
+                } else {
+                    Spacer(modifier = Modifier.width(4.dp))
+                }
+                if (backupSyncEnabled) {
+                    com.mj.yata.ui.widgets.YataTopBarIconButton(onClick = onSyncClick, enabled = syncButtonEnabled) {
+                        SyncStatusIcon(lastSyncSucceeded = if (syncing) null else lastSyncSucceeded)
+                    }
+                }
             }
             // Icon colours come from IconButtonDefaults via LocalContentColor rather than a
             // hardcoded `tint` on each Icon, so these follow the theme (including the disabled
@@ -287,11 +430,6 @@ fun TodayTab(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                if (backupSyncEnabled) {
-                    com.mj.yata.ui.widgets.YataTopBarIconButton(onClick = onSyncClick, enabled = syncButtonEnabled) {
-                        SyncStatusIcon(lastSyncSucceeded = if (syncing) null else lastSyncSucceeded)
-                    }
-                }
                 com.mj.yata.ui.widgets.TaskSortMenuButton(
                     current = sortMode,
                     onSelect = onSortModeChange,
@@ -355,6 +493,33 @@ fun TodayTab(
             }
         }
 
+        if (useWideLayout && !selectionMode) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(24.dp)
+            ) {
+                TodayHeader(modifier = Modifier.weight(if (showHeroStats) 0.9f else 1f))
+                if (showHeroStats) {
+                    AnimatedVisibility(
+                        visible = true,
+                        enter = fadeIn(tween(YataDur.fade, easing = YataEase.emphDecel)) + scaleIn(
+                            initialScale = 0.96f,
+                            animationSpec = tween(YataDur.sheet, easing = YataEase.emphasized)
+                        ),
+                        exit = fadeOut(tween(YataDur.fade, easing = YataEase.emphAccel)) + scaleOut(
+                            targetScale = 0.96f,
+                            animationSpec = tween(YataDur.fade, easing = YataEase.emphAccel)
+                        ),
+                        modifier = Modifier.weight(1.1f)
+                    ) {
+                        TodayStats()
+                    }
+                }
+            }
+        } else {
         // 2. Header row
         Row(
             modifier = Modifier
@@ -419,37 +584,23 @@ fun TodayTab(
 
         // 2.5 Overdue/high-priority/due-today stats — tap one to filter Pending in place,
         // matching the same tap-to-filter stat row on the Person/Project/List/Tag hero sections.
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        AnimatedVisibility(
+            visible = showHeroStats,
+            enter = fadeIn(tween(YataDur.fade, easing = YataEase.emphDecel)) + scaleIn(
+                initialScale = 0.96f,
+                animationSpec = tween(YataDur.sheet, easing = YataEase.emphasized)
+            ),
+            exit = fadeOut(tween(YataDur.fade, easing = YataEase.emphAccel)) + scaleOut(
+                targetScale = 0.96f,
+                animationSpec = tween(YataDur.fade, easing = YataEase.emphAccel)
+            )
         ) {
-            com.mj.yata.ui.widgets.HeroStatCell(
-                label = stringResource(R.string.today_stat_overdue),
-                value = overdueCount,
-                accentColor = MaterialTheme.colorScheme.primary,
-                valueColor = if (overdueCount > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
-                active = activeStatFilter == com.mj.yata.ui.widgets.HeroStatKind.OVERDUE,
-                onClick = { activeStatFilter = if (activeStatFilter == com.mj.yata.ui.widgets.HeroStatKind.OVERDUE) null else com.mj.yata.ui.widgets.HeroStatKind.OVERDUE },
-                modifier = Modifier.weight(1f)
+            TodayStats(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp)
             )
-            com.mj.yata.ui.widgets.HeroStatCell(
-                label = stringResource(R.string.today_stat_high_priority),
-                value = highPriorityCount,
-                accentColor = MaterialTheme.colorScheme.primary,
-                active = activeStatFilter == com.mj.yata.ui.widgets.HeroStatKind.HIGH_PRIORITY,
-                onClick = { activeStatFilter = if (activeStatFilter == com.mj.yata.ui.widgets.HeroStatKind.HIGH_PRIORITY) null else com.mj.yata.ui.widgets.HeroStatKind.HIGH_PRIORITY },
-                modifier = Modifier.weight(1f)
-            )
-            com.mj.yata.ui.widgets.HeroStatCell(
-                label = stringResource(R.string.today_stat_due_today),
-                value = dueTodayCount,
-                accentColor = MaterialTheme.colorScheme.primary,
-                active = activeStatFilter == com.mj.yata.ui.widgets.HeroStatKind.DUE_TODAY,
-                onClick = { activeStatFilter = if (activeStatFilter == com.mj.yata.ui.widgets.HeroStatKind.DUE_TODAY) null else com.mj.yata.ui.widgets.HeroStatKind.DUE_TODAY },
-                modifier = Modifier.weight(1f)
-            )
+        }
         }
 
         activeStatFilter?.let { statFilter ->
@@ -459,12 +610,11 @@ fun TodayTab(
             )
         }
 
-        // 3. Scrollable filter chips
+        // 3. Filter chips
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .horizontalScroll(rememberScrollState())
-                .padding(horizontal = 12.dp, vertical = 8.dp),
+                .padding(horizontal = if (useWideLayout) 24.dp else 12.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -478,7 +628,16 @@ fun TodayTab(
                 FilterChip(
                     selected = isSelected,
                     onClick = { selectedFilter = filter },
-                    label = { Text(text = todayTaskFilterLabel(filter)) },
+                    modifier = Modifier.weight(1f),
+                    label = {
+                        Text(
+                            text = todayTaskFilterLabel(filter),
+                            modifier = Modifier.fillMaxWidth(),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center
+                        )
+                    },
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
                         selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer
@@ -493,13 +652,35 @@ fun TodayTab(
         val peopleById = remember(people) { people.associateBy { it.id } }
         val projectsById = remember(projects) { projects.associateBy { it.id } }
         val tagsById = remember(tags) { tags.associateBy { it.id } }
+        val visibleTasks = remember(pendingTasks, completedTasks) { pendingTasks + completedTasks }
+        val previewTask = remember(visibleTasks, previewTaskId) {
+            visibleTasks.find { it.id == previewTaskId }
+        }
+
+        LaunchedEffect(visibleTasks, useWideLayout) {
+            if (!useWideLayout) {
+                previewTaskId = null
+            } else if (previewTaskId != null && visibleTasks.none { it.id == previewTaskId }) {
+                previewTaskId = visibleTasks.firstOrNull()?.id
+            }
+        }
 
         // 4. Task list — flat, no Morning/Afternoon grouping; completed tasks sort to the end.
+        Row(modifier = Modifier.weight(1f)) {
         LazyColumn(
             modifier = Modifier.weight(1f),
-            contentPadding = PaddingValues(start = 12.dp, top = 8.dp, end = 12.dp, bottom = 88.dp)
+            contentPadding = PaddingValues(
+                start = if (useWideLayout) 24.dp else 12.dp,
+                top = 8.dp,
+                end = if (useWideLayout) 24.dp else 12.dp,
+                bottom = 88.dp
+            )
         ) {
-            if (pendingTasks.isEmpty() && completedTasks.isEmpty()) {
+            if (pendingTasks.isEmpty() && completedTasks.isEmpty() && !initialDataLoaded) {
+                item(key = "loading_shimmer") {
+                    com.mj.yata.ui.widgets.ListRowsShimmer(modifier = Modifier.fillMaxWidth())
+                }
+            } else if (pendingTasks.isEmpty() && completedTasks.isEmpty()) {
                 val filtered = selectedFilter != TodayTaskFilter.ALL || activeStatFilter != null
                 item {
                     com.mj.yata.ui.widgets.TabEmptyState(
@@ -561,6 +742,9 @@ fun TodayTab(
                                 density = taskRowDensity,
                                 horizontalPadding = 12.dp,
                                 showDueDate = false,
+                                weekendDays = weekendDays,
+                                holidays = holidays,
+                                observeNonWorkingDays = observeNonWorkingDays,
                                 modifier = Modifier
                                     .alpha(0.5f)
                                     .animateItem(fadeInSpec = yataItemFade, placementSpec = yataItemPlacement, fadeOutSpec = yataItemFade)
@@ -601,6 +785,8 @@ fun TodayTab(
                         onTaskClick = {
                             if (selectionMode) {
                                 if (selectedIds.contains(task.id)) selectedIds.remove(task.id) else selectedIds.add(task.id)
+                            } else if (useWideLayout) {
+                                previewTaskId = task.id
                             } else {
                                 onTaskClick(task.id)
                             }
@@ -616,6 +802,10 @@ fun TodayTab(
                         swipeEnabled = !selectionMode,
                         horizontalPadding = 12.dp,
                         showDueDate = true,
+                        showDueTodayBadge = false,
+                        weekendDays = weekendDays,
+                        holidays = holidays,
+                        observeNonWorkingDays = observeNonWorkingDays,
                         modifier = Modifier.animateItem(fadeInSpec = yataItemFade, placementSpec = yataItemPlacement, fadeOutSpec = yataItemFade)
                     )
                 }
@@ -636,6 +826,26 @@ fun TodayTab(
                 }
             }
         }
+            if (useWideLayout && !selectionMode) {
+                VerticalDivider(
+                    modifier = Modifier.fillMaxHeight(),
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                )
+                TaskPreviewPane(
+                    task = previewTask,
+                    list = previewTask?.listId?.let { listsById[it] },
+                    project = previewTask?.projectId?.let { projectsById[it] },
+                    people = previewTask?.assigneeIds?.mapNotNull { peopleById[it] }.orEmpty(),
+                    tags = previewTask?.effectiveTags(projectsById, tagsById).orEmpty(),
+                    onOpenTask = onTaskClick,
+                    onToggleTask = { task -> onToggleDone(task.id) },
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .widthIn(min = 320.dp, max = 380.dp),
+                    emptySubtitle = "Preview today's tasks without leaving the day list."
+                )
+            }
+        }
     }
         com.mj.yata.ui.widgets.ConfettiOverlay(trigger = confettiTrigger)
     }
@@ -644,7 +854,8 @@ fun TodayTab(
         ModalBottomSheet(
             onDismissRequest = { showBulkTagSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             com.mj.yata.ui.sheets.TaskBulkTagPickerSheet(
                 tags = tags,
@@ -658,16 +869,38 @@ fun TodayTab(
         }
     }
 
+    if (showBulkPrioritySheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showBulkPrioritySheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
+        ) {
+            com.mj.yata.ui.sheets.TaskBulkPrioritySheet(
+                onSelectPriority = { priority ->
+                    onBulkSetPriority(selectedIds.toList(), priority)
+                    selectedIds.clear()
+                    showBulkPrioritySheet = false
+                },
+                onDismiss = { showBulkPrioritySheet = false }
+            )
+        }
+    }
+
     if (showBulkAssignSheet) {
         ModalBottomSheet(
             onDismissRequest = { showBulkAssignSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             com.mj.yata.ui.sheets.TaskBulkAssignPersonSheet(
                 people = people,
                 tasks = tasks,
                 todayStr = todayStr,
+                weekendDays = weekendDays,
+                holidays = holidays,
+                observeNonWorkingDays = observeNonWorkingDays,
                 onSelectPerson = { personId ->
                     onBulkAssignPerson(selectedIds.toList(), personId)
                     selectedIds.clear()
@@ -682,7 +915,8 @@ fun TodayTab(
         ModalBottomSheet(
             onDismissRequest = { showBulkMoveSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             com.mj.yata.ui.sheets.TaskBulkMoveSheet(
                 projects = projects,
@@ -707,11 +941,12 @@ fun TodayTab(
         ModalBottomSheet(
             onDismissRequest = { showBulkRescheduleSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             com.mj.yata.ui.sheets.TaskBulkRescheduleSheet(
-                onSelectPreset = { preset ->
-                    onBulkReschedule(selectedIds.toList(), preset)
+                onSelectPreset = { preset, keepExistingTime ->
+                    onBulkReschedule(selectedIds.toList(), preset, keepExistingTime)
                     selectedIds.clear()
                     showBulkRescheduleSheet = false
                 },
@@ -758,8 +993,7 @@ private fun SyncProgressPill(
     modifier: Modifier = Modifier
 ) {
     val percent = progress.percent.coerceIn(0, 100)
-    val transition = rememberInfiniteTransition(label = "SyncWave")
-    val phase by transition.animateFloat(
+    val phase by com.mj.yata.ui.theme.rememberMotionAwareInfiniteFloat(
         initialValue = 0f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
@@ -771,11 +1005,14 @@ private fun SyncProgressPill(
     val shape = RoundedCornerShape(28.dp)
     val containerColor = MaterialTheme.colorScheme.primaryContainer
     val contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+    // Resolved here rather than inline in `.semantics { }`, which is a plain SemanticsPropertyReceiver
+    // lambda, not @Composable -- stringResource can't be called from inside it.
+    val progressCd = stringResource(R.string.today_progress_cd, progress.label, percent)
     Box(
         modifier = modifier
             .clip(shape)
             .background(containerColor)
-            .semantics { contentDescription = "${progress.label}, $percent percent" }
+            .semantics { contentDescription = progressCd }
             .padding(horizontal = 16.dp, vertical = 10.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -791,10 +1028,11 @@ private fun SyncProgressPill(
                         .padding(end = 8.dp),
                     style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
                     color = contentColor,
-                    maxLines = 1
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = "$percent%",
+                    text = stringResource(R.string.today_progress_percent, percent),
                     style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                     color = contentColor
                 )
@@ -868,7 +1106,17 @@ private fun SyncStatusIcon(lastSyncSucceeded: Boolean?) {
             imageVector = Icons.Default.CloudSync,
             contentDescription = stringResource(R.string.cd_sync_now)
         )
-        lastSyncSucceeded?.let { success ->
+        // Pops in with a slight overshoot rather than appearing instantly -- this badge lands
+        // right after a sync finishes, in the one spot on Today that's visible at a glance, so
+        // it's worth the badge-arriving feel instead of a flat cut.
+        AnimatedVisibility(
+            visible = lastSyncSucceeded != null,
+            modifier = Modifier.align(Alignment.TopEnd),
+            enter = scaleIn(tween(YataDur.micro, easing = YataEase.spring)) +
+                fadeIn(tween(YataDur.micro)),
+            exit = scaleOut(tween(YataDur.micro)) + fadeOut(tween(YataDur.micro))
+        ) {
+            val success = lastSyncSucceeded == true
             val containerColor = if (success) {
                 MaterialTheme.colorScheme.primaryContainer
             } else {
@@ -884,7 +1132,6 @@ private fun SyncStatusIcon(lastSyncSucceeded: Boolean?) {
             )
             Box(
                 modifier = Modifier
-                    .align(Alignment.TopEnd)
                     .offset(x = 3.dp, y = (-3).dp)
                     .size(12.dp)
                     .clip(CircleShape)

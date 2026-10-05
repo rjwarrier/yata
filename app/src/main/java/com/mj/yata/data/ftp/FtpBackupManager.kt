@@ -11,6 +11,11 @@ import com.mj.yata.data.sync.SnapshotSyncEngine
 import com.mj.yata.domain.model.BackupSummary
 import com.mj.yata.domain.model.SyncLockBusyException
 import com.mj.yata.domain.model.SyncLockInfo
+import com.mj.yata.domain.sync.LockableSyncTransport
+import com.mj.yata.domain.sync.RestorePoint
+import com.mj.yata.domain.sync.SyncRunOptions
+import com.mj.yata.domain.sync.SyncRunReport
+import com.mj.yata.domain.sync.restorePointFromHistoryName
 import com.mj.yata.util.BackupCrypto
 import com.mj.yata.util.JsonExporter
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -60,7 +65,7 @@ class FtpBackupManager @Inject constructor(
     private val credentialsStore: RemoteBackupCredentialsStore,
     private val snapshotSyncEngine: SnapshotSyncEngine,
     private val recoveryBackupManager: RecoveryBackupManager
-) {
+) : LockableSyncTransport {
     companion object {
         private const val TAG = "FtpBackupManager"
         private const val FILENAME_PREFIX = "yata_backup_"
@@ -102,7 +107,7 @@ class FtpBackupManager @Inject constructor(
         }
     }
 
-    suspend fun clearSyncLock(): Result<Unit> = sessionMutex.withLock {
+    override suspend fun clearSyncLock(): Result<Unit> = sessionMutex.withLock {
         withContext(Dispatchers.IO) {
             try {
                 val remoteDir = userPreferences.sftpRemoteDirFlow.first()
@@ -133,14 +138,11 @@ class FtpBackupManager @Inject constructor(
                 val jsonBytes = primaryJson.toString(2).toByteArray(Charsets.UTF_8)
                 val zipped = zip(jsonBytes)
                 val backupPassphrase = credentialsStore.backupPassphrase
-                val bytes = if (backupPassphrase != null) {
-                    BackupCrypto.encrypt(zipped, backupPassphrase)
-                } else {
-                    zipped
-                }
+                    ?: throw IllegalStateException("Set a backup passphrase before publishing FTP backup data")
+                val bytes = BackupCrypto.encrypt(zipped, backupPassphrase)
                 val filename = FILENAME_PREFIX +
                     SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date()) +
-                    (if (backupPassphrase != null) ENCRYPTED_SUFFIX else FILENAME_SUFFIX)
+                    ENCRYPTED_SUFFIX
 
                 // The transfer runs NonCancellable once it has started. Cancelling mid-upload
                 // (screen closed, scope torn down) drops the socket without a TLS shutdown, and
@@ -175,9 +177,13 @@ class FtpBackupManager @Inject constructor(
     }
 
     /** Full two-way sync using only generic FTP/FTPS file operations. */
-    suspend fun syncNow(progress: (Int, String) -> Unit = { _, _ -> }): Result<Unit> = sessionMutex.withLock {
+    override suspend fun syncNow(
+        progress: (Int, String) -> Unit,
+        options: SyncRunOptions
+    ): Result<SyncRunReport> = sessionMutex.withLock {
         withContext(Dispatchers.IO) {
             try {
+                var conflictsResolved = 0
                 val remoteDir = userPreferences.sftpRemoteDirFlow.first()
                 val keepCount = userPreferences.sftpKeepCountFlow.first()
                 val host = userPreferences.sftpHostFlow.first()
@@ -211,7 +217,9 @@ class FtpBackupManager @Inject constructor(
                                 remoteBytes = remote.jsonBytes,
                                 scopeKey = scopeKey,
                                 remoteIsRecovery =
-                                    remote.jsonBytes != null && !remote.canonicalHeadValid
+                                    remote.jsonBytes != null && !remote.canonicalHeadValid,
+                                allowInitialJoinMerge = options.allowInitialJoinMerge,
+                                allowEmptyLocalOverwrite = options.allowEmptyLocalOverwrite
                             )
                             val publish =
                                 prepared.remoteNeedsPublish || !remote.canonicalHeadValid
@@ -233,14 +241,13 @@ class FtpBackupManager @Inject constructor(
                                 progress(76, "Already up to date")
                             }
                             progress(86, "Applying updates")
-                            snapshotSyncEngine.commit(prepared)
+                            conflictsResolved = snapshotSyncEngine.commit(prepared)
 
                             if (encoded != null) {
                                 progress(92, "Saving backup copy")
-                                val encrypted = credentialsStore.backupPassphrase != null
                                 val backupName = FILENAME_PREFIX +
                                     SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date()) +
-                                    (if (encrypted) ENCRYPTED_SUFFIX else FILENAME_SUFFIX)
+                                    ENCRYPTED_SUFFIX
                                 publishNewFile(client, backupName, encoded)
                                 pruneOldBackups(client, remoteDir, keepCount)
                             }
@@ -253,7 +260,7 @@ class FtpBackupManager @Inject constructor(
                 }
 
                 userPreferences.setSftpLastBackupAt(System.currentTimeMillis())
-                Result.success(Unit)
+                Result.success(SyncRunReport(conflictsResolved = conflictsResolved))
             } catch (e: Exception) {
                 Log.w(TAG, "syncNow failed", e)
                 Result.failure(e)
@@ -318,7 +325,8 @@ class FtpBackupManager @Inject constructor(
     private fun encodePayload(jsonBytes: ByteArray): ByteArray {
         val zipped = zip(jsonBytes)
         val passphrase = credentialsStore.backupPassphrase
-        return if (passphrase == null) zipped else BackupCrypto.encrypt(zipped, passphrase)
+            ?: throw IllegalStateException("Set a backup passphrase before publishing FTP sync data")
+        return BackupCrypto.encrypt(zipped, passphrase)
     }
 
     private fun decodePayload(bytes: ByteArray): ByteArray {
@@ -377,6 +385,9 @@ class FtpBackupManager @Inject constructor(
 
         acceptIfValid(SYNC_FILENAME, currentPayload)?.let { return it }
 
+        val previousPayload = readRemoteBytesOrNull(client, SYNC_PREVIOUS_FILENAME)
+        acceptIfValid(SYNC_PREVIOUS_FILENAME, previousPayload)?.let { return it }
+
         listHistoryBackupNames(client).forEach { filename ->
             // The listing itself observed a candidate. If it disappears before RETR, fail closed
             // rather than reclassifying a raced/unstable remote as a brand-new empty server.
@@ -384,9 +395,6 @@ class FtpBackupManager @Inject constructor(
             val payload = readRemoteBytesOrNull(client, filename)
             acceptIfValid(filename, payload)?.let { return it }
         }
-
-        val previousPayload = readRemoteBytesOrNull(client, SYNC_PREVIOUS_FILENAME)
-        acceptIfValid(SYNC_PREVIOUS_FILENAME, previousPayload)?.let { return it }
 
         check(!sawCandidate) {
             "The server contains sync/backup files, but none is a valid YATA snapshot"
@@ -492,7 +500,7 @@ class FtpBackupManager @Inject constructor(
 
     private fun acquireSyncLock(client: FTPClient): SyncLease {
         if (!client.makeDirectory(SYNC_LOCK_DIR)) {
-            val leaseInfo = readLeaseInfo(client)
+            val leaseInfo = readLeaseInfoOrEmpty(client)
             val directoryMillis = runCatching {
                 client.mlistFile(SYNC_LOCK_DIR)?.timestamp?.timeInMillis
             }.getOrNull()
@@ -560,6 +568,14 @@ class FtpBackupManager @Inject constructor(
             ?.toString(Charsets.UTF_8)
             ?.let(::parseLeaseInfo)
             ?: RemoteLeaseInfo()
+
+    private fun readLeaseInfoOrEmpty(client: FTPClient): RemoteLeaseInfo =
+        try {
+            readLeaseInfo(client)
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not read FTP sync lease; falling back to lock directory age", e)
+            RemoteLeaseInfo()
+        }
 
     private fun releaseSyncLock(client: FTPClient, lease: SyncLease) {
         try {
@@ -636,6 +652,12 @@ class FtpBackupManager @Inject constructor(
         name.startsWith(FILENAME_PREFIX) &&
             (name.endsWith(FILENAME_SUFFIX) || name.endsWith(ENCRYPTED_SUFFIX))
 
+    private fun requireRestoreFilename(name: String) {
+        require(name == name.substringAfterLast('/')) { "Invalid backup filename" }
+        require('\\' !in name && ".." !in name) { "Invalid backup filename" }
+        require(isHistoryBackupName(name)) { "Unsupported backup filename" }
+    }
+
     private fun listHistoryBackupNames(client: FTPClient): List<String> {
         val files = client.listFiles()
         check(FTPReply.isPositiveCompletion(client.replyCode)) {
@@ -667,6 +689,11 @@ class FtpBackupManager @Inject constructor(
         }
     }
 
+    // The rotated history file list is already small (retention-bounded), so limit is a
+    // client-side trim rather than something worth threading into the directory listing itself.
+    override suspend fun listRestorePoints(limit: Int): Result<List<RestorePoint>> =
+        listBackups().map { names -> names.take(limit).map(::restorePointFromHistoryName) }
+
     suspend fun restoreBackup(filename: String): Result<Unit> = sessionMutex.withLock {
         withContext(Dispatchers.IO) {
             try {
@@ -690,6 +717,8 @@ class FtpBackupManager @Inject constructor(
         }
     }
 
+    override suspend fun restore(id: String): Result<Unit> = restoreBackup(id)
+
     /**
      * Reads a backup's contents without importing it, so the confirm dialog can say what restoring
      * would actually bring back. Same download-and-decode path as [restoreBackup] — a backup that
@@ -707,6 +736,8 @@ class FtpBackupManager @Inject constructor(
         }
     }
 
+    override suspend fun inspect(id: String): Result<BackupSummary> = inspectBackup(id)
+
     /** Read-only access for comparing a server backup with current local data. */
     suspend fun readBackupJson(filename: String): Result<ByteArray> = sessionMutex.withLock {
         withContext(Dispatchers.IO) {
@@ -719,8 +750,15 @@ class FtpBackupManager @Inject constructor(
         }
     }
 
+    override suspend fun readSnapshot(id: String): Result<ByteArray> = readBackupJson(id)
+
+    override suspend fun isConfigured(): Boolean =
+        userPreferences.sftpHostFlow.first().isNotBlank() &&
+            !credentialsStore.backupPassphrase.isNullOrBlank()
+
     /** Downloads, verifies length, decrypts if needed, unzips if needed. */
     private suspend fun fetchBackupJson(filename: String): ByteArray {
+        requireRestoreFilename(filename)
         val remoteDir = userPreferences.sftpRemoteDirFlow.first()
         val client = connect()
         val bytes = try {
@@ -766,12 +804,17 @@ class FtpBackupManager @Inject constructor(
         val port = userPreferences.sftpPortFlow.first()
         val username = userPreferences.sftpUsernameFlow.first()
         val useTls = userPreferences.ftpUseTlsFlow.first()
+        val strictTls = userPreferences.ftpStrictTlsFlow.first()
+        val backupPassphrase = credentialsStore.backupPassphrase
 
         if (host.isBlank() || username.isBlank()) {
             throw SftpNotConfiguredException("FTP host and username must be set")
         }
         val password = credentialsStore.password
             ?: throw SftpNotConfiguredException("No FTP password saved")
+        if (!useTls && backupPassphrase.isNullOrBlank()) {
+            throw IllegalStateException("Plain FTP requires a backup passphrase so backup contents are encrypted")
+        }
 
         // Explicit FTPS (AUTH TLS on the plain control port) rather than implicit FTPS (a
         // dedicated TLS-from-the-start port) -- explicit is what virtually every FTPS server
@@ -779,11 +822,14 @@ class FtpBackupManager @Inject constructor(
         // different port that's uncommon on self-hosted setups.
         val client: FTPClient = if (useTls) {
             FTPSClient(false).apply {
-                // Commons Net's default trust manager only checks certificate dates. Install the
-                // platform CA trust manager explicitly, but do not enable endpoint identification:
-                // many self-hosted FTPS servers have certificates with no matching SAN, and the
-                // Settings screen exposes only "use FTPS" rather than a separate strict TLS mode.
+                // Commons Net's default trust manager only checks certificate dates, not the
+                // hostname -- install the platform CA trust manager explicitly either way, but
+                // endpoint identification (does the cert's name actually match this host?) is only
+                // turned on when the user opts into "Strict TLS": many self-hosted FTPS servers
+                // have certificates with no matching SAN, and defaulting this on would silently
+                // break those backups rather than surfacing a clear one-time choice.
                 setTrustManager(platformTrustManager())
+                if (strictTls) setEndpointCheckingEnabled(true)
             }
         } else {
             FTPClient()
@@ -824,7 +870,7 @@ class FtpBackupManager @Inject constructor(
                 // file. With an encrypted payload the file is protected in transit and at rest by
                 // its own AES-GCM layer, so the data channel carries ciphertext either way; the
                 // login still goes over TLS on the control channel.
-                client.execPROT(if (credentialsStore.backupPassphrase != null) "C" else "P")
+                client.execPROT(if (backupPassphrase != null) "C" else "P")
             }
             configurePassiveDataMode(client)
             client.setFileType(FTP.BINARY_FILE_TYPE)
