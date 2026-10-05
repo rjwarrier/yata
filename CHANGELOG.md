@@ -17,6 +17,30 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ### Added
 - A "Support Dev" button in Settings → Help & About opens the developer's Buy Me a Coffee page.
+- Snoozing or rescheduling tasks can be undone: an Undo snackbar puts back the previous date,
+  time and postponement count, while keeping any other edits made in the meantime.
+- Snooze and reschedule choices show the exact date and time they'll move a task to, including
+  which day "Next business day" lands on after weekends and holidays.
+- Bulk reschedule can keep each task's own time, so only the date moves.
+- The repeat editor previews the next three dates a rule produces, or says when the series ends.
+
+### Fixed
+- "Tonight" can no longer be picked once tonight's snooze time has passed, which used to leave
+  the task already overdue.
+- Editing a task's repeat rule from its detail screen now starts from the task's due date rather
+  than today.
+- Restoring or syncing a backup with more than about 1,000 tasks no longer fails on Android 11
+  and older, which cap how many items a single database lookup can name.
+
+### Changed
+- Saving, completing or deleting a task no longer stalls the UI on disk writes, and large task
+  lists stay smoother after each change: task data is now prepared off the main thread, the app
+  no longer loads everything twice at launch, and changing one setting no longer makes every
+  screen recompute.
+- Typing in the new-task box is noticeably lighter: smart-add recognition does about an eighth of
+  the work it used to on each keystroke.
+- Snooze, bulk edits and duplicate act on just the selected tasks instead of reloading the whole
+  task list first, and restoring or syncing a large backup runs far fewer database lookups.
 
 ## [0.95.1] - 2026-09-14
 

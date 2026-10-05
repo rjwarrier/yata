@@ -31,6 +31,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
@@ -61,6 +62,7 @@ import com.mj.yata.util.export.TaskTransferImporter
 import com.mj.yata.util.export.isTaskTransferUri
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
@@ -78,6 +80,7 @@ class MainActivity : AppCompatActivity() {
     @Inject lateinit var taskTransferImporter: TaskTransferImporter
     @Inject lateinit var userPreferences: UserPreferences
     @Inject lateinit var errorBus: com.mj.yata.ui.error.AppErrorBus
+    @Inject lateinit var undoBus: com.mj.yata.ui.undo.AppUndoBus
 
     private val notificationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -362,6 +365,8 @@ class MainActivity : AppCompatActivity() {
                 .collectAsState(initial = com.mj.yata.domain.model.SwipeAction.COMPLETE)
             val swipeLeftAction by userPreferences.swipeLeftActionFlow
                 .collectAsState(initial = com.mj.yata.domain.model.SwipeAction.DELETE)
+            val quickSnoozeSettings by userPreferences.quickSnoozeSettingsFlow
+                .collectAsState(initial = com.mj.yata.domain.model.QuickSnoozeSettings())
 
             val appLockEnabledPref by userPreferences.appLockEnabledFlow.collectAsState(initial = false)
             LaunchedEffect(appLockEnabledPref) {
@@ -409,6 +414,7 @@ class MainActivity : AppCompatActivity() {
                 com.mj.yata.ui.theme.LocalTaskCardBackground provides taskCardBackground,
                 com.mj.yata.ui.theme.LocalSwipeRightAction provides swipeRightAction,
                 com.mj.yata.ui.theme.LocalSwipeLeftAction provides swipeLeftAction,
+                com.mj.yata.ui.widgets.LocalQuickSnoozeSettings provides quickSnoozeSettings,
                 com.mj.yata.ui.theme.LocalReduceMotion provides reduceMotionEnabled
             ) {
                 YataTheme(
@@ -576,16 +582,38 @@ class MainActivity : AppCompatActivity() {
                             }
                         }
 
+                        // Undo offers for snooze/reschedule (see AppUndoBus). Shown in the top
+                        // screen's own snackbar host where it has registered one, falling back to
+                        // the activity-wide host above. collectLatest: a newer offer replaces an
+                        // older one still on screen, whose window then simply lapses.
+                        val undoHosts = remember { com.mj.yata.ui.widgets.UndoSnackbarHosts() }
+                        val undoWindowSecondsState = rememberUpdatedState(
+                            com.mj.yata.ui.widgets.LocalUndoWindowSeconds.current
+                        )
+                        LaunchedEffect(Unit) {
+                            undoBus.requests.collectLatest { request ->
+                                val host = undoHosts.top ?: errorHostState
+                                val message = resources.getQuantityString(
+                                    request.messageRes, request.count, request.count
+                                )
+                                if (com.mj.yata.ui.widgets.showUndoSnackbar(host, message, undoWindowSecondsState.value)) {
+                                    request.undo()
+                                }
+                            }
+                        }
+
                         Box(modifier = Modifier.fillMaxSize()) {
-                            AppNavigation(
-                                navController      = navController,
-                                onExportRequested  = { exportLauncher.launch("yata_backup.json") },
-                                onImportRequested  = { importLauncher.launch(arrayOf("application/json")) },
-                                onImportPlainTextRequested = { plainTextImportLauncher.launch(arrayOf("text/csv", "text/comma-separated-values", "text/plain", "*/*")) },
-                                onExportCsvRequested = { exportCsvLauncher.launch("yata_tasks.csv") },
-                                onExportIcsRequested = { icsExportLauncher.launch("yata_calendar.ics") },
-                                taskTransferImporter = taskTransferImporter
-                            )
+                            CompositionLocalProvider(com.mj.yata.ui.widgets.LocalUndoSnackbarHosts provides undoHosts) {
+                                AppNavigation(
+                                    navController      = navController,
+                                    onExportRequested  = { exportLauncher.launch("yata_backup.json") },
+                                    onImportRequested  = { importLauncher.launch(arrayOf("application/json")) },
+                                    onImportPlainTextRequested = { plainTextImportLauncher.launch(arrayOf("text/csv", "text/comma-separated-values", "text/plain", "*/*")) },
+                                    onExportCsvRequested = { exportCsvLauncher.launch("yata_tasks.csv") },
+                                    onExportIcsRequested = { icsExportLauncher.launch("yata_calendar.ics") },
+                                    taskTransferImporter = taskTransferImporter
+                                )
+                            }
                             SnackbarHost(
                                 hostState = errorHostState,
                                 modifier = Modifier.align(Alignment.BottomCenter)

@@ -21,6 +21,10 @@ interface PersonDao {
     @Query("SELECT * FROM people WHERE id = :id")
     fun getByIdDirect(id: String): PersonEntity?
 
+    /** Which of [ids] exist — batch form of [getByIdDirect] != null, for sanitizing a write. */
+    @Query("SELECT id FROM people WHERE id IN (:ids)")
+    suspend fun getExistingIds(ids: List<String>): List<String>
+
     @Upsert
     suspend fun insert(person: PersonEntity)
 
@@ -50,6 +54,10 @@ interface ProjectDao {
 
     @Query("SELECT * FROM projects WHERE id = :id")
     fun getByIdDirect(id: String): ProjectEntity?
+
+    /** Which of [ids] exist — batch form of [getByIdDirect] != null, for sanitizing a write. */
+    @Query("SELECT id FROM projects WHERE id IN (:ids)")
+    suspend fun getExistingIds(ids: List<String>): List<String>
 
     @Upsert
     suspend fun insert(project: ProjectEntity)
@@ -81,6 +89,10 @@ interface ListDao {
     @Query("SELECT * FROM lists WHERE id = :id")
     fun getByIdDirect(id: String): ListEntity?
 
+    /** Which of [ids] exist — batch form of [getByIdDirect] != null, for sanitizing a write. */
+    @Query("SELECT id FROM lists WHERE id IN (:ids)")
+    suspend fun getExistingIds(ids: List<String>): List<String>
+
     @Upsert
     suspend fun insert(list: ListEntity)
 
@@ -104,6 +116,10 @@ interface TagDao {
 
     @Query("SELECT * FROM tags WHERE id = :id")
     fun getByIdDirect(id: String): TagEntity?
+
+    /** Which of [ids] exist — batch form of [getByIdDirect] != null, for sanitizing a write. */
+    @Query("SELECT id FROM tags WHERE id IN (:ids)")
+    suspend fun getExistingIds(ids: List<String>): List<String>
 
     @Upsert
     suspend fun insert(tag: TagEntity)
@@ -197,6 +213,12 @@ interface TaskDao {
     @Transaction
     @Query("SELECT * FROM tasks WHERE id = :id")
     fun getTaskWithRelationsById(id: String): Flow<TaskDetailWithRelations?>
+
+    /** The live (not trashed, not archived) tasks among [ids] — the same rows [getTasksWithRelations]
+     * would return for them, without loading every other task to find them. */
+    @Transaction
+    @Query("SELECT * FROM tasks WHERE id IN (:ids) AND deletedAt IS NULL AND archived = 0")
+    suspend fun getLiveTasksWithRelationsByIds(ids: List<String>): List<TaskWithRelations>
 
     @Transaction
     @Query("SELECT * FROM tasks WHERE listId = :listId AND deletedAt IS NULL AND archived = 0 ORDER BY sortOrder ASC")

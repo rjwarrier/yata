@@ -1623,4 +1623,11 @@
     <string name="action_reopen">Rouvrir</string>
     <string name="action_complete">Terminer</string>
     <string name="action_open">Ouvrir</string>
+    <plurals name="tasks_rescheduled">
+        <item quantity="one">Tâche replanifiée</item>
+        <item quantity="other">%1$d tâches replanifiées</item>
+    </plurals>
+    <string name="bulk_reschedule_keep_time">Conserver l’heure de chaque tâche</string>
+    <string name="recurrence_preview_next">Prochaines : %1$s</string>
+    <string name="recurrence_preview_none">Ne se répète plus après celle-ci</string>
 </resources>

@@ -3,6 +3,8 @@ package com.mj.yata.ui.widgets
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.staticCompositionLocalOf
 import kotlinx.coroutines.withTimeoutOrNull
 
@@ -20,6 +22,43 @@ const val UNDO_ACTION_LABEL = "Undo"
 val LocalUndoWindowSeconds = staticCompositionLocalOf { DEFAULT_UNDO_WINDOW_SECONDS }
 
 const val DEFAULT_UNDO_WINDOW_SECONDS = 4
+
+/**
+ * The snackbar hosts of the screens currently composed, newest on top, so an app-level undo offer
+ * ([com.mj.yata.ui.undo.AppUndoBus]) lands in the visible screen's own Scaffold host — positioned
+ * above its bottom bar and FAB — rather than in one activity-wide host that would sit over them.
+ * Only touched from composition and the main-thread collector, so it needs no locking.
+ */
+class UndoSnackbarHosts {
+    private val hosts = mutableListOf<SnackbarHostState>()
+
+    val top: SnackbarHostState? get() = hosts.lastOrNull()
+
+    fun push(host: SnackbarHostState) {
+        hosts.remove(host)
+        hosts.add(host)
+    }
+
+    fun remove(host: SnackbarHostState) {
+        hosts.remove(host)
+    }
+}
+
+val LocalUndoSnackbarHosts = staticCompositionLocalOf<UndoSnackbarHosts?> { null }
+
+/**
+ * Makes [host] the target for app-level undo offers while this screen is composed. During a
+ * navigation transition both screens are composed briefly; the destination registers last, so it
+ * is the one on top.
+ */
+@Composable
+fun RegisterUndoSnackbarHost(host: SnackbarHostState) {
+    val hosts = LocalUndoSnackbarHosts.current ?: return
+    DisposableEffect(hosts, host) {
+        hosts.push(host)
+        onDispose { hosts.remove(host) }
+    }
+}
 
 /**
  * Shows a delete-undo snackbar and suspends until the user either undoes it or the window

@@ -1622,4 +1622,12 @@
     <string name="action_reopen">Redeschide</string>
     <string name="action_complete">Finalizează</string>
     <string name="action_open">Deschide</string>
+    <plurals name="tasks_rescheduled">
+        <item quantity="one">Sarcină reprogramată</item>
+        <item quantity="few">%1$d sarcini reprogramate</item>
+        <item quantity="other">%1$d de sarcini reprogramate</item>
+    </plurals>
+    <string name="bulk_reschedule_keep_time">Păstrează ora fiecărei sarcini</string>
+    <string name="recurrence_preview_next">Următoarele: %1$s</string>
+    <string name="recurrence_preview_none">Nu se mai repetă după aceasta</string>
 </resources>

@@ -35,8 +35,17 @@ internal class ParserContext(
 
     fun firstObstacleFrom(from: Int): Int? = claims.firstObstacleFrom(from)
 
+    /**
+     * First unclaimed whole-word occurrence of [word]. [wordRegex] must build a regex that matches
+     * [word] as a literal (every caller passes the parser's cached `literalWordRegex`), which is
+     * what makes the `contains` pre-check safe: such a regex, case-insensitive over ASCII, can
+     * only match where `contains(ignoreCase = true)` — the more lenient test — already finds it.
+     * The date, recurrence and alias rules call this for hundreds of multilingual words per
+     * parse, almost none of which are in any given title, and the parse runs on every keystroke
+     * of the new-task sheet; skipping the regex scan for absent words is most of its cost.
+     */
     fun firstFreeWord(word: String, wordRegex: (String) -> Regex): MatchResult? =
-        firstFreeMatch(wordRegex(word))
+        if (raw.contains(word, ignoreCase = true)) firstFreeMatch(wordRegex(word)) else null
 
     fun expandedSpans(prepositionRegex: Regex): List<QuickAddHighlightSpan> =
         claims.expandedSpans(raw, prepositionRegex)

@@ -1621,4 +1621,11 @@
     <string name="action_reopen">Öppna igen</string>
     <string name="action_complete">Slutför</string>
     <string name="action_open">Öppna</string>
+    <plurals name="tasks_rescheduled">
+        <item quantity="one">Uppgift omplanerad</item>
+        <item quantity="other">%1$d uppgifter omplanerade</item>
+    </plurals>
+    <string name="bulk_reschedule_keep_time">Behåll varje uppgifts tid</string>
+    <string name="recurrence_preview_next">Nästa: %1$s</string>
+    <string name="recurrence_preview_none">Upprepas inte efter denna</string>
 </resources>

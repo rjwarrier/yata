@@ -1621,4 +1621,11 @@
     <string name="action_reopen">Buka kembali</string>
     <string name="action_complete">Selesai</string>
     <string name="action_open">Buka</string>
+    <plurals name="tasks_rescheduled">
+        <item quantity="one">Tugas dijadwalkan ulang</item>
+        <item quantity="other">%1$d tugas dijadwalkan ulang</item>
+    </plurals>
+    <string name="bulk_reschedule_keep_time">Pertahankan waktu setiap tugas</string>
+    <string name="recurrence_preview_next">Berikutnya: %1$s</string>
+    <string name="recurrence_preview_none">Tidak berulang lagi setelah ini</string>
 </resources>

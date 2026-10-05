@@ -66,6 +66,8 @@ fun NextDaysScreen(
     val scope = rememberCoroutineScope()
     val undoWindowSeconds = com.mj.yata.ui.widgets.LocalUndoWindowSeconds.current
     val snackbarHostState = remember { SnackbarHostState() }
+    // Snooze and bulk-reschedule Undo offers (AppUndoBus) land here while this screen is on top.
+    com.mj.yata.ui.widgets.RegisterUndoSnackbarHost(snackbarHostState)
     val context = androidx.compose.ui.platform.LocalContext.current
 
     fun deleteTaskWithUndo(task: Task) {

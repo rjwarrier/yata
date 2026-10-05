@@ -1618,4 +1618,11 @@
     <string name="action_reopen">మళ్లీ తెరవండి</string>
     <string name="action_complete">పూర్తి చేయండి</string>
     <string name="action_open">తెరవండి</string>
+    <plurals name="tasks_rescheduled">
+        <item quantity="one">టాస్క్ మళ్లీ షెడ్యూల్ చేయబడింది</item>
+        <item quantity="other">%1$d టాస్క్‌లు మళ్లీ షెడ్యూల్ చేయబడ్డాయి</item>
+    </plurals>
+    <string name="bulk_reschedule_keep_time">ప్రతి టాస్క్ సమయాన్ని అలాగే ఉంచండి</string>
+    <string name="recurrence_preview_next">తదుపరి: %1$s</string>
+    <string name="recurrence_preview_none">దీని తర్వాత మళ్లీ పునరావృతం కాదు</string>
 </resources>

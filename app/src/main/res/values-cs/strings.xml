@@ -1623,4 +1623,13 @@
     <string name="action_reopen">Znovu otevřít</string>
     <string name="action_complete">Dokončit</string>
     <string name="action_open">Otevřít</string>
+    <plurals name="tasks_rescheduled">
+        <item quantity="one">Úkol přeplánován</item>
+        <item quantity="few">%1$d úkoly přeplánovány</item>
+        <item quantity="many">%1$d úkolu přeplánováno</item>
+        <item quantity="other">%1$d úkolů přeplánováno</item>
+    </plurals>
+    <string name="bulk_reschedule_keep_time">Zachovat čas každého úkolu</string>
+    <string name="recurrence_preview_next">Další: %1$s</string>
+    <string name="recurrence_preview_none">Po tomto se už neopakuje</string>
 </resources>

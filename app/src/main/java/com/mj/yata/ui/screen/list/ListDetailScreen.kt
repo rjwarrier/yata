@@ -101,6 +101,8 @@ fun ListDetailScreen(
     var exportInProgress by remember { mutableStateOf(false) }
     val longTaskLinkWarningGate = com.mj.yata.util.export.rememberLongTaskLinkWarningGate()
     val snackbarHostState = remember { SnackbarHostState() }
+    // Snooze and bulk-reschedule Undo offers (AppUndoBus) land here while this screen is on top.
+    com.mj.yata.ui.widgets.RegisterUndoSnackbarHost(snackbarHostState)
 
     // A list's tasks are already scoped to this one list, so the export's subheading groups
     // by project instead (a list name heading would be redundant on every group here) —
@@ -795,8 +797,8 @@ fun ListDetailScreen(
             sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             TaskBulkRescheduleSheet(
-                onSelectPreset = { preset ->
-                    viewModel.bulkRescheduleTasks(selectedIds.toList(), preset)
+                onSelectPreset = { preset, keepExistingTime ->
+                    viewModel.bulkRescheduleTasks(selectedIds.toList(), preset, keepExistingTime)
                     selectedIds.clear()
                     showBulkRescheduleSheet = false
                 },

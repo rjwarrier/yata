@@ -117,6 +117,8 @@ fun PersonDetailScreen(
     var exportInProgress by remember { mutableStateOf(false) }
     val longTaskLinkWarningGate = com.mj.yata.util.export.rememberLongTaskLinkWarningGate()
     val snackbarHostState = remember { SnackbarHostState() }
+    // Snooze and bulk-reschedule Undo offers (AppUndoBus) land here while this screen is on top.
+    com.mj.yata.ui.widgets.RegisterUndoSnackbarHost(snackbarHostState)
     val projectsById = remember(projects) { projects.associateBy { it.id } }
     val listsById = remember(lists) { lists.associateBy { it.id } }
     val tagsById = remember(tags) { tags.associateBy { it.id } }
@@ -985,8 +987,8 @@ fun PersonDetailScreen(
             sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             TaskBulkRescheduleSheet(
-                onSelectPreset = { preset ->
-                    viewModel.bulkRescheduleTasks(selectedIds.toList(), preset)
+                onSelectPreset = { preset, keepExistingTime ->
+                    viewModel.bulkRescheduleTasks(selectedIds.toList(), preset, keepExistingTime)
                     selectedIds.clear()
                     showBulkRescheduleSheet = false
                 },

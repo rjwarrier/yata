@@ -1490,6 +1490,8 @@ private class FakeYataRepository : YataRepository {
     override fun getTasksForList(listId: String): Flow<List<Task>> = TODO()
     override fun getTasksForProject(projectId: String): Flow<List<Task>> = TODO()
     override fun getTasksForPerson(personId: String): Flow<List<Task>> = TODO()
+    override suspend fun getTasksByIds(ids: Collection<String>): List<Task> =
+        tasksFlow.value.filter { it.id in ids }
     override suspend fun getTaskStreak(taskId: String): Int = TODO()
 
     override suspend fun upsertTask(task: Task, notify: Boolean, resyncReminder: Boolean) {

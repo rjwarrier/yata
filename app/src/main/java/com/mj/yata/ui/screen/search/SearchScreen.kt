@@ -300,13 +300,19 @@ internal fun parseSearchQuery(
     return ParsedSearchQuery(matched.distinct(), entities, residual)
 }
 
+private val SEARCH_TERM_SEPARATOR = Regex("\\s+")
+
+/** [query] split into lowercased terms once per search, rather than re-split (with a freshly
+ * compiled Regex) and re-lowercased inside [matchesSearchText] for every task it's tested on. */
+private fun searchTermsOf(query: String): List<String> =
+    query.split(SEARCH_TERM_SEPARATOR).filter { it.isNotBlank() }.map { it.lowercase() }
+
 private fun Task.matchesSearchText(
-    query: String,
+    terms: List<String>,
     peopleById: Map<String, Person>,
     tagsById: Map<String, Tag>,
     projectsById: Map<String, Project>
 ): Boolean {
-    val terms = query.split(Regex("\\s+")).filter { it.isNotBlank() }
     if (terms.isEmpty()) return true
     val haystack = buildString {
         append(title).append(' ')
@@ -315,7 +321,7 @@ private fun Task.matchesSearchText(
         effectiveTags(projectsById, tagsById).forEach { append(it.name).append(' ') }
         subtasks.forEach { append(it.title).append(' ') }
     }.lowercase()
-    return terms.all { haystack.contains(it.lowercase()) }
+    return terms.all { haystack.contains(it) }
 }
 
 /** A recognized-entity chip (tag/person/project/list/priority/flag) — always "on" while shown,
@@ -453,6 +459,8 @@ fun SearchScreen(
     val scope = rememberCoroutineScope()
     val undoWindowSeconds = com.mj.yata.ui.widgets.LocalUndoWindowSeconds.current
     val snackbarHostState = remember { SnackbarHostState() }
+    // Snooze and bulk-reschedule Undo offers (AppUndoBus) land here while this screen is on top.
+    com.mj.yata.ui.widgets.RegisterUndoSnackbarHost(snackbarHostState)
     val context = androidx.compose.ui.platform.LocalContext.current
 
     // Swipe-to-delete on a single task reuses the same deferred-Undo-snackbar pattern as the
@@ -493,24 +501,25 @@ fun SearchScreen(
             emptyList()
         } else {
             val today = LocalDate.now()
+            val terms = searchTermsOf(debouncedQuery)
             val activeSource = if (debouncedQuery.isBlank()) {
                 tasks
             } else {
-                tasks.filter { it.matchesSearchText(debouncedQuery, peopleById, tagsById, projectsById) }
+                tasks.filter { it.matchesSearchText(terms, peopleById, tagsById, projectsById) }
             }
             val archivedSource = if (!includeArchived) {
                 emptyList()
             } else if (debouncedQuery.isBlank()) {
                 archivedTasks
             } else {
-                archivedTasks.filter { it.matchesSearchText(debouncedQuery, peopleById, tagsById, projectsById) }
+                archivedTasks.filter { it.matchesSearchText(terms, peopleById, tagsById, projectsById) }
             }
             val trashSource = if (!includeTrash) {
                 emptyList()
             } else if (debouncedQuery.isBlank()) {
                 deletedTasks
             } else {
-                deletedTasks.filter { it.matchesSearchText(debouncedQuery, peopleById, tagsById, projectsById) }
+                deletedTasks.filter { it.matchesSearchText(terms, peopleById, tagsById, projectsById) }
             }
             val sourceTasks = (activeSource + archivedSource + trashSource).distinctBy { it.id }
             sourceTasks.filter { task ->
@@ -898,8 +907,8 @@ fun SearchScreen(
             sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             com.mj.yata.ui.sheets.TaskBulkRescheduleSheet(
-                onSelectPreset = { preset ->
-                    viewModel.bulkRescheduleTasks(selectedIds.toList(), preset)
+                onSelectPreset = { preset, keepExistingTime ->
+                    viewModel.bulkRescheduleTasks(selectedIds.toList(), preset, keepExistingTime)
                     selectedIds.clear()
                     showBulkRescheduleSheet = false
                 },

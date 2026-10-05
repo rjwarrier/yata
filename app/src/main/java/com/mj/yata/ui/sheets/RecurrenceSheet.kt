@@ -77,6 +77,13 @@ fun RecurrenceSheet(
         if (enabled) RecurrenceEvaluator.toRRULE(r) else ""
     }
 
+    // The dates this rule actually produces after the task's current due date, recomputed as the
+    // rule is edited — the summary text alone doesn't show what "last Friday" or "every 3 weeks"
+    // lands on, or where an end count stops the series.
+    val previewDates = remember(enabled, r, baseDate) {
+        if (enabled) RecurrenceEvaluator.previewNextOccurrences(r, baseDate.toString()) else emptyList()
+    }
+
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -115,6 +122,22 @@ fun RecurrenceSheet(
                             fontFamily = com.mj.yata.ui.theme.JetBrainsMonoFamily,
                             color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.7f),
                             fontSize = 11.sp
+                        )
+                    )
+                }
+                if (enabled) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = if (previewDates.isEmpty()) {
+                            stringResource(R.string.recurrence_preview_none)
+                        } else {
+                            stringResource(
+                                R.string.recurrence_preview_next,
+                                previewDates.joinToString(" · ") { formatPreviewDate(it) }
+                            )
+                        },
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            color = MaterialTheme.colorScheme.onTertiaryContainer
                         )
                     )
                 }
@@ -460,6 +483,19 @@ fun RecurrenceSheet(
             }
         )
     }
+}
+
+/** A preview date with the year only when it isn't this year's — "Fri, 30 Oct" / "29 Jan 2027".
+ * Not @Composable (it's called from a joinToString lambda), but called during composition, so its
+ * AppClock/AppFormats snapshot reads still re-render the preview when either changes. */
+private fun formatPreviewDate(isoDate: String): String {
+    val date = runCatching { LocalDate.parse(isoDate) }.getOrNull() ?: return isoDate
+    val formatter = if (date.year == com.mj.yata.util.AppClock.today.year) {
+        com.mj.yata.util.AppFormats.shortDateFormatter()
+    } else {
+        com.mj.yata.util.AppFormats.longDateFormatter()
+    }
+    return date.format(formatter)
 }
 
 /** Bordered selection card for the Ends radio group — handoff sheets.jsx PTRecurrenceSheet Ends rows. */

@@ -1618,4 +1618,11 @@
     <string name="action_reopen">Fungua tena</string>
     <string name="action_complete">Kamilisha</string>
     <string name="action_open">Fungua</string>
+    <plurals name="tasks_rescheduled">
+        <item quantity="one">Kazi imepangwa upya</item>
+        <item quantity="other">Kazi %1$d zimepangwa upya</item>
+    </plurals>
+    <string name="bulk_reschedule_keep_time">Hifadhi muda wa kila kazi</string>
+    <string name="recurrence_preview_next">Zijazo: %1$s</string>
+    <string name="recurrence_preview_none">Haitajirudia baada ya hii</string>
 </resources>

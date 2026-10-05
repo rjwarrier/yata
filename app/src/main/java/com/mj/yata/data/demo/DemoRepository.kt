@@ -45,6 +45,10 @@ class DemoRepository @Inject constructor() : YataRepository {
     override fun getTasksForProject(projectId: String): Flow<List<Task>> = dataset.map { d -> d.tasks.filter { it.projectId == projectId } }
     override fun getTasksForPerson(personId: String): Flow<List<Task>> = dataset.map { d -> d.tasks.filter { personId in it.assigneeIds } }
     override suspend fun getTaskStreak(taskId: String): Int = 0
+    override suspend fun getTasksByIds(ids: Collection<String>): List<Task> {
+        val wanted = ids.toSet()
+        return dataset.value.tasks.filter { it.id in wanted }
+    }
 
     override suspend fun upsertTask(task: Task, notify: Boolean, resyncReminder: Boolean) = Unit
     override suspend fun upsertTasks(

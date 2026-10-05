@@ -114,10 +114,17 @@ class OperationHistoryStore @Inject constructor(
         }
     }
 
+    // apply(), not commit(): these records are written from hot paths that run on the main thread —
+    // every task save reaches ReminderScheduler and WidgetUpdater from the ViewModel's
+    // viewModelScope — and commit() is a synchronous rewrite-and-fsync of this whole file, two or
+    // three of them per save. apply() updates the in-memory map immediately (so the
+    // read-modify-write in recordFailure and the copyable log still see the previous record) and
+    // persists in the background. Losing the very last record to a process death in that window is
+    // an acceptable trade for diagnostic state.
     private fun edit(id: String, block: android.content.SharedPreferences.Editor.() -> Unit) {
         try {
             if (OPERATIONS.none { it.id == id }) return
-            prefs.edit().apply(block).commit()
+            prefs.edit().apply(block).apply()
         } catch (t: Throwable) {
             Log.e(TAG, "Could not record operation history for $id", t)
         }

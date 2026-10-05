@@ -1618,4 +1618,11 @@
     <string name="action_reopen">ਦੁਬਾਰਾ ਖੋਲ੍ਹੋ</string>
     <string name="action_complete">ਪੂਰਾ ਕਰੋ</string>
     <string name="action_open">ਖੋਲ੍ਹੋ</string>
+    <plurals name="tasks_rescheduled">
+        <item quantity="one">ਕਾਰਜ ਮੁੜ-ਨਿਰਧਾਰਤ ਕੀਤਾ ਗਿਆ</item>
+        <item quantity="other">%1$d ਕਾਰਜ ਮੁੜ-ਨਿਰਧਾਰਤ ਕੀਤੇ ਗਏ</item>
+    </plurals>
+    <string name="bulk_reschedule_keep_time">ਹਰ ਕਾਰਜ ਦਾ ਸਮਾਂ ਬਰਕਰਾਰ ਰੱਖੋ</string>
+    <string name="recurrence_preview_next">ਅਗਲੀਆਂ: %1$s</string>
+    <string name="recurrence_preview_none">ਇਸ ਤੋਂ ਬਾਅਦ ਦੁਹਰਾਇਆ ਨਹੀਂ ਜਾਵੇਗਾ</string>
 </resources>

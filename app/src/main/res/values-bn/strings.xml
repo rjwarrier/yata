@@ -1621,4 +1621,11 @@
     <string name="action_reopen">পুনরায় খুলুন</string>
     <string name="action_complete">সম্পন্ন করুন</string>
     <string name="action_open">খুলুন</string>
+    <plurals name="tasks_rescheduled">
+        <item quantity="one">টাস্ক পুনঃনির্ধারণ করা হয়েছে</item>
+        <item quantity="other">%1$d টাস্ক পুনঃনির্ধারণ করা হয়েছে</item>
+    </plurals>
+    <string name="bulk_reschedule_keep_time">প্রতিটি টাস্কের সময় রাখুন</string>
+    <string name="recurrence_preview_next">পরবর্তী: %1$s</string>
+    <string name="recurrence_preview_none">এরপর আর পুনরাবৃত্তি হবে না</string>
 </resources>

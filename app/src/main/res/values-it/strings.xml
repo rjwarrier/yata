@@ -1621,4 +1621,11 @@
     <string name="action_reopen">Riapri</string>
     <string name="action_complete">Completa</string>
     <string name="action_open">Apri</string>
+    <plurals name="tasks_rescheduled">
+        <item quantity="one">Attività ripianificata</item>
+        <item quantity="other">%1$d attività ripianificate</item>
+    </plurals>
+    <string name="bulk_reschedule_keep_time">Mantieni l’orario di ogni attività</string>
+    <string name="recurrence_preview_next">Prossime: %1$s</string>
+    <string name="recurrence_preview_none">Non si ripete dopo questa</string>
 </resources>

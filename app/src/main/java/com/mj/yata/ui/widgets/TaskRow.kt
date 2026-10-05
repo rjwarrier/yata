@@ -593,8 +593,23 @@ fun TaskRow(
                     onDismissRequest = { showSnoozeMenu = false }
                 ) {
                     QuickSnoozePreset.entries.forEach { preset ->
+                        val available = quickSnoozeAvailable(preset)
                         YataDropdownMenuItem(
-                            text = { Text(quickSnoozeLabel(preset)) },
+                            text = {
+                                Column {
+                                    Text(quickSnoozeLabel(preset))
+                                    Text(
+                                        text = quickSnoozePreview(preset),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = if (available) {
+                                            MaterialTheme.colorScheme.onSurfaceVariant
+                                        } else {
+                                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                                        }
+                                    )
+                                }
+                            },
+                            enabled = available,
                             onClick = {
                                 showSnoozeMenu = false
                                 onQuickSnooze(preset)

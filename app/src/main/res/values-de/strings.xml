@@ -1778,4 +1778,11 @@
     <string name="action_reopen">Wieder öffnen</string>
     <string name="action_complete">Erledigen</string>
     <string name="action_open">Öffnen</string>
+    <plurals name="tasks_rescheduled">
+        <item quantity="one">Aufgabe verschoben</item>
+        <item quantity="other">%1$d Aufgaben verschoben</item>
+    </plurals>
+    <string name="bulk_reschedule_keep_time">Uhrzeit jeder Aufgabe beibehalten</string>
+    <string name="recurrence_preview_next">Nächste: %1$s</string>
+    <string name="recurrence_preview_none">Wird danach nicht mehr wiederholt</string>
 </resources>

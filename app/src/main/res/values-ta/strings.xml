@@ -1618,4 +1618,11 @@
     <string name="action_reopen">மீண்டும் திறக்கவும்</string>
     <string name="action_complete">முடிக்கவும்</string>
     <string name="action_open">திறக்கவும்</string>
+    <plurals name="tasks_rescheduled">
+        <item quantity="one">பணி மீண்டும் திட்டமிடப்பட்டது</item>
+        <item quantity="other">%1$d பணிகள் மீண்டும் திட்டமிடப்பட்டன</item>
+    </plurals>
+    <string name="bulk_reschedule_keep_time">ஒவ்வொரு பணியின் நேரத்தையும் வைத்திருக்கவும்</string>
+    <string name="recurrence_preview_next">அடுத்தவை: %1$s</string>
+    <string name="recurrence_preview_none">இதற்குப் பிறகு மீண்டும் வராது</string>
 </resources>

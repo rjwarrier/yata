@@ -133,4 +133,48 @@ class RecurrenceEvaluatorTest {
         assertEquals("Monthly on the last Fri", RecurrenceEvaluator.recurrenceSummary(r2))
         assertEquals("RRULE:FREQ=MONTHLY;BYDAY=-1FR", RecurrenceEvaluator.toRRULE(r2))
     }
+
+    // previewNextOccurrences — the next-dates preview in RecurrenceSheet.
+
+    @Test
+    fun previewListsNextThreeWeeklyDates() {
+        val r = Recurrence("weekly", 1, listOf("MO"), null, RecurrenceEnds.Never)
+        // 2026-10-05 is a Monday.
+        assertEquals(
+            listOf("2026-10-12", "2026-10-19", "2026-10-26"),
+            RecurrenceEvaluator.previewNextOccurrences(r, "2026-10-05")
+        )
+    }
+
+    @Test
+    fun previewFollowsLastWeekdayOfMonthAcrossYearEnd() {
+        val r = Recurrence("monthly", 1, null, null, RecurrenceEnds.Never, byweekday = "FR", bysetpos = -1)
+        // 2026-10-30 is the last Friday of October.
+        assertEquals(
+            listOf("2026-11-27", "2026-12-25", "2027-01-29"),
+            RecurrenceEvaluator.previewNextOccurrences(r, "2026-10-30")
+        )
+    }
+
+    @Test
+    fun previewStopsWhereAnEndCountEndsTheSeries() {
+        // "Ends after 3" counts the current occurrence, so only two more follow — the same
+        // decrement toggleTaskDone applies on each completion.
+        val afterThree = Recurrence("daily", 1, null, null, RecurrenceEnds.After(3))
+        assertEquals(
+            listOf("2026-10-05", "2026-10-06"),
+            RecurrenceEvaluator.previewNextOccurrences(afterThree, "2026-10-04")
+        )
+        val afterOne = Recurrence("daily", 1, null, null, RecurrenceEnds.After(1))
+        assertTrue(RecurrenceEvaluator.previewNextOccurrences(afterOne, "2026-10-04").isEmpty())
+    }
+
+    @Test
+    fun previewStopsAtAnEndDate() {
+        val r = Recurrence("weekly", 1, null, null, RecurrenceEnds.On("2026-10-20"))
+        assertEquals(
+            listOf("2026-10-11", "2026-10-18"),
+            RecurrenceEvaluator.previewNextOccurrences(r, "2026-10-04")
+        )
+    }
 }

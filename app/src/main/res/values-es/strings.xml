@@ -1667,4 +1667,11 @@
     <string name="action_reopen">Reabrir</string>
     <string name="action_complete">Completar</string>
     <string name="action_open">Abrir</string>
+    <plurals name="tasks_rescheduled">
+        <item quantity="one">Tarea reprogramada</item>
+        <item quantity="other">%1$d tareas reprogramadas</item>
+    </plurals>
+    <string name="bulk_reschedule_keep_time">Mantener la hora de cada tarea</string>
+    <string name="recurrence_preview_next">Próximas: %1$s</string>
+    <string name="recurrence_preview_none">No se repite después de esta</string>
 </resources>

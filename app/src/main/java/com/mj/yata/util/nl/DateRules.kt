@@ -124,7 +124,7 @@ internal object DateRules {
 
         if (due == null) {
             for ((phrase, resolve, clock) in config.phraseDateTimes) {
-                context.firstFreeMatch(config.wordRegex(phrase))?.let { match ->
+                context.firstFreeWord(phrase, config.wordRegex)?.let { match ->
                     due = resolve(context.referenceDate)
                     if (clock != null && time == null) time = clock.formatStorage(config.timeFormatter)
                     context.claimDueDate(match.range)
@@ -285,7 +285,7 @@ internal object DateRules {
 
         if (due == null) {
             for ((phrase, resolve) in config.phraseDates) {
-                context.firstFreeMatch(config.wordRegex(phrase))?.let { match ->
+                context.firstFreeWord(phrase, config.wordRegex)?.let { match ->
                     due = resolve(context.referenceDate)
                     context.claimDueDate(match.range)
                     dueRange = match.range

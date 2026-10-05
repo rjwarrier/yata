@@ -1618,4 +1618,11 @@
     <string name="action_reopen">വീണ്ടും തുറക്കുക</string>
     <string name="action_complete">പൂർത്തിയാക്കുക</string>
     <string name="action_open">തുറക്കുക</string>
+    <plurals name="tasks_rescheduled">
+        <item quantity="one">ടാസ്ക് പുനഃക്രമീകരിച്ചു</item>
+        <item quantity="other">%1$d ടാസ്കുകൾ പുനഃക്രമീകരിച്ചു</item>
+    </plurals>
+    <string name="bulk_reschedule_keep_time">ഓരോ ടാസ്കിന്റെയും സമയം നിലനിർത്തുക</string>
+    <string name="recurrence_preview_next">അടുത്തത്: %1$s</string>
+    <string name="recurrence_preview_none">ഇതിനുശേഷം ആവർത്തിക്കില്ല</string>
 </resources>

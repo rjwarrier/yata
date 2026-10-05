@@ -1618,4 +1618,11 @@
     <string name="action_reopen">पुन्हा उघडा</string>
     <string name="action_complete">पूर्ण करा</string>
     <string name="action_open">उघडा</string>
+    <plurals name="tasks_rescheduled">
+        <item quantity="one">कार्य पुन्हा नियोजित केले</item>
+        <item quantity="other">%1$d कार्ये पुन्हा नियोजित केली</item>
+    </plurals>
+    <string name="bulk_reschedule_keep_time">प्रत्येक कार्याची वेळ कायम ठेवा</string>
+    <string name="recurrence_preview_next">पुढील: %1$s</string>
+    <string name="recurrence_preview_none">यानंतर पुनरावृत्ती होणार नाही</string>
 </resources>

@@ -98,7 +98,7 @@ fun UpcomingTab(
     onBulkSetList: (List<String>, String?) -> Unit = { _, _ -> },
     onBulkDuplicate: (List<String>) -> Unit = {},
     onBulkAssignPerson: (List<String>, String) -> Unit = { _, _ -> },
-    onBulkReschedule: (List<String>, QuickSnoozePreset) -> Unit = { _, _ -> },
+    onBulkReschedule: (List<String>, QuickSnoozePreset, Boolean) -> Unit = { _, _, _ -> },
     onBulkSetPriority: (List<String>, String) -> Unit = { _, _ -> },
     onBulkSetFlag: (List<String>, Boolean) -> Unit = { _, _ -> },
     onRenameTask: (String, String) -> Unit = { _, _ -> },
@@ -779,8 +779,8 @@ fun UpcomingTab(
             sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             com.mj.yata.ui.sheets.TaskBulkRescheduleSheet(
-                onSelectPreset = { preset ->
-                    onBulkReschedule(selectedIds.toList(), preset)
+                onSelectPreset = { preset, keepExistingTime ->
+                    onBulkReschedule(selectedIds.toList(), preset, keepExistingTime)
                     selectedIds.clear()
                     showBulkRescheduleSheet = false
                 },

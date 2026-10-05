@@ -122,6 +122,8 @@ fun MainScreen(
     val defaultEstimateMinutes by viewModel.defaultEstimateMinutes.collectAsStateWithLifecycle()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val snackbarHostState = remember { SnackbarHostState() }
+    // Snooze and bulk-reschedule Undo offers (AppUndoBus) land here while this screen is on top.
+    com.mj.yata.ui.widgets.RegisterUndoSnackbarHost(snackbarHostState)
 
     // Manual sync from the Today top bar. The in-progress state comes from BackupOperations so
     // automatic startup/debounced/settings syncs animate the same button.
@@ -971,7 +973,7 @@ fun MainScreen(
                             onBulkSetList = { ids, listId -> viewModel.bulkSetList(ids, listId) },
                             onBulkDuplicate = { ids -> viewModel.bulkDuplicateTasks(ids) { single -> onNavigateToTaskDetail(single.id) } },
                             onBulkAssignPerson = { ids, personId -> viewModel.bulkAssignPerson(ids, personId) },
-                            onBulkReschedule = { ids, preset -> viewModel.bulkRescheduleTasks(ids, preset) },
+                            onBulkReschedule = { ids, preset, keepExistingTime -> viewModel.bulkRescheduleTasks(ids, preset, keepExistingTime) },
                             onBulkSetPriority = { ids, priority -> viewModel.bulkSetPriority(ids, priority) },
                             onBulkSetFlag = { ids, flag -> viewModel.bulkSetFlag(ids, flag) },
                             onRenameTask = { id, title -> viewModel.renameTask(id, title) },
@@ -1097,7 +1099,7 @@ fun MainScreen(
                             onBulkSetList = { ids, listId -> viewModel.bulkSetList(ids, listId) },
                             onBulkDuplicate = { ids -> viewModel.bulkDuplicateTasks(ids) { single -> onNavigateToTaskDetail(single.id) } },
                             onBulkAssignPerson = { ids, personId -> viewModel.bulkAssignPerson(ids, personId) },
-                            onBulkReschedule = { ids, preset -> viewModel.bulkRescheduleTasks(ids, preset) },
+                            onBulkReschedule = { ids, preset, keepExistingTime -> viewModel.bulkRescheduleTasks(ids, preset, keepExistingTime) },
                             onBulkSetPriority = { ids, priority -> viewModel.bulkSetPriority(ids, priority) },
                             onBulkSetFlag = { ids, flag -> viewModel.bulkSetFlag(ids, flag) },
                             onRenameTask = { id, title -> viewModel.renameTask(id, title) },

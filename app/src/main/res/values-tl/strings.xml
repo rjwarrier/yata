@@ -1618,4 +1618,11 @@
     <string name="action_reopen">Muling buksan</string>
     <string name="action_complete">Kumpletuhin</string>
     <string name="action_open">Buksan</string>
+    <plurals name="tasks_rescheduled">
+        <item quantity="one">Na-reschedule ang gawain</item>
+        <item quantity="other">Na-reschedule ang %1$d gawain</item>
+    </plurals>
+    <string name="bulk_reschedule_keep_time">Panatilihin ang oras ng bawat gawain</string>
+    <string name="recurrence_preview_next">Susunod: %1$s</string>
+    <string name="recurrence_preview_none">Hindi na mauulit pagkatapos nito</string>
 </resources>

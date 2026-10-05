@@ -1791,4 +1791,11 @@
     <string name="action_reopen">Reopen</string>
     <string name="action_complete">Complete</string>
     <string name="action_open">Open</string>
+    <plurals name="tasks_rescheduled">
+        <item quantity="one">Task rescheduled</item>
+        <item quantity="other">%1$d tasks rescheduled</item>
+    </plurals>
+    <string name="bulk_reschedule_keep_time">Keep each task\'s time</string>
+    <string name="recurrence_preview_next">Next: %1$s</string>
+    <string name="recurrence_preview_none">Doesn\'t repeat after this one</string>
 </resources>

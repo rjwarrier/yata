@@ -12,6 +12,7 @@ import com.mj.yata.domain.model.ColorIntensity
 import com.mj.yata.domain.model.DateAliasDefinition
 import com.mj.yata.domain.model.DefaultDueDate
 import com.mj.yata.domain.model.Holiday
+import com.mj.yata.domain.model.QuickSnoozeSettings
 import com.mj.yata.domain.model.MotionMode
 import com.mj.yata.domain.model.SavedThemePreset
 import com.mj.yata.domain.model.SubtaskCompletionAction
@@ -31,6 +32,7 @@ import com.mj.yata.util.verifyPin
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.io.IOException
@@ -86,7 +88,19 @@ class UserPreferences @Inject constructor(
         }
     }
 
-    val snapshotFlow: Flow<UserPreferencesSnapshot> = prefsFlow.map { prefs ->
+    /**
+     * Every per-setting flow below is derived from the one shared [prefsFlow], which emits a new
+     * Preferences for a write to *any* key. Without the dedupe, changing one setting (or a sync
+     * stamping its last-run time) re-emitted all of them, re-running every combine downstream —
+     * the Today badge count and the Analytics rollup each re-walk the full task list — and
+     * restarting collectLatest consumers such as the due-countdown minute ticker in
+     * YataApplication. Only a change to the value a flow actually reads gets through now.
+     */
+    private inline fun <T> Flow<Preferences>.mapDistinct(
+        crossinline transform: suspend (Preferences) -> T
+    ): Flow<T> = map { transform(it) }.distinctUntilChanged()
+
+    val snapshotFlow: Flow<UserPreferencesSnapshot> = prefsFlow.mapDistinct { prefs ->
         UserPreferencesSnapshot(
             themeMode = when (prefs[THEME_MODE]) {
                 ThemeMode.LIGHT.name     -> ThemeMode.LIGHT
@@ -297,7 +311,7 @@ class UserPreferences @Inject constructor(
     private fun entitySortModeOf(raw: String?): EntitySortMode =
         EntitySortMode.entries.firstOrNull { it.name == raw } ?: EntitySortMode.NAME_ASC
 
-    val themeModeFlow: Flow<ThemeMode> = prefsFlow.map { prefs ->
+    val themeModeFlow: Flow<ThemeMode> = prefsFlow.mapDistinct { prefs ->
         when (prefs[THEME_MODE]) {
             ThemeMode.LIGHT.name     -> ThemeMode.LIGHT
             ThemeMode.DARK.name      -> ThemeMode.DARK
@@ -308,11 +322,11 @@ class UserPreferences @Inject constructor(
 
     // Dark from 9pm to 7am by default.
 
-    val motionModeFlow: Flow<MotionMode> = prefsFlow.map { prefs ->
+    val motionModeFlow: Flow<MotionMode> = prefsFlow.mapDistinct { prefs ->
         MotionMode.entries.firstOrNull { it.name == prefs[MOTION_MODE] }
             ?: if (prefs[REDUCE_MOTION_ENABLED] == true) MotionMode.REDUCED else MotionMode.FULL
     }
-    val reduceMotionEnabledFlow: Flow<Boolean> = prefsFlow.map { prefs ->
+    val reduceMotionEnabledFlow: Flow<Boolean> = prefsFlow.mapDistinct { prefs ->
         val mode = MotionMode.entries.firstOrNull { it.name == prefs[MOTION_MODE] }
         when (mode) {
             MotionMode.REDUCED, MotionMode.OFF -> true
@@ -320,69 +334,69 @@ class UserPreferences @Inject constructor(
             null -> prefs[REDUCE_MOTION_ENABLED] ?: false
         }
     }
-    val enhancedM3ThemingEnabledFlow: Flow<Boolean> = prefsFlow.map { it[ENHANCED_M3_THEMING_ENABLED] ?: false }
-    val floatingBottomNavEnabledFlow: Flow<Boolean> = prefsFlow.map { it[FLOATING_BOTTOM_NAV_ENABLED] ?: false }
-    val bottomNavLabelsEnabledFlow: Flow<Boolean> = prefsFlow.map { it[BOTTOM_NAV_LABELS_ENABLED] ?: true }
-    val demoModeEnabledFlow: Flow<Boolean> = prefsFlow.map { it[DEMO_MODE_ENABLED] ?: false }
+    val enhancedM3ThemingEnabledFlow: Flow<Boolean> = prefsFlow.mapDistinct { it[ENHANCED_M3_THEMING_ENABLED] ?: false }
+    val floatingBottomNavEnabledFlow: Flow<Boolean> = prefsFlow.mapDistinct { it[FLOATING_BOTTOM_NAV_ENABLED] ?: false }
+    val bottomNavLabelsEnabledFlow: Flow<Boolean> = prefsFlow.mapDistinct { it[BOTTOM_NAV_LABELS_ENABLED] ?: true }
+    val demoModeEnabledFlow: Flow<Boolean> = prefsFlow.mapDistinct { it[DEMO_MODE_ENABLED] ?: false }
 
     /** Non-null means a seed-color theme (preset or custom) is active; null means the app's
      * default warm coral palette. Ignored entirely when Material You dynamic color is on. */
-    val customThemeSeedColorFlow: Flow<Int?> = prefsFlow.map { it[CUSTOM_THEME_SEED_COLOR] }
-    val completionSoundEnabledFlow: Flow<Boolean> = prefsFlow.map { it[COMPLETION_SOUND_ENABLED] ?: true }
-    val voiceRecognitionLanguageFlow: Flow<String> = prefsFlow.map { it[VOICE_RECOGNITION_LANGUAGE] ?: "default" }
-    val textScaleFlow: Flow<Float> = prefsFlow.map { it[TEXT_SCALE] ?: 1.0f }
-    val taskRowDensityFlow: Flow<com.mj.yata.domain.model.TaskRowDensity> = prefsFlow.map { prefs ->
+    val customThemeSeedColorFlow: Flow<Int?> = prefsFlow.mapDistinct { it[CUSTOM_THEME_SEED_COLOR] }
+    val completionSoundEnabledFlow: Flow<Boolean> = prefsFlow.mapDistinct { it[COMPLETION_SOUND_ENABLED] ?: true }
+    val voiceRecognitionLanguageFlow: Flow<String> = prefsFlow.mapDistinct { it[VOICE_RECOGNITION_LANGUAGE] ?: "default" }
+    val textScaleFlow: Flow<Float> = prefsFlow.mapDistinct { it[TEXT_SCALE] ?: 1.0f }
+    val taskRowDensityFlow: Flow<com.mj.yata.domain.model.TaskRowDensity> = prefsFlow.mapDistinct { prefs ->
         when (prefs[TASK_ROW_DENSITY]) {
             com.mj.yata.domain.model.TaskRowDensity.COMPACT.name -> com.mj.yata.domain.model.TaskRowDensity.COMPACT
             com.mj.yata.domain.model.TaskRowDensity.SPACIOUS.name -> com.mj.yata.domain.model.TaskRowDensity.SPACIOUS
             else -> com.mj.yata.domain.model.TaskRowDensity.COMFORTABLE
         }
     }
-    val hapticsEnabledFlow: Flow<Boolean> = prefsFlow.map { it[HAPTICS_ENABLED] ?: true }
-    val taskSwipeActionsEnabledFlow: Flow<Boolean> = prefsFlow.map { it[TASK_SWIPE_ACTIONS_ENABLED] ?: true }
+    val hapticsEnabledFlow: Flow<Boolean> = prefsFlow.mapDistinct { it[HAPTICS_ENABLED] ?: true }
+    val taskSwipeActionsEnabledFlow: Flow<Boolean> = prefsFlow.mapDistinct { it[TASK_SWIPE_ACTIONS_ENABLED] ?: true }
     // Defaults reproduce the behaviour from before the directions were configurable.
-    val swipeRightActionFlow: Flow<com.mj.yata.domain.model.SwipeAction> = prefsFlow.map { prefs ->
+    val swipeRightActionFlow: Flow<com.mj.yata.domain.model.SwipeAction> = prefsFlow.mapDistinct { prefs ->
         com.mj.yata.domain.model.SwipeAction.entries.firstOrNull { it.name == prefs[SWIPE_RIGHT_ACTION] }
             ?: com.mj.yata.domain.model.SwipeAction.COMPLETE
     }
-    val swipeLeftActionFlow: Flow<com.mj.yata.domain.model.SwipeAction> = prefsFlow.map { prefs ->
+    val swipeLeftActionFlow: Flow<com.mj.yata.domain.model.SwipeAction> = prefsFlow.mapDistinct { prefs ->
         com.mj.yata.domain.model.SwipeAction.entries.firstOrNull { it.name == prefs[SWIPE_LEFT_ACTION] }
             ?: com.mj.yata.domain.model.SwipeAction.DELETE
     }
-    val startupTabFlow: Flow<com.mj.yata.domain.model.StartupTab> = prefsFlow.map { prefs ->
+    val startupTabFlow: Flow<com.mj.yata.domain.model.StartupTab> = prefsFlow.mapDistinct { prefs ->
         com.mj.yata.domain.model.StartupTab.entries.firstOrNull { it.name == prefs[STARTUP_TAB] }
             ?: com.mj.yata.domain.model.StartupTab.LAST_USED
     }
     // Separate from Reduce Motion on purpose: turning the confetti off shouldn't cost you every
     // other animation in the app, which is the only way it could be done before.
-    val confettiEnabledFlow: Flow<Boolean> = prefsFlow.map { it[CONFETTI_ENABLED] ?: true }
-    val timeFormatFlow: Flow<com.mj.yata.domain.model.TimeFormat> = prefsFlow.map { prefs ->
+    val confettiEnabledFlow: Flow<Boolean> = prefsFlow.mapDistinct { it[CONFETTI_ENABLED] ?: true }
+    val timeFormatFlow: Flow<com.mj.yata.domain.model.TimeFormat> = prefsFlow.mapDistinct { prefs ->
         com.mj.yata.domain.model.TimeFormat.entries.firstOrNull { it.name == prefs[TIME_FORMAT] }
             ?: com.mj.yata.domain.model.TimeFormat.SYSTEM
     }
-    val dateFormatFlow: Flow<com.mj.yata.domain.model.DateFormat> = prefsFlow.map { prefs ->
+    val dateFormatFlow: Flow<com.mj.yata.domain.model.DateFormat> = prefsFlow.mapDistinct { prefs ->
         com.mj.yata.domain.model.DateFormat.entries.firstOrNull { it.name == prefs[DATE_FORMAT] }
             ?: com.mj.yata.domain.model.DateFormat.SYSTEM
     }
-    val dateAliasDefinitionsFlow: Flow<Set<String>> = prefsFlow.map { it[DATE_ALIASES] ?: emptySet() }
-    val savedThemePresetsFlow: Flow<Set<String>> = prefsFlow.map { it[SAVED_THEME_PRESETS] ?: emptySet() }
+    val dateAliasDefinitionsFlow: Flow<Set<String>> = prefsFlow.mapDistinct { it[DATE_ALIASES] ?: emptySet() }
+    val savedThemePresetsFlow: Flow<Set<String>> = prefsFlow.mapDistinct { it[SAVED_THEME_PRESETS] ?: emptySet() }
     // Off by default: the plugin's FIRE_SETTING receiver (CreateTaskRunner, via
     // taskerpluginlibrary) is exported with no permission requirement -- inherent to how the
     // Locale/Tasker plugin API works, not something an app can enforce on the sender -- so any
     // other app on the device can trigger it while this is on. Defaulting off means that exposure
     // requires an explicit, informed choice rather than existing for everyone who never opened
     // this setting.
-    val taskerIntegrationEnabledFlow: Flow<Boolean> = prefsFlow.map { it[TASKER_INTEGRATION_ENABLED] ?: false }
+    val taskerIntegrationEnabledFlow: Flow<Boolean> = prefsFlow.mapDistinct { it[TASKER_INTEGRATION_ENABLED] ?: false }
 
     // Off by default: the flat list is the app's existing look, and this changes every task list
     // at once, so it has to be something a user opts into rather than finds applied after update.
-    val taskCardBackgroundFlow: Flow<Boolean> = prefsFlow.map { it[TASK_CARD_BACKGROUND] ?: false }
-    val appLockEnabledFlow: Flow<Boolean> = prefsFlow.map { it[APP_LOCK_ENABLED] ?: false }
-    val appLockPinSetFlow: Flow<Boolean> = prefsFlow.map { !it[APP_LOCK_PIN_HASH].isNullOrBlank() }
-    val appLockTimeoutMinutesFlow: Flow<Int> = prefsFlow.map { it[APP_LOCK_TIMEOUT_MINUTES] ?: 0 }
-    val todayTabEnabledFlow: Flow<Boolean> = prefsFlow.map { it[TODAY_TAB_ENABLED] ?: true }
-    val upcomingTabEnabledFlow: Flow<Boolean> = prefsFlow.map { it[UPCOMING_TAB_ENABLED] ?: true }
-    val fabPositionFlow: Flow<com.mj.yata.domain.model.FabPosition> = prefsFlow.map { prefs ->
+    val taskCardBackgroundFlow: Flow<Boolean> = prefsFlow.mapDistinct { it[TASK_CARD_BACKGROUND] ?: false }
+    val appLockEnabledFlow: Flow<Boolean> = prefsFlow.mapDistinct { it[APP_LOCK_ENABLED] ?: false }
+    val appLockPinSetFlow: Flow<Boolean> = prefsFlow.mapDistinct { !it[APP_LOCK_PIN_HASH].isNullOrBlank() }
+    val appLockTimeoutMinutesFlow: Flow<Int> = prefsFlow.mapDistinct { it[APP_LOCK_TIMEOUT_MINUTES] ?: 0 }
+    val todayTabEnabledFlow: Flow<Boolean> = prefsFlow.mapDistinct { it[TODAY_TAB_ENABLED] ?: true }
+    val upcomingTabEnabledFlow: Flow<Boolean> = prefsFlow.mapDistinct { it[UPCOMING_TAB_ENABLED] ?: true }
+    val fabPositionFlow: Flow<com.mj.yata.domain.model.FabPosition> = prefsFlow.mapDistinct { prefs ->
         when (prefs[FAB_POSITION]) {
             com.mj.yata.domain.model.FabPosition.LEFT.name -> com.mj.yata.domain.model.FabPosition.LEFT
             com.mj.yata.domain.model.FabPosition.HIDDEN.name -> com.mj.yata.domain.model.FabPosition.HIDDEN
@@ -390,7 +404,7 @@ class UserPreferences @Inject constructor(
         }
     }
 
-    val appFontFlow: Flow<AppFont> = prefsFlow.map { prefs ->
+    val appFontFlow: Flow<AppFont> = prefsFlow.mapDistinct { prefs ->
         when (prefs[APP_FONT]) {
             AppFont.JETBRAINS_MONO.name -> AppFont.JETBRAINS_MONO
             else                        -> AppFont.INTER
@@ -400,44 +414,44 @@ class UserPreferences @Inject constructor(
     // Both default to their no-op stop, so an existing install looks identical until the slider
     // is actually moved. Unknown names fall back the same way every other enum preference here
     // does, rather than throwing on a value written by a newer build.
-    val colorIntensityFlow: Flow<ColorIntensity> = prefsFlow.map { prefs ->
+    val colorIntensityFlow: Flow<ColorIntensity> = prefsFlow.mapDistinct { prefs ->
         ColorIntensity.entries.firstOrNull { it.name == prefs[COLOR_INTENSITY] } ?: ColorIntensity.NORMAL
     }
 
-    val backgroundTintFlow: Flow<BackgroundTint> = prefsFlow.map { prefs ->
+    val backgroundTintFlow: Flow<BackgroundTint> = prefsFlow.mapDistinct { prefs ->
         BackgroundTint.entries.firstOrNull { it.name == prefs[BACKGROUND_TINT] } ?: BackgroundTint.SOFT
     }
 
-    val userNameFlow: Flow<String> = prefsFlow.map { it[USER_NAME] ?: "" }
-    val userEmailFlow: Flow<String> = prefsFlow.map { it[USER_EMAIL] ?: "" }
-    val userPhotoUriFlow: Flow<String?> = prefsFlow.map { it[USER_PHOTO_URI] }
+    val userNameFlow: Flow<String> = prefsFlow.mapDistinct { it[USER_NAME] ?: "" }
+    val userEmailFlow: Flow<String> = prefsFlow.mapDistinct { it[USER_EMAIL] ?: "" }
+    val userPhotoUriFlow: Flow<String?> = prefsFlow.mapDistinct { it[USER_PHOTO_URI] }
 
-    override val defaultListIdFlow: Flow<String> = prefsFlow.map { it[DEFAULT_LIST_ID] ?: "" }
+    override val defaultListIdFlow: Flow<String> = prefsFlow.mapDistinct { it[DEFAULT_LIST_ID] ?: "" }
 
-    val startOfWeekSundayFlow: Flow<Boolean> = prefsFlow.map { it[START_OF_WEEK_SUNDAY] ?: true }
-    val defaultReminderHourFlow: Flow<Int> = prefsFlow.map { it[DEFAULT_REMINDER_HOUR] ?: 9 }
-    val defaultReminderMinuteFlow: Flow<Int> = prefsFlow.map { it[DEFAULT_REMINDER_MINUTE] ?: 0 }
-    val uiScaleFlow: Flow<Float> = prefsFlow.map { it[UI_SCALE] ?: 1.0f }
-    val dynamicColorEnabledFlow: Flow<Boolean> = prefsFlow.map { it[DYNAMIC_COLOR_ENABLED] ?: true }
-    val peopleFeatureEnabledFlow: Flow<Boolean> = prefsFlow.map { it[PEOPLE_FEATURE_ENABLED] ?: true }
-    val tagsFeatureEnabledFlow: Flow<Boolean> = prefsFlow.map { it[TAGS_FEATURE_ENABLED] ?: true }
-    val projectsFeatureEnabledFlow: Flow<Boolean> = prefsFlow.map { it[PROJECTS_FEATURE_ENABLED] ?: true }
+    val startOfWeekSundayFlow: Flow<Boolean> = prefsFlow.mapDistinct { it[START_OF_WEEK_SUNDAY] ?: true }
+    val defaultReminderHourFlow: Flow<Int> = prefsFlow.mapDistinct { it[DEFAULT_REMINDER_HOUR] ?: 9 }
+    val defaultReminderMinuteFlow: Flow<Int> = prefsFlow.mapDistinct { it[DEFAULT_REMINDER_MINUTE] ?: 0 }
+    val uiScaleFlow: Flow<Float> = prefsFlow.mapDistinct { it[UI_SCALE] ?: 1.0f }
+    val dynamicColorEnabledFlow: Flow<Boolean> = prefsFlow.mapDistinct { it[DYNAMIC_COLOR_ENABLED] ?: true }
+    val peopleFeatureEnabledFlow: Flow<Boolean> = prefsFlow.mapDistinct { it[PEOPLE_FEATURE_ENABLED] ?: true }
+    val tagsFeatureEnabledFlow: Flow<Boolean> = prefsFlow.mapDistinct { it[TAGS_FEATURE_ENABLED] ?: true }
+    val projectsFeatureEnabledFlow: Flow<Boolean> = prefsFlow.mapDistinct { it[PROJECTS_FEATURE_ENABLED] ?: true }
     // Default matches the old periodic backup schedule (1 day) — WorkManager enforces a
     // 15-minute floor on periodic work, so this is clamped the same way on write.
-    val localBackupEnabledFlow: Flow<Boolean> = prefsFlow.map { it[LOCAL_BACKUP_ENABLED] ?: false }
-    val localBackupLastAtFlow: Flow<Long?> = prefsFlow.map { it[LOCAL_BACKUP_LAST_AT] }
-    val localBackupIntervalMinutesFlow: Flow<Long> = prefsFlow.map { it[LOCAL_BACKUP_INTERVAL_MINUTES] ?: (24 * 60L) }
-    val sftpBackupEnabledFlow: Flow<Boolean> = prefsFlow.map { it[SFTP_BACKUP_ENABLED] ?: false }
-    val sftpHostFlow: Flow<String> = prefsFlow.map { it[SFTP_HOST] ?: "" }
-    val sftpPortFlow: Flow<Int> = prefsFlow.map { it[SFTP_PORT] ?: 22 }
-    val sftpUsernameFlow: Flow<String> = prefsFlow.map { it[SFTP_USERNAME] ?: "" }
-    val sftpAuthMethodFlow: Flow<String> = prefsFlow.map { it[SFTP_AUTH_METHOD]?.takeIf { m -> m == "PASSWORD" || m == "PRIVATE_KEY" } ?: "PASSWORD" }
-    val sftpRemoteDirFlow: Flow<String> = prefsFlow.map { it[SFTP_REMOTE_DIR] ?: "/yata-backups" }
-    val sftpIntervalMinutesFlow: Flow<Long> = prefsFlow.map { it[SFTP_INTERVAL_MINUTES] ?: (24 * 60L) }
-    val sftpLastBackupAtFlow: Flow<Long?> = prefsFlow.map { it[SFTP_LAST_BACKUP_AT] }
+    val localBackupEnabledFlow: Flow<Boolean> = prefsFlow.mapDistinct { it[LOCAL_BACKUP_ENABLED] ?: false }
+    val localBackupLastAtFlow: Flow<Long?> = prefsFlow.mapDistinct { it[LOCAL_BACKUP_LAST_AT] }
+    val localBackupIntervalMinutesFlow: Flow<Long> = prefsFlow.mapDistinct { it[LOCAL_BACKUP_INTERVAL_MINUTES] ?: (24 * 60L) }
+    val sftpBackupEnabledFlow: Flow<Boolean> = prefsFlow.mapDistinct { it[SFTP_BACKUP_ENABLED] ?: false }
+    val sftpHostFlow: Flow<String> = prefsFlow.mapDistinct { it[SFTP_HOST] ?: "" }
+    val sftpPortFlow: Flow<Int> = prefsFlow.mapDistinct { it[SFTP_PORT] ?: 22 }
+    val sftpUsernameFlow: Flow<String> = prefsFlow.mapDistinct { it[SFTP_USERNAME] ?: "" }
+    val sftpAuthMethodFlow: Flow<String> = prefsFlow.mapDistinct { it[SFTP_AUTH_METHOD]?.takeIf { m -> m == "PASSWORD" || m == "PRIVATE_KEY" } ?: "PASSWORD" }
+    val sftpRemoteDirFlow: Flow<String> = prefsFlow.mapDistinct { it[SFTP_REMOTE_DIR] ?: "/yata-backups" }
+    val sftpIntervalMinutesFlow: Flow<Long> = prefsFlow.mapDistinct { it[SFTP_INTERVAL_MINUTES] ?: (24 * 60L) }
+    val sftpLastBackupAtFlow: Flow<Long?> = prefsFlow.mapDistinct { it[SFTP_LAST_BACKUP_AT] }
     /** Shared by both self-hosted protocols. Clamped on
      * read so a corrupt or hand-edited value can't prune every backup off the server. */
-    val sftpKeepCountFlow: Flow<Int> = prefsFlow.map { (it[SFTP_KEEP_COUNT] ?: 5).coerceIn(2, 15) }
+    val sftpKeepCountFlow: Flow<Int> = prefsFlow.mapDistinct { (it[SFTP_KEEP_COUNT] ?: 5).coerceIn(2, 15) }
 
     /**
      * How often the single scheduled backup runs, covering every enabled destination.
@@ -446,98 +460,112 @@ class UserPreferences @Inject constructor(
      * were merged, so an existing user's backups carry on at the cadence they chose rather than
      * silently resetting to the default.
      */
-    val backupIntervalMinutesFlow: Flow<Long> = prefsFlow.map { prefs ->
+    val backupIntervalMinutesFlow: Flow<Long> = prefsFlow.mapDistinct { prefs ->
         prefs[BACKUP_INTERVAL_MINUTES]
             ?: prefs[CLOUD_BACKUP_INTERVAL_MINUTES]
             ?: (24 * 60L)
     }
-    val sftpHostKeyFingerprintFlow: Flow<String?> = prefsFlow.map { it[SFTP_HOST_KEY_FINGERPRINT] }
-    val remoteBackupProtocolFlow: Flow<com.mj.yata.domain.model.RemoteBackupProtocol> = prefsFlow.map { prefs ->
+    val sftpHostKeyFingerprintFlow: Flow<String?> = prefsFlow.mapDistinct { it[SFTP_HOST_KEY_FINGERPRINT] }
+    val remoteBackupProtocolFlow: Flow<com.mj.yata.domain.model.RemoteBackupProtocol> = prefsFlow.mapDistinct { prefs ->
         when (prefs[REMOTE_BACKUP_PROTOCOL]) {
             com.mj.yata.domain.model.RemoteBackupProtocol.FTP.name -> com.mj.yata.domain.model.RemoteBackupProtocol.FTP
             com.mj.yata.domain.model.RemoteBackupProtocol.GITHUB.name -> com.mj.yata.domain.model.RemoteBackupProtocol.GITHUB
             else -> com.mj.yata.domain.model.RemoteBackupProtocol.SFTP
         }
     }
-    val ftpUseTlsFlow: Flow<Boolean> = prefsFlow.map { it[FTP_USE_TLS] ?: true }
-    val ftpStrictTlsFlow: Flow<Boolean> = prefsFlow.map { it[FTP_STRICT_TLS] ?: true }
-    val githubOwnerFlow: Flow<String> = prefsFlow.map { it[GITHUB_OWNER] ?: "" }
-    val githubRepoFlow: Flow<String> = prefsFlow.map { it[GITHUB_REPO] ?: "" }
-    val githubBranchFlow: Flow<String> = prefsFlow.map { it[GITHUB_BRANCH] ?: "" }
-    val githubApiBaseFlow: Flow<String> = prefsFlow.map { it[GITHUB_API_BASE] ?: "https://api.github.com" }
-    val githubTokenExpiresAtFlow: Flow<Long?> = prefsFlow.map { it[GITHUB_TOKEN_EXPIRES_AT] }
-    val githubLastHeadShaFlow: Flow<String?> = prefsFlow.map { it[GITHUB_LAST_HEAD_SHA] }
-    val githubLastCanonicalHashFlow: Flow<String?> = prefsFlow.map { it[GITHUB_LAST_CANONICAL_HASH] }
-    val hideCompletedTodayFlow: Flow<Boolean> = prefsFlow.map { it[HIDE_COMPLETED_TODAY] ?: false }
-    val hideCompletedNextDaysFlow: Flow<Boolean> = prefsFlow.map { it[HIDE_COMPLETED_NEXT_DAYS] ?: false }
-    val todayShowUpcomingWhenEmptyFlow: Flow<Boolean> = prefsFlow.map { it[TODAY_SHOW_UPCOMING_WHEN_EMPTY] ?: false }
-    val dueCountdownEnabledFlow: Flow<Boolean> = prefsFlow.map { it[DUE_COUNTDOWN_ENABLED] ?: true }
-    val hideCompletedProjectFlow: Flow<Boolean> = prefsFlow.map { it[HIDE_COMPLETED_PROJECT] ?: false }
-    val hideCompletedListFlow: Flow<Boolean> = prefsFlow.map { it[HIDE_COMPLETED_LIST] ?: false }
-    val hideCompletedPersonFlow: Flow<Boolean> = prefsFlow.map { it[HIDE_COMPLETED_PERSON] ?: false }
-    val sortModeTodayFlow: Flow<TaskSortMode> = prefsFlow.map { taskSortModeOf(it[SORT_MODE_TODAY]) }
-    val sortModeProjectFlow: Flow<TaskSortMode> = prefsFlow.map { taskSortModeOf(it[SORT_MODE_PROJECT]) }
-    val sortModeListFlow: Flow<TaskSortMode> = prefsFlow.map { taskSortModeOf(it[SORT_MODE_LIST]) }
-    val sortModePersonFlow: Flow<TaskSortMode> = prefsFlow.map { taskSortModeOf(it[SORT_MODE_PERSON]) }
+    val ftpUseTlsFlow: Flow<Boolean> = prefsFlow.mapDistinct { it[FTP_USE_TLS] ?: true }
+    val ftpStrictTlsFlow: Flow<Boolean> = prefsFlow.mapDistinct { it[FTP_STRICT_TLS] ?: true }
+    val githubOwnerFlow: Flow<String> = prefsFlow.mapDistinct { it[GITHUB_OWNER] ?: "" }
+    val githubRepoFlow: Flow<String> = prefsFlow.mapDistinct { it[GITHUB_REPO] ?: "" }
+    val githubBranchFlow: Flow<String> = prefsFlow.mapDistinct { it[GITHUB_BRANCH] ?: "" }
+    val githubApiBaseFlow: Flow<String> = prefsFlow.mapDistinct { it[GITHUB_API_BASE] ?: "https://api.github.com" }
+    val githubTokenExpiresAtFlow: Flow<Long?> = prefsFlow.mapDistinct { it[GITHUB_TOKEN_EXPIRES_AT] }
+    val githubLastHeadShaFlow: Flow<String?> = prefsFlow.mapDistinct { it[GITHUB_LAST_HEAD_SHA] }
+    val githubLastCanonicalHashFlow: Flow<String?> = prefsFlow.mapDistinct { it[GITHUB_LAST_CANONICAL_HASH] }
+    val hideCompletedTodayFlow: Flow<Boolean> = prefsFlow.mapDistinct { it[HIDE_COMPLETED_TODAY] ?: false }
+    val hideCompletedNextDaysFlow: Flow<Boolean> = prefsFlow.mapDistinct { it[HIDE_COMPLETED_NEXT_DAYS] ?: false }
+    val todayShowUpcomingWhenEmptyFlow: Flow<Boolean> = prefsFlow.mapDistinct { it[TODAY_SHOW_UPCOMING_WHEN_EMPTY] ?: false }
+    val dueCountdownEnabledFlow: Flow<Boolean> = prefsFlow.mapDistinct { it[DUE_COUNTDOWN_ENABLED] ?: true }
+    val hideCompletedProjectFlow: Flow<Boolean> = prefsFlow.mapDistinct { it[HIDE_COMPLETED_PROJECT] ?: false }
+    val hideCompletedListFlow: Flow<Boolean> = prefsFlow.mapDistinct { it[HIDE_COMPLETED_LIST] ?: false }
+    val hideCompletedPersonFlow: Flow<Boolean> = prefsFlow.mapDistinct { it[HIDE_COMPLETED_PERSON] ?: false }
+    val sortModeTodayFlow: Flow<TaskSortMode> = prefsFlow.mapDistinct { taskSortModeOf(it[SORT_MODE_TODAY]) }
+    val sortModeProjectFlow: Flow<TaskSortMode> = prefsFlow.mapDistinct { taskSortModeOf(it[SORT_MODE_PROJECT]) }
+    val sortModeListFlow: Flow<TaskSortMode> = prefsFlow.mapDistinct { taskSortModeOf(it[SORT_MODE_LIST]) }
+    val sortModePersonFlow: Flow<TaskSortMode> = prefsFlow.mapDistinct { taskSortModeOf(it[SORT_MODE_PERSON]) }
     /** Defaults applied to a newly created task. TODAY preserves the previous hardcoded behavior. */
-    val defaultDueDateFlow: Flow<DefaultDueDate> = prefsFlow.map { prefs ->
+    val defaultDueDateFlow: Flow<DefaultDueDate> = prefsFlow.mapDistinct { prefs ->
         DefaultDueDate.entries.firstOrNull { it.name == prefs[DEFAULT_DUE_DATE] } ?: DefaultDueDate.TODAY
     }
     /** One of Task.priority's values: "none" | "low" | "med" | "high". */
-    val defaultPriorityFlow: Flow<String> = prefsFlow.map { prefs ->
+    val defaultPriorityFlow: Flow<String> = prefsFlow.mapDistinct { prefs ->
         prefs[DEFAULT_PRIORITY]?.takeIf { it in setOf("none", "low", "med", "high") } ?: "none"
     }
-    val defaultProjectIdFlow: Flow<String> = prefsFlow.map { prefs -> prefs[DEFAULT_PROJECT_ID] ?: "" }
-    val defaultTagIdsFlow: Flow<Set<String>> = prefsFlow.map { prefs -> prefs[DEFAULT_TAG_IDS] ?: emptySet() }
-    val defaultEstimateMinutesFlow: Flow<Int?> = prefsFlow.map { prefs ->
+    val defaultProjectIdFlow: Flow<String> = prefsFlow.mapDistinct { prefs -> prefs[DEFAULT_PROJECT_ID] ?: "" }
+    val defaultTagIdsFlow: Flow<Set<String>> = prefsFlow.mapDistinct { prefs -> prefs[DEFAULT_TAG_IDS] ?: emptySet() }
+    val defaultEstimateMinutesFlow: Flow<Int?> = prefsFlow.mapDistinct { prefs ->
         prefs[DEFAULT_ESTIMATE_MINUTES]?.takeIf { it > 0 }
     }
-    val postponementWarningThresholdFlow: Flow<Int> = prefsFlow.map { prefs ->
+    val postponementWarningThresholdFlow: Flow<Int> = prefsFlow.mapDistinct { prefs ->
         (prefs[POSTPONEMENT_WARNING_THRESHOLD] ?: DEFAULT_POSTPONEMENT_WARNING_THRESHOLD)
             .coerceIn(MIN_POSTPONEMENT_WARNING_THRESHOLD, MAX_POSTPONEMENT_WARNING_THRESHOLD)
     }
-    val weekendDaysFlow: Flow<Set<String>> = prefsFlow.map { prefs ->
+    val weekendDaysFlow: Flow<Set<String>> = prefsFlow.mapDistinct { prefs ->
         prefs[WEEKEND_DAYS] ?: DEFAULT_WEEKEND_DAYS
     }
-    val holidaysFlow: Flow<Set<String>> = prefsFlow.map { prefs -> prefs[HOLIDAYS] ?: emptySet() }
+    val holidaysFlow: Flow<Set<String>> = prefsFlow.mapDistinct { prefs -> prefs[HOLIDAYS] ?: emptySet() }
     /** Off by default — shifting what counts as "due" is a bigger behavioral change than the
      * weekend/holiday reschedule *warning*, which only ever informs and never alters filtering,
      * overdue counts, or notifications on its own. */
-    val observeNonWorkingDaysFlow: Flow<Boolean> = prefsFlow.map { prefs -> prefs[OBSERVE_NON_WORKING_DAYS] ?: false }
-    val subtaskCompletionActionFlow: Flow<SubtaskCompletionAction> = prefsFlow.map { prefs ->
+    val observeNonWorkingDaysFlow: Flow<Boolean> = prefsFlow.mapDistinct { prefs -> prefs[OBSERVE_NON_WORKING_DAYS] ?: false }
+    val subtaskCompletionActionFlow: Flow<SubtaskCompletionAction> = prefsFlow.mapDistinct { prefs ->
         SubtaskCompletionAction.entries.firstOrNull { it.name == prefs[SUBTASK_COMPLETION_ACTION] }
             ?: SubtaskCompletionAction.ASK
     }
-    val trashRetentionDaysFlow: Flow<Int> = prefsFlow.map { it[TRASH_RETENTION_DAYS] ?: 30 }
-    val autoArchiveDaysFlow: Flow<Int> = prefsFlow.map { it[AUTO_ARCHIVE_DAYS] ?: 0 }
-    val dailyAgendaEnabledFlow: Flow<Boolean> = prefsFlow.map { it[DAILY_AGENDA_ENABLED] ?: true }
-    val dailyAgendaHourFlow: Flow<Int> = prefsFlow.map { it[DAILY_AGENDA_HOUR] ?: 7 }
-    val dailyAgendaMinuteFlow: Flow<Int> = prefsFlow.map { it[DAILY_AGENDA_MINUTE] ?: 30 }
-    val overdueNudgesEnabledFlow: Flow<Boolean> = prefsFlow.map { it[OVERDUE_NUDGES_ENABLED] ?: true }
-    val quietHoursEnabledFlow: Flow<Boolean> = prefsFlow.map { it[QUIET_HOURS_ENABLED] ?: false }
-    val quietHoursStartHourFlow: Flow<Int> = prefsFlow.map { it[QUIET_HOURS_START_HOUR] ?: 22 }
-    val quietHoursStartMinuteFlow: Flow<Int> = prefsFlow.map { it[QUIET_HOURS_START_MINUTE] ?: 0 }
-    val quietHoursEndHourFlow: Flow<Int> = prefsFlow.map { it[QUIET_HOURS_END_HOUR] ?: 7 }
-    val quietHoursEndMinuteFlow: Flow<Int> = prefsFlow.map { it[QUIET_HOURS_END_MINUTE] ?: 0 }
-    val undoWindowSecondsFlow: Flow<Int> = prefsFlow.map { it[UNDO_WINDOW_SECONDS] ?: 4 }
-    val snoozeTonightHourFlow: Flow<Int> = prefsFlow.map { it[SNOOZE_TONIGHT_HOUR] ?: 18 }
-    val snoozeTonightMinuteFlow: Flow<Int> = prefsFlow.map { it[SNOOZE_TONIGHT_MINUTE] ?: 0 }
-    val snoozeTomorrowHourFlow: Flow<Int> = prefsFlow.map { it[SNOOZE_TOMORROW_HOUR] ?: 9 }
-    val snoozeTomorrowMinuteFlow: Flow<Int> = prefsFlow.map { it[SNOOZE_TOMORROW_MINUTE] ?: 0 }
-    val sortModeTagDetailFlow: Flow<TaskSortMode> = prefsFlow.map { taskSortModeOf(it[SORT_MODE_TAG_DETAIL]) }
-    val sortModeTagsTabFlow: Flow<EntitySortMode> = prefsFlow.map { entitySortModeOf(it[SORT_MODE_TAGS_TAB]) }
-    val sortModePeopleTabFlow: Flow<EntitySortMode> = prefsFlow.map { entitySortModeOf(it[SORT_MODE_PEOPLE_TAB]) }
-    val lastHomeTabFlow: Flow<Int> = prefsFlow.map { (it[LAST_HOME_TAB] ?: 0).coerceIn(0, 4) }
-    val hasSeenWelcomeFlow: Flow<Boolean> = prefsFlow.map { it[HAS_SEEN_WELCOME] ?: false }
-    val savedSmartFilterSetsFlow: Flow<Set<String>> = prefsFlow.map { it[SAVED_SMART_FILTER_SETS] ?: emptySet() }
-    val recentTaskIdsFlow: Flow<List<String>> = prefsFlow.map { prefs ->
+    val trashRetentionDaysFlow: Flow<Int> = prefsFlow.mapDistinct { it[TRASH_RETENTION_DAYS] ?: 30 }
+    val autoArchiveDaysFlow: Flow<Int> = prefsFlow.mapDistinct { it[AUTO_ARCHIVE_DAYS] ?: 0 }
+    val dailyAgendaEnabledFlow: Flow<Boolean> = prefsFlow.mapDistinct { it[DAILY_AGENDA_ENABLED] ?: true }
+    val dailyAgendaHourFlow: Flow<Int> = prefsFlow.mapDistinct { it[DAILY_AGENDA_HOUR] ?: 7 }
+    val dailyAgendaMinuteFlow: Flow<Int> = prefsFlow.mapDistinct { it[DAILY_AGENDA_MINUTE] ?: 30 }
+    val overdueNudgesEnabledFlow: Flow<Boolean> = prefsFlow.mapDistinct { it[OVERDUE_NUDGES_ENABLED] ?: true }
+    val quietHoursEnabledFlow: Flow<Boolean> = prefsFlow.mapDistinct { it[QUIET_HOURS_ENABLED] ?: false }
+    val quietHoursStartHourFlow: Flow<Int> = prefsFlow.mapDistinct { it[QUIET_HOURS_START_HOUR] ?: 22 }
+    val quietHoursStartMinuteFlow: Flow<Int> = prefsFlow.mapDistinct { it[QUIET_HOURS_START_MINUTE] ?: 0 }
+    val quietHoursEndHourFlow: Flow<Int> = prefsFlow.mapDistinct { it[QUIET_HOURS_END_HOUR] ?: 7 }
+    val quietHoursEndMinuteFlow: Flow<Int> = prefsFlow.mapDistinct { it[QUIET_HOURS_END_MINUTE] ?: 0 }
+    val undoWindowSecondsFlow: Flow<Int> = prefsFlow.mapDistinct { it[UNDO_WINDOW_SECONDS] ?: 4 }
+    val snoozeTonightHourFlow: Flow<Int> = prefsFlow.mapDistinct { it[SNOOZE_TONIGHT_HOUR] ?: 18 }
+    val snoozeTonightMinuteFlow: Flow<Int> = prefsFlow.mapDistinct { it[SNOOZE_TONIGHT_MINUTE] ?: 0 }
+    val snoozeTomorrowHourFlow: Flow<Int> = prefsFlow.mapDistinct { it[SNOOZE_TOMORROW_HOUR] ?: 9 }
+    val snoozeTomorrowMinuteFlow: Flow<Int> = prefsFlow.mapDistinct { it[SNOOZE_TOMORROW_MINUTE] ?: 0 }
+
+    /** Everything [com.mj.yata.domain.model.resolve] needs to turn a quick-snooze preset into a
+     * concrete date and time — read together so the snooze write and the menus previewing it see
+     * one consistent set of values. */
+    val quickSnoozeSettingsFlow: Flow<QuickSnoozeSettings> = prefsFlow.mapDistinct { prefs ->
+        QuickSnoozeSettings(
+            tonightHour = prefs[SNOOZE_TONIGHT_HOUR] ?: QuickSnoozeSettings.DEFAULT_TONIGHT_HOUR,
+            tonightMinute = prefs[SNOOZE_TONIGHT_MINUTE] ?: 0,
+            tomorrowHour = prefs[SNOOZE_TOMORROW_HOUR] ?: QuickSnoozeSettings.DEFAULT_TOMORROW_HOUR,
+            tomorrowMinute = prefs[SNOOZE_TOMORROW_MINUTE] ?: 0,
+            weekendDays = prefs[WEEKEND_DAYS] ?: DEFAULT_WEEKEND_DAYS,
+            holidays = (prefs[HOLIDAYS] ?: emptySet()).mapNotNull(Holiday::decode)
+        )
+    }
+    val sortModeTagDetailFlow: Flow<TaskSortMode> = prefsFlow.mapDistinct { taskSortModeOf(it[SORT_MODE_TAG_DETAIL]) }
+    val sortModeTagsTabFlow: Flow<EntitySortMode> = prefsFlow.mapDistinct { entitySortModeOf(it[SORT_MODE_TAGS_TAB]) }
+    val sortModePeopleTabFlow: Flow<EntitySortMode> = prefsFlow.mapDistinct { entitySortModeOf(it[SORT_MODE_PEOPLE_TAB]) }
+    val lastHomeTabFlow: Flow<Int> = prefsFlow.mapDistinct { (it[LAST_HOME_TAB] ?: 0).coerceIn(0, 4) }
+    val hasSeenWelcomeFlow: Flow<Boolean> = prefsFlow.mapDistinct { it[HAS_SEEN_WELCOME] ?: false }
+    val savedSmartFilterSetsFlow: Flow<Set<String>> = prefsFlow.mapDistinct { it[SAVED_SMART_FILTER_SETS] ?: emptySet() }
+    val recentTaskIdsFlow: Flow<List<String>> = prefsFlow.mapDistinct { prefs ->
         prefs[RECENT_TASK_IDS]?.split(",")?.filter { it.isNotBlank() } ?: emptyList()
     }
     /** Last `MaterialTheme.colorScheme.primary` actually rendered by the foreground Activity —
      * background notification/widget code reads this instead of re-deriving dynamic color in a
      * receiver/worker context, where it can resolve differently than in the live Activity. Null
      * (no cached value yet) until the app has been opened at least once. */
-    val lastPrimaryArgbFlow: Flow<Int?> = prefsFlow.map { it[LAST_PRIMARY_ARGB] }
+    val lastPrimaryArgbFlow: Flow<Int?> = prefsFlow.mapDistinct { it[LAST_PRIMARY_ARGB] }
 
     suspend fun setThemeMode(mode: ThemeMode) {
         dataStore.edit { it[THEME_MODE] = mode.name }
@@ -671,7 +699,7 @@ class UserPreferences @Inject constructor(
 
     /** Default true: new tasks were unconditionally assigned to the user before this existed, so
      * anything else would silently change behaviour for everyone on upgrade. */
-    val autoAssignToMeFlow: Flow<Boolean> = prefsFlow.map { it[AUTO_ASSIGN_TO_ME] ?: true }
+    val autoAssignToMeFlow: Flow<Boolean> = prefsFlow.mapDistinct { it[AUTO_ASSIGN_TO_ME] ?: true }
 
     suspend fun setAutoAssignToMe(enabled: Boolean) {
         dataStore.edit { it[AUTO_ASSIGN_TO_ME] = enabled }
@@ -1314,9 +1342,9 @@ class UserPreferences @Inject constructor(
         return lockedUntil
     }
 
-    val appLockPinLengthFlow: Flow<Int> = prefsFlow.map { it[APP_LOCK_PIN_LENGTH] ?: 0 }
-    val appLockLockedUntilFlow: Flow<Long> = prefsFlow.map { it[APP_LOCK_LOCKED_UNTIL] ?: 0L }
-    val appLockFailedAttemptsFlow: Flow<Int> = prefsFlow.map { it[APP_LOCK_FAILED_ATTEMPTS] ?: 0 }
+    val appLockPinLengthFlow: Flow<Int> = prefsFlow.mapDistinct { it[APP_LOCK_PIN_LENGTH] ?: 0 }
+    val appLockLockedUntilFlow: Flow<Long> = prefsFlow.mapDistinct { it[APP_LOCK_LOCKED_UNTIL] ?: 0L }
+    val appLockFailedAttemptsFlow: Flow<Int> = prefsFlow.mapDistinct { it[APP_LOCK_FAILED_ATTEMPTS] ?: 0 }
 
     suspend fun setTodayTabEnabled(enabled: Boolean) {
         dataStore.edit { it[TODAY_TAB_ENABLED] = enabled }

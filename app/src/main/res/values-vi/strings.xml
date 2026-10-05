@@ -1621,4 +1621,11 @@
     <string name="action_reopen">Mở lại</string>
     <string name="action_complete">Hoàn thành</string>
     <string name="action_open">Mở</string>
+    <plurals name="tasks_rescheduled">
+        <item quantity="one">Đã dời lịch việc cần làm</item>
+        <item quantity="other">Đã dời lịch %1$d việc cần làm</item>
+    </plurals>
+    <string name="bulk_reschedule_keep_time">Giữ nguyên giờ của từng việc</string>
+    <string name="recurrence_preview_next">Tiếp theo: %1$s</string>
+    <string name="recurrence_preview_none">Không lặp lại sau lần này</string>
 </resources>

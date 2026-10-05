@@ -206,6 +206,34 @@ object RecurrenceEvaluator {
         return nextDate.format(dateFormatter)
     }
 
+    /**
+     * The next [count] due dates after [baseDateStr], in order, for previewing a rule while it's
+     * being edited — so "last Friday", an every-3-weeks interval or an end count can be checked
+     * against real dates before saving rather than weeks later.
+     *
+     * Walks the same steps completing the task does (`YataRepositoryImpl.toggleTaskDone`): each
+     * date comes from [calculateNextOccurrence] off the previous one, and an "ends after N" count
+     * is decremented per step, so the list stops exactly where the series would. A completion-based
+     * rule is previewed as if each occurrence were finished on its due date. Fewer than [count]
+     * dates (possibly none) means the series ends first.
+     */
+    fun previewNextOccurrences(r: Recurrence, baseDateStr: String, count: Int = 3): List<String> {
+        val dates = mutableListOf<String>()
+        var rule: Recurrence = r
+        var current = baseDateStr
+        while (dates.size < count) {
+            val next = calculateNextOccurrence(rule, current) ?: break
+            dates += next
+            current = next
+            val ends = rule.ends
+            if (ends is RecurrenceEnds.After) {
+                if (ends.count - 1 <= 0) break
+                rule = rule.copy(ends = RecurrenceEnds.After(ends.count - 1))
+            }
+        }
+        return dates
+    }
+
     /** [completions] must be sorted newest-first (as `getCompletedTasksBySeriesId` already
      * returns them). Counts consecutive on-time completions from the most recent one back —
      * "on-time" meaning completed on or before the due date it was completed against — stopping

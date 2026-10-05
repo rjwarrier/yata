@@ -148,6 +148,28 @@ internal object PriorityFlagRules {
         "marquer", "marquÃ©", "marquee", "signaler", "favori", "mettre en favori", "marquer comme important"
     )
 
+    // Compiled once. These used to be built inside apply() — a fresh Regex per phrase, dozens of
+    // them, on every keystroke of the new-task sheet, which runs the parser on each change of
+    // the title. Pattern compilation was a sixth of the whole parse.
+    private val priorityWordRegexes = priorityWordPhrases.map { (phrase, level) ->
+        PhraseRegex(phrase, literalWordRegex(phrase)) to level
+    }
+    private val flagRegexes = flagPhrases.map { PhraseRegex(it, literalWordRegex(it)) }
+    private val tagCommandSuffixRegex = Regex(
+        "(?:#|hash\\s*tag|hashtag|pound\\s*tag|tag(?:ged)?(?:\\s+as)?|label(?:ed)?(?:\\s+as)?|with\\s+tag|etiqueta(?:\\s+como)?|\\u00e9tiquette|etiquette)\\s*$",
+        RegexOption.IGNORE_CASE
+    )
+
+    /**
+     * A phrase and its word-boundary regex. [canMatch] is a cheap pre-check: the regex is the
+     * phrase as a literal, matched with ASCII case-insensitivity, so it can only match where the
+     * phrase occurs case-insensitively — and `contains(ignoreCase = true)` is at least that
+     * lenient. Most input mentions none of the ~100 phrases, so this skips nearly every scan.
+     */
+    private class PhraseRegex(private val phrase: String, val regex: Regex) {
+        fun canMatch(raw: String): Boolean = raw.contains(phrase, ignoreCase = true)
+    }
+
     fun apply(context: ParserContext): PriorityFlagResult {
         var priority: String? = null
 
@@ -169,8 +191,9 @@ internal object PriorityFlagRules {
         }
 
         if (priority == null) {
-            for ((phrase, level) in priorityWordPhrases) {
-                literalWordRegex(phrase).findAll(context.raw)
+            for ((phrase, level) in priorityWordRegexes) {
+                if (!phrase.canMatch(context.raw)) continue
+                phrase.regex.findAll(context.raw)
                     .firstOrNull { match -> context.isFree(match.range) && !followsTagCommand(context.raw, match.range) }
                     ?.let { match ->
                         priority = level
@@ -181,8 +204,9 @@ internal object PriorityFlagRules {
         }
 
         var flag = false
-        for (phrase in flagPhrases) {
-            context.firstFreeMatch(literalWordRegex(phrase))?.let { match ->
+        for (phrase in flagRegexes) {
+            if (!phrase.canMatch(context.raw)) continue
+            context.firstFreeMatch(phrase.regex)?.let { match ->
                 flag = true
                 context.claimFlag(match.range)
             }
@@ -201,6 +225,5 @@ internal object PriorityFlagRules {
         }
 
     private fun followsTagCommand(raw: String, range: IntRange): Boolean =
-        Regex("(?:#|hash\\s*tag|hashtag|pound\\s*tag|tag(?:ged)?(?:\\s+as)?|label(?:ed)?(?:\\s+as)?|with\\s+tag|etiqueta(?:\\s+como)?|\\u00e9tiquette|etiquette)\\s*$", RegexOption.IGNORE_CASE)
-            .containsMatchIn(raw.substring(0, range.first))
+        tagCommandSuffixRegex.containsMatchIn(raw.substring(0, range.first))
 }

@@ -1878,6 +1878,9 @@ fun TaskDetailScreen(
                         activeSheet = DetailSheetType.None
                     },
                     onDismiss = { activeSheet = DetailSheetType.None },
+                    // The task's own due date anchors both the new-rule defaults (weekday, day of
+                    // month) and the next-dates preview; without it both counted from today.
+                    referenceDate = task.due,
                     weekendDays = dueDatePickerContext.weekendDays
                 )
                 DetailSheetType.ListPicker -> {

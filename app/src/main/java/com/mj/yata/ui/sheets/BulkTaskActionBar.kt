@@ -20,6 +20,10 @@ import androidx.compose.material.icons.filled.PriorityHigh
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
@@ -35,7 +39,9 @@ import com.mj.yata.domain.model.Project
 import com.mj.yata.domain.model.QuickSnoozePreset
 import com.mj.yata.domain.model.Task
 import com.mj.yata.domain.model.effectiveDue
+import com.mj.yata.ui.widgets.quickSnoozeAvailable
 import com.mj.yata.ui.widgets.quickSnoozeLabel
+import com.mj.yata.ui.widgets.quickSnoozePreview
 import com.mj.yata.domain.model.Tag
 import com.mj.yata.domain.model.YataList
 import com.mj.yata.domain.model.activePeople
@@ -119,10 +125,14 @@ fun TaskSelectionTopBar(
 
 @Composable
 fun TaskBulkRescheduleSheet(
-    onSelectPreset: (QuickSnoozePreset) -> Unit,
+    /** The chosen preset, and whether each task keeps its own time (only the date moves). */
+    onSelectPreset: (preset: QuickSnoozePreset, keepExistingTime: Boolean) -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // Saveable rather than a preference: it's a per-reschedule choice, and a stored default would
+    // need its own Settings row and backup handling for very little.
+    var keepExistingTime by rememberSaveable { mutableStateOf(false) }
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -136,18 +146,51 @@ fun TaskBulkRescheduleSheet(
             modifier = Modifier.padding(bottom = 12.dp)
         )
         QuickSnoozePreset.entries.forEach { preset ->
+            val available = quickSnoozeAvailable(preset)
+            val contentAlpha = if (available) 1f else 0.38f
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(12.dp))
-                    .clickable { onSelectPreset(preset) }
+                    .clickable(enabled = available) { onSelectPreset(preset, keepExistingTime) }
                     .padding(vertical = 12.dp, horizontal = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Icon(Icons.Default.Schedule, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(quickSnoozeLabel(preset), style = MaterialTheme.typography.bodyLarge)
+                Icon(
+                    Icons.Default.Schedule,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = contentAlpha)
+                )
+                Column {
+                    Text(
+                        quickSnoozeLabel(preset),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = contentAlpha)
+                    )
+                    Text(
+                        text = quickSnoozePreview(preset, includeTime = !keepExistingTime),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = contentAlpha)
+                    )
+                }
             }
+        }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp))
+                .clickable { keepExistingTime = !keepExistingTime }
+                .padding(vertical = 8.dp, horizontal = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.bulk_reschedule_keep_time),
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.weight(1f)
+            )
+            Switch(checked = keepExistingTime, onCheckedChange = { keepExistingTime = it })
         }
         TextButton(onClick = onDismiss, modifier = Modifier.align(Alignment.End)) {
             Text(stringResource(R.string.action_cancel))

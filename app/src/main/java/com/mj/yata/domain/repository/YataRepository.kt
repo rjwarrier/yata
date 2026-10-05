@@ -13,6 +13,11 @@ interface YataRepository {
     fun getTasksForProject(projectId: String): Flow<List<Task>>
     fun getTasksForPerson(personId: String): Flow<List<Task>>
 
+    /** The live (not trashed, not archived) tasks among [ids], in no particular order — what
+     * `getTasks().first()` filtered to [ids] would give, without loading every other task. For
+     * actions on a known selection (snooze, bulk edits, duplicate). */
+    suspend fun getTasksByIds(ids: Collection<String>): List<Task>
+
     /** Consecutive on-time completions for [taskId]'s recurring series (0 if the task isn't
      * recurring, or has never completed since seriesId tracking was added). See
      * TaskEntity.seriesId and RecurrenceEvaluator.computeStreak. */

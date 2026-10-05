@@ -1622,4 +1622,11 @@
     <string name="action_reopen">Heropenen</string>
     <string name="action_complete">Voltooien</string>
     <string name="action_open">Openen</string>
+    <plurals name="tasks_rescheduled">
+        <item quantity="one">Taak verplaatst</item>
+        <item quantity="other">%1$d taken verplaatst</item>
+    </plurals>
+    <string name="bulk_reschedule_keep_time">Tijd van elke taak behouden</string>
+    <string name="recurrence_preview_next">Volgende: %1$s</string>
+    <string name="recurrence_preview_none">Herhaalt niet meer na deze</string>
 </resources>

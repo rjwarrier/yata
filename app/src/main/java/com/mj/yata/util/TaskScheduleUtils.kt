@@ -50,6 +50,8 @@ object TaskScheduleUtils {
         .appendPattern("h:mm a")
         .toFormatter(Locale.US)
 
+    private val SPACE_SEPARATORS = Regex("""\p{Zs}""")
+
     private fun shortDateFormatter() = AppFormats.shortDateFormatter()
     private fun longDateFormatter() = AppFormats.longDateFormatter()
 
@@ -185,12 +187,17 @@ object TaskScheduleUtils {
         val trimmed = timeString.trim()
         // Some locales/JDKs render the AM/PM separator as a narrow no-break space; normalize it
         // so a value formatted on one device still parses on another.
-        val normalized = trimmed.replace(Regex("""\p{Zs}"""), " ")
+        val normalized = trimmed.replace(SPACE_SEPARATORS, " ")
         for (candidate in listOf(trimmed, normalized).distinct()) {
-            try {
-                return LocalTime.parse(candidate)
-            } catch (_: DateTimeParseException) {
-                // Not ISO — fall through to the 12-hour attempts below.
+            // An ISO time never contains a letter, and the stored "3:00 PM" form always does — so
+            // skip the ISO attempt outright for the common case rather than paying for a thrown
+            // (stack-trace-filling) DateTimeParseException on every stored time, every row render.
+            if (candidate.none { it.isLetter() }) {
+                try {
+                    return LocalTime.parse(candidate)
+                } catch (_: DateTimeParseException) {
+                    // Not ISO — fall through to the 12-hour attempts below.
+                }
             }
             for (formatter in listOf(storageTimeParser, storageTimeParserFallback)) {
                 try {

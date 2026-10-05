@@ -1618,4 +1618,11 @@
     <string name="action_reopen">ફરીથી ખોલો</string>
     <string name="action_complete">પૂર્ણ કરો</string>
     <string name="action_open">ખોલો</string>
+    <plurals name="tasks_rescheduled">
+        <item quantity="one">ટાસ્ક ફરી શેડ્યૂલ કરવામાં આવ્યો</item>
+        <item quantity="other">%1$d ટાસ્ક ફરી શેડ્યૂલ કરવામાં આવ્યા</item>
+    </plurals>
+    <string name="bulk_reschedule_keep_time">દરેક ટાસ્કનો સમય જાળવો</string>
+    <string name="recurrence_preview_next">આગળ: %1$s</string>
+    <string name="recurrence_preview_none">આ પછી ફરી પુનરાવર્તન થશે નહીં</string>
 </resources>

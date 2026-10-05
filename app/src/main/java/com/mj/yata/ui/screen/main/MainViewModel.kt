@@ -57,6 +57,7 @@ class MainViewModel @Inject constructor(
     private val taskOperations: TaskOperations,
     private val backupOperations: BackupOperations,
     private val errorBus: AppErrorBus,
+    private val undoBus: com.mj.yata.ui.undo.AppUndoBus,
     private val crashLogStore: CrashLogStore,
     private val operationHistoryStore: OperationHistoryStore,
     private val remoteBackupCredentialsStore: RemoteBackupCredentialsStore
@@ -512,7 +513,24 @@ data class WeekendRescheduleWarning(
 )
 
     // Data streams
-    val tasks: StateFlow<List<Task>> = repository.getTasks()
+    //
+    // The five core streams are shared (replay = 1) before being turned into StateFlows, so that
+    // [initialDataLoaded] below can wait on the same upstream Room subscription the UI uses. It
+    // used to subscribe to fresh repository flows of its own, which ran the full tasks query
+    // (relations, subtasks and all) plus the other four a second time on every cold start, on the
+    // critical path to first frame. The shared flow has no seed value, so `first()` on it still
+    // waits for Room's real first emission exactly as before. Its 5s stop timeout covers the
+    // window between that `first()` finishing and the UI's own collector arriving.
+    private val tasksSource = repository.getTasks().shareCore()
+    private val projectsSource = repository.getProjects().shareCore()
+    private val listsSource = repository.getLists().shareCore()
+    private val peopleSource = repository.getPeople().shareCore()
+    private val tagsSource = repository.getTags().shareCore()
+
+    private fun <T> Flow<T>.shareCore(): SharedFlow<T> =
+        shareIn(viewModelScope, SharingStarted.WhileSubscribed(5000), replay = 1)
+
+    val tasks: StateFlow<List<Task>> = tasksSource
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val _postponementWarnings = MutableSharedFlow<PostponementWarning>()
@@ -521,7 +539,7 @@ data class WeekendRescheduleWarning(
     private val _weekendRescheduleWarnings = MutableSharedFlow<WeekendRescheduleWarning>()
     val weekendRescheduleWarnings: SharedFlow<WeekendRescheduleWarning> = _weekendRescheduleWarnings.asSharedFlow()
 
-    val projects: StateFlow<List<Project>> = repository.getProjects()
+    val projects: StateFlow<List<Project>> = projectsSource
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val activeProjects: StateFlow<List<Project>> = repository.getActiveProjects()
@@ -530,10 +548,10 @@ data class WeekendRescheduleWarning(
     val archivedProjects: StateFlow<List<Project>> = repository.getArchivedProjects()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val lists: StateFlow<List<YataList>> = repository.getLists()
+    val lists: StateFlow<List<YataList>> = listsSource
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val people: StateFlow<List<Person>> = repository.getPeople()
+    val people: StateFlow<List<Person>> = peopleSource
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val activePeople: StateFlow<List<Person>> = repository.getActivePeople()
@@ -542,7 +560,7 @@ data class WeekendRescheduleWarning(
     val archivedPeople: StateFlow<List<Person>> = repository.getArchivedPeople()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val tags: StateFlow<List<Tag>> = repository.getTags()
+    val tags: StateFlow<List<Tag>> = tagsSource
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val tagGroups: StateFlow<List<TagGroup>> = repository.getTagGroups()
@@ -560,21 +578,20 @@ data class WeekendRescheduleWarning(
      * state (with icon pulse) before Room's first query result replaced it. Tabs gate their empty
      * state on this instead, showing a loading skeleton until the real data lands.
      *
-     * Subscribes directly to the repository flows rather than the [tasks]/[projects]/etc.
-     * [StateFlow]s above: those are [SharingStarted.WhileSubscribed], so their `.value` is only
-     * the real seed until *something* subscribes to them, and collecting them here first would
-     * just observe that same seed instead of waiting for it to be replaced.
+     * Subscribes to the seedless shared sources rather than the [tasks]/[projects]/etc.
+     * [StateFlow]s above: those start at `emptyList()`, so collecting them here first would just
+     * observe that seed instead of waiting for it to be replaced.
      */
     val initialDataLoaded: StateFlow<Boolean> = _initialDataLoaded.asStateFlow()
 
     init {
         viewModelScope.launch {
             combine(
-                repository.getTasks(),
-                repository.getProjects(),
-                repository.getLists(),
-                repository.getPeople(),
-                repository.getTags()
+                tasksSource,
+                projectsSource,
+                listsSource,
+                peopleSource,
+                tagsSource
             ) { _, _, _, _, _ -> Unit }.first()
             _initialDataLoaded.value = true
         }
@@ -626,16 +643,18 @@ data class WeekendRescheduleWarning(
         nonWorkingDayContext
     ) { inputs, nonWorkingDays ->
         val todayStr = inputs.today.toString()
+        val nowMillis = System.currentTimeMillis()
         val myId = inputs.people.firstOrNull { it.isMe }?.id
         val excludedProjectIds = inputs.projects.hiddenFromMainTaskProjectIds()
         val excludedListIds = inputs.lists.hiddenFromMainTaskListIds()
         inputs.tasks.count {
             it.isActionableToday(
-                todayStr, System.currentTimeMillis(), myId,
+                todayStr, nowMillis, myId,
                 nonWorkingDays.weekendDays, nonWorkingDays.holidays, nonWorkingDays.enabled
             ) && it.projectId !in excludedProjectIds && it.listId !in excludedListIds
         }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+    }.flowOn(Dispatchers.Default) // walks every live task on each emission — keep it off the UI thread
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
     val voiceRecognitionLanguage: StateFlow<String> = userPreferences.voiceRecognitionLanguageFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "default")
@@ -1952,29 +1971,40 @@ data class WeekendRescheduleWarning(
 
     fun quickSnoozeTask(id: String, preset: QuickSnoozePreset) {
         safeLaunch {
-            val previous = tasks.value.find { it.id == id }
-            taskOperations.quickSnooze(id, preset)?.let { updated ->
-                if (updated.postponementCount > (previous?.postponementCount ?: 0)) {
-                    warnIfPostponedOften(updated)
-                }
-                warnIfRescheduledToWeekend(previous?.due, updated)
+            taskOperations.quickSnooze(id, preset)?.let { change ->
+                offerRescheduleUndo(listOf(change))
+                warnAfterReschedule(change)
             }
             userPreferences.recordRecentTask(id)
         }
     }
 
-    fun bulkRescheduleTasks(ids: List<String>, preset: QuickSnoozePreset) {
+    fun bulkRescheduleTasks(ids: List<String>, preset: QuickSnoozePreset, keepExistingTime: Boolean = false) {
         safeLaunch {
-            val previousById = tasks.value.filter { it.id in ids }.associateBy { it.id }
-            taskOperations.bulkReschedule(ids, preset).forEach { updated ->
-                val previous = previousById[updated.id]
-                if (updated.postponementCount > (previous?.postponementCount ?: 0)) {
-                    warnIfPostponedOften(updated)
-                }
-                warnIfRescheduledToWeekend(previous?.due, updated)
-            }
+            val changes = taskOperations.bulkReschedule(ids, preset, keepExistingTime)
+            offerRescheduleUndo(changes)
+            changes.forEach { warnAfterReschedule(it) }
             ids.take(8).forEach { userPreferences.recordRecentTask(it) }
         }
+    }
+
+    /** Offered before the postponement/weekend warnings below so the Undo, which is the
+     * time-limited one, reaches the snackbar host first instead of queueing behind them. */
+    private fun offerRescheduleUndo(changes: List<com.mj.yata.domain.usecase.Rescheduled>) {
+        val undoable = changes.filter { it.changedSchedule }
+        if (undoable.isEmpty()) return
+        undoBus.offer(
+            com.mj.yata.ui.undo.UndoRequest(R.plurals.tasks_rescheduled, undoable.size) {
+                safeLaunch { taskOperations.undoReschedule(undoable) }
+            }
+        )
+    }
+
+    private suspend fun warnAfterReschedule(change: com.mj.yata.domain.usecase.Rescheduled) {
+        if (change.updated.postponementCount > change.previous.postponementCount) {
+            warnIfPostponedOften(change.updated)
+        }
+        warnIfRescheduledToWeekend(change.previous.due, change.updated)
     }
 
     private suspend fun warnIfPostponedOften(task: Task) {

@@ -1621,4 +1621,11 @@
     <string name="action_reopen">Yeniden aç</string>
     <string name="action_complete">Tamamla</string>
     <string name="action_open">Aç</string>
+    <plurals name="tasks_rescheduled">
+        <item quantity="one">Görev yeniden planlandı</item>
+        <item quantity="other">%1$d görev yeniden planlandı</item>
+    </plurals>
+    <string name="bulk_reschedule_keep_time">Her görevin saatini koru</string>
+    <string name="recurrence_preview_next">Sonraki: %1$s</string>
+    <string name="recurrence_preview_none">Bundan sonra tekrarlanmaz</string>
 </resources>

@@ -50,6 +50,7 @@ class RoutingYataRepository @Inject constructor(
     override fun getTasksForProject(projectId: String): Flow<List<Task>> = routed(real.getTasksForProject(projectId), demo.getTasksForProject(projectId))
     override fun getTasksForPerson(personId: String): Flow<List<Task>> = routed(real.getTasksForPerson(personId), demo.getTasksForPerson(personId))
     override suspend fun getTaskStreak(taskId: String): Int = if (isDemo()) demo.getTaskStreak(taskId) else real.getTaskStreak(taskId)
+    override suspend fun getTasksByIds(ids: Collection<String>): List<Task> = if (isDemo()) demo.getTasksByIds(ids) else real.getTasksByIds(ids)
 
     override suspend fun upsertTask(task: Task, notify: Boolean, resyncReminder: Boolean) = write { real.upsertTask(task, notify, resyncReminder) }
     override suspend fun upsertTasks(

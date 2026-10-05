@@ -1621,4 +1621,11 @@
     <string name="action_reopen">फिर से खोलें</string>
     <string name="action_complete">पूरा करें</string>
     <string name="action_open">खोलें</string>
+    <plurals name="tasks_rescheduled">
+        <item quantity="one">कार्य पुनर्निर्धारित किया गया</item>
+        <item quantity="other">%1$d कार्य पुनर्निर्धारित किए गए</item>
+    </plurals>
+    <string name="bulk_reschedule_keep_time">हर कार्य का समय बनाए रखें</string>
+    <string name="recurrence_preview_next">अगली: %1$s</string>
+    <string name="recurrence_preview_none">इसके बाद दोहराया नहीं जाएगा</string>
 </resources>

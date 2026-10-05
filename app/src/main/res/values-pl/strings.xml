@@ -1623,4 +1623,13 @@
     <string name="action_reopen">Otwórz ponownie</string>
     <string name="action_complete">Ukończ</string>
     <string name="action_open">Otwórz</string>
+    <plurals name="tasks_rescheduled">
+        <item quantity="one">Przełożono zadanie</item>
+        <item quantity="few">Przełożono %1$d zadania</item>
+        <item quantity="many">Przełożono %1$d zadań</item>
+        <item quantity="other">Przełożono %1$d zadania</item>
+    </plurals>
+    <string name="bulk_reschedule_keep_time">Zachowaj godzinę każdego zadania</string>
+    <string name="recurrence_preview_next">Następne: %1$s</string>
+    <string name="recurrence_preview_none">Po tym już się nie powtarza</string>
 </resources>
