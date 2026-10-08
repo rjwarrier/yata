@@ -133,6 +133,10 @@ fun TodayTab(
      * tasks" and "haven't loaded yet"; this disambiguates so the former's empty state doesn't
      * flash before the latter resolves. */
     initialDataLoaded: Boolean = true,
+    /** The running focus timer, if any, and its controls for Today's rows. */
+    focusTimer: FocusTimer? = null,
+    onStartFocusTimer: (Task) -> Unit = {},
+    onStopFocusTimer: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val selectedIds = remember { mutableStateListOf<String>() }
@@ -804,6 +808,9 @@ fun TodayTab(
                         onCommentClick = { pendingCommentTask = task },
                         onQuickSnooze = { preset -> onQuickSnooze(task.id, preset) },
                         onRenameTask = { title -> onRenameTask(task.id, title) },
+                        focusTimerStartedAt = focusTimer?.takeIf { it.taskId == task.id }?.startedAt,
+                        onStartFocusTimer = { onStartFocusTimer(task) },
+                        onStopFocusTimer = onStopFocusTimer,
                         density = taskRowDensity,
                         onSwipeToDelete = { onSwipeToDelete(task.id) },
                         swipeEnabled = !selectionMode,

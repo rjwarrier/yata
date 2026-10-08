@@ -272,6 +272,7 @@ fun MainScreen(
     val holidays = remember(holidaysRaw) { holidaysRaw.mapNotNull(com.mj.yata.domain.model.Holiday::decode) }
     val observeNonWorkingDays by viewModel.observeNonWorkingDays.collectAsStateWithLifecycle()
     val showCalendarEvents by viewModel.showCalendarEvents.collectAsStateWithLifecycle()
+    val focusTimer by viewModel.focusTimer.collectAsStateWithLifecycle()
     val tasks = uiState.tasks
     val projects = uiState.projects
     val activeProjects = uiState.activeProjects
@@ -1008,7 +1009,10 @@ fun MainScreen(
                             holidays = holidays,
                             observeNonWorkingDays = observeNonWorkingDays,
                             useWideLayout = useWideNavigation,
-                            initialDataLoaded = initialDataLoaded
+                            initialDataLoaded = initialDataLoaded,
+                            focusTimer = focusTimer,
+                            onStartFocusTimer = { viewModel.startFocusTimer(it) },
+                            onStopFocusTimer = { viewModel.stopFocusTimer() }
                         )
                         1 -> ProjectsTab(
                             projects = projects,

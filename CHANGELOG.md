@@ -30,7 +30,8 @@ test-only changes belong in the commit message, not here, unless they change beh
 - Recurring tasks show a completion heatmap on their detail screen, one square per day.
 - Reply to the daily agenda notification to add a task without opening the app. The text is
   understood the same way as in Quick Add, so dates, #projects and tags work.
-- Focus timer: start a timer from a task's detail screen to log the time you actually spend on it,
+- Focus timer: start a timer from a task's detail screen, or from the play button on Today's task
+  rows, to log the time you actually spend on it,
   shown against the task's estimate. Analytics compares tracked time with estimates for the tasks
   you finish. While it runs, a notification shows the elapsed time and can stop it, even after the
   phone restarts. The tracked total can be edited by hand, to fix a forgotten timer or add time

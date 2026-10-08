@@ -21,12 +21,15 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Snooze
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -59,6 +62,11 @@ import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.YataEase
 import com.mj.yata.util.TaskScheduleUtils
 import java.time.LocalDate
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import kotlinx.coroutines.delay
 
 /** Inset from the screen edge to a task card, when card mode is on. Same on every list screen. */
 private val TASK_CARD_MARGIN = 12.dp
@@ -87,6 +95,42 @@ private fun TaskHealthBadge(label: String) {
             .background(containerColor)
             .padding(horizontal = 6.dp, vertical = 2.dp)
     )
+}
+
+/** The running focus timer on its task's row: live elapsed time, tap to stop and log it. */
+@Composable
+private fun FocusTimerChip(startedAt: Long, onStop: () -> Unit) {
+    val elapsedSeconds by produceState(0L, startedAt) {
+        while (true) {
+            value = ((System.currentTimeMillis() - startedAt) / 1000).coerceAtLeast(0)
+            delay(1000)
+        }
+    }
+    val elapsed = android.text.format.DateUtils.formatElapsedTime(elapsedSeconds)
+    val stopLabel = stringResource(R.string.task_detail_timer_stop, elapsed)
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(50))
+            .background(MaterialTheme.colorScheme.primaryContainer)
+            .clickable(role = Role.Button, onClick = onStop)
+            .semantics { contentDescription = stopLabel }
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Icon(
+            imageVector = Icons.Default.Stop,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+            modifier = Modifier.size(14.dp)
+        )
+        Text(
+            text = elapsed,
+            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+            color = MaterialTheme.colorScheme.onPrimaryContainer,
+            modifier = Modifier.clearAndSetSemantics {}
+        )
+    }
 }
 
 @Composable
@@ -150,6 +194,11 @@ fun TaskRow(
     showDueTodayBadge: Boolean = true,
     onQuickSnooze: ((QuickSnoozePreset) -> Unit)? = null,
     onRenameTask: ((String) -> Unit)? = null,
+    // Focus timer controls, passed by Today only, so every other list renders as before.
+    // [focusTimerStartedAt] is non-null when this task's timer is the one running.
+    focusTimerStartedAt: Long? = null,
+    onStartFocusTimer: (() -> Unit)? = null,
+    onStopFocusTimer: (() -> Unit)? = null,
     // "Observe non-working days" (Settings → Task Defaults → Holidays). Default off so every
     // existing caller compiles and renders exactly as before until explicitly updated.
     weekendDays: Set<String> = emptySet(),
@@ -574,6 +623,19 @@ fun TaskRow(
                         TagChip(name = t.name, accentKey = t.color, size = "sm")
                     }
                 }
+            }
+        }
+
+        if (focusTimerStartedAt != null && onStopFocusTimer != null) {
+            FocusTimerChip(focusTimerStartedAt, onStopFocusTimer)
+        } else if (onStartFocusTimer != null && !task.done) {
+            IconButton(onClick = onStartFocusTimer) {
+                Icon(
+                    imageVector = Icons.Default.PlayArrow,
+                    contentDescription = stringResource(R.string.task_detail_timer_start),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                    modifier = Modifier.size(18.dp)
+                )
             }
         }
 
