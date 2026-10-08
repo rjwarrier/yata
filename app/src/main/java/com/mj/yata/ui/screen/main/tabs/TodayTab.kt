@@ -163,11 +163,15 @@ fun TodayTab(
     // Due-or-overdue, minus anything deferred or being waited on — see Task.isActionableToday,
     // which the home-screen widgets and the daily agenda digest share so they can't drift from
     // this screen. The container exclusions stay here since they're specific to the in-app view.
+    // Task.wasPendingAsOf(today) keeps only today's completions: a task done on an earlier day
+    // would otherwise match due <= today forever, piling every past completion into Completed
+    // and inflating the progress ring.
     val todayTasks = remember(tasks, todayStr, excludedProjectIds, excludedListIds, myId, weekendDays, holidays, observeNonWorkingDays) {
         val nowMillis = System.currentTimeMillis()
         tasks.filter {
             it.isActionableToday(todayStr, nowMillis, myId, weekendDays, holidays, observeNonWorkingDays) &&
-                it.projectId !in excludedProjectIds && it.listId !in excludedListIds
+                it.projectId !in excludedProjectIds && it.listId !in excludedListIds &&
+                it.wasPendingAsOf(today)
         }
     }
 
@@ -189,14 +193,9 @@ fun TodayTab(
     }
 
     // Always reflect all of today's tasks here, not the chip-filtered subset below —
-    // otherwise picking "High Priority" etc. would skew the ring/"X to go" text. Also scoped to
-    // Task.wasPendingAsOf(today) rather than raw todayTasks, so a task done on a previous day
-    // doesn't keep inflating the total forever (see that function's doc for why).
-    val progressBaseTasks = remember(todayTasks, today) {
-        todayTasks.filter { it.wasPendingAsOf(today) }
-    }
-    val doneCount = progressBaseTasks.count { it.done }
-    val totalCount = progressBaseTasks.size
+    // otherwise picking "High Priority" etc. would skew the ring/"X to go" text.
+    val doneCount = todayTasks.count { it.done }
+    val totalCount = todayTasks.size
     val progress = if (totalCount > 0) doneCount.toFloat() / totalCount else 0f
     val remainingCount = totalCount - doneCount
 
@@ -207,12 +206,12 @@ fun TodayTab(
     val unestimatedCount = remember(openTodayTasks) { com.mj.yata.util.EstimateUtils.unestimatedCount(openTodayTasks) }
 
     var activeStatFilter by remember { mutableStateOf<com.mj.yata.ui.widgets.HeroStatKind?>(null) }
-    val overdueCount = remember(progressBaseTasks, today, weekendDays, holidays, observeNonWorkingDays) {
-        com.mj.yata.util.AnalyticsUtils.overdueCount(progressBaseTasks, today, weekendDays, holidays, observeNonWorkingDays)
+    val overdueCount = remember(todayTasks, today, weekendDays, holidays, observeNonWorkingDays) {
+        com.mj.yata.util.AnalyticsUtils.overdueCount(todayTasks, today, weekendDays, holidays, observeNonWorkingDays)
     }
-    val highPriorityCount = remember(progressBaseTasks) { progressBaseTasks.count { !it.done && it.priority == "high" } }
-    val dueTodayCount = remember(progressBaseTasks, todayStr, weekendDays, holidays, observeNonWorkingDays) {
-        progressBaseTasks.count {
+    val highPriorityCount = remember(todayTasks) { todayTasks.count { !it.done && it.priority == "high" } }
+    val dueTodayCount = remember(todayTasks, todayStr, weekendDays, holidays, observeNonWorkingDays) {
+        todayTasks.count {
             !it.done && it.effectiveDue(weekendDays, holidays, observeNonWorkingDays) == todayStr
         }
     }

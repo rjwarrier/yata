@@ -94,9 +94,9 @@ class WidgetUpdaterImpl @Inject constructor(
         var refreshed = 0
 
         val today = LocalDate.now()
-        // Only the Single List and Today widgets show completions from before today; the rest
-        // never need the full completed history.
-        val tasks = if (hasSingleList || hasAppWidget) repository.getTasks().first()
+        // Only the Single List widget shows completions from before today; the rest never need
+        // the full completed history.
+        val tasks = if (hasSingleList) repository.getTasks().first()
         else repository.getOpenTasks(alsoCompletedSince = today)
         val needsPeople = hasProgress || hasUpcoming || hasTeam || hasSingleList || hasAppWidget
         val needsProjects = hasProgress || hasUpcoming || hasSingleList || hasAppWidget
@@ -210,15 +210,14 @@ class WidgetUpdaterImpl @Inject constructor(
                 .filter {
                     it.isActionableToday(todayStr, nowMillis, myId, weekendDays, holidays, observeNonWorkingDays) &&
                         it.projectId !in excludedProjectIds &&
-                        it.listId !in excludedListIds
+                        it.listId !in excludedListIds &&
+                        it.wasPendingAsOf(today)
                 }
                 .sortedWith(compareBy({ it.done }, { it.sortOrder }))
-            val progressTasks = todayTasks.filter { it.wasPendingAsOf(today) }
             val appWidgetHash = listOf(
                 todayTasks.map { task ->
                     listOf(task.id, task.title, task.done, task.due, task.time, task.listId, task.assigneeIds, task.sortOrder)
                 },
-                progressTasks.map { it.id to it.done },
                 lists.map { list -> listOf(list.id, list.name, list.color, list.excludeFromToday) },
                 people.map { person -> listOf(person.id, person.name, person.initials, person.color, person.photoUri, person.isMe) },
                 projects.map { project -> listOf(project.id, project.excludeFromToday, project.archived) }

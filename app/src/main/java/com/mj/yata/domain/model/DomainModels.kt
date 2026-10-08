@@ -252,8 +252,8 @@ fun Task.effectiveDue(
  * there, since the point of a start date is only to keep it out of the day view.
  *
  * Callers still apply their own scoping on top (excludeFromToday containers, archived projects,
- * `wasPendingAsOf` for progress counts) — this covers the two task-level "not yet mine to do"
- * rules alone.
+ * `wasPendingAsOf` to drop completions from earlier days) — this covers the two task-level
+ * "not yet mine to do" rules alone.
  *
  * [weekendDays]/[holidays]/[observeNonWorkingDays] default to off so every existing call site
  * compiles and behaves exactly as before; only callers that explicitly opt in (currently: this

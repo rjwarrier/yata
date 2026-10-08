@@ -77,17 +77,17 @@ class YataAppWidget : GlanceAppWidget() {
         val excludedProjectIds = repository.getProjects().first().hiddenFromMainTaskProjectIds()
         val lists = repository.getLists().first()
         val excludedListIds = lists.hiddenFromMainTaskListIds()
-        val todayTasks = repository.getTasks().first()
+        // wasPendingAsOf keeps only today's completions, same as the Today tab — a task done on an
+        // earlier day would otherwise match due <= today forever.
+        val todayTasks = repository.getOpenTasks(alsoCompletedSince = today)
             .filter {
                 it.isActionableToday(todayStr, System.currentTimeMillis(), myId) &&
-                    it.projectId !in excludedProjectIds && it.listId !in excludedListIds
+                    it.projectId !in excludedProjectIds && it.listId !in excludedListIds &&
+                    it.wasPendingAsOf(today)
             }
             .sortedWith(compareBy({ it.done }, { it.sortOrder }))
-        // wasPendingAsOf drops tasks done on an earlier day from the ring/"X to go" count only —
-        // the row list above still shows every today-or-overdue task, done or not.
-        val progressTasks = todayTasks.filter { it.wasPendingAsOf(today) }
-        val remaining = progressTasks.count { !it.done }
-        val progress = if (progressTasks.isEmpty()) 0f else progressTasks.count { it.done }.toFloat() / progressTasks.size
+        val remaining = todayTasks.count { !it.done }
+        val progress = if (todayTasks.isEmpty()) 0f else todayTasks.count { it.done }.toFloat() / todayTasks.size
         val listsById = lists.associateBy { it.id }
         val peopleById = people.associateBy { it.id }
         val theme = resolveWidgetTheme(context)
