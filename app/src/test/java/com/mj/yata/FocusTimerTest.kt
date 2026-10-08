@@ -33,16 +33,22 @@ class FocusTimerTest {
 
     @Test
     fun trackedVsEstimateCountsOnlyTasksWithBoth() {
-        fun task(tracked: Int, estimate: Int?) = Task(
+        fun task(tracked: Int, estimate: Int?, assignee: String? = null) = Task(
             id = "t$tracked$estimate", title = "t", listId = null, projectId = null, section = "", due = null,
             time = null, reminder = null, priority = "none", flag = false, done = true,
-            assigneeIds = emptyList(), tagIds = emptyList(), recurrence = null, subtasks = emptyList(), notes = null,
+            assigneeIds = listOfNotNull(assignee), tagIds = emptyList(), recurrence = null, subtasks = emptyList(), notes = null,
             estimateMinutes = estimate, trackedMinutes = tracked
         )
-        assertNull(AnalyticsUtils.trackedVsEstimate(listOf(task(30, null), task(0, 60))))
+        assertNull(AnalyticsUtils.trackedVsEstimate(listOf(task(30, null), task(0, 60)), "me", peopleEnabled = true))
+        val mixed = listOf(task(40, 30), task(50, 30, assignee = "me"), task(20, null), task(70, 60, assignee = "p2"))
         assertEquals(
             TrackedVsEstimate(trackedMinutes = 90, estimatedMinutes = 60),
-            AnalyticsUtils.trackedVsEstimate(listOf(task(40, 30), task(50, 30), task(20, null)))
+            AnalyticsUtils.trackedVsEstimate(mixed, "me", peopleEnabled = true)
+        )
+        // With People off, assignment isn't shown anywhere, so delegated tasks count too.
+        assertEquals(
+            TrackedVsEstimate(trackedMinutes = 160, estimatedMinutes = 120),
+            AnalyticsUtils.trackedVsEstimate(mixed, "me", peopleEnabled = false)
         )
     }
 

@@ -8,6 +8,7 @@ import com.mj.yata.domain.model.Task
 import com.mj.yata.domain.model.YataList
 import com.mj.yata.domain.model.effectiveDue
 import com.mj.yata.domain.model.effectiveTagIds
+import com.mj.yata.domain.model.isDelegated
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -279,7 +280,8 @@ object AnalyticsUtils {
         today: LocalDate = LocalDate.now(),
         weekendDays: Set<String> = emptySet(),
         holidays: List<Holiday> = emptyList(),
-        observeNonWorkingDays: Boolean = false
+        observeNonWorkingDays: Boolean = false,
+        peopleEnabled: Boolean = true
     ): AnalyticsUiState {
         val periodTasks = filterTasksByPeriod(tasks, period, today)
         val totalCount = periodTasks.size
@@ -325,7 +327,11 @@ object AnalyticsUtils {
             oldestOpenAgeDays = oldestOpenAge(tasks, today),
             openWithoutDueDate = tasks.count { !it.done && it.due == null },
             capacity = capacitySnapshot(tasks, today, weekendDays, holidays, observeNonWorkingDays),
-            trackedVsEstimate = trackedVsEstimate(periodTasks.filter { it.done }),
+            trackedVsEstimate = trackedVsEstimate(
+                periodTasks.filter { it.done },
+                myId = people.find { it.isMe }?.id,
+                peopleEnabled = peopleEnabled
+            ),
             postponedOpenTaskCount = postponedOpenTaskCount(tasks),
             maxPostponementCount = maxPostponementCount(tasks),
             mostPostponedTasks = mostPostponedTasks(tasks),
@@ -596,8 +602,12 @@ object AnalyticsUtils {
         )
     }
 
-    fun trackedVsEstimate(doneTasks: List<Task>): TrackedVsEstimate? {
-        val both = doneTasks.filter { it.trackedMinutes > 0 && (it.estimateMinutes ?: 0) > 0 }
+    /** Only your own tasks count, the same rule that decides where the focus timer is offered —
+     * so a delegated task's leftover tracked time doesn't skew your estimate accuracy. */
+    fun trackedVsEstimate(doneTasks: List<Task>, myId: String?, peopleEnabled: Boolean): TrackedVsEstimate? {
+        val both = doneTasks.filter {
+            it.trackedMinutes > 0 && (it.estimateMinutes ?: 0) > 0 && !(peopleEnabled && it.isDelegated(myId))
+        }
         if (both.isEmpty()) return null
         return TrackedVsEstimate(both.sumOf { it.trackedMinutes }, both.sumOf { it.estimateMinutes ?: 0 })
     }
