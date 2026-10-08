@@ -1818,4 +1818,7 @@
     <string name="settings_calendar_permission_denied">Calendar access wasn\'t allowed. Turn it on for YATA in system settings to show events.</string>
     <string name="calendar_event_all_day">All day</string>
     <string name="calendar_event_no_title">(No title)</string>
+    <string name="notification_channel_focus_timer">Focus timer</string>
+    <string name="notification_focus_timer_running">Focus timer running</string>
+    <string name="notification_action_stop_timer">Stop timer</string>
 </resources>

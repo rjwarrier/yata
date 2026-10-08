@@ -2503,7 +2503,7 @@ private fun FocusTimerRow(task: Task, viewModel: MainViewModel) {
         )
         if (!task.done || runningHere) {
             FilledTonalButton(
-                onClick = { if (runningHere) viewModel.stopFocusTimer() else viewModel.startFocusTimer(task.id) }
+                onClick = { if (runningHere) viewModel.stopFocusTimer() else viewModel.startFocusTimer(task) }
             ) {
                 Icon(
                     if (runningHere) Icons.Default.Stop else Icons.Default.PlayArrow,

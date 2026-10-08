@@ -55,6 +55,7 @@ class MainViewModel @Inject constructor(
     private val repository: YataRepository,
     private val userPreferences: UserPreferences,
     private val taskOperations: TaskOperations,
+    private val focusTimerOperations: com.mj.yata.domain.usecase.FocusTimerOperations,
     private val backupOperations: BackupOperations,
     private val errorBus: AppErrorBus,
     private val undoBus: com.mj.yata.ui.undo.AppUndoBus,
@@ -2909,29 +2910,13 @@ data class WeekendRescheduleWarning(
     val focusTimer: StateFlow<FocusTimer?> = userPreferences.focusTimerFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-    /** Starts the focus timer on [taskId]. Only one runs at a time, so a timer already running on
-     * another task is stopped and its time logged first. */
-    fun startFocusTimer(taskId: String) {
-        safeLaunch {
-            logRunningFocusTimer()
-            userPreferences.setFocusTimer(FocusTimer(taskId, System.currentTimeMillis()))
-        }
+    /** See [com.mj.yata.domain.usecase.FocusTimerOperations.start]. */
+    fun startFocusTimer(task: Task) {
+        safeLaunch { focusTimerOperations.start(task) }
     }
 
     fun stopFocusTimer() {
-        safeLaunch { logRunningFocusTimer() }
-    }
-
-    /** Clears the running timer before writing its minutes, so a failed write loses one session
-     * rather than leaving a timer that would log the same time twice. A task archived or trashed
-     * while its timer ran isn't live any more, and the session is dropped. */
-    private suspend fun logRunningFocusTimer() {
-        val timer = userPreferences.focusTimerFlow.first() ?: return
-        userPreferences.setFocusTimer(null)
-        val minutes = focusSessionMinutes(timer.startedAt, System.currentTimeMillis())
-        if (minutes == 0) return
-        val task = repository.getTasksByIds(listOf(timer.taskId)).firstOrNull() ?: return
-        repository.upsertTask(task.copy(trackedMinutes = task.trackedMinutes + minutes), resyncReminder = false)
+        safeLaunch { focusTimerOperations.stop() }
     }
 
     val taskTemplates: StateFlow<List<TaskTemplate>> = userPreferences.taskTemplatesFlow

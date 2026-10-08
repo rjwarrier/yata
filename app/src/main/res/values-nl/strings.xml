@@ -1649,4 +1649,7 @@
     <string name="settings_calendar_permission_denied">Toegang tot de agenda is niet toegestaan. Zet die aan voor YATA in de systeeminstellingen om afspraken te tonen.</string>
     <string name="calendar_event_all_day">Hele dag</string>
     <string name="calendar_event_no_title">(Geen titel)</string>
+    <string name="notification_channel_focus_timer">Focustimer</string>
+    <string name="notification_focus_timer_running">Focustimer loopt</string>
+    <string name="notification_action_stop_timer">Timer stoppen</string>
 </resources>

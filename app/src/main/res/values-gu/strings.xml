@@ -1645,4 +1645,7 @@
     <string name="settings_calendar_permission_denied">કૅલેન્ડર ઍક્સેસની મંજૂરી ન મળી. ઇવેન્ટ બતાવવા સિસ્ટમ સેટિંગ્સમાં YATA માટે તે ચાલુ કરો.</string>
     <string name="calendar_event_all_day">આખો દિવસ</string>
     <string name="calendar_event_no_title">(કોઈ શીર્ષક નથી)</string>
+    <string name="notification_channel_focus_timer">ફોકસ ટાઇમર</string>
+    <string name="notification_focus_timer_running">ફોકસ ટાઇમર ચાલુ છે</string>
+    <string name="notification_action_stop_timer">ટાઇમર બંધ કરો</string>
 </resources>

@@ -1805,4 +1805,7 @@
     <string name="settings_calendar_permission_denied">Kalenderzugriff wurde nicht erlaubt. Aktiviere ihn für YATA in den Systemeinstellungen, um Termine anzuzeigen.</string>
     <string name="calendar_event_all_day">Ganztägig</string>
     <string name="calendar_event_no_title">(Ohne Titel)</string>
+    <string name="notification_channel_focus_timer">Fokus-Timer</string>
+    <string name="notification_focus_timer_running">Fokus-Timer läuft</string>
+    <string name="notification_action_stop_timer">Timer stoppen</string>
 </resources>

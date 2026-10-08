@@ -1645,4 +1645,7 @@
     <string name="settings_calendar_permission_denied">कॅलेंडर प्रवेशाची परवानगी मिळाली नाही. इव्हेंट दाखवण्यासाठी सिस्टम सेटिंग्जमध्ये YATA साठी ती चालू करा.</string>
     <string name="calendar_event_all_day">संपूर्ण दिवस</string>
     <string name="calendar_event_no_title">(शीर्षक नाही)</string>
+    <string name="notification_channel_focus_timer">फोकस टायमर</string>
+    <string name="notification_focus_timer_running">फोकस टायमर सुरू आहे</string>
+    <string name="notification_action_stop_timer">टायमर थांबवा</string>
 </resources>

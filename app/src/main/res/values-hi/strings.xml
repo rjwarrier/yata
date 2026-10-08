@@ -1648,4 +1648,7 @@
     <string name="settings_calendar_permission_denied">कैलेंडर एक्सेस की अनुमति नहीं मिली। इवेंट दिखाने के लिए सिस्टम सेटिंग में YATA के लिए इसे चालू करें।</string>
     <string name="calendar_event_all_day">पूरा दिन</string>
     <string name="calendar_event_no_title">(कोई शीर्षक नहीं)</string>
+    <string name="notification_channel_focus_timer">फ़ोकस टाइमर</string>
+    <string name="notification_focus_timer_running">फ़ोकस टाइमर चल रहा है</string>
+    <string name="notification_action_stop_timer">टाइमर रोकें</string>
 </resources>

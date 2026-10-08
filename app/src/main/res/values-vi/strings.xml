@@ -1648,4 +1648,7 @@
     <string name="settings_calendar_permission_denied">Quyền truy cập lịch chưa được cho phép. Hãy bật cho YATA trong cài đặt hệ thống để hiển thị sự kiện.</string>
     <string name="calendar_event_all_day">Cả ngày</string>
     <string name="calendar_event_no_title">(Không có tiêu đề)</string>
+    <string name="notification_channel_focus_timer">Hẹn giờ tập trung</string>
+    <string name="notification_focus_timer_running">Đang hẹn giờ tập trung</string>
+    <string name="notification_action_stop_timer">Dừng hẹn giờ</string>
 </resources>

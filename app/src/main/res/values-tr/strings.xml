@@ -1648,4 +1648,7 @@
     <string name="settings_calendar_permission_denied">Takvim erişimine izin verilmedi. Etkinlikleri göstermek için sistem ayarlarından YATA için açın.</string>
     <string name="calendar_event_all_day">Tüm gün</string>
     <string name="calendar_event_no_title">(Başlıksız)</string>
+    <string name="notification_channel_focus_timer">Odak zamanlayıcı</string>
+    <string name="notification_focus_timer_running">Odak zamanlayıcı çalışıyor</string>
+    <string name="notification_action_stop_timer">Zamanlayıcıyı durdur</string>
 </resources>

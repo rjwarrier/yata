@@ -1648,4 +1648,7 @@
     <string name="settings_calendar_permission_denied">ক্যালেন্ডার অ্যাক্সেসের অনুমতি দেওয়া হয়নি। ইভেন্ট দেখাতে সিস্টেম সেটিংসে YATA-এর জন্য এটি চালু করুন।</string>
     <string name="calendar_event_all_day">সারাদিন</string>
     <string name="calendar_event_no_title">(শিরোনাম নেই)</string>
+    <string name="notification_channel_focus_timer">ফোকাস টাইমার</string>
+    <string name="notification_focus_timer_running">ফোকাস টাইমার চলছে</string>
+    <string name="notification_action_stop_timer">টাইমার থামান</string>
 </resources>

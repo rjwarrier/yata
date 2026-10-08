@@ -23,6 +23,8 @@ object NotificationHelper {
     const val ESCALATION_NOTIFICATION_ID = 900001
     const val AGENDA_CHANNEL_ID = "daily_agenda_channel"
     const val DAILY_AGENDA_NOTIFICATION_ID = 900002
+    const val FOCUS_TIMER_CHANNEL_ID = "focus_timer_channel"
+    const val FOCUS_TIMER_NOTIFICATION_ID = 900003
 
     fun createChannels(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -53,7 +55,16 @@ object NotificationHelper {
                 description = "A once-a-morning summary of what's due today"
             }
 
-            nm.createNotificationChannels(listOf(reminderChannel, escalationChannel, agendaChannel))
+            // Low importance: a running timer is status, not an alert, so it never makes a sound.
+            val focusTimerChannel = NotificationChannel(
+                FOCUS_TIMER_CHANNEL_ID,
+                context.getString(R.string.notification_channel_focus_timer),
+                NotificationManager.IMPORTANCE_LOW
+            ).apply {
+                setShowBadge(false)
+            }
+
+            nm.createNotificationChannels(listOf(reminderChannel, escalationChannel, agendaChannel, focusTimerChannel))
         }
     }
 
@@ -222,4 +233,52 @@ object NotificationHelper {
             .build()
     }
 
+    /** Ongoing notification for a running focus timer: the task, a live chronometer counting up
+     * from [FocusTimer.startedAt], and a Stop action that logs the session. Tapping it opens the
+     * task. Skipped silently when notifications are off; the timer itself runs either way. */
+    fun showFocusTimer(context: Context, timer: com.mj.yata.domain.model.FocusTimer, taskTitle: String, accentColor: Int) {
+        if (!NotificationPermissionUtils.areNotificationsEnabled(context)) return
+        createChannels(context)
+        val openIntent = PendingIntent.getActivity(
+            context, FOCUS_TIMER_NOTIFICATION_ID,
+            Intent(context, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+                putExtra("navigate_to", "task_detail")
+                putExtra("task_id", timer.taskId)
+            },
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+        val stopIntent = PendingIntent.getBroadcast(
+            context, FOCUS_TIMER_NOTIFICATION_ID,
+            Intent(context, NotificationActionReceiver::class.java).setAction(NotificationActionReceiver.ACTION_STOP_FOCUS_TIMER),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+        val notification = NotificationCompat.Builder(context, FOCUS_TIMER_CHANNEL_ID)
+            .setContentTitle(taskTitle)
+            .setContentText(context.getString(R.string.notification_focus_timer_running))
+            .setSmallIcon(R.drawable.ic_notification_small)
+            .setColor(accentColor)
+            .setWhen(timer.startedAt)
+            .setShowWhen(true)
+            .setUsesChronometer(true)
+            .setOngoing(true)
+            .setOnlyAlertOnce(true)
+            .setSilent(true)
+            .setCategory(NotificationCompat.CATEGORY_STOPWATCH)
+            .setContentIntent(openIntent)
+            .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+            .addAction(
+                android.R.drawable.ic_media_pause,
+                context.getString(R.string.notification_action_stop_timer),
+                stopIntent
+            )
+            .build()
+        (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)
+            .notify(FOCUS_TIMER_NOTIFICATION_ID, notification)
+    }
+
+    fun cancelFocusTimer(context: Context) {
+        (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)
+            .cancel(FOCUS_TIMER_NOTIFICATION_ID)
+    }
 }

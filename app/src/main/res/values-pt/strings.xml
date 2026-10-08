@@ -1650,4 +1650,7 @@
     <string name="settings_calendar_permission_denied">O acesso ao calendário não foi permitido. Ative-o para o YATA nas configurações do sistema para mostrar eventos.</string>
     <string name="calendar_event_all_day">Dia inteiro</string>
     <string name="calendar_event_no_title">(Sem título)</string>
+    <string name="notification_channel_focus_timer">Cronômetro de foco</string>
+    <string name="notification_focus_timer_running">Cronômetro de foco em andamento</string>
+    <string name="notification_action_stop_timer">Parar cronômetro</string>
 </resources>

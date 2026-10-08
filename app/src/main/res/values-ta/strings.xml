@@ -1645,4 +1645,7 @@
     <string name="settings_calendar_permission_denied">காலண்டர் அணுகல் அனுமதிக்கப்படவில்லை. நிகழ்வுகளைக் காட்ட சிஸ்டம் அமைப்புகளில் YATA-க்கு அதை இயக்கவும்.</string>
     <string name="calendar_event_all_day">நாள் முழுவதும்</string>
     <string name="calendar_event_no_title">(தலைப்பு இல்லை)</string>
+    <string name="notification_channel_focus_timer">கவன டைமர்</string>
+    <string name="notification_focus_timer_running">கவன டைமர் இயங்குகிறது</string>
+    <string name="notification_action_stop_timer">டைமரை நிறுத்து</string>
 </resources>

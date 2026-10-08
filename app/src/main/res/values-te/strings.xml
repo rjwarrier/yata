@@ -1645,4 +1645,7 @@
     <string name="settings_calendar_permission_denied">క్యాలెండర్ యాక్సెస్ అనుమతించబడలేదు. ఈవెంట్‌లను చూపడానికి సిస్టమ్ సెట్టింగ్‌లలో YATA కోసం దాన్ని ఆన్ చేయండి.</string>
     <string name="calendar_event_all_day">రోజంతా</string>
     <string name="calendar_event_no_title">(శీర్షిక లేదు)</string>
+    <string name="notification_channel_focus_timer">ఫోకస్ టైమర్</string>
+    <string name="notification_focus_timer_running">ఫోకస్ టైమర్ నడుస్తోంది</string>
+    <string name="notification_action_stop_timer">టైమర్ ఆపు</string>
 </resources>

@@ -1648,4 +1648,7 @@
     <string name="settings_calendar_permission_denied">Akses kalender tidak diizinkan. Aktifkan untuk YATA di pengaturan sistem untuk menampilkan acara.</string>
     <string name="calendar_event_all_day">Sepanjang hari</string>
     <string name="calendar_event_no_title">(Tanpa judul)</string>
+    <string name="notification_channel_focus_timer">Timer fokus</string>
+    <string name="notification_focus_timer_running">Timer fokus berjalan</string>
+    <string name="notification_action_stop_timer">Hentikan timer</string>
 </resources>

@@ -32,7 +32,8 @@ test-only changes belong in the commit message, not here, unless they change beh
   understood the same way as in Quick Add, so dates, #projects and tags work.
 - Focus timer: start a timer from a task's detail screen to log the time you actually spend on it,
   shown against the task's estimate. Analytics compares tracked time with estimates for the tasks
-  you finish. The timer keeps running if you leave the screen.
+  you finish. While it runs, a notification shows the elapsed time and can stop it, even after the
+  phone restarts.
 - Device calendar events can be shown in Upcoming and Next 10 days, above each day's tasks
   (Settings → Navigation & features). It's read-only and off until you allow calendar access, and
   tapping an event opens it in your calendar app.

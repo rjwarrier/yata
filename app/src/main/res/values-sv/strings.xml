@@ -1648,4 +1648,7 @@
     <string name="settings_calendar_permission_denied">Kalenderåtkomst tilläts inte. Slå på den för YATA i systeminställningarna för att visa händelser.</string>
     <string name="calendar_event_all_day">Heldag</string>
     <string name="calendar_event_no_title">(Ingen titel)</string>
+    <string name="notification_channel_focus_timer">Fokustimer</string>
+    <string name="notification_focus_timer_running">Fokustimer igång</string>
+    <string name="notification_action_stop_timer">Stoppa timer</string>
 </resources>

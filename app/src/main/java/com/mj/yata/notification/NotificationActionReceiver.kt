@@ -29,6 +29,7 @@ import java.time.ZoneId
  *   - "Complete" → marks the task as completed.
  *   - "Snooze 1hr" → reschedules the reminder 1 hour from now.
  *   - "Add task" (inline reply on the daily agenda) → creates a task from the typed text.
+ *   - "Stop timer" (focus timer notification) → stops the timer and logs its minutes.
  */
 class NotificationActionReceiver : BroadcastReceiver() {
 
@@ -39,6 +40,7 @@ class NotificationActionReceiver : BroadcastReceiver() {
         fun yataRepository(): YataRepository
         fun reminderScheduler(): ReminderScheduler
         fun userPreferences(): UserPreferences
+        fun focusTimerOperations(): com.mj.yata.domain.usecase.FocusTimerOperations
     }
 
     companion object {
@@ -48,6 +50,7 @@ class NotificationActionReceiver : BroadcastReceiver() {
         const val ACTION_SNOOZE_15M       = "com.mj.yata.ACTION_SNOOZE_15M"
         const val ACTION_SNOOZE_TOMORROW  = "com.mj.yata.ACTION_SNOOZE_TOMORROW"
         const val ACTION_QUICK_ADD        = "com.mj.yata.ACTION_QUICK_ADD"
+        const val ACTION_STOP_FOCUS_TIMER = "com.mj.yata.ACTION_STOP_FOCUS_TIMER"
         const val KEY_QUICK_ADD_TEXT   = "quick_add_text"
         const val EXTRA_TASK_ID        = "EXTRA_TASK_ID"
         const val EXTRA_NOTIFICATION_ID = "EXTRA_NOTIFICATION_ID"
@@ -62,6 +65,13 @@ class NotificationActionReceiver : BroadcastReceiver() {
             context.applicationContext,
             ActionReceiverEntryPoint::class.java
         )
+
+        if (intent.action == ACTION_STOP_FOCUS_TIMER) {
+            goAsyncSafely(context, TAG, OperationHistoryStore.REMINDERS_TASK) {
+                entryPoint.focusTimerOperations().stop()
+            }
+            return@onReceiveSafely
+        }
 
         if (intent.action == ACTION_QUICK_ADD) {
             val text = RemoteInput.getResultsFromIntent(intent)

@@ -1694,4 +1694,7 @@
     <string name="settings_calendar_permission_denied">No se permitió el acceso al calendario. Actívalo para YATA en los ajustes del sistema para ver eventos.</string>
     <string name="calendar_event_all_day">Todo el día</string>
     <string name="calendar_event_no_title">(Sin título)</string>
+    <string name="notification_channel_focus_timer">Temporizador de enfoque</string>
+    <string name="notification_focus_timer_running">Temporizador de enfoque en marcha</string>
+    <string name="notification_action_stop_timer">Detener temporizador</string>
 </resources>

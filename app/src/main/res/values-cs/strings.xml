@@ -1654,4 +1654,7 @@
     <string name="settings_calendar_permission_denied">Přístup ke kalendáři nebyl povolen. Zapněte ho pro YATA v nastavení systému, aby se zobrazovaly události.</string>
     <string name="calendar_event_all_day">Celý den</string>
     <string name="calendar_event_no_title">(Bez názvu)</string>
+    <string name="notification_channel_focus_timer">Časovač soustředění</string>
+    <string name="notification_focus_timer_running">Časovač soustředění běží</string>
+    <string name="notification_action_stop_timer">Zastavit časovač</string>
 </resources>

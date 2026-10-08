@@ -29,6 +29,7 @@ class YataApplication : Application(), Configuration.Provider {
     @Inject lateinit var workerFactory: HiltWorkerFactory
     @Inject lateinit var userPreferences: com.mj.yata.data.local.datastore.UserPreferences
     @Inject lateinit var crashLogStore: com.mj.yata.data.local.crash.CrashLogStore
+    @Inject lateinit var focusTimerOperations: com.mj.yata.domain.usecase.FocusTimerOperations
 
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder().setWorkerFactory(workerFactory).build()
@@ -160,6 +161,12 @@ class YataApplication : Application(), Configuration.Provider {
         } else {
             OverdueEscalationWorker.cancel(this)
         }
+
+        // A running focus timer outlives a reboot (its state is in DataStore) but its ongoing
+        // notification doesn't. The boot receiver starting this process is enough to bring it back.
+        // Isolated so a failure here can't skip the scheduling below.
+        runCatching { focusTimerOperations.restoreNotification() }
+            .onFailure { Log.w("YataApplication", "Could not restore focus timer notification", it) }
 
         if (userPreferences.dailyAgendaEnabledFlow.first()) {
             DailyAgendaWorker.schedule(

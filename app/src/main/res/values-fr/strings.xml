@@ -1650,4 +1650,7 @@
     <string name="settings_calendar_permission_denied">L\'accès au calendrier n\'a pas été autorisé. Activez-le pour YATA dans les paramètres système pour afficher les événements.</string>
     <string name="calendar_event_all_day">Toute la journée</string>
     <string name="calendar_event_no_title">(Sans titre)</string>
+    <string name="notification_channel_focus_timer">Minuteur de concentration</string>
+    <string name="notification_focus_timer_running">Minuteur de concentration en cours</string>
+    <string name="notification_action_stop_timer">Arrêter le minuteur</string>
 </resources>

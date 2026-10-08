@@ -1654,4 +1654,7 @@
     <string name="settings_calendar_permission_denied">Nie zezwolono na dostęp do kalendarza. Włącz go dla YATA w ustawieniach systemu, aby pokazywać wydarzenia.</string>
     <string name="calendar_event_all_day">Cały dzień</string>
     <string name="calendar_event_no_title">(Bez tytułu)</string>
+    <string name="notification_channel_focus_timer">Licznik skupienia</string>
+    <string name="notification_focus_timer_running">Licznik skupienia działa</string>
+    <string name="notification_action_stop_timer">Zatrzymaj licznik</string>
 </resources>

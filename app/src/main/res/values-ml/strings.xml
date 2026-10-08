@@ -1645,4 +1645,7 @@
     <string name="settings_calendar_permission_denied">കലണ്ടർ ആക്സസ് അനുവദിച്ചില്ല. ഇവന്റുകൾ കാണിക്കാൻ സിസ്റ്റം ക്രമീകരണങ്ങളിൽ YATA-യ്ക്കായി അത് ഓണാക്കുക.</string>
     <string name="calendar_event_all_day">ദിവസം മുഴുവൻ</string>
     <string name="calendar_event_no_title">(തലക്കെട്ടില്ല)</string>
+    <string name="notification_channel_focus_timer">ഫോക്കസ് ടൈമർ</string>
+    <string name="notification_focus_timer_running">ഫോക്കസ് ടൈമർ പ്രവർത്തിക്കുന്നു</string>
+    <string name="notification_action_stop_timer">ടൈമർ നിർത്തുക</string>
 </resources>

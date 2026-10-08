@@ -1645,4 +1645,7 @@
     <string name="settings_calendar_permission_denied">Hindi pinayagan ang access sa kalendaryo. I-on ito para sa YATA sa system settings para maipakita ang mga event.</string>
     <string name="calendar_event_all_day">Buong araw</string>
     <string name="calendar_event_no_title">(Walang pamagat)</string>
+    <string name="notification_channel_focus_timer">Focus timer</string>
+    <string name="notification_focus_timer_running">Tumatakbo ang focus timer</string>
+    <string name="notification_action_stop_timer">Ihinto ang timer</string>
 </resources>

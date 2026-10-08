@@ -127,6 +127,7 @@
                 <action android:name="com.mj.yata.ACTION_SNOOZE_15M" />
                 <action android:name="com.mj.yata.ACTION_SNOOZE_TOMORROW" />
                 <action android:name="com.mj.yata.ACTION_QUICK_ADD" />
+                <action android:name="com.mj.yata.ACTION_STOP_FOCUS_TIMER" />
             </intent-filter>
         </receiver>
 
