@@ -36,7 +36,8 @@ test-only changes belong in the commit message, not here, unless they change beh
   phone restarts.
 - Device calendar events can be shown in Upcoming and Next 10 days, above each day's tasks
   (Settings → Navigation & features). It's read-only and off until you allow calendar access, and
-  tapping an event opens it in your calendar app.
+  tapping an event opens it in your calendar app. Days with events get hollow dots in the event's
+  colour in Upcoming's month grid and week strip, next to the filled task dots.
 
 ### Fixed
 - "Tonight" can no longer be picked once tonight's snooze time has passed, which used to leave

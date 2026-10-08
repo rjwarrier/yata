@@ -12,6 +12,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -188,6 +189,17 @@ fun UpcomingTab(
         tasksByDate[date.toString()].orEmpty().take(3).map { t ->
             listsById[t.listId]?.let { accents.getAccent(it.color) } ?: defaultDotColor
         }
+
+    // One read covering everything on screen at once: the month grid being browsed (with the
+    // spill-over days around it), the selected day's agenda and the week strip. They're usually the
+    // same month, so stepping between days or the agenda's outgoing animation never waits on a query.
+    val calendarEvents = com.mj.yata.ui.widgets.rememberCalendarEvents(
+        enabled = showCalendarEvents,
+        from = minOf(selectedMonth.atDay(1).minusDays(7), YearMonth.from(selectedDay).atDay(1), today),
+        to = maxOf(selectedMonth.atEndOfMonth().plusDays(7), YearMonth.from(selectedDay).atEndOfMonth(), today.plusDays(6))
+    )
+    fun eventDotColorsForDate(date: LocalDate): List<Color> =
+        calendarEvents[date].orEmpty().take(2).map { Color(it.color) }
 
     val monthLabel = remember(selectedDay, selectedMonth, viewMode) {
         val base = if (viewMode == ScheduleViewMode.MONTH) selectedMonth.atDay(1) else selectedDay
@@ -414,6 +426,7 @@ fun UpcomingTab(
                             selected = day == selectedDay,
                             isToday = day == today,
                             dotColors = dotColorsForDate(day),
+                            eventDotColors = eventDotColorsForDate(day),
                             onClick = { onSelectedDayChange(day) },
                             modifier = Modifier.weight(1f)
                         )
@@ -501,6 +514,7 @@ fun UpcomingTab(
                                                     isToday = day == today,
                                                     inMonth = YearMonth.from(day) == month,
                                                     dotColors = dotColorsForDate(day),
+                                                    eventDotColors = eventDotColorsForDate(day),
                                                     onClick = { onSelectedDayChange(day) }
                                                 )
                                             }
@@ -560,14 +574,6 @@ fun UpcomingTab(
 
         val peopleById = remember(people) { people.associateBy { it.id } }
 
-        // Read a month (plus a week either side) at a time rather than per selected day, so
-        // stepping between days, and the agenda's outgoing animation, never waits on a query.
-        val eventsMonth = YearMonth.from(selectedDay)
-        val calendarEvents = com.mj.yata.ui.widgets.rememberCalendarEvents(
-            enabled = showCalendarEvents,
-            from = eventsMonth.atDay(1).minusDays(7),
-            to = eventsMonth.atEndOfMonth().plusDays(7)
-        )
 
         // 4. Agenda — header + task list slide/fade together, keyed on the selected day
         AnimatedContent(
@@ -843,6 +849,7 @@ private fun DayPill(
     selected: Boolean,
     isToday: Boolean,
     dotColors: List<Color>,
+    eventDotColors: List<Color>,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -898,7 +905,7 @@ private fun DayPill(
             color = fg,
             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold, fontSize = 17.sp)
         )
-        DayDots(dotColors = dotColors, overrideColor = if (selected) MaterialTheme.colorScheme.onPrimary else null)
+        DayDots(dotColors = dotColors, eventDotColors = eventDotColors, overrideColor = if (selected) MaterialTheme.colorScheme.onPrimary else null)
     }
 }
 
@@ -910,6 +917,7 @@ private fun MonthDayCell(
     isToday: Boolean,
     inMonth: Boolean,
     dotColors: List<Color>,
+    eventDotColors: List<Color>,
     onClick: () -> Unit
 ) {
     val bg by animateColorAsState(
@@ -968,19 +976,20 @@ private fun MonthDayCell(
                     color = fg
                 )
             }
-            DayDots(dotColors = dotColors, overrideColor = if (selected) MaterialTheme.colorScheme.onPrimary else null)
+            DayDots(dotColors = dotColors, eventDotColors = eventDotColors, overrideColor = if (selected) MaterialTheme.colorScheme.onPrimary else null)
         }
     }
 }
 
-/** Up to 3 dots colored by each task's list accent — a quick read of what's on a day. */
+/** Up to 3 filled dots colored by each task's list accent, then up to 2 hollow rings in each
+ * calendar event's color — a quick read of what's on a day, with events told apart by shape. */
 @Composable
-private fun DayDots(dotColors: List<Color>, overrideColor: Color?, modifier: Modifier = Modifier) {
+private fun DayDots(dotColors: List<Color>, eventDotColors: List<Color>, overrideColor: Color?, modifier: Modifier = Modifier) {
     Row(
         modifier = modifier.height(4.dp),
         horizontalArrangement = Arrangement.spacedBy(2.dp)
     ) {
-        if (dotColors.isEmpty()) {
+        if (dotColors.isEmpty() && eventDotColors.isEmpty()) {
             Spacer(modifier = Modifier.size(4.dp))
         } else {
             dotColors.forEach { color ->
@@ -988,6 +997,13 @@ private fun DayDots(dotColors: List<Color>, overrideColor: Color?, modifier: Mod
                     modifier = Modifier
                         .size(4.dp)
                         .background(overrideColor ?: color, CircleShape)
+                )
+            }
+            eventDotColors.forEach { color ->
+                Box(
+                    modifier = Modifier
+                        .size(4.dp)
+                        .border(1.dp, overrideColor ?: color, CircleShape)
                 )
             }
         }
