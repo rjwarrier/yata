@@ -213,7 +213,14 @@ tasks.register("lintLocaleParity") {
             if (f.exists()) nameAttr.findAll(f.readText()).map { it.groupValues[1] }.toSet() else emptySet()
 
         val sourceFile = valuesDir.resolve("values/strings.xml")
-        val sourceKeys = keysIn(sourceFile)
+        // translatable="false" keys live in values/ only by design, so no locale is expected to
+        // carry them. Attribute order varies, hence matching the whole start tag.
+        val untranslatableTag = Regex("""<(?:string|plurals)\s[^>]*translatable="false"[^>]*>""")
+        val nameInTag = Regex("""\bname="([^"]+)"""")
+        val untranslatableKeys = if (sourceFile.exists()) {
+            untranslatableTag.findAll(sourceFile.readText()).mapNotNull { nameInTag.find(it.value)?.groupValues?.get(1) }.toSet()
+        } else emptySet()
+        val sourceKeys = keysIn(sourceFile) - untranslatableKeys
         check(sourceKeys.isNotEmpty()) { "No keys found in ${sourceFile.path} — check the file exists." }
 
         // "values-v" alone would also match values-vi (Vietnamese) - API-level qualifiers are
