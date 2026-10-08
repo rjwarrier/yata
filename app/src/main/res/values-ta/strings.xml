@@ -1347,7 +1347,6 @@
     <string name="tasker_create_task_hint">புலங்கள் Tasker மாறிகளை (%var) ஏற்கின்றன. தவிர்க்க காலியாக விடவும்.</string>
     <string name="archive_section_header">%1$s - %2$d</string>
     <string name="image_cropper_hint">இடம் மாற்ற இழுக்கவும், பெரிதாக்க பின்ச் செய்யவும்</string>
-    <string name="entity_report_pdf_title">%1$s — YATA %2$s அறிக்கை</string>
     <string name="task_filter_all">அனைத்தும்</string>
     <string name="task_filter_delegated">ஒப்படைக்கப்பட்டவை</string>
     <string name="task_filter_no_matches">இந்த வடிகட்டிக்கு பணிகள் பொருந்தவில்லை.</string>

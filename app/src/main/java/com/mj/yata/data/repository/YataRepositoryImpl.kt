@@ -175,13 +175,7 @@ class YataRepositoryImpl @Inject constructor(
         }
 
         if (resyncReminder) {
-            reminderScheduler.syncReminders(sanitizedTasks.map { task ->
-                task.toEntity().let { entity ->
-                    // ReminderScheduler historically only knew about done/due/reminder. Feed
-                    // archived and trashed rows through its cancellation branch as well.
-                    if (entity.archived || entity.deletedAt != null) entity.copy(done = true) else entity
-                }
-            })
+            reminderScheduler.syncReminders(sanitizedTasks.map { it.toEntity() })
         }
         if (notify) widgetUpdater.notifyTasksChanged()
     }

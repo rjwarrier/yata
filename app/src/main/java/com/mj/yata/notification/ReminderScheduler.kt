@@ -93,7 +93,7 @@ class ReminderScheduler @Inject constructor(
             var cancelled = 0
             var skipped = 0
             tasks.forEach { task ->
-                if (task.done || task.dueDate == null || task.reminder.isNullOrBlank()) {
+                if (task.isReminderInactive()) {
                     cancelReminder(task)
                     cancelled++
                 } else {
@@ -114,7 +114,7 @@ class ReminderScheduler @Inject constructor(
     }
 
     private fun scheduleReminder(task: TaskEntity, defaultTime: LocalTime, quietHours: QuietHoursConfig): ReminderScheduleOutcome {
-        if (task.dueDate == null || task.done || task.reminder.isNullOrBlank()) return ReminderScheduleOutcome.SKIPPED
+        if (task.isReminderInactive()) return ReminderScheduleOutcome.SKIPPED
 
         val localDate = try {
             LocalDate.parse(task.dueDate)
@@ -223,6 +223,11 @@ class ReminderScheduler @Inject constructor(
             pendingIntent.cancel()
         }
     }
+
+    /** Archived and trashed rows count as inactive here, not just at the call sites: the boot
+     * reschedule used to re-arm reminders that archiving had already cancelled. */
+    private fun TaskEntity.isReminderInactive(): Boolean =
+        done || archived || deletedAt != null || dueDate == null || reminder.isNullOrBlank()
 
     private suspend fun loadQuietHours(): QuietHoursConfig = QuietHoursConfig(
         enabled = userPreferences.quietHoursEnabledFlow.first(),

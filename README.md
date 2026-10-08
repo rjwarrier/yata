@@ -145,7 +145,7 @@ Instrumented tests (Room migrations, Compose smoke tests) reinstall the app and 
 | **Storage** | Room (hand-written migrations), DataStore |
 | **Background** | WorkManager, AlarmManager |
 | **Widgets** | Glance |
-| **Other** | Markwon, sshj, Apache Commons Net, pdfbox-android, Tasker plugin library |
+| **Other** | Markwon, sshj, Apache Commons Net, Tasker plugin library |
 
 ## Architecture
 

@@ -122,13 +122,6 @@ suspend fun exportTaskReport(
                 )
             }
             val file = saveBitmapAsPdf(context, bitmap, "$baseName.pdf", rowBreaks, pdfPageSize)
-            applyPdfMetadata(
-                context = context,
-                file = file,
-                title = "$title — YATA Task",
-                subject = "YATA task export: $title",
-                keywords = "YATA, task, $title"
-            )
             return deliverExportedFile(context, file, "application/pdf", "Share $title", destination, transferText)
         }
     }

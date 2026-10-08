@@ -1263,7 +1263,6 @@
     <string name="tasker_create_task_hint">I campi accettano variabili Tasker (%var). Lascia vuoto per saltare.</string>
     <string name="archive_section_header">%1$s - %2$d</string>
     <string name="image_cropper_hint">Trascina per riposizionare, pizzica per zoomare</string>
-    <string name="entity_report_pdf_title">%1$s — Report YATA %2$s</string>
     <string name="task_filter_all">Tutte</string>
     <string name="task_filter_delegated">Delegate</string>
     <string name="task_filter_no_matches">Nessuna attività corrisponde a questo filtro.</string>

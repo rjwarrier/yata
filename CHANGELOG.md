@@ -31,6 +31,7 @@ test-only changes belong in the commit message, not here, unless they change beh
   than today.
 - Restoring or syncing a backup with more than about 1,000 tasks no longer fails on Android 11
   and older, which cap how many items a single database lookup can name.
+- Archived tasks no longer start sending reminders again after the phone restarts.
 
 ### Changed
 - Saving, completing or deleting a task no longer stalls the UI on disk writes, and large task
@@ -41,6 +42,8 @@ test-only changes belong in the commit message, not here, unless they change beh
   the work it used to on each keystroke.
 - Snooze, bulk edits and duplicate act on just the selected tasks instead of reloading the whole
   task list first, and restoring or syncing a large backup runs far fewer database lookups.
+- The app download is several megabytes smaller, and PDF exports finish sooner. Exported PDFs no
+  longer fill in the title, author and keyword fields of the document's properties.
 
 ## [0.95.1] - 2026-09-14
 

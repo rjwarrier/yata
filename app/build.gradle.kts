@@ -112,6 +112,9 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            // Bouncy Castle's post-quantum tables (Picnic, SIKE): ~4 MB compressed, and sshj
+            // never uses those algorithms.
+            excludes += "org/bouncycastle/pqc/**"
         }
     }
 
@@ -366,16 +369,11 @@ dependencies {
     // Self-hosted backup: SFTP to a user's own server. sshj needs Bouncy Castle registered as a
     // security provider (see YataApplication) for algorithms Android's stock providers don't
     // cover (Ed25519, curve25519-sha256), which a lot of real-world OpenSSH servers default to.
-    //
-    // sshj's own transitive Bouncy Castle (bcprov/bcpkix-jdk18on) is excluded here: pdfbox-android
-    // below already pulls a different artifact for the exact same classes/packages
-    // (bcprov/bcpkix-jdk15to18), and Android's build fails at dex-merge time ("Duplicate class")
-    // when both are present, no matter which version wins. The jdk15to18 build pdfbox-android
-    // brings is functionally complete for sshj's needs -- Ed25519/X25519 support has been in
-    // Bouncy Castle since well before that artifact's baseline.
-    implementation(libs.sshj) {
-        exclude(group = "org.bouncycastle")
-    }
+    // sshj only puts Bouncy Castle on the runtime classpath, so bcprov is declared directly for
+    // BouncyCastleSupport, at the same version sshj pulls. Its post-quantum lookup tables are
+    // excluded under packaging {} above.
+    implementation(libs.sshj)
+    implementation(libs.bcprov)
 
     // Self-hosted backup: FTP/FTPS to a user's own server. Apache Commons Net's FTPSClient
     // handles TLS via the platform's own SSLContext/trust store -- no reflection-based algorithm
@@ -398,11 +396,6 @@ dependencies {
 
     // Tasker plugin (Create Task action)
     implementation(libs.tasker.plugin.library)
-
-    // PDF Info dictionary (Title/Author/Subject/Keywords) — android.graphics.pdf.PdfDocument
-    // has no metadata API, so exported PDFs get a real doc-info pass through this after
-    // being rendered with PdfDocument.
-    implementation(libs.pdfbox.android)
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)

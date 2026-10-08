@@ -1263,7 +1263,6 @@
     <string name="tasker_create_task_hint">Pola akceptują zmienne Taskera (%var). Pozostaw puste, aby pominąć.</string>
     <string name="archive_section_header">%1$s - %2$d</string>
     <string name="image_cropper_hint">Przeciągnij, aby zmienić pozycję, uszczypnij, aby powiększyć</string>
-    <string name="entity_report_pdf_title">%1$s — Raport YATA %2$s</string>
     <string name="task_filter_all">Wszystkie</string>
     <string name="task_filter_delegated">Delegowane</string>
     <string name="task_filter_no_matches">Żadne zadania nie pasują do tego filtru.</string>

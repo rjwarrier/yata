@@ -261,7 +261,11 @@ interface TaskDao {
     @Query("SELECT * FROM tasks WHERE id = :id")
     fun getByIdDirect(id: String): TaskEntity?
 
-    @Query("SELECT * FROM tasks WHERE done = 0 AND dueDate IS NOT NULL AND deletedAt IS NULL")
+    @Query("""
+        SELECT * FROM tasks
+        WHERE done = 0 AND archived = 0 AND deletedAt IS NULL
+          AND dueDate IS NOT NULL AND reminder IS NOT NULL AND reminder != ''
+    """)
     fun getActiveReminderTasksDirect(): List<TaskEntity>
 
     /** Existing creation timestamps for an upsert batch. `insert` is an @Upsert, so it can't tell

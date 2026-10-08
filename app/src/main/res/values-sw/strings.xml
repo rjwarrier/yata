@@ -1347,7 +1347,6 @@
     <string name="tasker_create_task_hint">Sehemu zinakubali vigezo vya Tasker (%var). Acha wazi kuruka.</string>
     <string name="archive_section_header">%1$s - %2$d</string>
     <string name="image_cropper_hint">Buruta kubadilisha nafasi, banana kukuza</string>
-    <string name="entity_report_pdf_title">%1$s — Ripoti ya YATA %2$s</string>
     <string name="task_filter_all">Zote</string>
     <string name="task_filter_delegated">Zilizokabidhiwa</string>
     <string name="task_filter_no_matches">Hakuna kazi zinazolingana na kichujio hiki.</string>

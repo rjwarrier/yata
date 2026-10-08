@@ -1357,7 +1357,6 @@
     <string name="tasker_create_task_hint">Les champs acceptent les variables Tasker (%var). Laissez vide pour ignorer.</string>
     <string name="archive_section_header">%1$s - %2$d</string>
     <string name="image_cropper_hint">Faites glisser pour repositionner, pincez pour zoomer</string>
-    <string name="entity_report_pdf_title">%1$s — YATA %2$s Report</string>
     <string name="task_filter_all">All</string>
     <string name="task_filter_delegated">Delegated</string>
     <string name="task_filter_no_matches">Aucune tâche ne correspond à ce filtre.</string>

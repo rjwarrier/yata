@@ -4,7 +4,6 @@ import android.content.Context
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import java.time.LocalDateTime
-import com.mj.yata.R
 import com.mj.yata.util.localized
 
 private fun cardWidth(scale: ExportImageScale) = scale.widthDp.dp
@@ -73,13 +72,6 @@ suspend fun exportEntityReport(
         }
         ExportFormat.PDF -> {
             val file = saveBitmapAsPdf(context, bitmap, "$baseName.pdf", rowBreaks, pdfPageSize)
-            applyPdfMetadata(
-                context = context,
-                file = file,
-                title = context.getString(R.string.entity_report_pdf_title, entityName, entityKind),
-                subject = "$entityKind task report for $entityName ($doneCount/$totalCount done)",
-                keywords = "YATA, $entityKind, $entityName, tasks, report"
-            )
             return deliverExportedFile(context, file, "application/pdf", "Share $entityName", destination, transferText)
         }
     }

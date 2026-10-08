@@ -25,10 +25,10 @@ glance = "1.1.1"
 work = "2.9.1"
 markwon = "4.6.2"
 taskerPlugin = "0.4.10"
-pdfboxAndroid = "2.0.27.0"
 coroutinesTest = "1.8.1"
 orgJson = "20240303"
 sshj = "0.38.0"
+bouncycastle = "1.75"
 commonsNet = "3.11.1"
 androidxTest = "1.5.0"             # androidx.test core-ktx + rules
 robolectric = "4.13"                # JVM unit tests needing android.net.Uri (e.g. TaskTransferLinkTest)
@@ -74,11 +74,11 @@ androidx-hilt-compiler = { group = "androidx.hilt", name = "hilt-compiler", vers
 glance-appwidget = { group = "androidx.glance", name = "glance-appwidget", version.ref = "glance" }
 glance-material3 = { group = "androidx.glance", name = "glance-material3", version.ref = "glance" }
 sshj = { group = "com.hierynomus", name = "sshj", version.ref = "sshj" }
+bcprov = { group = "org.bouncycastle", name = "bcprov-jdk18on", version.ref = "bouncycastle" }
 commons-net = { group = "commons-net", name = "commons-net", version.ref = "commonsNet" }
 androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "work" }
 markwon-core = { group = "io.noties.markwon", name = "core", version.ref = "markwon" }
 tasker-plugin-library = { group = "com.joaomgcd", name = "taskerpluginlibrary", version.ref = "taskerPlugin" }
-pdfbox-android = { group = "com.tom-roush", name = "pdfbox-android", version.ref = "pdfboxAndroid" }
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutinesTest" }
 org-json = { group = "org.json", name = "json", version.ref = "orgJson" }
 androidx-test-core-ktx = { group = "androidx.test", name = "core-ktx", version.ref = "androidxTest" }

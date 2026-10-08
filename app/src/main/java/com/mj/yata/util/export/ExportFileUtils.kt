@@ -6,17 +6,15 @@ import android.content.Intent
 import android.content.ContentValues
 import android.graphics.Bitmap
 import android.graphics.pdf.PdfDocument
+import android.graphics.pdf.PdfRenderer
 import android.os.Build
 import android.os.Environment
+import android.os.ParcelFileDescriptor
 import android.provider.MediaStore
 import androidx.core.content.FileProvider
-import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
-import com.tom_roush.pdfbox.pdmodel.PDDocument
-import com.tom_roush.pdfbox.pdmodel.PDDocumentInformation
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
-import java.util.Calendar
 
 internal fun exportsDir(context: Context): File =
     File(context.cacheDir, "exports").apply { mkdirs() }
@@ -130,38 +128,6 @@ fun saveBitmapAsPdf(
     return file
 }
 
-/**
- * Fills in the PDF's Info dictionary (Title/Author/Subject/Keywords/Creator/Producer) so the
- * exported file looks like a real, cohesive document rather than an anonymous image dump —
- * android.graphics.pdf.PdfDocument (used to render the pages themselves) has no metadata API,
- * so this reopens the already-written file through PDFBox purely to set that dictionary and
- * rewrite it in place.
- */
-fun applyPdfMetadata(
-    context: Context,
-    file: File,
-    title: String,
-    subject: String,
-    keywords: String,
-    author: String = "YATA"
-) {
-    PDFBoxResourceLoader.init(context.applicationContext)
-    PDDocument.load(file).use { document ->
-        val info = PDDocumentInformation()
-        info.title = title
-        info.author = author
-        info.subject = subject
-        info.keywords = keywords
-        info.creator = "YATA for Android"
-        info.producer = "YATA for Android"
-        val now = Calendar.getInstance()
-        info.creationDate = now
-        info.modificationDate = now
-        document.documentInformation = info
-        document.save(file)
-    }
-}
-
 fun shareExportedFile(context: Context, file: File, mimeType: String, chooserTitle: String, extraText: String? = null) {
     val uri = shareUriFor(context, file)
     val intent = Intent(Intent.ACTION_SEND).apply {
@@ -183,10 +149,10 @@ fun deliverExportedFile(
 ): ExportOutcome {
     if (destination == ExportDestination.SHARE) {
         shareExportedFile(context, file, mimeType, chooserTitle, extraText)
-        return ExportOutcome(file = file, destination = destination, pageCount = if (mimeType == "application/pdf") countPdfPages(context, file) else 1)
+        return ExportOutcome(file = file, destination = destination, pageCount = if (mimeType == "application/pdf") countPdfPages(file) else 1)
     }
     val saved = copyExportToDownloads(context, file, mimeType)
-    return ExportOutcome(file = saved, destination = destination, pageCount = if (mimeType == "application/pdf") countPdfPages(context, saved) else 1)
+    return ExportOutcome(file = saved, destination = destination, pageCount = if (mimeType == "application/pdf") countPdfPages(saved) else 1)
 }
 
 private fun copyExportToDownloads(context: Context, file: File, mimeType: String): File {
@@ -218,9 +184,6 @@ private fun copyExportToDownloads(context: Context, file: File, mimeType: String
     return saved
 }
 
-private fun countPdfPages(context: Context, file: File): Int {
-    PDFBoxResourceLoader.init(context.applicationContext)
-    return runCatching {
-        PDDocument.load(file).use { it.numberOfPages }
-    }.getOrDefault(1)
-}
+private fun countPdfPages(file: File): Int = runCatching {
+    PdfRenderer(ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)).use { it.pageCount }
+}.getOrDefault(1)

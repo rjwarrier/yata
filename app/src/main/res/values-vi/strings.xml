@@ -1263,7 +1263,6 @@
     <string name="tasker_create_task_hint">Các trường chấp nhận biến Tasker (%var). Để trống để bỏ qua.</string>
     <string name="archive_section_header">%1$s - %2$d</string>
     <string name="image_cropper_hint">Kéo để di chuyển, chụm để thu phóng</string>
-    <string name="entity_report_pdf_title">%1$s — Báo cáo YATA %2$s</string>
     <string name="task_filter_all">Tất cả</string>
     <string name="task_filter_delegated">Đã ủy quyền</string>
     <string name="task_filter_no_matches">Không có việc cần làm nào khớp bộ lọc này.</string>

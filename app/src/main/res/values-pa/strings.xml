@@ -1347,7 +1347,6 @@
     <string name="tasker_create_task_hint">ਖੇਤਰ Tasker ਵੇਰੀਏਬਲ (%var) ਸਵੀਕਾਰ ਕਰਦੇ ਹਨ। ਛੱਡਣ ਲਈ ਖਾਲੀ ਰੱਖੋ।</string>
     <string name="archive_section_header">%1$s - %2$d</string>
     <string name="image_cropper_hint">ਸਥਿਤੀ ਬਦਲਣ ਲਈ ਖਿੱਚੋ, ਜ਼ੂਮ ਲਈ ਚੂੰਡੀ ਭਰੋ</string>
-    <string name="entity_report_pdf_title">%1$s — YATA %2$s ਰਿਪੋਰਟ</string>
     <string name="task_filter_all">ਸਭ</string>
     <string name="task_filter_delegated">ਸੌਂਪਿਆ</string>
     <string name="task_filter_no_matches">ਇਸ ਫਿਲਟਰ ਨਾਲ ਕੋਈ ਕਾਰਜ ਮੇਲ ਨਹੀਂ ਖਾਂਦਾ।</string>

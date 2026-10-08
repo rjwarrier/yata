@@ -1263,7 +1263,6 @@
     <string name="tasker_create_task_hint">Pole přijímají proměnné Taskeru (%var). Pro přeskočení nechte prázdné.</string>
     <string name="archive_section_header">%1$s - %2$d</string>
     <string name="image_cropper_hint">Přetažením přesunete, sevřením přiblížíte</string>
-    <string name="entity_report_pdf_title">%1$s — Přehled YATA %2$s</string>
     <string name="task_filter_all">Vše</string>
     <string name="task_filter_delegated">Delegováno</string>
     <string name="task_filter_no_matches">Žádné úkoly neodpovídají tomuto filtru.</string>

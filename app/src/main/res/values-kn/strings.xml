@@ -1347,7 +1347,6 @@
     <string name="tasker_create_task_hint">ಫೀಲ್ಡ್‌ಗಳು Tasker ವೇರಿಯೇಬಲ್‌ಗಳನ್ನು (%var) ಸ್ವೀಕರಿಸುತ್ತವೆ. ಬಿಟ್ಟುಬಿಡಲು ಖಾಲಿ ಬಿಡಿ.</string>
     <string name="archive_section_header">%1$s - %2$d</string>
     <string name="image_cropper_hint">ಮರುಸ್ಥಾಪಿಸಲು ಎಳೆಯಿರಿ, ಜೂಮ್ ಮಾಡಲು ಪಿಂಚ್ ಮಾಡಿ</string>
-    <string name="entity_report_pdf_title">%1$s — YATA %2$s ವರದಿ</string>
     <string name="task_filter_all">ಎಲ್ಲಾ</string>
     <string name="task_filter_delegated">ಪ್ರತಿನಿಧೀಕರಿಸಲಾಗಿದೆ</string>
     <string name="task_filter_no_matches">ಈ ಫಿಲ್ಟರ್‌ಗೆ ಯಾವುದೇ ಕಾರ್ಯ ಹೊಂದಾಣಿಕೆಯಾಗುವುದಿಲ್ಲ.</string>
