@@ -1654,4 +1654,5 @@
     <string name="task_detail_edit_tracked_time">ट्रैक किया समय बदलें</string>
     <string name="task_detail_tracked_hours">घंटे</string>
     <string name="task_detail_tracked_minutes">मिनट</string>
+    <string name="task_detail_tracked_none">अभी तक कोई समय ट्रैक नहीं किया</string>
 </resources>

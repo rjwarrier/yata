@@ -1654,4 +1654,5 @@
     <string name="task_detail_edit_tracked_time">Sửa thời gian đã ghi</string>
     <string name="task_detail_tracked_hours">Giờ</string>
     <string name="task_detail_tracked_minutes">Phút</string>
+    <string name="task_detail_tracked_none">Chưa ghi thời gian</string>
 </resources>

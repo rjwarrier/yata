@@ -1651,4 +1651,5 @@
     <string name="task_detail_edit_tracked_time">ಟ್ರ್ಯಾಕ್ ಮಾಡಿದ ಸಮಯವನ್ನು ಸಂಪಾದಿಸಿ</string>
     <string name="task_detail_tracked_hours">ಗಂಟೆಗಳು</string>
     <string name="task_detail_tracked_minutes">ನಿಮಿಷಗಳು</string>
+    <string name="task_detail_tracked_none">ಇನ್ನೂ ಸಮಯ ಟ್ರ್ಯಾಕ್ ಮಾಡಿಲ್ಲ</string>
 </resources>

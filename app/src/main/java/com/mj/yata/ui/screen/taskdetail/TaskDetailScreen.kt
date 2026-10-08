@@ -25,6 +25,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -2504,12 +2506,18 @@ private fun FocusTimerRow(task: Task, viewModel: MainViewModel, delegated: Boole
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+        horizontalArrangement = Arrangement.spacedBy(com.mj.yata.ui.theme.UiSpacing.small)
     ) {
+        Icon(
+            Icons.Outlined.Timer,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(com.mj.yata.ui.theme.UiSize.iconSmall)
+        )
         val tracked = com.mj.yata.util.EstimateUtils.format(task.trackedMinutes)
         Text(
             text = when {
-                task.trackedMinutes == 0 -> ""
+                task.trackedMinutes == 0 -> stringResource(R.string.task_detail_tracked_none)
                 task.estimateMinutes != null -> stringResource(
                     R.string.task_detail_tracked_of_estimate,
                     tracked,
@@ -2522,16 +2530,21 @@ private fun FocusTimerRow(task: Task, viewModel: MainViewModel, delegated: Boole
             modifier = Modifier.weight(1f)
         )
         IconButton(onClick = { editingTrackedTime = true }) {
-            Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.task_detail_edit_tracked_time))
+            Icon(
+                Icons.Outlined.Edit,
+                contentDescription = stringResource(R.string.task_detail_edit_tracked_time),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(com.mj.yata.ui.theme.UiSize.iconSmall)
+            )
         }
         if (!task.done || runningHere) {
-            FilledTonalButton(
-                onClick = { if (runningHere) viewModel.stopFocusTimer() else viewModel.startFocusTimer(task) }
-            ) {
+            val onClick = { if (runningHere) viewModel.stopFocusTimer() else viewModel.startFocusTimer(task) }
+            // Filled while running so the active state stands out; tonal at rest.
+            val content: @Composable RowScope.() -> Unit = {
                 Icon(
                     if (runningHere) Icons.Default.Stop else Icons.Default.PlayArrow,
                     contentDescription = null,
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(com.mj.yata.ui.theme.UiSize.iconSmall)
                 )
                 Spacer(Modifier.width(6.dp))
                 Text(
@@ -2539,9 +2552,12 @@ private fun FocusTimerRow(task: Task, viewModel: MainViewModel, delegated: Boole
                         stringResource(R.string.task_detail_timer_stop, android.text.format.DateUtils.formatElapsedTime(elapsedSeconds))
                     } else {
                         stringResource(R.string.task_detail_timer_start)
-                    }
+                    },
+                    // Tabular digits, so the button doesn't change width every second.
+                    style = MaterialTheme.typography.labelLarge.copy(fontFeatureSettings = "tnum")
                 )
             }
+            if (runningHere) Button(onClick = onClick, content = content) else FilledTonalButton(onClick = onClick, content = content)
         }
     }
 }

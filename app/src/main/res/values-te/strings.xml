@@ -1651,4 +1651,5 @@
     <string name="task_detail_edit_tracked_time">ట్రాక్ చేసిన సమయాన్ని సవరించు</string>
     <string name="task_detail_tracked_hours">గంటలు</string>
     <string name="task_detail_tracked_minutes">నిమిషాలు</string>
+    <string name="task_detail_tracked_none">ఇంకా సమయం ట్రాక్ చేయలేదు</string>
 </resources>

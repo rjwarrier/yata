@@ -1210,10 +1210,14 @@ fun MainScreen(
             onDismissRequest = { templatePendingDelete = null },
             title = { Text(stringResource(R.string.task_template_delete_title, template.name)) },
             confirmButton = {
-                TextButton(onClick = {
-                    viewModel.removeTaskTemplate(template)
-                    templatePendingDelete = null
-                }) { Text(stringResource(R.string.cd_delete)) }
+                // Error-toned: deleting a template can't be undone.
+                TextButton(
+                    onClick = {
+                        viewModel.removeTaskTemplate(template)
+                        templatePendingDelete = null
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) { Text(stringResource(R.string.cd_delete)) }
             },
             dismissButton = {
                 TextButton(onClick = { templatePendingDelete = null }) { Text(stringResource(R.string.action_cancel)) }
@@ -1736,7 +1740,11 @@ private fun PaletteRow(
         trailingContent = onDelete?.let { delete ->
             {
                 IconButton(onClick = delete) {
-                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cd_delete))
+                    Icon(
+                        Icons.Outlined.Delete,
+                        contentDescription = stringResource(R.string.cd_delete),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
         },

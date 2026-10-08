@@ -66,6 +66,8 @@ test-only changes belong in the commit message, not here, unless they change beh
 - Home-screen widgets, the daily agenda and overdue notifications no longer read your whole
   completed-task history to work out today's tasks. Restoring, archiving or permanently deleting
   many tasks at once, and syncs that remove tasks, now apply in one step instead of task by task.
+- The Clear action on a filter banner (shown after tapping an Overdue, High priority or Due today
+  count) has a full-size touch target and is easier to hit.
 - The app download is several megabytes smaller, and PDF exports finish sooner. Exported PDFs no
   longer fill in the title, author and keyword fields of the document's properties.
 

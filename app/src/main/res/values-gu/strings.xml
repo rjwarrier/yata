@@ -1651,4 +1651,5 @@
     <string name="task_detail_edit_tracked_time">ટ્રૅક કરેલો સમય સંપાદિત કરો</string>
     <string name="task_detail_tracked_hours">કલાક</string>
     <string name="task_detail_tracked_minutes">મિનિટ</string>
+    <string name="task_detail_tracked_none">હજી સુધી કોઈ સમય ટ્રૅક કર્યો નથી</string>
 </resources>

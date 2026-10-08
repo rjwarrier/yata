@@ -69,7 +69,12 @@ import androidx.compose.ui.semantics.semantics
 import kotlinx.coroutines.delay
 
 /** Inset from the screen edge to a task card, when card mode is on. Same on every list screen. */
-private val TASK_CARD_MARGIN = 12.dp
+// Row geometry, shared with CalendarEventRow so an event's title lines up with the task titles
+// around it.
+internal val TASK_CARD_MARGIN = 12.dp
+internal val TASK_CARD_CONTENT_PADDING = 14.dp
+internal val TASK_ROW_LEADING_SIZE = 24.dp
+internal val TASK_ROW_LEADING_GAP = 14.dp
 
 private fun TaskRowDensity.verticalPadding() = when (this) {
     TaskRowDensity.COMPACT -> 6.dp
@@ -110,7 +115,9 @@ private fun FocusTimerChip(startedAt: Long, onStop: () -> Unit) {
     val stopLabel = stringResource(R.string.task_detail_timer_stop, elapsed)
     Row(
         modifier = Modifier
-            .clip(RoundedCornerShape(50))
+            // Visually a small pill, but a full 48dp touch target like the icon buttons beside it.
+            .minimumInteractiveComponentSize()
+            .clip(com.mj.yata.ui.theme.UiShape.pill)
             .background(MaterialTheme.colorScheme.primaryContainer)
             .clickable(role = Role.Button, onClick = onStop)
             .semantics { contentDescription = stopLabel }
@@ -126,7 +133,8 @@ private fun FocusTimerChip(startedAt: Long, onStop: () -> Unit) {
         )
         Text(
             text = elapsed,
-            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+            // Tabular digits, so the chip doesn't change width every second.
+            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold, fontFeatureSettings = "tnum"),
             color = MaterialTheme.colorScheme.onPrimaryContainer,
             modifier = Modifier.clearAndSetSemantics {}
         )
@@ -231,7 +239,7 @@ fun TaskRow(
     // The gap between cards is not part of the tap target — the card is the thing you press, which
     // is why the margin is kept narrow rather than matching the old full-width row.
     val cardBackground = com.mj.yata.ui.theme.LocalTaskCardBackground.current
-    val contentHorizontalPadding = if (cardBackground) 14.dp else horizontalPadding
+    val contentHorizontalPadding = if (cardBackground) TASK_CARD_CONTENT_PADDING else horizontalPadding
 
     // Press feedback. Deliberately not PressableScaleBox, which every other pressable surface in
     // the app uses: that wraps `clickable`, so it would drop this row's long-press (selection,
@@ -634,7 +642,7 @@ fun TaskRow(
                     imageVector = Icons.Default.PlayArrow,
                     contentDescription = stringResource(R.string.task_detail_timer_start),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(com.mj.yata.ui.theme.UiSize.iconSmall)
                 )
             }
         }

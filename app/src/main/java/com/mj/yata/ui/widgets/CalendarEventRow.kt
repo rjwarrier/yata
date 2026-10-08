@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -34,8 +35,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.mj.yata.ui.theme.UiSize
+import com.mj.yata.ui.theme.UiSpacing
 import com.mj.yata.R
 import com.mj.yata.data.calendar.CalendarEvent
 import com.mj.yata.data.calendar.DeviceCalendar
@@ -72,10 +77,17 @@ fun rememberCalendarEvents(enabled: Boolean, from: LocalDate, to: LocalDate): Ma
 }
 
 /** A calendar event listed among tasks: deliberately lighter than a task card, since it can't be
- * completed or edited here. Tapping opens it in the calendar app. */
+ * completed or edited here, but laid out on the same grid — the color bar sits where a task's
+ * checkbox does, so event and task titles share one left edge. Tapping opens it in the calendar
+ * app. [horizontalPadding] is the TaskRow parameter of the same name on the surrounding list. */
 @Composable
-fun CalendarEventRow(event: CalendarEvent, modifier: Modifier = Modifier) {
+fun CalendarEventRow(event: CalendarEvent, modifier: Modifier = Modifier, horizontalPadding: Dp = 20.dp) {
     val context = LocalContext.current
+    val inset = if (com.mj.yata.ui.theme.LocalTaskCardBackground.current) {
+        TASK_CARD_MARGIN + TASK_CARD_CONTENT_PADDING
+    } else {
+        horizontalPadding
+    }
     val timeLabel = if (event.allDay) {
         stringResource(R.string.calendar_event_all_day)
     } else {
@@ -87,18 +99,22 @@ fun CalendarEventRow(event: CalendarEvent, modifier: Modifier = Modifier) {
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clickable { runCatching { context.startActivity(DeviceCalendar.openIntent(event)) } }
-            .padding(horizontal = 20.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+            .clickable(role = Role.Button) { runCatching { context.startActivity(DeviceCalendar.openIntent(event)) } }
+            .padding(horizontal = inset, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(
-            Modifier
-                .width(4.dp)
-                .height(32.dp)
-                .clip(RoundedCornerShape(2.dp))
-                .background(Color(event.color))
-        )
+        Box(Modifier.width(TASK_ROW_LEADING_SIZE), contentAlignment = Alignment.Center) {
+            // The provider's own color for this calendar — not a theme role, since it identifies
+            // which calendar the event came from, the same as it does in the calendar app.
+            Box(
+                Modifier
+                    .width(4.dp)
+                    .height(28.dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(Color(event.color))
+            )
+        }
+        Spacer(Modifier.width(TASK_ROW_LEADING_GAP))
         Column(Modifier.weight(1f)) {
             Text(
                 text = event.title.ifBlank { stringResource(R.string.calendar_event_no_title) },
@@ -112,11 +128,12 @@ fun CalendarEventRow(event: CalendarEvent, modifier: Modifier = Modifier) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+        Spacer(Modifier.width(UiSpacing.medium))
         Icon(
             Icons.Outlined.Event,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(16.dp)
+            modifier = Modifier.size(UiSize.iconSmall)
         )
     }
 }

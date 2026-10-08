@@ -1654,4 +1654,5 @@
     <string name="task_detail_edit_tracked_time">Modifica tempo tracciato</string>
     <string name="task_detail_tracked_hours">Ore</string>
     <string name="task_detail_tracked_minutes">Minuti</string>
+    <string name="task_detail_tracked_none">Nessun tempo tracciato</string>
 </resources>

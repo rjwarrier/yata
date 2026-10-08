@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
+import androidx.compose.ui.semantics.Role
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -217,10 +219,11 @@ fun ActiveFilterBanner(
     actionLabel: String? = null,
     onAction: () -> Unit = {}
 ) {
+    // No vertical padding: the actions' 48dp touch targets set the banner's height.
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 8.dp),
+            .padding(horizontal = 20.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -242,8 +245,9 @@ private fun BannerAction(label: String, onClick: () -> Unit) {
         style = MaterialTheme.typography.labelMedium,
         color = MaterialTheme.colorScheme.primary,
         modifier = Modifier
+            .minimumInteractiveComponentSize()
             .clip(RoundedCornerShape(6.dp))
-            .clickable(onClick = onClick)
+            .clickable(role = Role.Button, onClick = onClick)
             .padding(horizontal = 6.dp, vertical = 2.dp)
     )
 }

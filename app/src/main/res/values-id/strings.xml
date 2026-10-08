@@ -1654,4 +1654,5 @@
     <string name="task_detail_edit_tracked_time">Edit waktu tercatat</string>
     <string name="task_detail_tracked_hours">Jam</string>
     <string name="task_detail_tracked_minutes">Menit</string>
+    <string name="task_detail_tracked_none">Belum ada waktu tercatat</string>
 </resources>

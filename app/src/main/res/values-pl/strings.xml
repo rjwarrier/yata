@@ -1660,4 +1660,5 @@
     <string name="task_detail_edit_tracked_time">Edytuj zarejestrowany czas</string>
     <string name="task_detail_tracked_hours">Godziny</string>
     <string name="task_detail_tracked_minutes">Minuty</string>
+    <string name="task_detail_tracked_none">Brak zarejestrowanego czasu</string>
 </resources>

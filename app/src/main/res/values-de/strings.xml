@@ -1811,4 +1811,5 @@
     <string name="task_detail_edit_tracked_time">Erfasste Zeit bearbeiten</string>
     <string name="task_detail_tracked_hours">Stunden</string>
     <string name="task_detail_tracked_minutes">Minuten</string>
+    <string name="task_detail_tracked_none">Noch keine Zeit erfasst</string>
 </resources>
