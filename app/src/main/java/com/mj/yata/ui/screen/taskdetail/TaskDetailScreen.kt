@@ -58,6 +58,7 @@ import com.mj.yata.domain.model.Subtask
 import com.mj.yata.domain.model.SubtaskCompletionAction
 import com.mj.yata.domain.model.Tag
 import com.mj.yata.domain.model.Task
+import com.mj.yata.domain.model.isDelegated
 import com.mj.yata.domain.model.YataList
 import com.mj.yata.domain.model.activeLists
 import com.mj.yata.domain.model.activePeople
@@ -1341,7 +1342,11 @@ fun TaskDetailScreen(
                         }
                     }
                     LocalPanelHint(stringResource(R.string.task_estimate_hint))
-                    FocusTimerRow(task, viewModel)
+                    FocusTimerRow(
+                        task = task,
+                        viewModel = viewModel,
+                        delegated = peopleFeatureEnabled && task.isDelegated(people.find { it.isMe }?.id)
+                    )
                 }
             }
 
@@ -2472,7 +2477,7 @@ private fun SaveTemplateDialog(initialName: String, onDismiss: () -> Unit, onSav
  * MainViewModel.focusTimer, so it keeps going after leaving this screen.
  */
 @Composable
-private fun FocusTimerRow(task: Task, viewModel: MainViewModel) {
+private fun FocusTimerRow(task: Task, viewModel: MainViewModel, delegated: Boolean) {
     var editingTrackedTime by remember { mutableStateOf(false) }
     if (editingTrackedTime) {
         EditTrackedTimeDialog(
@@ -2486,6 +2491,9 @@ private fun FocusTimerRow(task: Task, viewModel: MainViewModel) {
     }
     val focusTimer by viewModel.focusTimer.collectAsStateWithLifecycle()
     val runningHere = focusTimer?.taskId == task.id
+    // The timer is for your own work. On a delegated task it's hidden, unless a timer is already
+    // running on it (started before it was reassigned), which must stay stoppable.
+    if (delegated && !runningHere) return
     val elapsedSeconds by produceState(0L, focusTimer, task.id) {
         val startedAt = focusTimer?.takeIf { it.taskId == task.id }?.startedAt ?: return@produceState
         while (true) {

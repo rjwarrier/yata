@@ -179,7 +179,7 @@ fun UpcomingTab(
     val myId = remember(people) { people.find { it.isMe }?.id ?: "me" }
     fun applyFilter(list: List<Task>): List<Task> = when (selectedFilter) {
         UpcomingTaskFilter.ASSIGNED_TO_ME -> list.filter { it.assigneeIds.contains(myId) }
-        UpcomingTaskFilter.DELEGATED -> list.filter { it.assigneeIds.isNotEmpty() && !it.assigneeIds.contains(myId) }
+        UpcomingTaskFilter.DELEGATED -> list.filter { it.isDelegated(myId) }
         UpcomingTaskFilter.HIGH_PRIORITY -> list.filter { it.priority == "high" }
         UpcomingTaskFilter.ALL -> list
     }

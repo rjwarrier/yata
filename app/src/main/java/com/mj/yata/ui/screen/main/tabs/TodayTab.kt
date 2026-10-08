@@ -190,7 +190,7 @@ fun TodayTab(
     val filteredTasks = remember(todayTasks, selectedFilter, myId) {
         when (selectedFilter) {
             TodayTaskFilter.ASSIGNED_TO_ME -> todayTasks.filter { it.assigneeIds.contains(myId) }
-            TodayTaskFilter.DELEGATED -> todayTasks.filter { it.assigneeIds.isNotEmpty() && !it.assigneeIds.contains(myId) }
+            TodayTaskFilter.DELEGATED -> todayTasks.filter { it.isDelegated(myId) }
             TodayTaskFilter.HIGH_PRIORITY -> todayTasks.filter { it.priority == "high" }
             TodayTaskFilter.ALL -> todayTasks
         }
@@ -809,9 +809,10 @@ fun TodayTab(
                         onQuickSnooze = { preset -> onQuickSnooze(task.id, preset) },
                         onRenameTask = { title -> onRenameTask(task.id, title) },
                         focusTimerStartedAt = focusTimer?.takeIf { it.taskId == task.id }?.startedAt,
-                        // Play only on estimated tasks, to keep the rest of Today's rows quiet; the
-                        // running chip still shows on any task, however its timer was started.
-                        onStartFocusTimer = if (task.estimateMinutes != null) {
+                        // Play only on your own estimated tasks, to keep the rest of Today's rows
+                        // quiet; the running chip still shows on any task, however its timer was
+                        // started, so it can always be stopped.
+                        onStartFocusTimer = if (task.estimateMinutes != null && !(peopleEnabled && task.isDelegated(myId))) {
                             { onStartFocusTimer(task) }
                         } else null,
                         onStopFocusTimer = onStopFocusTimer,

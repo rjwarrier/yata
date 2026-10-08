@@ -223,6 +223,12 @@ fun Task.isWaitingOn(nowMillis: Long, myId: String?): Boolean {
     return myId == null || owner != myId
 }
 
+/** True when the task is assigned and none of its assignees is [myId] — someone else's to do.
+ * An unassigned task is the user's own. The single definition behind the Delegated filters and
+ * the focus timer, which is only offered on work that's yours. */
+fun Task.isDelegated(myId: String?): Boolean =
+    assigneeIds.isNotEmpty() && myId !in assigneeIds
+
 /**
  * The date this task should be compared against as "due", for filtering/overdue purposes only —
  * never written back to [due]. For a recurring task whose [due] lands on a weekend or configured

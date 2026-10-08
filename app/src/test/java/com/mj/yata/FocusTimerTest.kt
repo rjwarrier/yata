@@ -4,6 +4,7 @@ import com.mj.yata.domain.model.MAX_FOCUS_SESSION_MINUTES
 import com.mj.yata.domain.model.Task
 import com.mj.yata.util.TrackedVsEstimate
 import com.mj.yata.domain.model.focusSessionMinutes
+import com.mj.yata.domain.model.isDelegated
 import com.mj.yata.util.AnalyticsUtils
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -43,5 +44,18 @@ class FocusTimerTest {
             TrackedVsEstimate(trackedMinutes = 90, estimatedMinutes = 60),
             AnalyticsUtils.trackedVsEstimate(listOf(task(40, 30), task(50, 30), task(20, null)))
         )
+    }
+
+    @Test
+    fun timerIsOnlyForTasksThatAreMine() {
+        fun task(vararg assignees: String) = Task(
+            id = "t", title = "t", listId = null, projectId = null, section = "", due = null,
+            time = null, reminder = null, priority = "none", flag = false, done = false,
+            assigneeIds = assignees.toList(), tagIds = emptyList(), recurrence = null, subtasks = emptyList(), notes = null
+        )
+        assertEquals(false, task().isDelegated("me"))
+        assertEquals(false, task("me", "p2").isDelegated("me"))
+        assertEquals(true, task("p2").isDelegated("me"))
+        assertEquals(true, task("p2").isDelegated(null))
     }
 }
