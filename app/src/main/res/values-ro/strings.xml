@@ -1654,4 +1654,7 @@
     <string name="notification_channel_focus_timer">Cronometru de concentrare</string>
     <string name="notification_focus_timer_running">Cronometrul de concentrare rulează</string>
     <string name="notification_action_stop_timer">Oprește cronometrul</string>
+    <string name="task_detail_edit_tracked_time">Editează timpul înregistrat</string>
+    <string name="task_detail_tracked_hours">Ore</string>
+    <string name="task_detail_tracked_minutes">Minute</string>
 </resources>

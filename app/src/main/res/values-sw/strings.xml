@@ -1648,4 +1648,7 @@
     <string name="notification_channel_focus_timer">Kipima muda cha umakini</string>
     <string name="notification_focus_timer_running">Kipima muda cha umakini kinaendelea</string>
     <string name="notification_action_stop_timer">Simamisha kipima muda</string>
+    <string name="task_detail_edit_tracked_time">Hariri muda uliofuatiliwa</string>
+    <string name="task_detail_tracked_hours">Saa</string>
+    <string name="task_detail_tracked_minutes">Dakika</string>
 </resources>

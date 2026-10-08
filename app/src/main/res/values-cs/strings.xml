@@ -1657,4 +1657,7 @@
     <string name="notification_channel_focus_timer">Časovač soustředění</string>
     <string name="notification_focus_timer_running">Časovač soustředění běží</string>
     <string name="notification_action_stop_timer">Zastavit časovač</string>
+    <string name="task_detail_edit_tracked_time">Upravit změřený čas</string>
+    <string name="task_detail_tracked_hours">Hodiny</string>
+    <string name="task_detail_tracked_minutes">Minuty</string>
 </resources>

@@ -1651,4 +1651,7 @@
     <string name="notification_channel_focus_timer">Timer fokus</string>
     <string name="notification_focus_timer_running">Timer fokus berjalan</string>
     <string name="notification_action_stop_timer">Hentikan timer</string>
+    <string name="task_detail_edit_tracked_time">Edit waktu tercatat</string>
+    <string name="task_detail_tracked_hours">Jam</string>
+    <string name="task_detail_tracked_minutes">Menit</string>
 </resources>

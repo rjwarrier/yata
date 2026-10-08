@@ -1653,4 +1653,7 @@
     <string name="notification_channel_focus_timer">Minuteur de concentration</string>
     <string name="notification_focus_timer_running">Minuteur de concentration en cours</string>
     <string name="notification_action_stop_timer">Arrêter le minuteur</string>
+    <string name="task_detail_edit_tracked_time">Modifier le temps suivi</string>
+    <string name="task_detail_tracked_hours">Heures</string>
+    <string name="task_detail_tracked_minutes">Minutes</string>
 </resources>

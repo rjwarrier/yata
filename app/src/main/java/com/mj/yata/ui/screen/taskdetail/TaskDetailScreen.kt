@@ -2466,12 +2466,24 @@ private fun SaveTemplateDialog(initialName: String, onDismiss: () -> Unit, onSav
 }
 
 /**
- * Focus timer for one task: what's been tracked so far (against the estimate, when there is one)
- * and a Start/Stop button that shows the running session's elapsed time. The running timer lives
- * in MainViewModel.focusTimer, so it keeps going after leaving this screen.
+ * Focus timer for one task: what's been tracked so far (against the estimate, when there is one),
+ * an edit button to correct that total or log time spent away from the timer, and a Start/Stop
+ * button that shows the running session's elapsed time. The running timer lives in
+ * MainViewModel.focusTimer, so it keeps going after leaving this screen.
  */
 @Composable
 private fun FocusTimerRow(task: Task, viewModel: MainViewModel) {
+    var editingTrackedTime by remember { mutableStateOf(false) }
+    if (editingTrackedTime) {
+        EditTrackedTimeDialog(
+            initialMinutes = task.trackedMinutes,
+            onDismiss = { editingTrackedTime = false },
+            onSave = { minutes ->
+                editingTrackedTime = false
+                viewModel.upsertTask(task.copy(trackedMinutes = minutes))
+            }
+        )
+    }
     val focusTimer by viewModel.focusTimer.collectAsStateWithLifecycle()
     val runningHere = focusTimer?.taskId == task.id
     val elapsedSeconds by produceState(0L, focusTimer, task.id) {
@@ -2501,6 +2513,9 @@ private fun FocusTimerRow(task: Task, viewModel: MainViewModel) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.weight(1f)
         )
+        IconButton(onClick = { editingTrackedTime = true }) {
+            Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.task_detail_edit_tracked_time))
+        }
         if (!task.done || runningHere) {
             FilledTonalButton(
                 onClick = { if (runningHere) viewModel.stopFocusTimer() else viewModel.startFocusTimer(task) }
@@ -2521,4 +2536,52 @@ private fun FocusTimerRow(task: Task, viewModel: MainViewModel) {
             }
         }
     }
+}
+
+/** Hours and minutes for a task's tracked total. Minutes past 59 are fine — 90 minutes saves as
+ * 1h 30m — and an empty field counts as 0, so clearing both resets the total. A session running
+ * while this is saved is still added on top when it stops. */
+@Composable
+private fun EditTrackedTimeDialog(initialMinutes: Int, onDismiss: () -> Unit, onSave: (Int) -> Unit) {
+    var hours by remember { mutableStateOf((initialMinutes / 60).toString()) }
+    var minutes by remember { mutableStateOf((initialMinutes % 60).toString()) }
+    val numberKeyboard = androidx.compose.foundation.text.KeyboardOptions(
+        keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+    )
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.task_detail_edit_tracked_time)) },
+        text = {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                TextField(
+                    value = hours,
+                    onValueChange = { hours = it.filter(Char::isDigit).take(3) },
+                    label = { Text(stringResource(R.string.task_detail_tracked_hours)) },
+                    singleLine = true,
+                    keyboardOptions = numberKeyboard,
+                    modifier = Modifier.weight(1f),
+                    shape = com.mj.yata.ui.widgets.YataCompactFieldShape,
+                    colors = com.mj.yata.ui.widgets.yataFieldColors()
+                )
+                TextField(
+                    value = minutes,
+                    onValueChange = { minutes = it.filter(Char::isDigit).take(4) },
+                    label = { Text(stringResource(R.string.task_detail_tracked_minutes)) },
+                    singleLine = true,
+                    keyboardOptions = numberKeyboard,
+                    modifier = Modifier.weight(1f),
+                    shape = com.mj.yata.ui.widgets.YataCompactFieldShape,
+                    colors = com.mj.yata.ui.widgets.yataFieldColors()
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onSave((hours.toIntOrNull() ?: 0) * 60 + (minutes.toIntOrNull() ?: 0)) }) {
+                Text(stringResource(R.string.action_save))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
+        }
+    )
 }

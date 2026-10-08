@@ -1648,4 +1648,7 @@
     <string name="notification_channel_focus_timer">ਫੋਕਸ ਟਾਈਮਰ</string>
     <string name="notification_focus_timer_running">ਫੋਕਸ ਟਾਈਮਰ ਚੱਲ ਰਿਹਾ ਹੈ</string>
     <string name="notification_action_stop_timer">ਟਾਈਮਰ ਰੋਕੋ</string>
+    <string name="task_detail_edit_tracked_time">ਟ੍ਰੈਕ ਕੀਤਾ ਸਮਾਂ ਸੋਧੋ</string>
+    <string name="task_detail_tracked_hours">ਘੰਟੇ</string>
+    <string name="task_detail_tracked_minutes">ਮਿੰਟ</string>
 </resources>

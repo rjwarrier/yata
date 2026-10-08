@@ -1648,4 +1648,7 @@
     <string name="notification_channel_focus_timer">Focus timer</string>
     <string name="notification_focus_timer_running">Tumatakbo ang focus timer</string>
     <string name="notification_action_stop_timer">Ihinto ang timer</string>
+    <string name="task_detail_edit_tracked_time">I-edit ang naitalang oras</string>
+    <string name="task_detail_tracked_hours">Oras</string>
+    <string name="task_detail_tracked_minutes">Minuto</string>
 </resources>

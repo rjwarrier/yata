@@ -1648,4 +1648,7 @@
     <string name="notification_channel_focus_timer">ಫೋಕಸ್ ಟೈಮರ್</string>
     <string name="notification_focus_timer_running">ಫೋಕಸ್ ಟೈಮರ್ ಚಾಲನೆಯಲ್ಲಿದೆ</string>
     <string name="notification_action_stop_timer">ಟೈಮರ್ ನಿಲ್ಲಿಸಿ</string>
+    <string name="task_detail_edit_tracked_time">ಟ್ರ್ಯಾಕ್ ಮಾಡಿದ ಸಮಯವನ್ನು ಸಂಪಾದಿಸಿ</string>
+    <string name="task_detail_tracked_hours">ಗಂಟೆಗಳು</string>
+    <string name="task_detail_tracked_minutes">ನಿಮಿಷಗಳು</string>
 </resources>

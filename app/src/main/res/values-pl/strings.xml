@@ -1657,4 +1657,7 @@
     <string name="notification_channel_focus_timer">Licznik skupienia</string>
     <string name="notification_focus_timer_running">Licznik skupienia działa</string>
     <string name="notification_action_stop_timer">Zatrzymaj licznik</string>
+    <string name="task_detail_edit_tracked_time">Edytuj zarejestrowany czas</string>
+    <string name="task_detail_tracked_hours">Godziny</string>
+    <string name="task_detail_tracked_minutes">Minuty</string>
 </resources>

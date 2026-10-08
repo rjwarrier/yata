@@ -33,7 +33,8 @@ test-only changes belong in the commit message, not here, unless they change beh
 - Focus timer: start a timer from a task's detail screen to log the time you actually spend on it,
   shown against the task's estimate. Analytics compares tracked time with estimates for the tasks
   you finish. While it runs, a notification shows the elapsed time and can stop it, even after the
-  phone restarts.
+  phone restarts. The tracked total can be edited by hand, to fix a forgotten timer or add time
+  spent away from it.
 - Device calendar events can be shown in Upcoming and Next 10 days, above each day's tasks
   (Settings → Navigation & features). It's read-only and off until you allow calendar access, and
   tapping an event opens it in your calendar app. Days with events get hollow dots in the event's

@@ -1651,4 +1651,7 @@
     <string name="notification_channel_focus_timer">फ़ोकस टाइमर</string>
     <string name="notification_focus_timer_running">फ़ोकस टाइमर चल रहा है</string>
     <string name="notification_action_stop_timer">टाइमर रोकें</string>
+    <string name="task_detail_edit_tracked_time">ट्रैक किया समय बदलें</string>
+    <string name="task_detail_tracked_hours">घंटे</string>
+    <string name="task_detail_tracked_minutes">मिनट</string>
 </resources>

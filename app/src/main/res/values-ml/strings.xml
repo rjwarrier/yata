@@ -1648,4 +1648,7 @@
     <string name="notification_channel_focus_timer">ഫോക്കസ് ടൈമർ</string>
     <string name="notification_focus_timer_running">ഫോക്കസ് ടൈമർ പ്രവർത്തിക്കുന്നു</string>
     <string name="notification_action_stop_timer">ടൈമർ നിർത്തുക</string>
+    <string name="task_detail_edit_tracked_time">ട്രാക്ക് ചെയ്ത സമയം എഡിറ്റ് ചെയ്യുക</string>
+    <string name="task_detail_tracked_hours">മണിക്കൂർ</string>
+    <string name="task_detail_tracked_minutes">മിനിറ്റ്</string>
 </resources>

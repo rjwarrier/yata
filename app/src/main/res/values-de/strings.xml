@@ -1808,4 +1808,7 @@
     <string name="notification_channel_focus_timer">Fokus-Timer</string>
     <string name="notification_focus_timer_running">Fokus-Timer läuft</string>
     <string name="notification_action_stop_timer">Timer stoppen</string>
+    <string name="task_detail_edit_tracked_time">Erfasste Zeit bearbeiten</string>
+    <string name="task_detail_tracked_hours">Stunden</string>
+    <string name="task_detail_tracked_minutes">Minuten</string>
 </resources>

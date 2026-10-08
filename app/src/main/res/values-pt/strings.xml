@@ -1653,4 +1653,7 @@
     <string name="notification_channel_focus_timer">Cronômetro de foco</string>
     <string name="notification_focus_timer_running">Cronômetro de foco em andamento</string>
     <string name="notification_action_stop_timer">Parar cronômetro</string>
+    <string name="task_detail_edit_tracked_time">Editar tempo registrado</string>
+    <string name="task_detail_tracked_hours">Horas</string>
+    <string name="task_detail_tracked_minutes">Minutos</string>
 </resources>

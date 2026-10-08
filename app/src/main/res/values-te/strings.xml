@@ -1648,4 +1648,7 @@
     <string name="notification_channel_focus_timer">ఫోకస్ టైమర్</string>
     <string name="notification_focus_timer_running">ఫోకస్ టైమర్ నడుస్తోంది</string>
     <string name="notification_action_stop_timer">టైమర్ ఆపు</string>
+    <string name="task_detail_edit_tracked_time">ట్రాక్ చేసిన సమయాన్ని సవరించు</string>
+    <string name="task_detail_tracked_hours">గంటలు</string>
+    <string name="task_detail_tracked_minutes">నిమిషాలు</string>
 </resources>

@@ -1821,4 +1821,7 @@
     <string name="notification_channel_focus_timer">Focus timer</string>
     <string name="notification_focus_timer_running">Focus timer running</string>
     <string name="notification_action_stop_timer">Stop timer</string>
+    <string name="task_detail_edit_tracked_time">Edit tracked time</string>
+    <string name="task_detail_tracked_hours">Hours</string>
+    <string name="task_detail_tracked_minutes">Minutes</string>
 </resources>
