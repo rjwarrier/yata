@@ -50,7 +50,7 @@ class RoutingYataRepository @Inject constructor(
     override fun getTasksForList(listId: String): Flow<List<Task>> = routed(real.getTasksForList(listId), demo.getTasksForList(listId))
     override fun getTasksForProject(projectId: String): Flow<List<Task>> = routed(real.getTasksForProject(projectId), demo.getTasksForProject(projectId))
     override fun getTasksForPerson(personId: String): Flow<List<Task>> = routed(real.getTasksForPerson(personId), demo.getTasksForPerson(personId))
-    override suspend fun getTaskStreak(taskId: String): Int = if (isDemo()) demo.getTaskStreak(taskId) else real.getTaskStreak(taskId)
+    override suspend fun getSeriesCompletions(taskId: String): List<Task> = if (isDemo()) demo.getSeriesCompletions(taskId) else real.getSeriesCompletions(taskId)
     override suspend fun getTasksByIds(ids: Collection<String>): List<Task> = if (isDemo()) demo.getTasksByIds(ids) else real.getTasksByIds(ids)
     override suspend fun getOpenTasks(alsoCompletedSince: LocalDate?): List<Task> =
         if (isDemo()) demo.getOpenTasks(alsoCompletedSince) else real.getOpenTasks(alsoCompletedSince)

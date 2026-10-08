@@ -1627,4 +1627,15 @@
     <string name="bulk_reschedule_keep_time">Pertahankan waktu setiap tugas</string>
     <string name="recurrence_preview_next">Berikutnya: %1$s</string>
     <string name="recurrence_preview_none">Tidak berulang lagi setelah ini</string>
+    <string name="today_move_overdue_to_today">Pindahkan ke hari ini</string>
+    <plurals name="task_detail_heatmap_summary">
+        <item quantity="one">%1$d kali selesai sejak %2$s</item>
+        <item quantity="other">%1$d kali selesai sejak %2$s</item>
+    </plurals>
+    <string name="task_detail_save_as_template">Simpan sebagai templat</string>
+    <string name="task_template_name_label">Nama templat</string>
+    <string name="task_template_dialog_body">Menyimpan semuanya kecuali tanggal, pengingat, dan orang. Buat tugas baru darinya di palet perintah.</string>
+    <string name="task_template_saved">Templat disimpan</string>
+    <string name="task_template_palette_subtitle">Templat</string>
+    <string name="task_template_delete_title">Hapus templat “%1$s”?</string>
 </resources>

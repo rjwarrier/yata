@@ -1627,4 +1627,15 @@
     <string name="bulk_reschedule_keep_time">Mantieni l’orario di ogni attività</string>
     <string name="recurrence_preview_next">Prossime: %1$s</string>
     <string name="recurrence_preview_none">Non si ripete dopo questa</string>
+    <string name="today_move_overdue_to_today">Sposta a oggi</string>
+    <plurals name="task_detail_heatmap_summary">
+        <item quantity="one">Completata %1$d volta dal %2$s</item>
+        <item quantity="other">Completata %1$d volte dal %2$s</item>
+    </plurals>
+    <string name="task_detail_save_as_template">Salva come modello</string>
+    <string name="task_template_name_label">Nome del modello</string>
+    <string name="task_template_dialog_body">Mantiene tutto tranne date, promemoria e persone. Crea una nuova attività da questo nella barra dei comandi.</string>
+    <string name="task_template_saved">Modello salvato</string>
+    <string name="task_template_palette_subtitle">Modello</string>
+    <string name="task_template_delete_title">Eliminare il modello «%1$s»?</string>
 </resources>

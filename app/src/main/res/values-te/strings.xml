@@ -1624,4 +1624,15 @@
     <string name="bulk_reschedule_keep_time">ప్రతి టాస్క్ సమయాన్ని అలాగే ఉంచండి</string>
     <string name="recurrence_preview_next">తదుపరి: %1$s</string>
     <string name="recurrence_preview_none">దీని తర్వాత మళ్లీ పునరావృతం కాదు</string>
+    <string name="today_move_overdue_to_today">ఈరోజుకు తరలించు</string>
+    <plurals name="task_detail_heatmap_summary">
+        <item quantity="one">%2$s నుండి %1$d సార్లు పూర్తయింది</item>
+        <item quantity="other">%2$s నుండి %1$d సార్లు పూర్తయింది</item>
+    </plurals>
+    <string name="task_detail_save_as_template">టెంప్లేట్‌గా సేవ్ చేయి</string>
+    <string name="task_template_name_label">టెంప్లేట్ పేరు</string>
+    <string name="task_template_dialog_body">తేదీలు, రిమైండర్ మరియు వ్యక్తులు తప్ప అన్నింటినీ ఉంచుతుంది. కమాండ్ ప్యాలెట్ నుండి దీనితో కొత్త పనిని ప్రారంభించండి.</string>
+    <string name="task_template_saved">టెంప్లేట్ సేవ్ చేయబడింది</string>
+    <string name="task_template_palette_subtitle">టెంప్లేట్</string>
+    <string name="task_template_delete_title">“%1$s” టెంప్లేట్‌ను తొలగించాలా?</string>
 </resources>

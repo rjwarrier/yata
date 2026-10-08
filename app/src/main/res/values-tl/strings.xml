@@ -1624,4 +1624,15 @@
     <string name="bulk_reschedule_keep_time">Panatilihin ang oras ng bawat gawain</string>
     <string name="recurrence_preview_next">Susunod: %1$s</string>
     <string name="recurrence_preview_none">Hindi na mauulit pagkatapos nito</string>
+    <string name="today_move_overdue_to_today">Ilipat sa ngayon</string>
+    <plurals name="task_detail_heatmap_summary">
+        <item quantity="one">Natapos nang %1$d beses mula %2$s</item>
+        <item quantity="other">Natapos nang %1$d beses mula %2$s</item>
+    </plurals>
+    <string name="task_detail_save_as_template">I-save bilang template</string>
+    <string name="task_template_name_label">Pangalan ng template</string>
+    <string name="task_template_dialog_body">Itinatabi ang lahat maliban sa mga petsa, paalala at tao. Gumawa ng bagong gawain mula rito sa Command Palette.</string>
+    <string name="task_template_saved">Na-save ang template</string>
+    <string name="task_template_palette_subtitle">Template</string>
+    <string name="task_template_delete_title">Burahin ang template na “%1$s”?</string>
 </resources>

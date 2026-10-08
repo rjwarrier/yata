@@ -1631,4 +1631,17 @@
     <string name="bulk_reschedule_keep_time">Zachovat čas každého úkolu</string>
     <string name="recurrence_preview_next">Další: %1$s</string>
     <string name="recurrence_preview_none">Po tomto se už neopakuje</string>
+    <string name="today_move_overdue_to_today">Přesunout na dnešek</string>
+    <plurals name="task_detail_heatmap_summary">
+        <item quantity="one">Splněno %1$d× od %2$s</item>
+        <item quantity="few">Splněno %1$d× od %2$s</item>
+        <item quantity="many">Splněno %1$d× od %2$s</item>
+        <item quantity="other">Splněno %1$d× od %2$s</item>
+    </plurals>
+    <string name="task_detail_save_as_template">Uložit jako šablonu</string>
+    <string name="task_template_name_label">Název šablony</string>
+    <string name="task_template_dialog_body">Zachová vše kromě dat, připomínky a lidí. Nový úkol z ní vytvoříte v paletě příkazů.</string>
+    <string name="task_template_saved">Šablona uložena</string>
+    <string name="task_template_palette_subtitle">Šablona</string>
+    <string name="task_template_delete_title">Smazat šablonu „%1$s“?</string>
 </resources>

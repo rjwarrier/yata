@@ -207,9 +207,16 @@ private fun HeroStatKind.label(): String = when (this) {
 }
 
 /** Dismissible banner shown above a task list while a [HeroStatKind] filter (tapped from
- * [EntityHeroSection] or Today's own stat row) is active. */
+ * [EntityHeroSection] or Today's own stat row) is active. [actionLabel], when given, adds a
+ * second action next to Clear that applies to the filtered tasks. */
 @Composable
-fun ActiveFilterBanner(kind: HeroStatKind, onClear: () -> Unit, modifier: Modifier = Modifier) {
+fun ActiveFilterBanner(
+    kind: HeroStatKind,
+    onClear: () -> Unit,
+    modifier: Modifier = Modifier,
+    actionLabel: String? = null,
+    onAction: () -> Unit = {}
+) {
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -220,16 +227,23 @@ fun ActiveFilterBanner(kind: HeroStatKind, onClear: () -> Unit, modifier: Modifi
         Text(
             text = stringResource(R.string.entity_hero_showing_filter, kind.label()),
             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-            color = MaterialTheme.colorScheme.primary
-        )
-        Text(
-            text = stringResource(R.string.entity_hero_clear_filter),
-            style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier
-                .clip(RoundedCornerShape(6.dp))
-                .clickable(onClick = onClear)
-                .padding(horizontal = 6.dp, vertical = 2.dp)
+            modifier = Modifier.weight(1f)
         )
+        if (actionLabel != null) BannerAction(actionLabel, onAction)
+        BannerAction(stringResource(R.string.entity_hero_clear_filter), onClear)
     }
+}
+
+@Composable
+private fun BannerAction(label: String, onClick: () -> Unit) {
+    Text(
+        text = label,
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier
+            .clip(RoundedCornerShape(6.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 6.dp, vertical = 2.dp)
+    )
 }

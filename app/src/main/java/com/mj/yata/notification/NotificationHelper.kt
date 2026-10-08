@@ -8,6 +8,8 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
+import androidx.core.app.PendingIntentCompat
+import androidx.core.app.RemoteInput
 import com.mj.yata.MainActivity
 import com.mj.yata.R
 
@@ -178,6 +180,28 @@ object NotificationHelper {
         val style = NotificationCompat.InboxStyle()
         lines.forEach { style.addLine(it) }
 
+        // Inline reply: the typed text becomes a task, parsed like Quick Add (see
+        // NotificationActionReceiver.ACTION_QUICK_ADD). Must be mutable so the system can attach
+        // the RemoteInput result; the explicit component keeps that safe.
+        val quickAddIntent = PendingIntentCompat.getBroadcast(
+            context, DAILY_AGENDA_NOTIFICATION_ID,
+            Intent(context, NotificationActionReceiver::class.java).setAction(NotificationActionReceiver.ACTION_QUICK_ADD),
+            PendingIntent.FLAG_UPDATE_CURRENT,
+            true
+        )
+        val quickAddAction = NotificationCompat.Action.Builder(
+            android.R.drawable.ic_input_add,
+            context.getString(R.string.cd_add_task),
+            quickAddIntent
+        )
+            .addRemoteInput(
+                RemoteInput.Builder(NotificationActionReceiver.KEY_QUICK_ADD_TEXT)
+                    .setLabel(context.getString(R.string.quick_add_dialog_what_needs_doing))
+                    .build()
+            )
+            .setAllowGeneratedReplies(false)
+            .build()
+
         return NotificationCompat.Builder(context, AGENDA_CHANNEL_ID)
             .setContentTitle(
                 context.resources.getQuantityString(
@@ -194,6 +218,7 @@ object NotificationHelper {
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+            .addAction(quickAddAction)
             .build()
     }
 

@@ -1629,4 +1629,16 @@
     <string name="bulk_reschedule_keep_time">Păstrează ora fiecărei sarcini</string>
     <string name="recurrence_preview_next">Următoarele: %1$s</string>
     <string name="recurrence_preview_none">Nu se mai repetă după aceasta</string>
+    <string name="today_move_overdue_to_today">Mută pe azi</string>
+    <plurals name="task_detail_heatmap_summary">
+        <item quantity="one">Finalizată de %1$d dată din %2$s</item>
+        <item quantity="few">Finalizată de %1$d ori din %2$s</item>
+        <item quantity="other">Finalizată de %1$d de ori din %2$s</item>
+    </plurals>
+    <string name="task_detail_save_as_template">Salvează ca șablon</string>
+    <string name="task_template_name_label">Numele șablonului</string>
+    <string name="task_template_dialog_body">Păstrează totul, cu excepția datelor, mementoului și persoanelor. Creează o sarcină nouă din el în paleta de comenzi.</string>
+    <string name="task_template_saved">Șablon salvat</string>
+    <string name="task_template_palette_subtitle">Șablon</string>
+    <string name="task_template_delete_title">Ștergi șablonul „%1$s”?</string>
 </resources>

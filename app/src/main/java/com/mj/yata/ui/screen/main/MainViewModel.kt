@@ -2899,6 +2899,39 @@ data class WeekendRescheduleWarning(
         }
     }
 
+    val taskTemplates: StateFlow<List<TaskTemplate>> = userPreferences.taskTemplatesFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    /**
+     * Saves [task] as a template named [name]. Dates are dropped, since a template is used on other
+     * days, along with everything a share link already leaves out (reminder, people, done state).
+     * The link is parsed back before saving, so a task too large for the link format fails here,
+     * through the usual error snackbar, rather than later when the template is used.
+     */
+    fun saveTaskTemplate(name: String, task: Task, onSaved: () -> Unit) {
+        safeLaunch {
+            val link = com.mj.yata.util.export.buildTaskTransferLink(
+                title = name,
+                tasks = listOf(task.copy(due = null, startDate = null)),
+                listsById = listsSource.first().associateBy { it.id },
+                projectsById = projectsSource.first().associateBy { it.id },
+                tagsById = tagsSource.first().associateBy { it.id },
+                peopleById = emptyMap(),
+                includeStructure = true,
+                includeNotes = true
+            ).uri
+            com.mj.yata.util.export.parseTransferLink(android.net.Uri.parse(link))
+            userPreferences.saveTaskTemplate(TaskTemplate.create(name, link))
+            onSaved()
+        }
+    }
+
+    fun removeTaskTemplate(template: TaskTemplate) {
+        safeLaunch {
+            userPreferences.removeTaskTemplate(template)
+        }
+    }
+
     fun setLocalBackupEnabled(enabled: Boolean) {
         safeLaunch {
             userPreferences.setLocalBackupEnabled(enabled)
@@ -3249,9 +3282,9 @@ data class WeekendRescheduleWarning(
         safeLaunch { onResult(backupOperations.inspectSftpBackup(filename)) }
     }
 
-    fun streakForTask(taskId: String, onResult: (Int) -> Unit) {
+    fun seriesCompletionsFor(taskId: String, onResult: (List<Task>) -> Unit) {
         safeLaunch {
-            onResult(repository.getTaskStreak(taskId))
+            onResult(repository.getSeriesCompletions(taskId))
         }
     }
 

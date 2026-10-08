@@ -24,10 +24,10 @@ interface YataRepository {
      * map the whole completed history the way `getTasks().first()` does. */
     suspend fun getOpenTasks(alsoCompletedSince: LocalDate? = null): List<Task>
 
-    /** Consecutive on-time completions for [taskId]'s recurring series (0 if the task isn't
-     * recurring, or has never completed since seriesId tracking was added). See
-     * TaskEntity.seriesId and RecurrenceEvaluator.computeStreak. */
-    suspend fun getTaskStreak(taskId: String): Int
+    /** Completed instances of [taskId]'s recurring series, newest first (empty if the task isn't
+     * recurring, or has never completed since seriesId tracking was added). Feeds both the streak
+     * (RecurrenceEvaluator.computeStreak) and the completion heatmap. See TaskEntity.seriesId. */
+    suspend fun getSeriesCompletions(taskId: String): List<Task>
 
     // [notify] defaults to true (fires the widget-refresh/server-sync-debounce
     // signal immediately, as every existing call site expects). Bulk callers that loop this N

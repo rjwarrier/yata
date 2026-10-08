@@ -77,11 +77,10 @@ class YataRepositoryImpl @Inject constructor(
         return withContext(Dispatchers.Default) { rows.map { it.toDomain() } }
     }
 
-    override suspend fun getTaskStreak(taskId: String): Int = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-        val seriesId = db.taskDao().getByIdDirect(taskId)?.seriesId ?: return@withContext 0
-        val completions = db.taskDao().getCompletedTasksBySeriesId(seriesId)
+    override suspend fun getSeriesCompletions(taskId: String): List<Task> = withContext(Dispatchers.IO) {
+        val seriesId = db.taskDao().getByIdDirect(taskId)?.seriesId ?: return@withContext emptyList()
+        db.taskDao().getCompletedTasksBySeriesId(seriesId)
             .map { it.toDomain(assigneeIds = emptyList(), tagIds = emptyList()) }
-        com.mj.yata.util.RecurrenceEvaluator.computeStreak(completions)
     }
 
     override fun notifyTasksChanged() {

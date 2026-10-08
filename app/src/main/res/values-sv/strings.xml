@@ -1627,4 +1627,15 @@
     <string name="bulk_reschedule_keep_time">Behåll varje uppgifts tid</string>
     <string name="recurrence_preview_next">Nästa: %1$s</string>
     <string name="recurrence_preview_none">Upprepas inte efter denna</string>
+    <string name="today_move_overdue_to_today">Flytta till idag</string>
+    <plurals name="task_detail_heatmap_summary">
+        <item quantity="one">Klar %1$d gång sedan %2$s</item>
+        <item quantity="other">Klar %1$d gånger sedan %2$s</item>
+    </plurals>
+    <string name="task_detail_save_as_template">Spara som mall</string>
+    <string name="task_template_name_label">Mallens namn</string>
+    <string name="task_template_dialog_body">Behåller allt utom datum, påminnelse och personer. Skapa en ny uppgift från den i kommandopaletten.</string>
+    <string name="task_template_saved">Mallen sparades</string>
+    <string name="task_template_palette_subtitle">Mall</string>
+    <string name="task_template_delete_title">Ta bort mallen ”%1$s”?</string>
 </resources>

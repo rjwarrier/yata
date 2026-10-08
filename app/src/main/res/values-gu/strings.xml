@@ -1624,4 +1624,15 @@
     <string name="bulk_reschedule_keep_time">દરેક ટાસ્કનો સમય જાળવો</string>
     <string name="recurrence_preview_next">આગળ: %1$s</string>
     <string name="recurrence_preview_none">આ પછી ફરી પુનરાવર્તન થશે નહીં</string>
+    <string name="today_move_overdue_to_today">આજ પર ખસેડો</string>
+    <plurals name="task_detail_heatmap_summary">
+        <item quantity="one">%2$s થી %1$d વાર પૂર્ણ</item>
+        <item quantity="other">%2$s થી %1$d વાર પૂર્ણ</item>
+    </plurals>
+    <string name="task_detail_save_as_template">ટેમ્પલેટ તરીકે સાચવો</string>
+    <string name="task_template_name_label">ટેમ્પલેટનું નામ</string>
+    <string name="task_template_dialog_body">તારીખો, રિમાઇન્ડર અને લોકો સિવાય બધું રાખે છે. કમાન્ડ પેલેટમાંથી તેના પરથી નવું કાર્ય શરૂ કરો.</string>
+    <string name="task_template_saved">ટેમ્પલેટ સાચવ્યું</string>
+    <string name="task_template_palette_subtitle">ટેમ્પલેટ</string>
+    <string name="task_template_delete_title">“%1$s” ટેમ્પલેટ કાઢી નાખીએ?</string>
 </resources>

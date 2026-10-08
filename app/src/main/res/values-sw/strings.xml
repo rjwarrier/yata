@@ -1624,4 +1624,15 @@
     <string name="bulk_reschedule_keep_time">Hifadhi muda wa kila kazi</string>
     <string name="recurrence_preview_next">Zijazo: %1$s</string>
     <string name="recurrence_preview_none">Haitajirudia baada ya hii</string>
+    <string name="today_move_overdue_to_today">Hamishia leo</string>
+    <plurals name="task_detail_heatmap_summary">
+        <item quantity="one">Imekamilishwa mara %1$d tangu %2$s</item>
+        <item quantity="other">Imekamilishwa mara %1$d tangu %2$s</item>
+    </plurals>
+    <string name="task_detail_save_as_template">Hifadhi kama kiolezo</string>
+    <string name="task_template_name_label">Jina la kiolezo</string>
+    <string name="task_template_dialog_body">Huhifadhi kila kitu isipokuwa tarehe, kikumbusho na watu. Anzisha kazi mpya kutoka kwake kwenye Jopo la Amri.</string>
+    <string name="task_template_saved">Kiolezo kimehifadhiwa</string>
+    <string name="task_template_palette_subtitle">Kiolezo</string>
+    <string name="task_template_delete_title">Futa kiolezo “%1$s”?</string>
 </resources>

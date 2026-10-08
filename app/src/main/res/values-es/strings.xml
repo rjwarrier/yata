@@ -1673,4 +1673,15 @@
     <string name="bulk_reschedule_keep_time">Mantener la hora de cada tarea</string>
     <string name="recurrence_preview_next">Próximas: %1$s</string>
     <string name="recurrence_preview_none">No se repite después de esta</string>
+    <string name="today_move_overdue_to_today">Mover a hoy</string>
+    <plurals name="task_detail_heatmap_summary">
+        <item quantity="one">Completada %1$d vez desde %2$s</item>
+        <item quantity="other">Completada %1$d veces desde %2$s</item>
+    </plurals>
+    <string name="task_detail_save_as_template">Guardar como plantilla</string>
+    <string name="task_template_name_label">Nombre de la plantilla</string>
+    <string name="task_template_dialog_body">Conserva todo excepto fechas, recordatorio y personas. Crea una nueva tarea a partir de ella en la paleta de comandos.</string>
+    <string name="task_template_saved">Plantilla guardada</string>
+    <string name="task_template_palette_subtitle">Plantilla</string>
+    <string name="task_template_delete_title">¿Eliminar la plantilla «%1$s»?</string>
 </resources>

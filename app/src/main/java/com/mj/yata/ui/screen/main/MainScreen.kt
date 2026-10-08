@@ -235,6 +235,15 @@ fun MainScreen(
         activeSheet = MainSheetType.NewTask
     }
 
+    // A template opens the normal New Task sheet prefilled. Its list/project/tags resolve by name
+    // (same as a shared link), so ones deleted since the template was saved are just left off.
+    val taskTemplates by viewModel.taskTemplates.collectAsStateWithLifecycle()
+    var templateDraft by remember { mutableStateOf<NewTaskDraft?>(null) }
+    var templatePendingDelete by remember { mutableStateOf<com.mj.yata.domain.model.TaskTemplate?>(null) }
+    LaunchedEffect(activeSheet) {
+        if (activeSheet != MainSheetType.NewTask) templateDraft = null
+    }
+
     fun NewTaskDraft.asInboxCaptureDraft(): NewTaskDraft = copy(
         listId = null,
         projectId = null,
@@ -1130,6 +1139,18 @@ fun MainScreen(
             peopleEnabled = peopleFeatureEnabled,
             tagsEnabled = tagsFeatureEnabled,
             savedSmartFilterSets = savedSmartFilterSets,
+            taskTemplates = taskTemplates,
+            onUseTemplate = { template ->
+                showCommandPalette = false
+                val shared = runCatching {
+                    com.mj.yata.util.export.parseTransferLink(android.net.Uri.parse(template.link)).tasks.single()
+                }.getOrNull()
+                if (shared != null) {
+                    templateDraft = shared.resolveAgainstLocalData(lists, activeProjects, tags).draft
+                    openNewTask()
+                }
+            },
+            onDeleteTemplate = { templatePendingDelete = it },
             onDismiss = { showCommandPalette = false },
             onNewTask = {
                 showCommandPalette = false
@@ -1178,6 +1199,22 @@ fun MainScreen(
         )
     }
 
+    templatePendingDelete?.let { template ->
+        AlertDialog(
+            onDismissRequest = { templatePendingDelete = null },
+            title = { Text(stringResource(R.string.task_template_delete_title, template.name)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.removeTaskTemplate(template)
+                    templatePendingDelete = null
+                }) { Text(stringResource(R.string.cd_delete)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { templatePendingDelete = null }) { Text(stringResource(R.string.action_cancel)) }
+            }
+        )
+    }
+
     // Modal sheet routing
     if (activeSheet != MainSheetType.None) {
         if (activeSheet == MainSheetType.NewTask) {
@@ -1211,6 +1248,7 @@ fun MainScreen(
                         people = if (quickCaptureMode) emptyList() else activePeople,
                         tags = if (quickCaptureMode) emptyList() else tags,
                         tasks = tasks,
+                        initialDraft = if (quickCaptureMode) null else templateDraft,
                         onAddTask = { draft ->
                             viewModel.addTask(if (quickCaptureMode) draft.asInboxCaptureDraft() else draft)
                             newTaskHasDraft = false
@@ -1540,6 +1578,9 @@ private fun CommandPaletteDialog(
     peopleEnabled: Boolean,
     tagsEnabled: Boolean,
     savedSmartFilterSets: Set<String> = emptySet(),
+    taskTemplates: List<com.mj.yata.domain.model.TaskTemplate> = emptyList(),
+    onUseTemplate: (com.mj.yata.domain.model.TaskTemplate) -> Unit = {},
+    onDeleteTemplate: (com.mj.yata.domain.model.TaskTemplate) -> Unit = {},
     onDismiss: () -> Unit,
     onNewTask: () -> Unit,
     onQuickCapture: () -> Unit,
@@ -1583,6 +1624,10 @@ private fun CommandPaletteDialog(
         // finds it the same way a built-in preset does.
         PaletteEntry(encoded.smartFilterSetLabel(), stringResource(R.string.search_filter_saved_view), Icons.Default.FilterList) { onSavedSearch(encoded) }
     }
+    val templateSubtitle = stringResource(R.string.task_template_palette_subtitle)
+    val filteredTemplates = taskTemplates.filter {
+        query.isBlank() || it.name.contains(query, ignoreCase = true) || templateSubtitle.contains(query, ignoreCase = true)
+    }
     val filteredCommands = commandEntries.filter {
         query.isBlank() ||
             it.title.contains(query, ignoreCase = true) ||
@@ -1618,10 +1663,18 @@ private fun CommandPaletteDialog(
                         .heightIn(max = 420.dp),
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
-                    if (filteredCommands.isNotEmpty()) {
+                    if (filteredCommands.isNotEmpty() || filteredTemplates.isNotEmpty()) {
                         item { PaletteSectionLabel("Actions") }
                         items(filteredCommands, key = { "cmd_${it.title}" }) { entry ->
-                            PaletteRow(entry.title, entry.subtitle, entry.icon, entry.onClick)
+                            PaletteRow(entry.title, entry.subtitle, entry.icon, onClick = entry.onClick)
+                        }
+                        items(filteredTemplates, key = { "template_${it.name}" }) { template ->
+                            PaletteRow(
+                                template.name,
+                                templateSubtitle,
+                                Icons.Default.Bookmark,
+                                onDelete = { onDeleteTemplate(template) }
+                            ) { onUseTemplate(template) }
                         }
                     }
                     if (filteredRecentTasks.isNotEmpty()) {
@@ -1667,12 +1720,20 @@ private fun PaletteRow(
     title: String,
     subtitle: String,
     icon: ImageVector,
+    onDelete: (() -> Unit)? = null,
     onClick: () -> Unit
 ) {
     ListItem(
         headlineContent = { Text(title, maxLines = 1) },
         supportingContent = { Text(subtitle, maxLines = 1) },
         leadingContent = { Icon(icon, contentDescription = null) },
+        trailingContent = onDelete?.let { delete ->
+            {
+                IconButton(onClick = delete) {
+                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cd_delete))
+                }
+            }
+        },
         modifier = Modifier
             .clip(RoundedCornerShape(12.dp))
             .clickable(onClick = onClick)

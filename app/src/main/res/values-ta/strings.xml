@@ -1624,4 +1624,15 @@
     <string name="bulk_reschedule_keep_time">ஒவ்வொரு பணியின் நேரத்தையும் வைத்திருக்கவும்</string>
     <string name="recurrence_preview_next">அடுத்தவை: %1$s</string>
     <string name="recurrence_preview_none">இதற்குப் பிறகு மீண்டும் வராது</string>
+    <string name="today_move_overdue_to_today">இன்றுக்கு நகர்த்து</string>
+    <plurals name="task_detail_heatmap_summary">
+        <item quantity="one">%2$s முதல் %1$d முறை முடிந்தது</item>
+        <item quantity="other">%2$s முதல் %1$d முறை முடிந்தது</item>
+    </plurals>
+    <string name="task_detail_save_as_template">டெம்ப்ளேட்டாகச் சேமி</string>
+    <string name="task_template_name_label">டெம்ப்ளேட் பெயர்</string>
+    <string name="task_template_dialog_body">தேதிகள், நினைவூட்டல் மற்றும் நபர்கள் தவிர அனைத்தையும் வைத்திருக்கும். கட்டளை பலகையில் இதிலிருந்து புதிய பணியைத் தொடங்கவும்.</string>
+    <string name="task_template_saved">டெம்ப்ளேட் சேமிக்கப்பட்டது</string>
+    <string name="task_template_palette_subtitle">டெம்ப்ளேட்</string>
+    <string name="task_template_delete_title">“%1$s” டெம்ப்ளேட்டை நீக்கவா?</string>
 </resources>

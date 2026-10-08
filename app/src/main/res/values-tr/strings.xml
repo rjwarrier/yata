@@ -1627,4 +1627,15 @@
     <string name="bulk_reschedule_keep_time">Her görevin saatini koru</string>
     <string name="recurrence_preview_next">Sonraki: %1$s</string>
     <string name="recurrence_preview_none">Bundan sonra tekrarlanmaz</string>
+    <string name="today_move_overdue_to_today">Bugüne taşı</string>
+    <plurals name="task_detail_heatmap_summary">
+        <item quantity="one">%2$s tarihinden beri %1$d kez tamamlandı</item>
+        <item quantity="other">%2$s tarihinden beri %1$d kez tamamlandı</item>
+    </plurals>
+    <string name="task_detail_save_as_template">Şablon olarak kaydet</string>
+    <string name="task_template_name_label">Şablon adı</string>
+    <string name="task_template_dialog_body">Tarihler, hatırlatıcı ve kişiler dışında her şeyi saklar. Komut paletinden bununla yeni bir görev başlatın.</string>
+    <string name="task_template_saved">Şablon kaydedildi</string>
+    <string name="task_template_palette_subtitle">Şablon</string>
+    <string name="task_template_delete_title">“%1$s” şablonu silinsin mi?</string>
 </resources>

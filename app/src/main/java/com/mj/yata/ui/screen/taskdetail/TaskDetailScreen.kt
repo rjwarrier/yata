@@ -48,6 +48,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mj.yata.ui.widgets.showUndoSnackbar
+import com.mj.yata.ui.widgets.CompletionHeatmap
+import com.mj.yata.util.RecurrenceEvaluator
 import com.mj.yata.R
 import com.mj.yata.domain.model.Person
 import com.mj.yata.domain.model.Project
@@ -404,6 +406,19 @@ fun TaskDetailScreen(
                     // Export as PDF/Image — options (include notes/comments) are confirmed via
                     // TaskExportOptionsDialog before the off-screen render actually happens.
                     var showExportMenu by remember { mutableStateOf(false) }
+                    var showSaveTemplateDialog by remember { mutableStateOf(false) }
+                    if (showSaveTemplateDialog) {
+                        SaveTemplateDialog(
+                            initialName = task.title,
+                            onDismiss = { showSaveTemplateDialog = false },
+                            onSave = { name ->
+                                showSaveTemplateDialog = false
+                                viewModel.saveTaskTemplate(name, task) {
+                                    scope.launch { snackbarHostState.showSuccess(context.getString(R.string.task_template_saved)) }
+                                }
+                            }
+                        )
+                    }
                     IconButton(onClick = { showExportMenu = true }) {
                         Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.cd_more_options))
                     }
@@ -431,6 +446,14 @@ fun TaskDetailScreen(
                                 scope.launch { snackbarHostState.showSuccess(context.getString(R.string.task_duplicated)) }
                             },
                             leadingIcon = { Icon(Icons.Default.ContentCopy, contentDescription = null) }
+                        )
+                        YataDropdownMenuItem(
+                            text = { Text(stringResource(R.string.task_detail_save_as_template)) },
+                            onClick = {
+                                showExportMenu = false
+                                showSaveTemplateDialog = true
+                            },
+                            leadingIcon = { Icon(Icons.Default.BookmarkAdd, contentDescription = null) }
                         )
                         YataDropdownMenuItem(
                             text = { Text(stringResource(R.string.action_export_as_image)) },
@@ -1071,23 +1094,42 @@ fun TaskDetailScreen(
                         )
                     }
 
-                    // Reliable streak (linked via TaskEntity.seriesId, not the title-heuristic
-                    // recurrenceHistory below) — only counts completions since seriesId tracking
-                    // was added, so a brand-new streak isn't itself a bug.
-                    var streak by remember(task.id) { mutableIntStateOf(0) }
-                    LaunchedEffect(task.id, task.recurrence) {
+                    // Reliable streak and heatmap (linked via TaskEntity.seriesId, not the
+                    // title-heuristic recurrenceHistory below) — only counts completions since
+                    // seriesId tracking was added, so a brand-new streak isn't itself a bug.
+                    // Keyed on due too: completing a recurring task advances it, which is exactly
+                    // when the series gains a completion.
+                    var seriesCompletions by remember(task.id) { mutableStateOf(emptyList<Task>()) }
+                    LaunchedEffect(task.id, task.recurrence, task.due) {
                         if (task.recurrence != null) {
-                            viewModel.streakForTask(task.id) { streak = it }
+                            viewModel.seriesCompletionsFor(task.id) { seriesCompletions = it }
                         } else {
-                            streak = 0
+                            seriesCompletions = emptyList()
                         }
                     }
+                    val streak = remember(seriesCompletions) { RecurrenceEvaluator.computeStreak(seriesCompletions) }
                     if (task.recurrence != null && streak >= 2) {
                         Text(
                             text = stringResource(R.string.task_detail_streak_days, streak),
                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.tertiary,
                             modifier = Modifier.padding(start = 4.dp)
+                        )
+                    }
+
+                    if (task.recurrence != null && seriesCompletions.isNotEmpty()) {
+                        val startOfWeekSunday by viewModel.startOfWeekSunday.collectAsStateWithLifecycle()
+                        val completedDays = remember(seriesCompletions) {
+                            seriesCompletions.mapNotNullTo(HashSet()) { done ->
+                                done.completedAt?.let {
+                                    java.time.Instant.ofEpochMilli(it).atZone(java.time.ZoneId.systemDefault()).toLocalDate()
+                                }
+                            }
+                        }
+                        CompletionHeatmap(
+                            completedDays = completedDays,
+                            today = java.time.LocalDate.now(),
+                            startOfWeekSunday = startOfWeekSunday
                         )
                     }
 
@@ -2383,4 +2425,40 @@ fun MetaRowItem(
             )
         }
     }
+}
+
+/** Names a new template; saving under an existing name replaces that template. */
+@Composable
+private fun SaveTemplateDialog(initialName: String, onDismiss: () -> Unit, onSave: (String) -> Unit) {
+    var name by remember { mutableStateOf(initialName) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.task_detail_save_as_template)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    stringResource(R.string.task_template_dialog_body),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                TextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text(stringResource(R.string.task_template_name_label)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = com.mj.yata.ui.widgets.YataCompactFieldShape,
+                    colors = com.mj.yata.ui.widgets.yataFieldColors()
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onSave(name.trim()) }, enabled = name.isNotBlank()) {
+                Text(stringResource(R.string.action_save))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
+        }
+    )
 }

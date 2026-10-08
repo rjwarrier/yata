@@ -7,6 +7,7 @@ import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
 import com.mj.yata.domain.model.AppFont
+import com.mj.yata.domain.model.TaskTemplate
 import com.mj.yata.domain.model.BackgroundTint
 import com.mj.yata.domain.model.ColorIntensity
 import com.mj.yata.domain.model.DateAliasDefinition
@@ -258,6 +259,7 @@ class UserPreferences @Inject constructor(
         val HAS_SEEN_WELCOME       = booleanPreferencesKey("has_seen_welcome")
         val LAST_PRIMARY_ARGB      = intPreferencesKey("last_primary_argb")
         val SAVED_SMART_FILTER_SETS = stringSetPreferencesKey("saved_smart_filter_sets")
+        val TASK_TEMPLATES         = stringSetPreferencesKey("task_templates")
         val RECENT_TASK_IDS       = stringPreferencesKey("recent_task_ids")
         // Sort mode per screen, persisted alongside HIDE_COMPLETED_* above — both are
         // per-screen view state the user expects to survive navigating away and back.
@@ -558,6 +560,9 @@ class UserPreferences @Inject constructor(
     val lastHomeTabFlow: Flow<Int> = prefsFlow.mapDistinct { (it[LAST_HOME_TAB] ?: 0).coerceIn(0, 4) }
     val hasSeenWelcomeFlow: Flow<Boolean> = prefsFlow.mapDistinct { it[HAS_SEEN_WELCOME] ?: false }
     val savedSmartFilterSetsFlow: Flow<Set<String>> = prefsFlow.mapDistinct { it[SAVED_SMART_FILTER_SETS] ?: emptySet() }
+    val taskTemplatesFlow: Flow<List<TaskTemplate>> = prefsFlow.mapDistinct { prefs ->
+        (prefs[TASK_TEMPLATES] ?: emptySet()).mapNotNull(TaskTemplate::decode).sortedBy { it.name.lowercase() }
+    }
     val recentTaskIdsFlow: Flow<List<String>> = prefsFlow.mapDistinct { prefs ->
         prefs[RECENT_TASK_IDS]?.split(",")?.filter { it.isNotBlank() } ?: emptyList()
     }
@@ -941,6 +946,23 @@ class UserPreferences @Inject constructor(
         if (encodedFilters.isBlank()) return
         dataStore.edit { prefs ->
             prefs[SAVED_SMART_FILTER_SETS] = (prefs[SAVED_SMART_FILTER_SETS] ?: emptySet()) + encodedFilters
+        }
+    }
+
+    /** Saves [template], replacing any template with the same name (case-insensitively). */
+    suspend fun saveTaskTemplate(template: TaskTemplate) {
+        dataStore.edit { prefs ->
+            val others = (prefs[TASK_TEMPLATES] ?: emptySet()).filterNot {
+                TaskTemplate.decode(it)?.name.equals(template.name, ignoreCase = true)
+            }
+            prefs[TASK_TEMPLATES] = others.toSet() + template.encode()
+        }
+    }
+
+    suspend fun removeTaskTemplate(template: TaskTemplate) {
+        dataStore.edit { prefs ->
+            val updated = (prefs[TASK_TEMPLATES] ?: emptySet()) - template.encode()
+            if (updated.isEmpty()) prefs.remove(TASK_TEMPLATES) else prefs[TASK_TEMPLATES] = updated
         }
     }
 

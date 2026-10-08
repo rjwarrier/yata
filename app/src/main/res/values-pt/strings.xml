@@ -1629,4 +1629,15 @@
     <string name="bulk_reschedule_keep_time">Manter o horário de cada tarefa</string>
     <string name="recurrence_preview_next">Próximas: %1$s</string>
     <string name="recurrence_preview_none">Não se repete depois desta</string>
+    <string name="today_move_overdue_to_today">Mover para hoje</string>
+    <plurals name="task_detail_heatmap_summary">
+        <item quantity="one">Concluída %1$d vez desde %2$s</item>
+        <item quantity="other">Concluída %1$d vezes desde %2$s</item>
+    </plurals>
+    <string name="task_detail_save_as_template">Salvar como modelo</string>
+    <string name="task_template_name_label">Nome do modelo</string>
+    <string name="task_template_dialog_body">Mantém tudo, exceto datas, lembrete e pessoas. Crie uma nova tarefa a partir dele na paleta de comandos.</string>
+    <string name="task_template_saved">Modelo salvo</string>
+    <string name="task_template_palette_subtitle">Modelo</string>
+    <string name="task_template_delete_title">Excluir o modelo “%1$s”?</string>
 </resources>

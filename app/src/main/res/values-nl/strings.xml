@@ -1628,4 +1628,15 @@
     <string name="bulk_reschedule_keep_time">Tijd van elke taak behouden</string>
     <string name="recurrence_preview_next">Volgende: %1$s</string>
     <string name="recurrence_preview_none">Herhaalt niet meer na deze</string>
+    <string name="today_move_overdue_to_today">Naar vandaag verplaatsen</string>
+    <plurals name="task_detail_heatmap_summary">
+        <item quantity="one">%1$d keer voltooid sinds %2$s</item>
+        <item quantity="other">%1$d keer voltooid sinds %2$s</item>
+    </plurals>
+    <string name="task_detail_save_as_template">Opslaan als sjabloon</string>
+    <string name="task_template_name_label">Naam van sjabloon</string>
+    <string name="task_template_dialog_body">Bewaart alles behalve datums, herinnering en personen. Start er een nieuwe taak mee vanuit het opdrachtenpalet.</string>
+    <string name="task_template_saved">Sjabloon opgeslagen</string>
+    <string name="task_template_palette_subtitle">Sjabloon</string>
+    <string name="task_template_delete_title">Sjabloon “%1$s” verwijderen?</string>
 </resources>

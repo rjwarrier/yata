@@ -1624,4 +1624,15 @@
     <string name="bulk_reschedule_keep_time">ഓരോ ടാസ്കിന്റെയും സമയം നിലനിർത്തുക</string>
     <string name="recurrence_preview_next">അടുത്തത്: %1$s</string>
     <string name="recurrence_preview_none">ഇതിനുശേഷം ആവർത്തിക്കില്ല</string>
+    <string name="today_move_overdue_to_today">ഇന്നത്തേക്ക് മാറ്റുക</string>
+    <plurals name="task_detail_heatmap_summary">
+        <item quantity="one">%2$s മുതൽ %1$d തവണ പൂർത്തിയാക്കി</item>
+        <item quantity="other">%2$s മുതൽ %1$d തവണ പൂർത്തിയാക്കി</item>
+    </plurals>
+    <string name="task_detail_save_as_template">ടെംപ്ലേറ്റായി സംരക്ഷിക്കുക</string>
+    <string name="task_template_name_label">ടെംപ്ലേറ്റിന്റെ പേര്</string>
+    <string name="task_template_dialog_body">തീയതികൾ, ഓർമ്മപ്പെടുത്തൽ, ആളുകൾ എന്നിവ ഒഴികെ എല്ലാം സൂക്ഷിക്കുന്നു. കമാൻഡ് പാലറ്റിൽ നിന്ന് ഇതുപയോഗിച്ച് പുതിയ ടാസ്ക് ആരംഭിക്കുക.</string>
+    <string name="task_template_saved">ടെംപ്ലേറ്റ് സംരക്ഷിച്ചു</string>
+    <string name="task_template_palette_subtitle">ടെംപ്ലേറ്റ്</string>
+    <string name="task_template_delete_title">“%1$s” ടെംപ്ലേറ്റ് ഇല്ലാതാക്കണോ?</string>
 </resources>

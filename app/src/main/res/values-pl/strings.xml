@@ -1631,4 +1631,17 @@
     <string name="bulk_reschedule_keep_time">Zachowaj godzinę każdego zadania</string>
     <string name="recurrence_preview_next">Następne: %1$s</string>
     <string name="recurrence_preview_none">Po tym już się nie powtarza</string>
+    <string name="today_move_overdue_to_today">Przenieś na dziś</string>
+    <plurals name="task_detail_heatmap_summary">
+        <item quantity="one">Ukończono %1$d raz od %2$s</item>
+        <item quantity="few">Ukończono %1$d razy od %2$s</item>
+        <item quantity="many">Ukończono %1$d razy od %2$s</item>
+        <item quantity="other">Ukończono %1$d razy od %2$s</item>
+    </plurals>
+    <string name="task_detail_save_as_template">Zapisz jako szablon</string>
+    <string name="task_template_name_label">Nazwa szablonu</string>
+    <string name="task_template_dialog_body">Zachowuje wszystko oprócz dat, przypomnienia i osób. Utwórz z niego nowe zadanie w palecie poleceń.</string>
+    <string name="task_template_saved">Zapisano szablon</string>
+    <string name="task_template_palette_subtitle">Szablon</string>
+    <string name="task_template_delete_title">Usunąć szablon „%1$s”?</string>
 </resources>

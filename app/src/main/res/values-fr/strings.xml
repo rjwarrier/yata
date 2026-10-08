@@ -1629,4 +1629,15 @@
     <string name="bulk_reschedule_keep_time">Conserver l’heure de chaque tâche</string>
     <string name="recurrence_preview_next">Prochaines : %1$s</string>
     <string name="recurrence_preview_none">Ne se répète plus après celle-ci</string>
+    <string name="today_move_overdue_to_today">Déplacer à aujourd\'hui</string>
+    <plurals name="task_detail_heatmap_summary">
+        <item quantity="one">Terminée %1$d fois depuis le %2$s</item>
+        <item quantity="other">Terminée %1$d fois depuis le %2$s</item>
+    </plurals>
+    <string name="task_detail_save_as_template">Enregistrer comme modèle</string>
+    <string name="task_template_name_label">Nom du modèle</string>
+    <string name="task_template_dialog_body">Conserve tout sauf les dates, le rappel et les personnes. Créez une nouvelle tâche à partir de celui-ci dans la palette de commandes.</string>
+    <string name="task_template_saved">Modèle enregistré</string>
+    <string name="task_template_palette_subtitle">Modèle</string>
+    <string name="task_template_delete_title">Supprimer le modèle « %1$s » ?</string>
 </resources>

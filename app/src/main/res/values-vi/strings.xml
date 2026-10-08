@@ -1627,4 +1627,15 @@
     <string name="bulk_reschedule_keep_time">Giữ nguyên giờ của từng việc</string>
     <string name="recurrence_preview_next">Tiếp theo: %1$s</string>
     <string name="recurrence_preview_none">Không lặp lại sau lần này</string>
+    <string name="today_move_overdue_to_today">Chuyển sang hôm nay</string>
+    <plurals name="task_detail_heatmap_summary">
+        <item quantity="one">Hoàn thành %1$d lần kể từ %2$s</item>
+        <item quantity="other">Hoàn thành %1$d lần kể từ %2$s</item>
+    </plurals>
+    <string name="task_detail_save_as_template">Lưu làm mẫu</string>
+    <string name="task_template_name_label">Tên mẫu</string>
+    <string name="task_template_dialog_body">Giữ mọi thứ trừ ngày, lời nhắc và người. Tạo công việc mới từ mẫu này trong bảng lệnh.</string>
+    <string name="task_template_saved">Đã lưu mẫu</string>
+    <string name="task_template_palette_subtitle">Mẫu</string>
+    <string name="task_template_delete_title">Xóa mẫu “%1$s”?</string>
 </resources>

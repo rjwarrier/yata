@@ -1624,4 +1624,15 @@
     <string name="bulk_reschedule_keep_time">ਹਰ ਕਾਰਜ ਦਾ ਸਮਾਂ ਬਰਕਰਾਰ ਰੱਖੋ</string>
     <string name="recurrence_preview_next">ਅਗਲੀਆਂ: %1$s</string>
     <string name="recurrence_preview_none">ਇਸ ਤੋਂ ਬਾਅਦ ਦੁਹਰਾਇਆ ਨਹੀਂ ਜਾਵੇਗਾ</string>
+    <string name="today_move_overdue_to_today">ਅੱਜ ਲਈ ਲਿਜਾਓ</string>
+    <plurals name="task_detail_heatmap_summary">
+        <item quantity="one">%2$s ਤੋਂ %1$d ਵਾਰ ਪੂਰਾ</item>
+        <item quantity="other">%2$s ਤੋਂ %1$d ਵਾਰ ਪੂਰਾ</item>
+    </plurals>
+    <string name="task_detail_save_as_template">ਟੈਮਪਲੇਟ ਵਜੋਂ ਸੰਭਾਲੋ</string>
+    <string name="task_template_name_label">ਟੈਮਪਲੇਟ ਦਾ ਨਾਮ</string>
+    <string name="task_template_dialog_body">ਤਾਰੀਖਾਂ, ਰਿਮਾਈਂਡਰ ਅਤੇ ਲੋਕਾਂ ਤੋਂ ਇਲਾਵਾ ਸਭ ਕੁਝ ਰੱਖਦਾ ਹੈ। ਕਮਾਂਡ ਪੈਲੇਟ ਤੋਂ ਇਸ ਨਾਲ ਨਵਾਂ ਕੰਮ ਸ਼ੁਰੂ ਕਰੋ।</string>
+    <string name="task_template_saved">ਟੈਮਪਲੇਟ ਸੰਭਾਲਿਆ ਗਿਆ</string>
+    <string name="task_template_palette_subtitle">ਟੈਮਪਲੇਟ</string>
+    <string name="task_template_delete_title">“%1$s” ਟੈਮਪਲੇਟ ਮਿਟਾਉਣਾ ਹੈ?</string>
 </resources>

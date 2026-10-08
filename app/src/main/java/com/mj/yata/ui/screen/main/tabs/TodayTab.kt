@@ -603,9 +603,17 @@ fun TodayTab(
         }
 
         activeStatFilter?.let { statFilter ->
+            val isOverdue = statFilter == com.mj.yata.ui.widgets.HeroStatKind.OVERDUE
             com.mj.yata.ui.widgets.ActiveFilterBanner(
                 kind = statFilter,
-                onClear = { activeStatFilter = null }
+                onClear = { activeStatFilter = null },
+                actionLabel = if (isOverdue && pendingTasks.isNotEmpty()) stringResource(R.string.today_move_overdue_to_today) else null,
+                onAction = {
+                    // TONIGHT's date is today; keeping each task's own time makes this a plain
+                    // move-to-today, with the usual reschedule Undo.
+                    onBulkReschedule(pendingTasks.map { it.id }, QuickSnoozePreset.TONIGHT, true)
+                    activeStatFilter = null
+                }
             )
         }
 

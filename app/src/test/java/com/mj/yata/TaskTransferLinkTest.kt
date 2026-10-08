@@ -1493,7 +1493,7 @@ private class FakeYataRepository : YataRepository {
     override suspend fun getTasksByIds(ids: Collection<String>): List<Task> =
         tasksFlow.value.filter { it.id in ids }
     override suspend fun getOpenTasks(alsoCompletedSince: java.time.LocalDate?): List<Task> = TODO()
-    override suspend fun getTaskStreak(taskId: String): Int = TODO()
+    override suspend fun getSeriesCompletions(taskId: String): List<Task> = TODO()
 
     override suspend fun upsertTask(task: Task, notify: Boolean, resyncReminder: Boolean) {
         tasksFlow.value = tasksFlow.value + task

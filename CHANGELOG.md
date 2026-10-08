@@ -23,6 +23,13 @@ test-only changes belong in the commit message, not here, unless they change beh
   which day "Next business day" lands on after weekends and holidays.
 - Bulk reschedule can keep each task's own time, so only the date moves.
 - The repeat editor previews the next three dates a rule produces, or says when the series ends.
+- Task templates: save any task as a template from its menu (dates are left out), then start a new
+  task from it in the command palette, with its subtasks, notes, tags and list or project filled in.
+- Overdue tasks can be moved to today in one go: tap the Overdue count on Today, then Move to
+  today. Each task keeps its own time, and the move can be undone.
+- Recurring tasks show a completion heatmap on their detail screen, one square per day.
+- Reply to the daily agenda notification to add a task without opening the app. The text is
+  understood the same way as in Quick Add, so dates, #projects and tags work.
 
 ### Fixed
 - "Tonight" can no longer be picked once tonight's snooze time has passed, which used to leave

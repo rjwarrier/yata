@@ -1784,4 +1784,15 @@
     <string name="bulk_reschedule_keep_time">Uhrzeit jeder Aufgabe beibehalten</string>
     <string name="recurrence_preview_next">Nächste: %1$s</string>
     <string name="recurrence_preview_none">Wird danach nicht mehr wiederholt</string>
+    <string name="today_move_overdue_to_today">Auf heute verschieben</string>
+    <plurals name="task_detail_heatmap_summary">
+        <item quantity="one">%1$d Erledigung seit %2$s</item>
+        <item quantity="other">%1$d Erledigungen seit %2$s</item>
+    </plurals>
+    <string name="task_detail_save_as_template">Als Vorlage speichern</string>
+    <string name="task_template_name_label">Name der Vorlage</string>
+    <string name="task_template_dialog_body">Übernimmt alles außer Datum, Erinnerung und Personen. Starte daraus eine neue Aufgabe über die Befehlspalette.</string>
+    <string name="task_template_saved">Vorlage gespeichert</string>
+    <string name="task_template_palette_subtitle">Vorlage</string>
+    <string name="task_template_delete_title">Vorlage „%1$s“ löschen?</string>
 </resources>

@@ -1797,4 +1797,15 @@
     <string name="bulk_reschedule_keep_time">Keep each task\'s time</string>
     <string name="recurrence_preview_next">Next: %1$s</string>
     <string name="recurrence_preview_none">Doesn\'t repeat after this one</string>
+    <string name="today_move_overdue_to_today">Move to today</string>
+    <plurals name="task_detail_heatmap_summary">
+        <item quantity="one">%1$d completion since %2$s</item>
+        <item quantity="other">%1$d completions since %2$s</item>
+    </plurals>
+    <string name="task_detail_save_as_template">Save as template</string>
+    <string name="task_template_name_label">Template name</string>
+    <string name="task_template_dialog_body">Keeps everything except dates, reminder and people. Start a new task from it in the command palette.</string>
+    <string name="task_template_saved">Template saved</string>
+    <string name="task_template_palette_subtitle">Template</string>
+    <string name="task_template_delete_title">Delete template “%1$s”?</string>
 </resources>
