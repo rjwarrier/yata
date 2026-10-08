@@ -542,10 +542,12 @@ data class WeekendRescheduleWarning(
     val projects: StateFlow<List<Project>> = projectsSource
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val activeProjects: StateFlow<List<Project>> = repository.getActiveProjects()
+    // Active/archived splits are filtered from the shared source rather than queried separately,
+    // so a write to the table re-runs one Room query instead of three.
+    val activeProjects: StateFlow<List<Project>> = projectsSource.map { all -> all.filter { !it.archived } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val archivedProjects: StateFlow<List<Project>> = repository.getArchivedProjects()
+    val archivedProjects: StateFlow<List<Project>> = projectsSource.map { all -> all.filter { it.archived } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val lists: StateFlow<List<YataList>> = listsSource
@@ -554,10 +556,10 @@ data class WeekendRescheduleWarning(
     val people: StateFlow<List<Person>> = peopleSource
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val activePeople: StateFlow<List<Person>> = repository.getActivePeople()
+    val activePeople: StateFlow<List<Person>> = peopleSource.map { all -> all.filter { !it.archived } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val archivedPeople: StateFlow<List<Person>> = repository.getArchivedPeople()
+    val archivedPeople: StateFlow<List<Person>> = peopleSource.map { all -> all.filter { it.archived } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val tags: StateFlow<List<Tag>> = tagsSource
@@ -2047,16 +2049,12 @@ data class WeekendRescheduleWarning(
     val deletedTasks: StateFlow<List<Task>> = repository.getDeletedTasks()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    fun restoreTask(id: String) {
-        safeLaunch {
-            repository.restoreTask(id)
-        }
-    }
+    fun restoreTask(id: String) = bulkRestoreTasks(listOf(id))
 
     fun bulkRestoreTasks(ids: List<String>) {
         if (ids.isEmpty()) return
         safeLaunch {
-            ids.forEach { repository.restoreTask(it) }
+            repository.restoreTasks(ids)
         }
     }
 
@@ -2064,28 +2062,21 @@ data class WeekendRescheduleWarning(
     val archivedTasks: StateFlow<List<Task>> = repository.getArchivedTasks()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    fun setTaskArchived(id: String, archived: Boolean) {
-        safeLaunch {
-            repository.setTaskArchived(id, archived)
-        }
-    }
+    fun setTaskArchived(id: String, archived: Boolean) = bulkArchiveTasks(listOf(id), archived)
 
     fun bulkArchiveTasks(ids: List<String>, archived: Boolean) {
+        if (ids.isEmpty()) return
         safeLaunch {
-            ids.forEach { repository.setTaskArchived(it, archived) }
+            repository.setTasksArchived(ids, archived)
         }
     }
 
-    fun permanentlyDeleteTask(task: Task) {
-        safeLaunch {
-            repository.permanentlyDeleteTask(task)
-        }
-    }
+    fun permanentlyDeleteTask(task: Task) = bulkPermanentlyDeleteTasks(listOf(task))
 
     fun bulkPermanentlyDeleteTasks(tasks: List<Task>) {
         if (tasks.isEmpty()) return
         safeLaunch {
-            tasks.forEach { repository.permanentlyDeleteTask(it) }
+            repository.permanentlyDeleteTasks(tasks.map { it.id })
         }
     }
 

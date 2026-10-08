@@ -643,8 +643,7 @@ class JsonExporter @Inject constructor(
                 repository.getArchivedTasks().first() +
                 repository.getDeletedTasks().first()
             ).distinctBy { it.id }
-        currentTasks.filterNot { it.id in taskIds }
-            .forEach { repository.permanentlyDeleteTask(it) }
+        repository.permanentlyDeleteTasks(currentTasks.map { it.id }.filterNot { it in taskIds })
 
         val projectIds = syncRows(root, "projects").keys
         repository.getProjects().first().filterNot { it.id in projectIds }

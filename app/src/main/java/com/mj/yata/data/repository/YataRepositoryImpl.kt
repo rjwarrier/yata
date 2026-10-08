@@ -15,6 +15,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
+import java.time.LocalDate
+import java.time.ZoneId
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -65,6 +67,13 @@ class YataRepositoryImpl @Inject constructor(
         val rows = chunkedIn(ids.distinct()) { db.taskDao().getLiveTasksWithRelationsByIds(it) }
         // Mapped off the caller's thread for the same reason as mapTasksOffMain: callers are
         // ViewModel coroutines on Main, and the mapping JSON-parses each recurrence.
+        return withContext(Dispatchers.Default) { rows.map { it.toDomain() } }
+    }
+
+    override suspend fun getOpenTasks(alsoCompletedSince: LocalDate?): List<Task> {
+        val since = alsoCompletedSince?.atStartOfDay(ZoneId.systemDefault())?.toInstant()?.toEpochMilli()
+            ?: Long.MAX_VALUE
+        val rows = db.taskDao().getOpenTasksWithRelations(since)
         return withContext(Dispatchers.Default) { rows.map { it.toDomain() } }
     }
 
@@ -346,9 +355,10 @@ class YataRepositoryImpl @Inject constructor(
         return db.taskDao().getDeletedTasksWithRelations().mapTasksOffMain()
     }
 
-    override suspend fun restoreTask(id: String) {
-        db.taskDao().restore(id)
-        db.taskDao().getByIdDirect(id)?.let { syncReminder(it) }
+    override suspend fun restoreTasks(ids: Collection<String>) {
+        if (ids.isEmpty()) return
+        db.withTransaction { ids.chunked(MAX_BIND_ARGS).forEach { db.taskDao().restore(it) } }
+        reminderScheduler.syncReminders(chunkedIn(ids) { db.taskDao().getByIdsDirect(it) })
         widgetUpdater.notifyTasksChanged()
     }
 
@@ -356,19 +366,19 @@ class YataRepositoryImpl @Inject constructor(
         return db.taskDao().getArchivedTasksWithRelations().mapTasksOffMain()
     }
 
-    override suspend fun setTaskArchived(id: String, archived: Boolean) {
-        db.taskDao().setArchived(id, archived)
+    override suspend fun setTasksArchived(ids: Collection<String>, archived: Boolean) {
+        if (ids.isEmpty()) return
+        db.withTransaction { ids.chunked(MAX_BIND_ARGS).forEach { db.taskDao().setArchived(it, archived) } }
         // An archived task shouldn't keep firing reminders; unarchiving re-arms whatever
-        // schedule the row still carries.
-        db.taskDao().getByIdDirect(id)?.let { entity ->
-            if (archived) reminderScheduler.cancelReminder(entity) else syncReminder(entity)
-        }
+        // schedule the row still carries. syncReminders cancels for archived rows.
+        reminderScheduler.syncReminders(chunkedIn(ids) { db.taskDao().getByIdsDirect(it) })
         widgetUpdater.notifyTasksChanged()
     }
 
-    override suspend fun permanentlyDeleteTask(task: Task) {
-        reminderScheduler.cancelReminder(task.toEntity())
-        db.taskDao().delete(task.toEntity())
+    override suspend fun permanentlyDeleteTasks(ids: Collection<String>) {
+        if (ids.isEmpty()) return
+        ids.forEach { reminderScheduler.cancelReminder(it) }
+        db.withTransaction { ids.chunked(MAX_BIND_ARGS).forEach { db.taskDao().deleteByIds(it) } }
         widgetUpdater.notifyTasksChanged()
     }
 
@@ -430,15 +440,6 @@ class YataRepositoryImpl @Inject constructor(
     override fun getProjects(): Flow<List<Project>> = db.projectDao().getAll()
         .map { list -> list.map { it.toDomain() } }
 
-    override fun getActiveProjects(): Flow<List<Project>> = db.projectDao().getActive()
-        .map { list -> list.map { it.toDomain() } }
-
-    override fun getArchivedProjects(): Flow<List<Project>> {
-        return db.projectDao().getArchived().map { list ->
-            list.map { it.toDomain() }
-        }
-    }
-
     override fun getProjectById(id: String): Flow<Project?> {
         return db.projectDao().getById(id).map { it?.toDomain() }
     }
@@ -478,15 +479,6 @@ class YataRepositoryImpl @Inject constructor(
     override fun getLists(): Flow<List<YataList>> = db.listDao().getAll()
         .map { list -> list.map { it.toDomain() } }
 
-    override fun getActiveLists(): Flow<List<YataList>> = db.listDao().getActive()
-        .map { list -> list.map { it.toDomain() } }
-
-    override fun getArchivedLists(): Flow<List<YataList>> {
-        return db.listDao().getArchived().map { list ->
-            list.map { it.toDomain() }
-        }
-    }
-
     override fun getListById(id: String): Flow<YataList?> {
         return db.listDao().getById(id).map { it?.toDomain() }
     }
@@ -523,15 +515,6 @@ class YataRepositoryImpl @Inject constructor(
 
     override fun getPeople(): Flow<List<Person>> = db.personDao().getAll()
         .map { list -> list.map { it.toDomain() } }
-
-    override fun getActivePeople(): Flow<List<Person>> = db.personDao().getActive()
-        .map { list -> list.map { it.toDomain() } }
-
-    override fun getArchivedPeople(): Flow<List<Person>> {
-        return db.personDao().getArchived().map { list ->
-            list.map { it.toDomain() }
-        }
-    }
 
     override fun getPersonById(id: String): Flow<Person?> {
         return db.personDao().getById(id).map { it?.toDomain() }

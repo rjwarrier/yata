@@ -74,7 +74,7 @@ class ProgressStatsWidget : GlanceAppWidget() {
         // as the container exclusions above; wasPendingAsOf then drops tasks done on an earlier
         // day — otherwise they'd match due<=today forever and permanently inflate the ring/
         // per-list "done" counts.
-        val todayTasks = repository.getTasks().first()
+        val todayTasks = repository.getOpenTasks(alsoCompletedSince = today)
             .filter {
                 it.isActionableToday(todayStr, System.currentTimeMillis(), myId) &&
                     it.projectId !in excludedProjectIds && it.listId !in excludedListIds

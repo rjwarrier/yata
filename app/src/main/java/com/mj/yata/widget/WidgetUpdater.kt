@@ -93,7 +93,11 @@ class WidgetUpdaterImpl @Inject constructor(
         }
         var refreshed = 0
 
-        val tasks = repository.getTasks().first()
+        val today = LocalDate.now()
+        // Only the Single List and Today widgets show completions from before today; the rest
+        // never need the full completed history.
+        val tasks = if (hasSingleList || hasAppWidget) repository.getTasks().first()
+        else repository.getOpenTasks(alsoCompletedSince = today)
         val needsPeople = hasProgress || hasUpcoming || hasTeam || hasSingleList || hasAppWidget
         val needsProjects = hasProgress || hasUpcoming || hasSingleList || hasAppWidget
         val needsLists = hasProgress || hasUpcoming || hasSingleList || hasAppWidget
@@ -101,7 +105,6 @@ class WidgetUpdaterImpl @Inject constructor(
         val people = if (needsPeople) repository.getPeople().first() else emptyList()
         val projects = if (needsProjects) repository.getProjects().first() else emptyList()
         val lists = if (needsLists) repository.getLists().first() else emptyList()
-        val today = LocalDate.now()
         val todayStr = today.toString()
         val nowMillis = System.currentTimeMillis()
         val myId = people.firstOrNull { it.isMe }?.id

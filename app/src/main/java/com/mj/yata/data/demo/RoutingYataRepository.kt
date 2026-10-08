@@ -15,6 +15,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
+import java.time.LocalDate
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -51,6 +52,8 @@ class RoutingYataRepository @Inject constructor(
     override fun getTasksForPerson(personId: String): Flow<List<Task>> = routed(real.getTasksForPerson(personId), demo.getTasksForPerson(personId))
     override suspend fun getTaskStreak(taskId: String): Int = if (isDemo()) demo.getTaskStreak(taskId) else real.getTaskStreak(taskId)
     override suspend fun getTasksByIds(ids: Collection<String>): List<Task> = if (isDemo()) demo.getTasksByIds(ids) else real.getTasksByIds(ids)
+    override suspend fun getOpenTasks(alsoCompletedSince: LocalDate?): List<Task> =
+        if (isDemo()) demo.getOpenTasks(alsoCompletedSince) else real.getOpenTasks(alsoCompletedSince)
 
     override suspend fun upsertTask(task: Task, notify: Boolean, resyncReminder: Boolean) = write { real.upsertTask(task, notify, resyncReminder) }
     override suspend fun upsertTasks(
@@ -72,10 +75,10 @@ class RoutingYataRepository @Inject constructor(
 
     override suspend fun deleteTask(task: Task, notify: Boolean) = write { real.deleteTask(task, notify) }
     override fun getDeletedTasks(): Flow<List<Task>> = routed(real.getDeletedTasks(), demo.getDeletedTasks())
-    override suspend fun restoreTask(id: String) = write { real.restoreTask(id) }
+    override suspend fun restoreTasks(ids: Collection<String>) = write { real.restoreTasks(ids) }
     override fun getArchivedTasks(): Flow<List<Task>> = routed(real.getArchivedTasks(), demo.getArchivedTasks())
-    override suspend fun setTaskArchived(id: String, archived: Boolean) = write { real.setTaskArchived(id, archived) }
-    override suspend fun permanentlyDeleteTask(task: Task) = write { real.permanentlyDeleteTask(task) }
+    override suspend fun setTasksArchived(ids: Collection<String>, archived: Boolean) = write { real.setTasksArchived(ids, archived) }
+    override suspend fun permanentlyDeleteTasks(ids: Collection<String>) = write { real.permanentlyDeleteTasks(ids) }
     override suspend fun emptyTrash() = write { real.emptyTrash() }
     override suspend fun purgeOldTrash() = real.purgeOldTrash()
     override suspend fun autoArchiveOldCompleted() = real.autoArchiveOldCompleted()
@@ -87,8 +90,6 @@ class RoutingYataRepository @Inject constructor(
     override suspend fun deleteComment(comment: TaskComment) = write { real.deleteComment(comment) }
 
     override fun getProjects(): Flow<List<Project>> = routed(real.getProjects(), demo.getProjects())
-    override fun getActiveProjects(): Flow<List<Project>> = routed(real.getActiveProjects(), demo.getActiveProjects())
-    override fun getArchivedProjects(): Flow<List<Project>> = routed(real.getArchivedProjects(), demo.getArchivedProjects())
     override fun getProjectById(id: String): Flow<Project?> = routed(real.getProjectById(id), demo.getProjectById(id))
     override suspend fun upsertProject(project: Project) = write { real.upsertProject(project) }
     override suspend fun deleteProject(project: Project) = write { real.deleteProject(project) }
@@ -96,8 +97,6 @@ class RoutingYataRepository @Inject constructor(
     override suspend fun setProjectsArchived(ids: List<String>, archived: Boolean) = write { real.setProjectsArchived(ids, archived) }
 
     override fun getLists(): Flow<List<YataList>> = routed(real.getLists(), demo.getLists())
-    override fun getActiveLists(): Flow<List<YataList>> = routed(real.getActiveLists(), demo.getActiveLists())
-    override fun getArchivedLists(): Flow<List<YataList>> = routed(real.getArchivedLists(), demo.getArchivedLists())
     override fun getListById(id: String): Flow<YataList?> = routed(real.getListById(id), demo.getListById(id))
     override suspend fun upsertList(list: YataList) = write { real.upsertList(list) }
     override suspend fun deleteList(list: YataList) = write { real.deleteList(list) }
@@ -105,8 +104,6 @@ class RoutingYataRepository @Inject constructor(
     override suspend fun setListsArchived(ids: List<String>, archived: Boolean) = write { real.setListsArchived(ids, archived) }
 
     override fun getPeople(): Flow<List<Person>> = routed(real.getPeople(), demo.getPeople())
-    override fun getActivePeople(): Flow<List<Person>> = routed(real.getActivePeople(), demo.getActivePeople())
-    override fun getArchivedPeople(): Flow<List<Person>> = routed(real.getArchivedPeople(), demo.getArchivedPeople())
     override fun getPersonById(id: String): Flow<Person?> = routed(real.getPersonById(id), demo.getPersonById(id))
     override suspend fun upsertPerson(person: Person) = write { real.upsertPerson(person) }
     override suspend fun deletePerson(person: Person) = write { real.deletePerson(person) }

@@ -12,6 +12,8 @@ import com.mj.yata.domain.repository.YataRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
+import java.time.LocalDate
+import java.time.ZoneId
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -49,6 +51,11 @@ class DemoRepository @Inject constructor() : YataRepository {
         val wanted = ids.toSet()
         return dataset.value.tasks.filter { it.id in wanted }
     }
+    override suspend fun getOpenTasks(alsoCompletedSince: LocalDate?): List<Task> {
+        val since = alsoCompletedSince?.atStartOfDay(ZoneId.systemDefault())?.toInstant()?.toEpochMilli()
+            ?: Long.MAX_VALUE
+        return dataset.value.tasks.filter { !it.done || (it.completedAt ?: Long.MIN_VALUE) >= since }
+    }
 
     override suspend fun upsertTask(task: Task, notify: Boolean, resyncReminder: Boolean) = Unit
     override suspend fun upsertTasks(
@@ -68,10 +75,10 @@ class DemoRepository @Inject constructor() : YataRepository {
 
     override suspend fun deleteTask(task: Task, notify: Boolean) = Unit
     override fun getDeletedTasks(): Flow<List<Task>> = dataset.map { emptyList() }
-    override suspend fun restoreTask(id: String) = Unit
+    override suspend fun restoreTasks(ids: Collection<String>) = Unit
     override fun getArchivedTasks(): Flow<List<Task>> = dataset.map { emptyList() }
-    override suspend fun setTaskArchived(id: String, archived: Boolean) = Unit
-    override suspend fun permanentlyDeleteTask(task: Task) = Unit
+    override suspend fun setTasksArchived(ids: Collection<String>, archived: Boolean) = Unit
+    override suspend fun permanentlyDeleteTasks(ids: Collection<String>) = Unit
     override suspend fun emptyTrash() = Unit
     override suspend fun purgeOldTrash() = Unit
     override suspend fun autoArchiveOldCompleted() = Unit
@@ -84,8 +91,6 @@ class DemoRepository @Inject constructor() : YataRepository {
     override suspend fun deleteComment(comment: TaskComment) = Unit
 
     override fun getProjects(): Flow<List<Project>> = dataset.map { it.projects }
-    override fun getActiveProjects(): Flow<List<Project>> = dataset.map { d -> d.projects.filter { !it.archived } }
-    override fun getArchivedProjects(): Flow<List<Project>> = dataset.map { d -> d.projects.filter { it.archived } }
     override fun getProjectById(id: String): Flow<Project?> = dataset.map { d -> d.projects.find { it.id == id } }
     override suspend fun upsertProject(project: Project) = Unit
     override suspend fun deleteProject(project: Project) = Unit
@@ -93,8 +98,6 @@ class DemoRepository @Inject constructor() : YataRepository {
     override suspend fun setProjectsArchived(ids: List<String>, archived: Boolean) = Unit
 
     override fun getLists(): Flow<List<YataList>> = dataset.map { it.lists }
-    override fun getActiveLists(): Flow<List<YataList>> = dataset.map { d -> d.lists.filter { !it.archived } }
-    override fun getArchivedLists(): Flow<List<YataList>> = dataset.map { d -> d.lists.filter { it.archived } }
     override fun getListById(id: String): Flow<YataList?> = dataset.map { d -> d.lists.find { it.id == id } }
     override suspend fun upsertList(list: YataList) = Unit
     override suspend fun deleteList(list: YataList) = Unit
@@ -102,8 +105,6 @@ class DemoRepository @Inject constructor() : YataRepository {
     override suspend fun setListsArchived(ids: List<String>, archived: Boolean) = Unit
 
     override fun getPeople(): Flow<List<Person>> = dataset.map { it.people }
-    override fun getActivePeople(): Flow<List<Person>> = dataset.map { d -> d.people.filter { !it.archived } }
-    override fun getArchivedPeople(): Flow<List<Person>> = dataset.map { d -> d.people.filter { it.archived } }
     override fun getPersonById(id: String): Flow<Person?> = dataset.map { d -> d.people.find { it.id == id } }
     override suspend fun upsertPerson(person: Person) = Unit
     override suspend fun deletePerson(person: Person) = Unit

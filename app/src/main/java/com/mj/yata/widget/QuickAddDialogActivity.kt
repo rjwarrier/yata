@@ -297,7 +297,7 @@ class QuickAddDialogActivity : ComponentActivity() {
                     },
                     onSubmit = { title, projectId, listId, tagIds, assigneeIds ->
                         lifecycleScope.launch {
-                            val duplicate = findSimilarTask(title, repository.getTasks().first())
+                            val duplicate = findSimilarTask(title, repository.getOpenTasks())
                             if (duplicate != null) {
                                 pendingTitle = title
                                 pendingProjectId = projectId

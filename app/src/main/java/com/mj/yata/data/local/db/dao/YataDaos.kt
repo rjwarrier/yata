@@ -9,12 +9,6 @@ interface PersonDao {
     @Query("SELECT * FROM people")
     fun getAll(): Flow<List<PersonEntity>>
 
-    @Query("SELECT * FROM people WHERE archived = 0")
-    fun getActive(): Flow<List<PersonEntity>>
-
-    @Query("SELECT * FROM people WHERE archived = 1")
-    fun getArchived(): Flow<List<PersonEntity>>
-
     @Query("SELECT * FROM people WHERE id = :id")
     fun getById(id: String): Flow<PersonEntity?>
 
@@ -43,12 +37,6 @@ interface ProjectDao {
     @Query("SELECT * FROM projects")
     fun getAll(): Flow<List<ProjectEntity>>
 
-    @Query("SELECT * FROM projects WHERE archived = 0")
-    fun getActive(): Flow<List<ProjectEntity>>
-
-    @Query("SELECT * FROM projects WHERE archived = 1")
-    fun getArchived(): Flow<List<ProjectEntity>>
-
     @Query("SELECT * FROM projects WHERE id = :id")
     fun getById(id: String): Flow<ProjectEntity?>
 
@@ -76,12 +64,6 @@ interface ProjectDao {
 interface ListDao {
     @Query("SELECT * FROM lists")
     fun getAll(): Flow<List<ListEntity>>
-
-    @Query("SELECT * FROM lists WHERE archived = 0")
-    fun getActive(): Flow<List<ListEntity>>
-
-    @Query("SELECT * FROM lists WHERE archived = 1")
-    fun getArchived(): Flow<List<ListEntity>>
 
     @Query("SELECT * FROM lists WHERE id = :id")
     fun getById(id: String): Flow<ListEntity?>
@@ -220,6 +202,17 @@ interface TaskDao {
     @Query("SELECT * FROM tasks WHERE id IN (:ids) AND deletedAt IS NULL AND archived = 0")
     suspend fun getLiveTasksWithRelationsByIds(ids: List<String>): List<TaskWithRelations>
 
+    /** [getTasksWithRelations] minus completed tasks older than [completedSince] (epoch ms) —
+     * pass Long.MAX_VALUE for open tasks only. */
+    @Transaction
+    @Query("""
+        SELECT * FROM tasks
+        WHERE deletedAt IS NULL AND archived = 0
+          AND (done = 0 OR completedAt >= :completedSince)
+        ORDER BY sortOrder ASC
+    """)
+    suspend fun getOpenTasksWithRelations(completedSince: Long): List<TaskWithRelations>
+
     @Transaction
     @Query("SELECT * FROM tasks WHERE listId = :listId AND deletedAt IS NULL AND archived = 0 ORDER BY sortOrder ASC")
     fun getTasksWithRelationsForList(listId: String): Flow<List<TaskWithRelations>>
@@ -261,6 +254,9 @@ interface TaskDao {
     @Query("SELECT * FROM tasks WHERE id = :id")
     fun getByIdDirect(id: String): TaskEntity?
 
+    @Query("SELECT * FROM tasks WHERE id IN (:ids)")
+    suspend fun getByIdsDirect(ids: List<String>): List<TaskEntity>
+
     @Query("""
         SELECT * FROM tasks
         WHERE done = 0 AND archived = 0 AND deletedAt IS NULL
@@ -283,11 +279,11 @@ interface TaskDao {
     @Query("UPDATE tasks SET deletedAt = :timestamp WHERE id = :id")
     suspend fun softDelete(id: String, timestamp: Long)
 
-    @Query("UPDATE tasks SET deletedAt = NULL WHERE id = :id")
-    suspend fun restore(id: String)
+    @Query("UPDATE tasks SET deletedAt = NULL WHERE id IN (:ids)")
+    suspend fun restore(ids: List<String>)
 
-    @Query("UPDATE tasks SET archived = :archived WHERE id = :id")
-    suspend fun setArchived(id: String, archived: Boolean)
+    @Query("UPDATE tasks SET archived = :archived WHERE id IN (:ids)")
+    suspend fun setArchived(ids: List<String>, archived: Boolean)
 
     @Query("UPDATE tasks SET projectId = NULL WHERE projectId = :projectId")
     suspend fun clearProject(projectId: String)
@@ -341,8 +337,8 @@ interface TaskDao {
     """)
     suspend fun archiveCompletedOlderThan(threshold: Long): Int
 
-    @Delete
-    suspend fun delete(task: TaskEntity)
+    @Query("DELETE FROM tasks WHERE id IN (:ids)")
+    suspend fun deleteByIds(ids: List<String>)
 
     // Many-to-Many Assignees (Person)
     @Insert(onConflict = OnConflictStrategy.REPLACE)

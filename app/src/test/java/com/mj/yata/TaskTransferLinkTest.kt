@@ -1492,6 +1492,7 @@ private class FakeYataRepository : YataRepository {
     override fun getTasksForPerson(personId: String): Flow<List<Task>> = TODO()
     override suspend fun getTasksByIds(ids: Collection<String>): List<Task> =
         tasksFlow.value.filter { it.id in ids }
+    override suspend fun getOpenTasks(alsoCompletedSince: java.time.LocalDate?): List<Task> = TODO()
     override suspend fun getTaskStreak(taskId: String): Int = TODO()
 
     override suspend fun upsertTask(task: Task, notify: Boolean, resyncReminder: Boolean) {
@@ -1519,10 +1520,10 @@ private class FakeYataRepository : YataRepository {
 
     override suspend fun deleteTask(task: Task, notify: Boolean): Unit = TODO()
     override fun getDeletedTasks(): Flow<List<Task>> = TODO()
-    override suspend fun restoreTask(id: String): Unit = TODO()
+    override suspend fun restoreTasks(ids: Collection<String>): Unit = TODO()
     override fun getArchivedTasks(): Flow<List<Task>> = TODO()
-    override suspend fun setTaskArchived(id: String, archived: Boolean): Unit = TODO()
-    override suspend fun permanentlyDeleteTask(task: Task): Unit = TODO()
+    override suspend fun setTasksArchived(ids: Collection<String>, archived: Boolean): Unit = TODO()
+    override suspend fun permanentlyDeleteTasks(ids: Collection<String>): Unit = TODO()
     override suspend fun emptyTrash(): Unit = TODO()
     override suspend fun purgeOldTrash(): Unit = TODO()
     override suspend fun autoArchiveOldCompleted(): Unit = TODO()
@@ -1534,8 +1535,6 @@ private class FakeYataRepository : YataRepository {
     override suspend fun deleteComment(comment: TaskComment): Unit = TODO()
 
     override fun getProjects(): Flow<List<Project>> = projectsFlow
-    override fun getActiveProjects(): Flow<List<Project>> = TODO()
-    override fun getArchivedProjects(): Flow<List<Project>> = TODO()
     override fun getProjectById(id: String): Flow<Project?> = TODO()
     override suspend fun upsertProject(project: Project) {
         projectsFlow.value = projectsFlow.value.filterNot { it.id == project.id } + project
@@ -1545,8 +1544,6 @@ private class FakeYataRepository : YataRepository {
     override suspend fun setProjectsArchived(ids: List<String>, archived: Boolean): Unit = TODO()
 
     override fun getLists(): Flow<List<YataList>> = listsFlow
-    override fun getActiveLists(): Flow<List<YataList>> = TODO()
-    override fun getArchivedLists(): Flow<List<YataList>> = TODO()
     override fun getListById(id: String): Flow<YataList?> = TODO()
     override suspend fun upsertList(list: YataList) {
         listsFlow.value = listsFlow.value.filterNot { it.id == list.id } + list
@@ -1556,8 +1553,6 @@ private class FakeYataRepository : YataRepository {
     override suspend fun setListsArchived(ids: List<String>, archived: Boolean): Unit = TODO()
 
     override fun getPeople(): Flow<List<Person>> = peopleFlow
-    override fun getActivePeople(): Flow<List<Person>> = TODO()
-    override fun getArchivedPeople(): Flow<List<Person>> = TODO()
     override fun getPersonById(id: String): Flow<Person?> = TODO()
     override suspend fun upsertPerson(person: Person) {
         peopleFlow.value = peopleFlow.value.filterNot { it.id == person.id } + person

@@ -42,7 +42,7 @@ class OverdueEscalationWorker @AssistedInject constructor(
         tag = TAG,
         runReason = "Overdue escalation worker started"
     ) {
-        val tasks = repository.getTasks().first()
+        val tasks = repository.getOpenTasks()
         val people = repository.getPeople().first()
         val today = LocalDate.now()
         val weekendDays = userPreferences.weekendDaysFlow.first()

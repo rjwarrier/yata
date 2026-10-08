@@ -73,7 +73,7 @@ class UpcomingWidget : GlanceAppWidget() {
         val entryPoint = EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java)
         val repository = entryPoint.repository()
         val userPreferences = entryPoint.userPreferences()
-        val allTasks = repository.getTasks().first()
+        val allTasks = repository.getOpenTasks()
         val lists = repository.getLists().first()
         val people = repository.getPeople().first()
         val peopleById = people.associateBy { it.id }

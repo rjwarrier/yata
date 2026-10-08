@@ -2,6 +2,7 @@ package com.mj.yata.domain.repository
 
 import com.mj.yata.domain.model.*
 import kotlinx.coroutines.flow.Flow
+import java.time.LocalDate
 
 interface YataRepository {
     // Tasks
@@ -17,6 +18,11 @@ interface YataRepository {
      * `getTasks().first()` filtered to [ids] would give, without loading every other task. For
      * actions on a known selection (snooze, bulk edits, duplicate). */
     suspend fun getTasksByIds(ids: Collection<String>): List<Task>
+
+    /** Live open tasks, plus tasks completed on or after [alsoCompletedSince] when given. For
+     * background readers (workers, widgets) that never look at older completions, so they don't
+     * map the whole completed history the way `getTasks().first()` does. */
+    suspend fun getOpenTasks(alsoCompletedSince: LocalDate? = null): List<Task>
 
     /** Consecutive on-time completions for [taskId]'s recurring series (0 if the task isn't
      * recurring, or has never completed since seriesId tracking was added). See
@@ -55,13 +61,13 @@ interface YataRepository {
     // Deleting a task moves it to Trash (soft delete) rather than removing it outright.
     suspend fun deleteTask(task: Task, notify: Boolean = true)
     fun getDeletedTasks(): Flow<List<Task>>
-    suspend fun restoreTask(id: String)
+    suspend fun restoreTasks(ids: Collection<String>)
 
     /** Archived tasks — shelved but intact, excluded from every default listing. Independent of
-     * Trash: [setTaskArchived] never touches deletedAt, and vice versa. */
+     * Trash: [setTasksArchived] never touches deletedAt, and vice versa. */
     fun getArchivedTasks(): Flow<List<Task>>
-    suspend fun setTaskArchived(id: String, archived: Boolean)
-    suspend fun permanentlyDeleteTask(task: Task)
+    suspend fun setTasksArchived(ids: Collection<String>, archived: Boolean)
+    suspend fun permanentlyDeleteTasks(ids: Collection<String>)
     suspend fun emptyTrash()
 
     // Hard-deletes trashed tasks older than 30 days — called once at startup so Trash doesn't
@@ -80,8 +86,6 @@ interface YataRepository {
 
     // Projects
     fun getProjects(): Flow<List<Project>>
-    fun getActiveProjects(): Flow<List<Project>>
-    fun getArchivedProjects(): Flow<List<Project>>
     fun getProjectById(id: String): Flow<Project?>
     suspend fun upsertProject(project: Project)
     suspend fun deleteProject(project: Project)
@@ -90,8 +94,6 @@ interface YataRepository {
 
     // Lists
     fun getLists(): Flow<List<YataList>>
-    fun getActiveLists(): Flow<List<YataList>>
-    fun getArchivedLists(): Flow<List<YataList>>
     fun getListById(id: String): Flow<YataList?>
     suspend fun upsertList(list: YataList)
     suspend fun deleteList(list: YataList)
@@ -100,8 +102,6 @@ interface YataRepository {
 
     // People
     fun getPeople(): Flow<List<Person>>
-    fun getActivePeople(): Flow<List<Person>>
-    fun getArchivedPeople(): Flow<List<Person>>
     fun getPersonById(id: String): Flow<Person?>
     suspend fun upsertPerson(person: Person)
     suspend fun deletePerson(person: Person)

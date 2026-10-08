@@ -44,7 +44,7 @@ class CreateTaskRunner : TaskerPluginRunnerActionNoOutput<CreateTaskInput>() {
                 // Checked before resolving/creating any project·list·tag·person side effects,
                 // so a rejected duplicate never leaves behind newly-created entities for a task
                 // that was never actually added.
-                val duplicate = findSimilarTask(title, repository.getTasks().first())
+                val duplicate = findSimilarTask(title, repository.getOpenTasks())
                 if (duplicate != null) {
                     return@runBlocking TaskerPluginResultError(2, "Similar task already exists: \"${duplicate.title}\". Task not created.")
                 }

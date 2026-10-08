@@ -42,6 +42,9 @@ test-only changes belong in the commit message, not here, unless they change beh
   the work it used to on each keystroke.
 - Snooze, bulk edits and duplicate act on just the selected tasks instead of reloading the whole
   task list first, and restoring or syncing a large backup runs far fewer database lookups.
+- Home-screen widgets, the daily agenda and overdue notifications no longer read your whole
+  completed-task history to work out today's tasks. Restoring, archiving or permanently deleting
+  many tasks at once, and syncs that remove tasks, now apply in one step instead of task by task.
 - The app download is several megabytes smaller, and PDF exports finish sooner. Exported PDFs no
   longer fill in the title, author and keyword fields of the document's properties.
 

@@ -61,7 +61,7 @@ class TeamOverdueWidget : GlanceAppWidget() {
         val entryPoint = EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java)
         val repository = entryPoint.repository()
         val userPreferences = entryPoint.userPreferences()
-        val tasks = repository.getTasks().first()
+        val tasks = repository.getOpenTasks()
         val people = repository.getPeople().first().filter { !it.archived }
         val today = LocalDate.now()
         val weekendDays = userPreferences.weekendDaysFlow.first()

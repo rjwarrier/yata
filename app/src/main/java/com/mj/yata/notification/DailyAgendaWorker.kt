@@ -47,7 +47,7 @@ class DailyAgendaWorker @AssistedInject constructor(
         tag = TAG,
         runReason = "Daily agenda worker started"
     ) {
-        val tasks = repository.getTasks().first()
+        val tasks = repository.getOpenTasks()
         val people = repository.getPeople().first()
         val today = LocalDate.now().toString()
         val weekendDays = userPreferences.weekendDaysFlow.first()
