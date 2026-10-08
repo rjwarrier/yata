@@ -231,6 +231,7 @@ fun AnalyticsScreen(
                 dueNext30 = dueNext30,
                 onTimeRate = overallOnTimeRate,
                 capacity = stats.capacity,
+                trackedVsEstimate = stats.trackedVsEstimate,
                 postponedOpenTaskCount = stats.postponedOpenTaskCount,
                 hasMostPostponedTasks = mostPostponedTasks.isNotEmpty(),
                 onOpenOverdue = { onNavigateToSearch(com.mj.yata.util.SEARCH_FILTER_OVERDUE) },
@@ -675,6 +676,7 @@ private fun AnalyticsOverviewCard(
     dueNext30: Int,
     onTimeRate: Float?,
     capacity: CapacitySnapshot?,
+    trackedVsEstimate: com.mj.yata.util.TrackedVsEstimate?,
     postponedOpenTaskCount: Int,
     hasMostPostponedTasks: Boolean,
     onOpenOverdue: () -> Unit,
@@ -796,6 +798,17 @@ private fun AnalyticsOverviewCard(
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            trackedVsEstimate?.let {
+                Text(
+                    text = stringResource(
+                        R.string.analytics_tracked_vs_estimate,
+                        EstimateUtils.format(it.trackedMinutes),
+                        EstimateUtils.format(it.estimatedMinutes)
+                    ),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
 
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),

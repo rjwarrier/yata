@@ -258,7 +258,8 @@ class YataRepositoryImpl @Inject constructor(
                     completedAt = null,
                     dueDate = nextDate,
                     recurrenceJson = serializeRecurrence(updatedRecurrence),
-                    seriesId = seriesId
+                    seriesId = seriesId,
+                    trackedMinutes = 0 // the time stays with the completed instance below
                 )
                 val historicalTaskId = UUID.randomUUID().toString()
 
@@ -321,7 +322,8 @@ class YataRepositoryImpl @Inject constructor(
         val updatedTask = taskEntity.copy(
             done = false,
             dueDate = nextDate,
-            recurrenceJson = serializeRecurrence(updatedRecurrence)
+            recurrenceJson = serializeRecurrence(updatedRecurrence),
+            trackedMinutes = 0 // the time stays with the skipped instance below
         )
         val historicalTaskId = UUID.randomUUID().toString()
 
@@ -676,7 +678,8 @@ class YataRepositoryImpl @Inject constructor(
             reminder = safeReminder,
             recurrence = sanitizeRecurrence(task.recurrence),
             subtasks = sanitizeSubtasks(task.subtasks),
-            estimateMinutes = safeEstimate
+            estimateMinutes = safeEstimate,
+            trackedMinutes = task.trackedMinutes.coerceAtLeast(0)
         )
     }
 

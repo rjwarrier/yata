@@ -114,6 +114,8 @@ fun UpcomingTab(
     weekendDays: Set<String> = emptySet(),
     holidays: List<com.mj.yata.domain.model.Holiday> = emptyList(),
     observeNonWorkingDays: Boolean = false,
+    /** Settings → Show calendar events: device events listed above each day's tasks. */
+    showCalendarEvents: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val selectedIds = remember { mutableStateListOf<String>() }
@@ -558,6 +560,15 @@ fun UpcomingTab(
 
         val peopleById = remember(people) { people.associateBy { it.id } }
 
+        // Read a month (plus a week either side) at a time rather than per selected day, so
+        // stepping between days, and the agenda's outgoing animation, never waits on a query.
+        val eventsMonth = YearMonth.from(selectedDay)
+        val calendarEvents = com.mj.yata.ui.widgets.rememberCalendarEvents(
+            enabled = showCalendarEvents,
+            from = eventsMonth.atDay(1).minusDays(7),
+            to = eventsMonth.atEndOfMonth().plusDays(7)
+        )
+
         // 4. Agenda — header + task list slide/fade together, keyed on the selected day
         AnimatedContent(
             targetState = selectedDay,
@@ -614,12 +625,16 @@ fun UpcomingTab(
                     modifier = if (useWideLayout && !selectionMode) Modifier.weight(1f) else Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(bottom = 88.dp)
                 ) {
+                    val dayEvents = calendarEvents[day].orEmpty()
+                    items(dayEvents, key = { "event_${it.eventId}_${it.begin}" }, contentType = { "event" }) { event ->
+                        com.mj.yata.ui.widgets.CalendarEventRow(event)
+                    }
                     if (dayTasks.isEmpty() && !initialDataLoaded) {
                         item(key = "loading_shimmer") {
                             com.mj.yata.ui.widgets.ListRowsShimmer(modifier = Modifier.fillMaxWidth())
                         }
                     } else if (dayTasks.isEmpty()) {
-                        item { UpcomingEmptyState() }
+                        if (dayEvents.isEmpty()) item { UpcomingEmptyState() }
                     } else {
                         items(dayTasks, key = { it.id }, contentType = { "task" }) { task ->
                             val taskList = remember(task.listId, listsById) { listsById[task.listId] }

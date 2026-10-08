@@ -1635,4 +1635,14 @@
     <string name="task_template_saved">டெம்ப்ளேட் சேமிக்கப்பட்டது</string>
     <string name="task_template_palette_subtitle">டெம்ப்ளேட்</string>
     <string name="task_template_delete_title">“%1$s” டெம்ப்ளேட்டை நீக்கவா?</string>
+    <string name="task_detail_tracked">கண்காணித்தது: %1$s</string>
+    <string name="task_detail_tracked_of_estimate">கண்காணித்தது: %2$s இல் %1$s</string>
+    <string name="task_detail_timer_start">டைமரைத் தொடங்கு</string>
+    <string name="task_detail_timer_stop">நிறுத்து · %1$s</string>
+    <string name="analytics_tracked_vs_estimate">%1$s கண்காணிப்பு, மதிப்பீடு %2$s</string>
+    <string name="settings_calendar_events">காலண்டர் நிகழ்வுகளைக் காட்டு</string>
+    <string name="settings_calendar_events_summary">சாதன காலண்டர்களின் நிகழ்வுகளை வரவிருக்கும் மற்றும் அடுத்த 10 நாட்கள் இல் காட்டும். படிக்க மட்டும்; உங்கள் ஃபோனிலிருந்து எதுவும் வெளியேறாது.</string>
+    <string name="settings_calendar_permission_denied">காலண்டர் அணுகல் அனுமதிக்கப்படவில்லை. நிகழ்வுகளைக் காட்ட சிஸ்டம் அமைப்புகளில் YATA-க்கு அதை இயக்கவும்.</string>
+    <string name="calendar_event_all_day">நாள் முழுவதும்</string>
+    <string name="calendar_event_no_title">(தலைப்பு இல்லை)</string>
 </resources>

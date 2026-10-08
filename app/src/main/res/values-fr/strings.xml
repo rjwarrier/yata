@@ -1640,4 +1640,14 @@
     <string name="task_template_saved">Modèle enregistré</string>
     <string name="task_template_palette_subtitle">Modèle</string>
     <string name="task_template_delete_title">Supprimer le modèle « %1$s » ?</string>
+    <string name="task_detail_tracked">Suivi : %1$s</string>
+    <string name="task_detail_tracked_of_estimate">Suivi : %1$s sur %2$s</string>
+    <string name="task_detail_timer_start">Démarrer le minuteur</string>
+    <string name="task_detail_timer_stop">Arrêter · %1$s</string>
+    <string name="analytics_tracked_vs_estimate">%1$s suivi contre %2$s estimé</string>
+    <string name="settings_calendar_events">Afficher les événements du calendrier</string>
+    <string name="settings_calendar_events_summary">Affiche les événements des calendriers de l\'appareil dans Prochain et 10 prochains jours. Lecture seule ; rien ne quitte votre téléphone.</string>
+    <string name="settings_calendar_permission_denied">L\'accès au calendrier n\'a pas été autorisé. Activez-le pour YATA dans les paramètres système pour afficher les événements.</string>
+    <string name="calendar_event_all_day">Toute la journée</string>
+    <string name="calendar_event_no_title">(Sans titre)</string>
 </resources>

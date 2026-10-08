@@ -452,7 +452,7 @@ fun SettingsScreen(
         SettingsSearchTarget("motion_mode", "Motion mode", "Full, reduced, or off", "animation reduce motion off accessibility", SettingsDestination.APPEARANCE_DISPLAY, Icons.Default.Tune),
         SettingsSearchTarget("theme_presets", "Theme presets", "Save and reapply personal themes", "theme preset saved color font material you", SettingsDestination.APPEARANCE_DISPLAY, Icons.Default.Palette),
         SettingsSearchTarget("navigation", stringResource(R.string.settings_section_navigation), stringResource(R.string.settings_search_navigation_summary), "bottom navigation labels fab quick add", SettingsDestination.NAVIGATION_FEATURES, Icons.Default.Navigation),
-        SettingsSearchTarget("features", stringResource(R.string.settings_section_features), stringResource(R.string.settings_search_features_summary), "today upcoming projects people tags", SettingsDestination.NAVIGATION_FEATURES, Icons.Default.Extension),
+        SettingsSearchTarget("features", stringResource(R.string.settings_section_features), stringResource(R.string.settings_search_features_summary), "today upcoming projects people tags calendar events", SettingsDestination.NAVIGATION_FEATURES, Icons.Default.Extension),
         SettingsSearchTarget("manage", stringResource(R.string.settings_section_manage), stringResource(R.string.settings_search_manage_summary), "manage projects people tags", SettingsDestination.NAVIGATION_FEATURES, Icons.Default.Build),
         SettingsSearchTarget("tasker", "Tasker", "Automation access for creating tasks", "tasker automation plugin create task", SettingsDestination.NAVIGATION_FEATURES, Icons.Default.Extension),
         SettingsSearchTarget("sound_feedback", stringResource(R.string.settings_section_sound_feedback), stringResource(R.string.settings_search_feedback_summary), "sound haptic voice language speech recognition", SettingsDestination.SOUND_FEEDBACK, Icons.AutoMirrored.Filled.VolumeUp),
@@ -1223,6 +1223,31 @@ fun SettingsScreen(
                     subtitle = stringResource(R.string.settings_tasker_integration_summary),
                     checked = taskerIntegrationEnabled,
                     onCheckedChange = { viewModel.setTaskerIntegrationEnabled(it) }
+                )
+                // Turning this on asks for read-only calendar access; the setting only sticks
+                // once that's granted, so "on" always means events can actually be shown.
+                val context = LocalContext.current
+                val showCalendarEvents by viewModel.showCalendarEvents.collectAsStateWithLifecycle()
+                val calendarPermission = androidx.activity.compose.rememberLauncherForActivityResult(
+                    androidx.activity.result.contract.ActivityResultContracts.RequestPermission()
+                ) { granted ->
+                    if (granted) {
+                        viewModel.setShowCalendarEvents(true)
+                    } else {
+                        android.widget.Toast.makeText(context, context.getString(R.string.settings_calendar_permission_denied), android.widget.Toast.LENGTH_LONG).show()
+                    }
+                }
+                SettingsToggleRow(
+                    title = stringResource(R.string.settings_calendar_events),
+                    subtitle = stringResource(R.string.settings_calendar_events_summary),
+                    checked = showCalendarEvents && com.mj.yata.data.calendar.DeviceCalendar.hasPermission(context),
+                    onCheckedChange = { enabled ->
+                        when {
+                            !enabled -> viewModel.setShowCalendarEvents(false)
+                            com.mj.yata.data.calendar.DeviceCalendar.hasPermission(context) -> viewModel.setShowCalendarEvents(true)
+                            else -> calendarPermission.launch(android.Manifest.permission.READ_CALENDAR)
+                        }
+                    }
                 )
             }
         }

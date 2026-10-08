@@ -91,6 +91,9 @@ data class CapacitySnapshot(
     val unestimatedOpenCount: Int
 )
 
+/** Focus-timer minutes against the estimate, summed over tasks that carry both. */
+data class TrackedVsEstimate(val trackedMinutes: Int, val estimatedMinutes: Int)
+
 data class PostponedTaskStat(
     val id: String,
     val title: String,
@@ -223,6 +226,8 @@ data class AnalyticsUiState(
     val openWithoutDueDate: Int = 0,
     /** Planned effort still outstanding. Null when nothing open is estimated. */
     val capacity: CapacitySnapshot? = null,
+    /** Null until a task finished in the period has both tracked time and an estimate. */
+    val trackedVsEstimate: TrackedVsEstimate? = null,
     val postponedOpenTaskCount: Int = 0,
     val maxPostponementCount: Int = 0,
     val mostPostponedTasks: List<PostponedTaskStat> = emptyList(),
@@ -320,6 +325,7 @@ object AnalyticsUtils {
             oldestOpenAgeDays = oldestOpenAge(tasks, today),
             openWithoutDueDate = tasks.count { !it.done && it.due == null },
             capacity = capacitySnapshot(tasks, today, weekendDays, holidays, observeNonWorkingDays),
+            trackedVsEstimate = trackedVsEstimate(periodTasks.filter { it.done }),
             postponedOpenTaskCount = postponedOpenTaskCount(tasks),
             maxPostponementCount = maxPostponementCount(tasks),
             mostPostponedTasks = mostPostponedTasks(tasks),
@@ -588,6 +594,12 @@ object AnalyticsUtils {
             estimatedOpenCount = open.count { it.estimateMinutes != null },
             unestimatedOpenCount = EstimateUtils.unestimatedCount(open)
         )
+    }
+
+    fun trackedVsEstimate(doneTasks: List<Task>): TrackedVsEstimate? {
+        val both = doneTasks.filter { it.trackedMinutes > 0 && (it.estimateMinutes ?: 0) > 0 }
+        if (both.isEmpty()) return null
+        return TrackedVsEstimate(both.sumOf { it.trackedMinutes }, both.sumOf { it.estimateMinutes ?: 0 })
     }
 
     fun postponedOpenTaskCount(tasks: List<Task>): Int =

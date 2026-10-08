@@ -1635,4 +1635,14 @@
     <string name="task_template_saved">टेम्पलेट जतन केले</string>
     <string name="task_template_palette_subtitle">टेम्पलेट</string>
     <string name="task_template_delete_title">“%1$s” टेम्पलेट हटवायचे?</string>
+    <string name="task_detail_tracked">ट्रॅक केले: %1$s</string>
+    <string name="task_detail_tracked_of_estimate">ट्रॅक केले: %2$s पैकी %1$s</string>
+    <string name="task_detail_timer_start">टायमर सुरू करा</string>
+    <string name="task_detail_timer_stop">थांबवा · %1$s</string>
+    <string name="analytics_tracked_vs_estimate">%1$s ट्रॅक केले, अंदाज %2$s</string>
+    <string name="settings_calendar_events">कॅलेंडर इव्हेंट दाखवा</string>
+    <string name="settings_calendar_events_summary">डिव्हाइसच्या कॅलेंडरमधील इव्हेंट आगामी आणि पुढील 10 दिवस मध्ये दाखवते. फक्त वाचन; तुमच्या फोनमधून काहीही बाहेर जात नाही.</string>
+    <string name="settings_calendar_permission_denied">कॅलेंडर प्रवेशाची परवानगी मिळाली नाही. इव्हेंट दाखवण्यासाठी सिस्टम सेटिंग्जमध्ये YATA साठी ती चालू करा.</string>
+    <string name="calendar_event_all_day">संपूर्ण दिवस</string>
+    <string name="calendar_event_no_title">(शीर्षक नाही)</string>
 </resources>

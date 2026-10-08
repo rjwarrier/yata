@@ -399,6 +399,7 @@ class JsonExporter @Inject constructor(
             o.put("followUpAt", t.followUpAt ?: JSONObject.NULL)
             o.put("estimateMinutes", t.estimateMinutes ?: JSONObject.NULL)
             o.put("postponementCount", t.postponementCount)
+            o.put("trackedMinutes", t.trackedMinutes)
 
             // Assignees
             val assArr = JSONArray()
@@ -825,6 +826,7 @@ class JsonExporter @Inject constructor(
             row.requireOptionalNumber("followUpAt")
             row.requireOptionalNumber("estimateMinutes")
             row.requireOptionalNumber("postponementCount")
+            row.requireOptionalNumber("trackedMinutes")
             row.nullableString("listId")?.let { require(it in lists) }
             row.nullableString("projectId")?.let { require(it in projects) }
             requireStringIds(row.getJSONArray("assigneeIds"), people.keys, "task assigneeIds")
@@ -1125,6 +1127,7 @@ class JsonExporter @Inject constructor(
             row.requireOptionalNumber("followUpAt")
             row.requireOptionalNumber("estimateMinutes")
             row.requireOptionalNumber("postponementCount")
+            row.requireOptionalNumber("trackedMinutes")
             row.nullableString("listId")?.let { if (lists.isNotEmpty()) require(it in lists) { "Task references missing list $it" } }
             row.nullableString("projectId")?.let { if (projects.isNotEmpty()) require(it in projects) { "Task references missing project $it" } }
             row.requireOptionalStringArray("assigneeIds")?.forEach { id ->
@@ -1540,7 +1543,8 @@ class JsonExporter @Inject constructor(
                                 // distinguishable from "estimated at zero minutes", or every old
                                 // task would count toward a day's planned total as a real zero.
                                 estimateMinutes = if (o.isNull("estimateMinutes")) null else o.optInt("estimateMinutes"),
-                                postponementCount = o.optInt("postponementCount", 0)
+                                postponementCount = o.optInt("postponementCount", 0),
+                                trackedMinutes = o.optInt("trackedMinutes", 0).coerceAtLeast(0)
                             )
                         )
                     }

@@ -1641,4 +1641,14 @@
     <string name="task_template_saved">Șablon salvat</string>
     <string name="task_template_palette_subtitle">Șablon</string>
     <string name="task_template_delete_title">Ștergi șablonul „%1$s”?</string>
+    <string name="task_detail_tracked">Înregistrat: %1$s</string>
+    <string name="task_detail_tracked_of_estimate">Înregistrat: %1$s din %2$s</string>
+    <string name="task_detail_timer_start">Pornește cronometrul</string>
+    <string name="task_detail_timer_stop">Oprește · %1$s</string>
+    <string name="analytics_tracked_vs_estimate">%1$s înregistrat față de %2$s estimat</string>
+    <string name="settings_calendar_events">Afișează evenimentele din calendar</string>
+    <string name="settings_calendar_events_summary">Afișează evenimentele din calendarele dispozitivului în Următoarele și Următoarele 10 zile. Doar citire; nimic nu părăsește telefonul.</string>
+    <string name="settings_calendar_permission_denied">Accesul la calendar nu a fost permis. Activează-l pentru YATA în setările sistemului ca să vezi evenimentele.</string>
+    <string name="calendar_event_all_day">Toată ziua</string>
+    <string name="calendar_event_no_title">(Fără titlu)</string>
 </resources>

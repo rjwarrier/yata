@@ -1638,4 +1638,14 @@
     <string name="task_template_saved">Mallen sparades</string>
     <string name="task_template_palette_subtitle">Mall</string>
     <string name="task_template_delete_title">Ta bort mallen ”%1$s”?</string>
+    <string name="task_detail_tracked">Spårat: %1$s</string>
+    <string name="task_detail_tracked_of_estimate">Spårat: %1$s av %2$s</string>
+    <string name="task_detail_timer_start">Starta timer</string>
+    <string name="task_detail_timer_stop">Stoppa · %1$s</string>
+    <string name="analytics_tracked_vs_estimate">%1$s spårat mot %2$s uppskattat</string>
+    <string name="settings_calendar_events">Visa kalenderhändelser</string>
+    <string name="settings_calendar_events_summary">Visar händelser från enhetens kalendrar i Kommande och Nästa 10 dagar. Endast läsning; inget lämnar telefonen.</string>
+    <string name="settings_calendar_permission_denied">Kalenderåtkomst tilläts inte. Slå på den för YATA i systeminställningarna för att visa händelser.</string>
+    <string name="calendar_event_all_day">Heldag</string>
+    <string name="calendar_event_no_title">(Ingen titel)</string>
 </resources>

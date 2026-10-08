@@ -1635,4 +1635,14 @@
     <string name="task_template_saved">ടെംപ്ലേറ്റ് സംരക്ഷിച്ചു</string>
     <string name="task_template_palette_subtitle">ടെംപ്ലേറ്റ്</string>
     <string name="task_template_delete_title">“%1$s” ടെംപ്ലേറ്റ് ഇല്ലാതാക്കണോ?</string>
+    <string name="task_detail_tracked">ട്രാക്ക് ചെയ്തത്: %1$s</string>
+    <string name="task_detail_tracked_of_estimate">ട്രാക്ക് ചെയ്തത്: %2$s ൽ %1$s</string>
+    <string name="task_detail_timer_start">ടൈമർ ആരംഭിക്കുക</string>
+    <string name="task_detail_timer_stop">നിർത്തുക · %1$s</string>
+    <string name="analytics_tracked_vs_estimate">%1$s ട്രാക്ക് ചെയ്തു, കണക്കാക്കിയത് %2$s</string>
+    <string name="settings_calendar_events">കലണ്ടർ ഇവന്റുകൾ കാണിക്കുക</string>
+    <string name="settings_calendar_events_summary">ഉപകരണത്തിലെ കലണ്ടറുകളിലെ ഇവന്റുകൾ വരാനിരിക്കുന്നവ, അടുത്ത 10 ദിവസം എന്നിവയിൽ കാണിക്കുന്നു. വായിക്കാൻ മാത്രം; ഒന്നും നിങ്ങളുടെ ഫോണിൽ നിന്ന് പുറത്തുപോകില്ല.</string>
+    <string name="settings_calendar_permission_denied">കലണ്ടർ ആക്സസ് അനുവദിച്ചില്ല. ഇവന്റുകൾ കാണിക്കാൻ സിസ്റ്റം ക്രമീകരണങ്ങളിൽ YATA-യ്ക്കായി അത് ഓണാക്കുക.</string>
+    <string name="calendar_event_all_day">ദിവസം മുഴുവൻ</string>
+    <string name="calendar_event_no_title">(തലക്കെട്ടില്ല)</string>
 </resources>

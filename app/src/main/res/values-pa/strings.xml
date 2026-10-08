@@ -1635,4 +1635,14 @@
     <string name="task_template_saved">ਟੈਮਪਲੇਟ ਸੰਭਾਲਿਆ ਗਿਆ</string>
     <string name="task_template_palette_subtitle">ਟੈਮਪਲੇਟ</string>
     <string name="task_template_delete_title">“%1$s” ਟੈਮਪਲੇਟ ਮਿਟਾਉਣਾ ਹੈ?</string>
+    <string name="task_detail_tracked">ਟ੍ਰੈਕ ਕੀਤਾ: %1$s</string>
+    <string name="task_detail_tracked_of_estimate">ਟ੍ਰੈਕ ਕੀਤਾ: %2$s ਵਿੱਚੋਂ %1$s</string>
+    <string name="task_detail_timer_start">ਟਾਈਮਰ ਸ਼ੁਰੂ ਕਰੋ</string>
+    <string name="task_detail_timer_stop">ਰੋਕੋ · %1$s</string>
+    <string name="analytics_tracked_vs_estimate">%1$s ਟ੍ਰੈਕ ਕੀਤਾ, ਅੰਦਾਜ਼ਾ %2$s</string>
+    <string name="settings_calendar_events">ਕੈਲੰਡਰ ਇਵੈਂਟ ਦਿਖਾਓ</string>
+    <string name="settings_calendar_events_summary">ਡਿਵਾਈਸ ਦੇ ਕੈਲੰਡਰਾਂ ਦੇ ਇਵੈਂਟ ਆਉਣ ਵਾਲੇ ਅਤੇ ਅਗਲੇ 10 ਦਿਨ ਵਿੱਚ ਦਿਖਾਉਂਦਾ ਹੈ। ਸਿਰਫ਼ ਪੜ੍ਹਨ ਲਈ; ਤੁਹਾਡੇ ਫ਼ੋਨ ਤੋਂ ਕੁਝ ਬਾਹਰ ਨਹੀਂ ਜਾਂਦਾ।</string>
+    <string name="settings_calendar_permission_denied">ਕੈਲੰਡਰ ਪਹੁੰਚ ਦੀ ਇਜਾਜ਼ਤ ਨਹੀਂ ਮਿਲੀ। ਇਵੈਂਟ ਦਿਖਾਉਣ ਲਈ ਸਿਸਟਮ ਸੈਟਿੰਗਾਂ ਵਿੱਚ YATA ਲਈ ਇਸਨੂੰ ਚਾਲੂ ਕਰੋ।</string>
+    <string name="calendar_event_all_day">ਸਾਰਾ ਦਿਨ</string>
+    <string name="calendar_event_no_title">(ਕੋਈ ਸਿਰਲੇਖ ਨਹੀਂ)</string>
 </resources>

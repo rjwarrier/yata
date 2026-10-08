@@ -1640,4 +1640,14 @@
     <string name="task_template_saved">Modelo salvo</string>
     <string name="task_template_palette_subtitle">Modelo</string>
     <string name="task_template_delete_title">Excluir o modelo “%1$s”?</string>
+    <string name="task_detail_tracked">Registrado: %1$s</string>
+    <string name="task_detail_tracked_of_estimate">Registrado: %1$s de %2$s</string>
+    <string name="task_detail_timer_start">Iniciar cronômetro</string>
+    <string name="task_detail_timer_stop">Parar · %1$s</string>
+    <string name="analytics_tracked_vs_estimate">%1$s registrado vs %2$s estimado</string>
+    <string name="settings_calendar_events">Mostrar eventos do calendário</string>
+    <string name="settings_calendar_events_summary">Mostra eventos dos calendários do dispositivo em Por vir e Próximos 10 dias. Somente leitura; nada sai do seu telefone.</string>
+    <string name="settings_calendar_permission_denied">O acesso ao calendário não foi permitido. Ative-o para o YATA nas configurações do sistema para mostrar eventos.</string>
+    <string name="calendar_event_all_day">Dia inteiro</string>
+    <string name="calendar_event_no_title">(Sem título)</string>
 </resources>

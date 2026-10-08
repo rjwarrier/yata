@@ -70,6 +70,7 @@ import com.mj.yata.ui.widgets.*
 import com.mj.yata.ui.sheets.RecurrenceSheet
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.animation.animateColorAsState
 import com.mj.yata.ui.theme.YataDur
@@ -1340,6 +1341,7 @@ fun TaskDetailScreen(
                         }
                     }
                     LocalPanelHint(stringResource(R.string.task_estimate_hint))
+                    FocusTimerRow(task, viewModel)
                 }
             }
 
@@ -2461,4 +2463,62 @@ private fun SaveTemplateDialog(initialName: String, onDismiss: () -> Unit, onSav
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
         }
     )
+}
+
+/**
+ * Focus timer for one task: what's been tracked so far (against the estimate, when there is one)
+ * and a Start/Stop button that shows the running session's elapsed time. The running timer lives
+ * in MainViewModel.focusTimer, so it keeps going after leaving this screen.
+ */
+@Composable
+private fun FocusTimerRow(task: Task, viewModel: MainViewModel) {
+    val focusTimer by viewModel.focusTimer.collectAsStateWithLifecycle()
+    val runningHere = focusTimer?.taskId == task.id
+    val elapsedSeconds by produceState(0L, focusTimer, task.id) {
+        val startedAt = focusTimer?.takeIf { it.taskId == task.id }?.startedAt ?: return@produceState
+        while (true) {
+            value = ((System.currentTimeMillis() - startedAt) / 1000).coerceAtLeast(0)
+            delay(1000)
+        }
+    }
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        val tracked = com.mj.yata.util.EstimateUtils.format(task.trackedMinutes)
+        Text(
+            text = when {
+                task.trackedMinutes == 0 -> ""
+                task.estimateMinutes != null -> stringResource(
+                    R.string.task_detail_tracked_of_estimate,
+                    tracked,
+                    com.mj.yata.util.EstimateUtils.format(task.estimateMinutes)
+                )
+                else -> stringResource(R.string.task_detail_tracked, tracked)
+            },
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f)
+        )
+        if (!task.done || runningHere) {
+            FilledTonalButton(
+                onClick = { if (runningHere) viewModel.stopFocusTimer() else viewModel.startFocusTimer(task.id) }
+            ) {
+                Icon(
+                    if (runningHere) Icons.Default.Stop else Icons.Default.PlayArrow,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    if (runningHere) {
+                        stringResource(R.string.task_detail_timer_stop, android.text.format.DateUtils.formatElapsedTime(elapsedSeconds))
+                    } else {
+                        stringResource(R.string.task_detail_timer_start)
+                    }
+                )
+            }
+        }
+    }
 }

@@ -73,5 +73,7 @@ data class TaskEntity(
     // separately so assigneeIds[0] survives backup/sync/import and remains semantic.
     val ownerId: String? = null,
     // Counts due-date pushes to a later date; see Task.postponementCount.
-    val postponementCount: Int = 0
+    val postponementCount: Int = 0,
+    // Focus-timer minutes logged against this task; see Task.trackedMinutes.
+    val trackedMinutes: Int = 0
 )

@@ -1635,4 +1635,14 @@
     <string name="task_template_saved">Na-save ang template</string>
     <string name="task_template_palette_subtitle">Template</string>
     <string name="task_template_delete_title">Burahin ang template na “%1$s”?</string>
+    <string name="task_detail_tracked">Naitala: %1$s</string>
+    <string name="task_detail_tracked_of_estimate">Naitala: %1$s sa %2$s</string>
+    <string name="task_detail_timer_start">Simulan ang timer</string>
+    <string name="task_detail_timer_stop">Ihinto · %1$s</string>
+    <string name="analytics_tracked_vs_estimate">%1$s naitala kumpara sa %2$s na tantya</string>
+    <string name="settings_calendar_events">Ipakita ang mga event sa kalendaryo</string>
+    <string name="settings_calendar_events_summary">Ipinapakita ang mga event mula sa mga kalendaryo ng device sa Paparating at Susunod na 10 araw. Pagbasa lang; walang lumalabas sa iyong telepono.</string>
+    <string name="settings_calendar_permission_denied">Hindi pinayagan ang access sa kalendaryo. I-on ito para sa YATA sa system settings para maipakita ang mga event.</string>
+    <string name="calendar_event_all_day">Buong araw</string>
+    <string name="calendar_event_no_title">(Walang pamagat)</string>
 </resources>

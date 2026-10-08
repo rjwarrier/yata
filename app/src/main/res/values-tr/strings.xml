@@ -1638,4 +1638,14 @@
     <string name="task_template_saved">Şablon kaydedildi</string>
     <string name="task_template_palette_subtitle">Şablon</string>
     <string name="task_template_delete_title">“%1$s” şablonu silinsin mi?</string>
+    <string name="task_detail_tracked">Takip edilen: %1$s</string>
+    <string name="task_detail_tracked_of_estimate">Takip edilen: %1$s / %2$s</string>
+    <string name="task_detail_timer_start">Zamanlayıcıyı başlat</string>
+    <string name="task_detail_timer_stop">Durdur · %1$s</string>
+    <string name="analytics_tracked_vs_estimate">%1$s takip edildi, %2$s tahmin edilmişti</string>
+    <string name="settings_calendar_events">Takvim etkinliklerini göster</string>
+    <string name="settings_calendar_events_summary">Cihaz takvimlerindeki etkinlikleri Yaklaşan ve Sonraki 10 gün görünümlerinde gösterir. Yalnızca okuma; hiçbir şey telefonunuzdan çıkmaz.</string>
+    <string name="settings_calendar_permission_denied">Takvim erişimine izin verilmedi. Etkinlikleri göstermek için sistem ayarlarından YATA için açın.</string>
+    <string name="calendar_event_all_day">Tüm gün</string>
+    <string name="calendar_event_no_title">(Başlıksız)</string>
 </resources>

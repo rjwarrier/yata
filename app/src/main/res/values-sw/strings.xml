@@ -1635,4 +1635,14 @@
     <string name="task_template_saved">Kiolezo kimehifadhiwa</string>
     <string name="task_template_palette_subtitle">Kiolezo</string>
     <string name="task_template_delete_title">Futa kiolezo “%1$s”?</string>
+    <string name="task_detail_tracked">Imefuatiliwa: %1$s</string>
+    <string name="task_detail_tracked_of_estimate">Imefuatiliwa: %1$s kati ya %2$s</string>
+    <string name="task_detail_timer_start">Anzisha kipima muda</string>
+    <string name="task_detail_timer_stop">Simamisha · %1$s</string>
+    <string name="analytics_tracked_vs_estimate">%1$s imefuatiliwa dhidi ya %2$s iliyokadiriwa</string>
+    <string name="settings_calendar_events">Onyesha matukio ya kalenda</string>
+    <string name="settings_calendar_events_summary">Huonyesha matukio kutoka kalenda za kifaa chako katika Zinazokuja na Siku 10 zijazo. Kusoma tu; hakuna kinachotoka kwenye simu yako.</string>
+    <string name="settings_calendar_permission_denied">Ruhusa ya kalenda haikutolewa. Iwashe kwa YATA katika mipangilio ya mfumo ili kuonyesha matukio.</string>
+    <string name="calendar_event_all_day">Siku nzima</string>
+    <string name="calendar_event_no_title">(Hakuna kichwa)</string>
 </resources>

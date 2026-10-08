@@ -92,6 +92,16 @@ fun NextDaysScreen(
         }.sortedWith(compareBy({ it.due }, { it.sortOrder }))
     }
     val groupedByDate = remember(upcomingTasks) { upcomingTasks.groupBy { it.due!! } }
+    val showCalendarEvents by viewModel.showCalendarEvents.collectAsStateWithLifecycle()
+    val calendarEvents = com.mj.yata.ui.widgets.rememberCalendarEvents(
+        enabled = showCalendarEvents,
+        from = today,
+        to = today.plusDays((WINDOW_DAYS - 1).toLong())
+    )
+    // ISO strings sort chronologically, so the union of task and event days sorts as plain text.
+    val dates = remember(groupedByDate, calendarEvents) {
+        (groupedByDate.keys + calendarEvents.keys.map { it.toString() }).sorted()
+    }
     val projectsById = remember(projects) { projects.associateBy { it.id } }
     val tagsById = remember(tags) { tags.associateBy { it.id } }
 
@@ -164,7 +174,7 @@ fun NextDaysScreen(
                 .background(MaterialTheme.colorScheme.background)
                 .padding(innerPadding)
         ) {
-        if (upcomingTasks.isEmpty()) {
+        if (dates.isEmpty()) {
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
@@ -180,7 +190,9 @@ fun NextDaysScreen(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(bottom = 32.dp)
             ) {
-                groupedByDate.forEach { (dateStr, dateTasks) ->
+                dates.forEach { dateStr ->
+                    val dateTasks = groupedByDate[dateStr].orEmpty()
+                    val dateEvents = runCatching { calendarEvents[LocalDate.parse(dateStr)] }.getOrNull().orEmpty()
                     item(key = "header_$dateStr") {
                         Row(
                             modifier = Modifier
@@ -194,12 +206,17 @@ fun NextDaysScreen(
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
-                            Text(
-                                text = pluralStringResource(R.plurals.task_count_lower, dateTasks.size, dateTasks.size),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            if (dateTasks.isNotEmpty()) {
+                                Text(
+                                    text = pluralStringResource(R.plurals.task_count_lower, dateTasks.size, dateTasks.size),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
+                    }
+                    items(dateEvents, key = { "event_${dateStr}_${it.eventId}_${it.begin}" }, contentType = { "event" }) { event ->
+                        com.mj.yata.ui.widgets.CalendarEventRow(event)
                     }
                     items(dateTasks, key = { it.id }, contentType = { "task" }) { task ->
                         val taskList = remember(task.listId, listsById) { listsById[task.listId] }

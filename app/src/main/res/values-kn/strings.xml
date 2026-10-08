@@ -1635,4 +1635,14 @@
     <string name="task_template_saved">ಟೆಂಪ್ಲೇಟ್ ಉಳಿಸಲಾಗಿದೆ</string>
     <string name="task_template_palette_subtitle">ಟೆಂಪ್ಲೇಟ್</string>
     <string name="task_template_delete_title">“%1$s” ಟೆಂಪ್ಲೇಟ್ ಅಳಿಸಬೇಕೆ?</string>
+    <string name="task_detail_tracked">ಟ್ರ್ಯಾಕ್ ಮಾಡಲಾಗಿದೆ: %1$s</string>
+    <string name="task_detail_tracked_of_estimate">ಟ್ರ್ಯಾಕ್ ಮಾಡಲಾಗಿದೆ: %2$s ರಲ್ಲಿ %1$s</string>
+    <string name="task_detail_timer_start">ಟೈಮರ್ ಪ್ರಾರಂಭಿಸಿ</string>
+    <string name="task_detail_timer_stop">ನಿಲ್ಲಿಸಿ · %1$s</string>
+    <string name="analytics_tracked_vs_estimate">%1$s ಟ್ರ್ಯಾಕ್, ಅಂದಾಜು %2$s</string>
+    <string name="settings_calendar_events">ಕ್ಯಾಲೆಂಡರ್ ಈವೆಂಟ್‌ಗಳನ್ನು ತೋರಿಸಿ</string>
+    <string name="settings_calendar_events_summary">ಸಾಧನದ ಕ್ಯಾಲೆಂಡರ್‌ಗಳ ಈವೆಂಟ್‌ಗಳನ್ನು ಮುಂಬರುವ ಮತ್ತು ಮುಂದಿನ 10 ದಿನಗಳು ನಲ್ಲಿ ತೋರಿಸುತ್ತದೆ. ಓದಲು ಮಾತ್ರ; ನಿಮ್ಮ ಫೋನ್‌ನಿಂದ ಏನೂ ಹೊರಹೋಗುವುದಿಲ್ಲ.</string>
+    <string name="settings_calendar_permission_denied">ಕ್ಯಾಲೆಂಡರ್ ಪ್ರವೇಶವನ್ನು ಅನುಮತಿಸಲಾಗಿಲ್ಲ. ಈವೆಂಟ್‌ಗಳನ್ನು ತೋರಿಸಲು ಸಿಸ್ಟಮ್ ಸೆಟ್ಟಿಂಗ್‌ಗಳಲ್ಲಿ YATA ಗಾಗಿ ಅದನ್ನು ಆನ್ ಮಾಡಿ.</string>
+    <string name="calendar_event_all_day">ದಿನವಿಡೀ</string>
+    <string name="calendar_event_no_title">(ಶೀರ್ಷಿಕೆ ಇಲ್ಲ)</string>
 </resources>

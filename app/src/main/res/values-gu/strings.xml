@@ -1635,4 +1635,14 @@
     <string name="task_template_saved">ટેમ્પલેટ સાચવ્યું</string>
     <string name="task_template_palette_subtitle">ટેમ્પલેટ</string>
     <string name="task_template_delete_title">“%1$s” ટેમ્પલેટ કાઢી નાખીએ?</string>
+    <string name="task_detail_tracked">ટ્રૅક કર્યું: %1$s</string>
+    <string name="task_detail_tracked_of_estimate">ટ્રૅક કર્યું: %2$s માંથી %1$s</string>
+    <string name="task_detail_timer_start">ટાઇમર શરૂ કરો</string>
+    <string name="task_detail_timer_stop">બંધ કરો · %1$s</string>
+    <string name="analytics_tracked_vs_estimate">%1$s ટ્રૅક કર્યું, અંદાજ %2$s</string>
+    <string name="settings_calendar_events">કૅલેન્ડર ઇવેન્ટ બતાવો</string>
+    <string name="settings_calendar_events_summary">ઉપકરણના કૅલેન્ડરના ઇવેન્ટ આગામી અને આગામી 10 દિવસમાં બતાવે છે. ફક્ત વાંચવા માટે; તમારા ફોનમાંથી કંઈ બહાર જતું નથી.</string>
+    <string name="settings_calendar_permission_denied">કૅલેન્ડર ઍક્સેસની મંજૂરી ન મળી. ઇવેન્ટ બતાવવા સિસ્ટમ સેટિંગ્સમાં YATA માટે તે ચાલુ કરો.</string>
+    <string name="calendar_event_all_day">આખો દિવસ</string>
+    <string name="calendar_event_no_title">(કોઈ શીર્ષક નથી)</string>
 </resources>

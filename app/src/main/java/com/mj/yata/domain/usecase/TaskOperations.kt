@@ -235,7 +235,8 @@ class TaskOperations @Inject constructor(
             due = newDue,
             done = false,
             completedAt = null,
-            createdAt = null
+            createdAt = null,
+            trackedMinutes = 0
         )
     }
 

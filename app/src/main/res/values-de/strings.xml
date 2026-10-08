@@ -1795,4 +1795,14 @@
     <string name="task_template_saved">Vorlage gespeichert</string>
     <string name="task_template_palette_subtitle">Vorlage</string>
     <string name="task_template_delete_title">Vorlage „%1$s“ löschen?</string>
+    <string name="task_detail_tracked">Erfasst: %1$s</string>
+    <string name="task_detail_tracked_of_estimate">Erfasst: %1$s von %2$s</string>
+    <string name="task_detail_timer_start">Timer starten</string>
+    <string name="task_detail_timer_stop">Stopp · %1$s</string>
+    <string name="analytics_tracked_vs_estimate">%1$s erfasst, %2$s geschätzt</string>
+    <string name="settings_calendar_events">Kalendertermine anzeigen</string>
+    <string name="settings_calendar_events_summary">Zeigt Termine aus den Kalendern deines Geräts unter Demnächst und Nächste 10 Tage. Nur lesend; nichts verlässt dein Telefon.</string>
+    <string name="settings_calendar_permission_denied">Kalenderzugriff wurde nicht erlaubt. Aktiviere ihn für YATA in den Systemeinstellungen, um Termine anzuzeigen.</string>
+    <string name="calendar_event_all_day">Ganztägig</string>
+    <string name="calendar_event_no_title">(Ohne Titel)</string>
 </resources>

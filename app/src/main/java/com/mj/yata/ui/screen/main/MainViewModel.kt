@@ -2899,6 +2899,41 @@ data class WeekendRescheduleWarning(
         }
     }
 
+    val showCalendarEvents: StateFlow<Boolean> = userPreferences.showCalendarEventsFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    fun setShowCalendarEvents(enabled: Boolean) {
+        safeLaunch { userPreferences.setShowCalendarEvents(enabled) }
+    }
+
+    val focusTimer: StateFlow<FocusTimer?> = userPreferences.focusTimerFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    /** Starts the focus timer on [taskId]. Only one runs at a time, so a timer already running on
+     * another task is stopped and its time logged first. */
+    fun startFocusTimer(taskId: String) {
+        safeLaunch {
+            logRunningFocusTimer()
+            userPreferences.setFocusTimer(FocusTimer(taskId, System.currentTimeMillis()))
+        }
+    }
+
+    fun stopFocusTimer() {
+        safeLaunch { logRunningFocusTimer() }
+    }
+
+    /** Clears the running timer before writing its minutes, so a failed write loses one session
+     * rather than leaving a timer that would log the same time twice. A task archived or trashed
+     * while its timer ran isn't live any more, and the session is dropped. */
+    private suspend fun logRunningFocusTimer() {
+        val timer = userPreferences.focusTimerFlow.first() ?: return
+        userPreferences.setFocusTimer(null)
+        val minutes = focusSessionMinutes(timer.startedAt, System.currentTimeMillis())
+        if (minutes == 0) return
+        val task = repository.getTasksByIds(listOf(timer.taskId)).firstOrNull() ?: return
+        repository.upsertTask(task.copy(trackedMinutes = task.trackedMinutes + minutes), resyncReminder = false)
+    }
+
     val taskTemplates: StateFlow<List<TaskTemplate>> = userPreferences.taskTemplatesFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 

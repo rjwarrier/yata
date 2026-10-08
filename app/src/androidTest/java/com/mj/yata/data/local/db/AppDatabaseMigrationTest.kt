@@ -795,6 +795,55 @@ class AppDatabaseMigrationTest {
         }
     }
 
+    @Test
+    fun migrate33To34_addsTaskTrackedMinutes() {
+        context.deleteDatabase(TEST_DB)
+        createVersion33TasksTableDatabase().apply {
+            execSQL(
+                "INSERT INTO `tasks` (`id`,`title`,`section`,`priority`,`flag`,`done`,`postponementCount`) " +
+                    "VALUES ('t1','Write report','Open','NORMAL',0,0,2)"
+            )
+            close()
+        }
+
+        val configuration = SupportSQLiteOpenHelper.Configuration.builder(context)
+            .name(TEST_DB)
+            .callback(object : SupportSQLiteOpenHelper.Callback(34) {
+                override fun onCreate(db: SupportSQLiteDatabase) = Unit
+                override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) {
+                    AppDatabase.MIGRATION_33_34.migrate(db)
+                }
+            })
+            .build()
+
+        FrameworkSQLiteOpenHelperFactory().create(configuration).writableDatabase.apply {
+            query("SELECT `trackedMinutes`, `postponementCount` FROM `tasks` WHERE `id` = 't1'").use { cursor ->
+                assertTrue(cursor.moveToFirst())
+                assertEquals(0, cursor.getInt(cursor.getColumnIndexOrThrow("trackedMinutes")))
+                assertEquals(2, cursor.getInt(cursor.getColumnIndexOrThrow("postponementCount")))
+            }
+            close()
+        }
+    }
+
+    /** Minimal — only the `tasks` table, since MIGRATION_33_34 only touches that one. */
+    private fun createVersion33TasksTableDatabase(): SupportSQLiteDatabase {
+        val configuration = SupportSQLiteOpenHelper.Configuration.builder(context)
+            .name(TEST_DB)
+            .callback(object : SupportSQLiteOpenHelper.Callback(33) {
+                override fun onCreate(db: SupportSQLiteDatabase) {
+                    db.execSQL(
+                        "CREATE TABLE IF NOT EXISTS `tasks` (`id` TEXT NOT NULL, `title` TEXT NOT NULL, `section` TEXT NOT NULL, `priority` TEXT NOT NULL, `flag` INTEGER NOT NULL, `done` INTEGER NOT NULL, `postponementCount` INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(`id`))"
+                    )
+                }
+                override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) = Unit
+            })
+            .build()
+        return FrameworkSQLiteOpenHelperFactory()
+            .create(configuration)
+            .writableDatabase
+    }
+
     /** Minimal — only the `lists` table, since MIGRATION_21_22 only touches that one. */
     private fun createVersion21ListsTableDatabase(): SupportSQLiteDatabase {
         val configuration = SupportSQLiteOpenHelper.Configuration.builder(context)

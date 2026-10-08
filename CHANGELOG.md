@@ -30,6 +30,12 @@ test-only changes belong in the commit message, not here, unless they change beh
 - Recurring tasks show a completion heatmap on their detail screen, one square per day.
 - Reply to the daily agenda notification to add a task without opening the app. The text is
   understood the same way as in Quick Add, so dates, #projects and tags work.
+- Focus timer: start a timer from a task's detail screen to log the time you actually spend on it,
+  shown against the task's estimate. Analytics compares tracked time with estimates for the tasks
+  you finish. The timer keeps running if you leave the screen.
+- Device calendar events can be shown in Upcoming and Next 10 days, above each day's tasks
+  (Settings → Navigation & features). It's read-only and off until you allow calendar access, and
+  tapping an event opens it in your calendar app.
 
 ### Fixed
 - "Tonight" can no longer be picked once tonight's snooze time has passed, which used to leave

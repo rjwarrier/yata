@@ -1639,4 +1639,14 @@
     <string name="task_template_saved">Sjabloon opgeslagen</string>
     <string name="task_template_palette_subtitle">Sjabloon</string>
     <string name="task_template_delete_title">Sjabloon “%1$s” verwijderen?</string>
+    <string name="task_detail_tracked">Bijgehouden: %1$s</string>
+    <string name="task_detail_tracked_of_estimate">Bijgehouden: %1$s van %2$s</string>
+    <string name="task_detail_timer_start">Timer starten</string>
+    <string name="task_detail_timer_stop">Stoppen · %1$s</string>
+    <string name="analytics_tracked_vs_estimate">%1$s bijgehouden tegenover %2$s geschat</string>
+    <string name="settings_calendar_events">Agenda-afspraken tonen</string>
+    <string name="settings_calendar_events_summary">Toont afspraken uit de agenda’s op je apparaat in Binnenkort en Volgende 10 dagen. Alleen lezen; er verlaat niets je telefoon.</string>
+    <string name="settings_calendar_permission_denied">Toegang tot de agenda is niet toegestaan. Zet die aan voor YATA in de systeeminstellingen om afspraken te tonen.</string>
+    <string name="calendar_event_all_day">Hele dag</string>
+    <string name="calendar_event_no_title">(Geen titel)</string>
 </resources>

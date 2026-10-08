@@ -1638,4 +1638,14 @@
     <string name="task_template_saved">Đã lưu mẫu</string>
     <string name="task_template_palette_subtitle">Mẫu</string>
     <string name="task_template_delete_title">Xóa mẫu “%1$s”?</string>
+    <string name="task_detail_tracked">Đã ghi: %1$s</string>
+    <string name="task_detail_tracked_of_estimate">Đã ghi: %1$s / %2$s</string>
+    <string name="task_detail_timer_start">Bắt đầu hẹn giờ</string>
+    <string name="task_detail_timer_stop">Dừng · %1$s</string>
+    <string name="analytics_tracked_vs_estimate">Đã ghi %1$s so với ước tính %2$s</string>
+    <string name="settings_calendar_events">Hiển thị sự kiện lịch</string>
+    <string name="settings_calendar_events_summary">Hiển thị sự kiện từ lịch trên thiết bị trong Sắp tới và 10 ngày tới. Chỉ đọc; không có gì rời khỏi điện thoại của bạn.</string>
+    <string name="settings_calendar_permission_denied">Quyền truy cập lịch chưa được cho phép. Hãy bật cho YATA trong cài đặt hệ thống để hiển thị sự kiện.</string>
+    <string name="calendar_event_all_day">Cả ngày</string>
+    <string name="calendar_event_no_title">(Không có tiêu đề)</string>
 </resources>

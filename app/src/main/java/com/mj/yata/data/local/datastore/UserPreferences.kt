@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
 import com.mj.yata.domain.model.AppFont
 import com.mj.yata.domain.model.TaskTemplate
+import com.mj.yata.domain.model.FocusTimer
 import com.mj.yata.domain.model.BackgroundTint
 import com.mj.yata.domain.model.ColorIntensity
 import com.mj.yata.domain.model.DateAliasDefinition
@@ -147,7 +148,11 @@ class UserPreferences @Inject constructor(
             "github_last_head_sha",
             "github_last_canonical_hash",
             "last_primary_argb",
-            "user_photo_uri"
+            "user_photo_uri",
+            "focus_timer_task_id",
+            "focus_timer_started_at",
+            // Backed by a per-device runtime permission, so it can't follow a restore or sync.
+            "show_calendar_events"
         )
 
         val AUTO_ASSIGN_TO_ME       = booleanPreferencesKey("auto_assign_to_me")
@@ -260,6 +265,9 @@ class UserPreferences @Inject constructor(
         val LAST_PRIMARY_ARGB      = intPreferencesKey("last_primary_argb")
         val SAVED_SMART_FILTER_SETS = stringSetPreferencesKey("saved_smart_filter_sets")
         val TASK_TEMPLATES         = stringSetPreferencesKey("task_templates")
+        val FOCUS_TIMER_TASK_ID    = stringPreferencesKey("focus_timer_task_id")
+        val FOCUS_TIMER_STARTED_AT = longPreferencesKey("focus_timer_started_at")
+        val SHOW_CALENDAR_EVENTS   = booleanPreferencesKey("show_calendar_events")
         val RECENT_TASK_IDS       = stringPreferencesKey("recent_task_ids")
         // Sort mode per screen, persisted alongside HIDE_COMPLETED_* above — both are
         // per-screen view state the user expects to survive navigating away and back.
@@ -560,6 +568,12 @@ class UserPreferences @Inject constructor(
     val lastHomeTabFlow: Flow<Int> = prefsFlow.mapDistinct { (it[LAST_HOME_TAB] ?: 0).coerceIn(0, 4) }
     val hasSeenWelcomeFlow: Flow<Boolean> = prefsFlow.mapDistinct { it[HAS_SEEN_WELCOME] ?: false }
     val savedSmartFilterSetsFlow: Flow<Set<String>> = prefsFlow.mapDistinct { it[SAVED_SMART_FILTER_SETS] ?: emptySet() }
+    val showCalendarEventsFlow: Flow<Boolean> = prefsFlow.mapDistinct { it[SHOW_CALENDAR_EVENTS] ?: false }
+    val focusTimerFlow: Flow<FocusTimer?> = prefsFlow.mapDistinct { prefs ->
+        val taskId = prefs[FOCUS_TIMER_TASK_ID]
+        val startedAt = prefs[FOCUS_TIMER_STARTED_AT]
+        if (taskId != null && startedAt != null) FocusTimer(taskId, startedAt) else null
+    }
     val taskTemplatesFlow: Flow<List<TaskTemplate>> = prefsFlow.mapDistinct { prefs ->
         (prefs[TASK_TEMPLATES] ?: emptySet()).mapNotNull(TaskTemplate::decode).sortedBy { it.name.lowercase() }
     }
@@ -946,6 +960,23 @@ class UserPreferences @Inject constructor(
         if (encodedFilters.isBlank()) return
         dataStore.edit { prefs ->
             prefs[SAVED_SMART_FILTER_SETS] = (prefs[SAVED_SMART_FILTER_SETS] ?: emptySet()) + encodedFilters
+        }
+    }
+
+    suspend fun setShowCalendarEvents(enabled: Boolean) {
+        dataStore.edit { it[SHOW_CALENDAR_EVENTS] = enabled }
+    }
+
+    /** Sets the running focus timer, or clears it when [timer] is null. */
+    suspend fun setFocusTimer(timer: FocusTimer?) {
+        dataStore.edit { prefs ->
+            if (timer == null) {
+                prefs.remove(FOCUS_TIMER_TASK_ID)
+                prefs.remove(FOCUS_TIMER_STARTED_AT)
+            } else {
+                prefs[FOCUS_TIMER_TASK_ID] = timer.taskId
+                prefs[FOCUS_TIMER_STARTED_AT] = timer.startedAt
+            }
         }
     }
 

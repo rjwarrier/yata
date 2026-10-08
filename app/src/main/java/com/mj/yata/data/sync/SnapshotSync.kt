@@ -223,6 +223,7 @@ internal object SnapshotMerger {
                     "estimateMinutes"
                 )
                 if (!task.has("postponementCount")) task.put("postponementCount", 0)
+                if (!task.has("trackedMinutes")) task.put("trackedMinutes", 0)
                 task.optJSONArray("tagIds")?.let { ids ->
                     task.put("tagIds", JSONArray((0 until ids.length()).map { ids.getString(it) }.sorted()))
                 }

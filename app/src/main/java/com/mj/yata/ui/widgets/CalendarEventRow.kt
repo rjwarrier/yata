@@ -1,0 +1,122 @@
+package com.mj.yata.ui.widgets
+
+import android.database.ContentObserver
+import android.os.Handler
+import android.os.Looper
+import android.provider.CalendarContract
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Event
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import com.mj.yata.R
+import com.mj.yata.data.calendar.CalendarEvent
+import com.mj.yata.data.calendar.DeviceCalendar
+import com.mj.yata.util.AppFormats
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+
+/**
+ * Device calendar events for [from]..[to], or nothing when [enabled] is off or the permission is
+ * missing. Re-reads whenever the calendar provider reports a change, so an event added in the
+ * calendar app appears without leaving the screen.
+ */
+@Composable
+fun rememberCalendarEvents(enabled: Boolean, from: LocalDate, to: LocalDate): Map<LocalDate, List<CalendarEvent>> {
+    val context = LocalContext.current
+    var version by remember { mutableIntStateOf(0) }
+    DisposableEffect(enabled) {
+        if (!enabled || !DeviceCalendar.hasPermission(context)) return@DisposableEffect onDispose {}
+        val observer = object : ContentObserver(Handler(Looper.getMainLooper())) {
+            override fun onChange(selfChange: Boolean) { version++ }
+        }
+        val registered = runCatching {
+            context.contentResolver.registerContentObserver(CalendarContract.CONTENT_URI, true, observer)
+        }.isSuccess
+        onDispose { if (registered) context.contentResolver.unregisterContentObserver(observer) }
+    }
+    val events by produceState(emptyMap<LocalDate, List<CalendarEvent>>(), enabled, from, to, version) {
+        value = if (enabled) withContext(Dispatchers.IO) { DeviceCalendar.eventsByDay(context, from, to) } else emptyMap()
+    }
+    return events
+}
+
+/** A calendar event listed among tasks: deliberately lighter than a task card, since it can't be
+ * completed or edited here. Tapping opens it in the calendar app. */
+@Composable
+fun CalendarEventRow(event: CalendarEvent, modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val timeLabel = if (event.allDay) {
+        stringResource(R.string.calendar_event_all_day)
+    } else {
+        val zone = ZoneId.systemDefault()
+        val formatter = AppFormats.timeFormatter()
+        "${Instant.ofEpochMilli(event.begin).atZone(zone).format(formatter)} – " +
+            Instant.ofEpochMilli(event.end).atZone(zone).format(formatter)
+    }
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable { runCatching { context.startActivity(DeviceCalendar.openIntent(event)) } }
+            .padding(horizontal = 20.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Box(
+            Modifier
+                .width(4.dp)
+                .height(32.dp)
+                .clip(RoundedCornerShape(2.dp))
+                .background(Color(event.color))
+        )
+        Column(Modifier.weight(1f)) {
+            Text(
+                text = event.title.ifBlank { stringResource(R.string.calendar_event_no_title) },
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = timeLabel,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Icon(
+            Icons.Outlined.Event,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(16.dp)
+        )
+    }
+}

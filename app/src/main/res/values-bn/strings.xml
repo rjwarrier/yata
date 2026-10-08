@@ -1638,4 +1638,14 @@
     <string name="task_template_saved">টেমপ্লেট সংরক্ষিত হয়েছে</string>
     <string name="task_template_palette_subtitle">টেমপ্লেট</string>
     <string name="task_template_delete_title">“%1$s” টেমপ্লেট মুছবেন?</string>
+    <string name="task_detail_tracked">ট্র্যাক করা: %1$s</string>
+    <string name="task_detail_tracked_of_estimate">ট্র্যাক করা: %2$s এর মধ্যে %1$s</string>
+    <string name="task_detail_timer_start">টাইমার শুরু করুন</string>
+    <string name="task_detail_timer_stop">থামান · %1$s</string>
+    <string name="analytics_tracked_vs_estimate">%1$s ট্র্যাক করা, অনুমান %2$s</string>
+    <string name="settings_calendar_events">ক্যালেন্ডার ইভেন্ট দেখান</string>
+    <string name="settings_calendar_events_summary">ডিভাইসের ক্যালেন্ডারের ইভেন্ট আসন্ন ও পরবর্তী ১০ দিন-এ দেখায়। শুধু পড়া; আপনার ফোন থেকে কিছুই বাইরে যায় না।</string>
+    <string name="settings_calendar_permission_denied">ক্যালেন্ডার অ্যাক্সেসের অনুমতি দেওয়া হয়নি। ইভেন্ট দেখাতে সিস্টেম সেটিংসে YATA-এর জন্য এটি চালু করুন।</string>
+    <string name="calendar_event_all_day">সারাদিন</string>
+    <string name="calendar_event_no_title">(শিরোনাম নেই)</string>
 </resources>

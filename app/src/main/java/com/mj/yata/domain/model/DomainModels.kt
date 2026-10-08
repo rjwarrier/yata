@@ -188,7 +188,10 @@ data class Task(
     val estimateMinutes: Int? = null,
     // Number of times this task's due date has been moved later. First assigning a due date,
     // clearing it, or moving it earlier does not count as a postponement.
-    val postponementCount: Int = 0
+    val postponementCount: Int = 0,
+    // Whole minutes logged with the focus timer, compared against [estimateMinutes] on Analytics.
+    // A recurring task's live row starts each occurrence at 0; completed instances keep theirs.
+    val trackedMinutes: Int = 0
 )
 
 /**

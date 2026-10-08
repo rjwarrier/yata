@@ -1684,4 +1684,14 @@
     <string name="task_template_saved">Plantilla guardada</string>
     <string name="task_template_palette_subtitle">Plantilla</string>
     <string name="task_template_delete_title">¿Eliminar la plantilla «%1$s»?</string>
+    <string name="task_detail_tracked">Registrado: %1$s</string>
+    <string name="task_detail_tracked_of_estimate">Registrado: %1$s de %2$s</string>
+    <string name="task_detail_timer_start">Iniciar temporizador</string>
+    <string name="task_detail_timer_stop">Detener · %1$s</string>
+    <string name="analytics_tracked_vs_estimate">%1$s registrado frente a %2$s estimado</string>
+    <string name="settings_calendar_events">Mostrar eventos del calendario</string>
+    <string name="settings_calendar_events_summary">Muestra eventos de los calendarios del dispositivo en Próximas y Próximos 10 días. Solo lectura; nada sale de tu teléfono.</string>
+    <string name="settings_calendar_permission_denied">No se permitió el acceso al calendario. Actívalo para YATA en los ajustes del sistema para ver eventos.</string>
+    <string name="calendar_event_all_day">Todo el día</string>
+    <string name="calendar_event_no_title">(Sin título)</string>
 </resources>

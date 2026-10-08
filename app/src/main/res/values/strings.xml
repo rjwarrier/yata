@@ -1808,4 +1808,14 @@
     <string name="task_template_saved">Template saved</string>
     <string name="task_template_palette_subtitle">Template</string>
     <string name="task_template_delete_title">Delete template “%1$s”?</string>
+    <string name="task_detail_tracked">Tracked %1$s</string>
+    <string name="task_detail_tracked_of_estimate">Tracked %1$s of %2$s</string>
+    <string name="task_detail_timer_start">Start timer</string>
+    <string name="task_detail_timer_stop">Stop · %1$s</string>
+    <string name="analytics_tracked_vs_estimate">%1$s tracked vs %2$s estimated</string>
+    <string name="settings_calendar_events">Show calendar events</string>
+    <string name="settings_calendar_events_summary">Lists events from your device calendars in Upcoming and Next 10 days. Read-only; nothing leaves your phone.</string>
+    <string name="settings_calendar_permission_denied">Calendar access wasn\'t allowed. Turn it on for YATA in system settings to show events.</string>
+    <string name="calendar_event_all_day">All day</string>
+    <string name="calendar_event_no_title">(No title)</string>
 </resources>

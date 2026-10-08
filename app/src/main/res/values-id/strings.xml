@@ -1638,4 +1638,14 @@
     <string name="task_template_saved">Templat disimpan</string>
     <string name="task_template_palette_subtitle">Templat</string>
     <string name="task_template_delete_title">Hapus templat “%1$s”?</string>
+    <string name="task_detail_tracked">Tercatat: %1$s</string>
+    <string name="task_detail_tracked_of_estimate">Tercatat: %1$s dari %2$s</string>
+    <string name="task_detail_timer_start">Mulai timer</string>
+    <string name="task_detail_timer_stop">Berhenti · %1$s</string>
+    <string name="analytics_tracked_vs_estimate">%1$s tercatat vs %2$s perkiraan</string>
+    <string name="settings_calendar_events">Tampilkan acara kalender</string>
+    <string name="settings_calendar_events_summary">Menampilkan acara dari kalender perangkat di Mendatang dan 10 hari ke depan. Hanya baca; tidak ada yang keluar dari ponsel Anda.</string>
+    <string name="settings_calendar_permission_denied">Akses kalender tidak diizinkan. Aktifkan untuk YATA di pengaturan sistem untuk menampilkan acara.</string>
+    <string name="calendar_event_all_day">Sepanjang hari</string>
+    <string name="calendar_event_no_title">(Tanpa judul)</string>
 </resources>
