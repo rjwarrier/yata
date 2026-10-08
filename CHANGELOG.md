@@ -50,6 +50,10 @@ test-only changes belong in the commit message, not here, unless they change beh
 - Restoring or syncing a backup with more than about 1,000 tasks no longer fails on Android 11
   and older, which cap how many items a single database lookup can name.
 - Archived tasks no longer start sending reminders again after the phone restarts.
+- On-device backups now keep a copy from each of the last seven days, plus the three most recent.
+  Before, they kept only the last five, and since a backup runs shortly after every edit, a few edits
+  could push out every copy from before a mistake. A backup is also skipped when nothing has changed
+  since the last one, and backup files are about a third smaller.
 
 ### Changed
 - Saving, completing or deleting a task no longer stalls the UI on disk writes, and large task
@@ -68,7 +72,7 @@ test-only changes belong in the commit message, not here, unless they change beh
   many tasks at once, and syncs that remove tasks, now apply in one step instead of task by task.
 - The Clear action on a filter banner (shown after tapping an Overdue, High priority or Due today
   count) has a full-size touch target and is easier to hit.
-- The app download is several megabytes smaller, and PDF exports finish sooner. Exported PDFs no
+- The app download is about 40% smaller (17.6 MB to 10.1 MB), and PDF exports finish sooner. Exported PDFs no
   longer fill in the title, author and keyword fields of the document's properties.
 
 ## [0.95.1] - 2026-09-14
