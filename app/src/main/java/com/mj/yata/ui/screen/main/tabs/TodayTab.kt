@@ -809,7 +809,11 @@ fun TodayTab(
                         onQuickSnooze = { preset -> onQuickSnooze(task.id, preset) },
                         onRenameTask = { title -> onRenameTask(task.id, title) },
                         focusTimerStartedAt = focusTimer?.takeIf { it.taskId == task.id }?.startedAt,
-                        onStartFocusTimer = { onStartFocusTimer(task) },
+                        // Play only on estimated tasks, to keep the rest of Today's rows quiet; the
+                        // running chip still shows on any task, however its timer was started.
+                        onStartFocusTimer = if (task.estimateMinutes != null) {
+                            { onStartFocusTimer(task) }
+                        } else null,
                         onStopFocusTimer = onStopFocusTimer,
                         density = taskRowDensity,
                         onSwipeToDelete = { onSwipeToDelete(task.id) },
