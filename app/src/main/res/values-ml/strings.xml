@@ -1077,6 +1077,7 @@
         <item quantity="other">%1$d പങ്കിട്ട ടാസ്കുകൾ ഇൻബോക്സിലേക്ക് ചേർത്തു</item>
     </plurals>
     <string name="task_transfer_import_failed">ഈ YATA ടാസ്ക് ലിങ്ക് ഇറക്കുമതി ചെയ്യാനായില്ല.</string>
+    <string name="ics_import_no_events">ഈ കലണ്ടർ ഫയലിൽ ഇവന്റുകളൊന്നും കണ്ടെത്തിയില്ല.</string>
     <string name="shared_task_import_title">പങ്കിട്ട ടാസ്ക്</string>
     <string name="shared_task_import_create_missing_title">കാണാത്ത ഇനങ്ങൾ സൃഷ്ടിക്കണോ?</string>
     <string name="shared_task_import_create_missing_message">%1$s ഇതുവരെ നിങ്ങളുടെ വർക്ക്‌സ്‌പെയ്‌സിൽ ഇല്ല. അവ സൃഷ്ടിച്ച് ഈ ടാസ്ക് ചേർക്കണോ?</string>

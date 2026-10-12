@@ -823,6 +823,7 @@
         <item quantity="other">%1$d tarefas compartilhadas adicionadas à Caixa de entrada</item>
     </plurals>
     <string name="task_transfer_import_failed">Não foi possível importar este link de tarefa do YATA.</string>
+    <string name="ics_import_no_events">Nenhum evento encontrado neste arquivo de calendário.</string>
     <string name="shared_task_import_title">Tarefa compartilhada</string>
     <string name="shared_task_import_create_missing_title">Criar itens ausentes?</string>
     <string name="shared_task_import_create_missing_message">%1$s ainda não existem no seu espaço de trabalho. Criar e adicionar esta tarefa?</string>

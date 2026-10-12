@@ -993,6 +993,7 @@
         <item quantity="other">%1$d sarcini partajate adăugate în Inbox</item>
     </plurals>
     <string name="task_transfer_import_failed">Acest link de sarcină YATA nu a putut fi importat.</string>
+    <string name="ics_import_no_events">Nu s-au găsit evenimente în acest fișier de calendar.</string>
     <string name="shared_task_import_title">Sarcină partajată</string>
     <string name="shared_task_import_create_missing_title">Creați elementele lipsă?</string>
     <string name="shared_task_import_create_missing_message">%1$s nu există încă în spațiul tău de lucru. Le creăm și adăugăm această sarcină?</string>

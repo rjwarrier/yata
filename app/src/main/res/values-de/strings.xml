@@ -1209,6 +1209,7 @@
         <item quantity="other">%1$d geteilte Aufgaben zum Eingang hinzugefügt</item>
     </plurals>
     <string name="task_transfer_import_failed">Dieser YATA-Aufgabenlink konnte nicht importiert werden.</string>
+    <string name="ics_import_no_events">In dieser Kalenderdatei wurden keine Termine gefunden.</string>
     <string name="shared_task_import_title">Geteilte Aufgabe</string>
     <string name="shared_task_import_create_missing_title">Fehlende Elemente erstellen?</string>
     <string name="shared_task_import_create_missing_message">%1$s gibt es in deinem Arbeitsbereich noch nicht. Erstellen und diese Aufgabe hinzufügen?</string>

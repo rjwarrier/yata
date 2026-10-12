@@ -1077,6 +1077,7 @@
         <item quantity="other">%1$d பகிரப்பட்ட பணிகள் உள்பெட்டியில் சேர்க்கப்பட்டன</item>
     </plurals>
     <string name="task_transfer_import_failed">இந்த YATA பணி இணைப்பை இறக்குமதி செய்ய முடியவில்லை.</string>
+    <string name="ics_import_no_events">இந்த நாட்காட்டி கோப்பில் நிகழ்வுகள் எதுவும் இல்லை.</string>
     <string name="shared_task_import_title">பகிரப்பட்ட பணி</string>
     <string name="shared_task_import_create_missing_title">இல்லாத உருப்படிகளை உருவாக்கவா?</string>
     <string name="shared_task_import_create_missing_message">%1$s இன்னும் உங்கள் பணியிடத்தில் இல்லை. அவற்றை உருவாக்கி இந்தப் பணியைச் சேர்க்கவா?</string>

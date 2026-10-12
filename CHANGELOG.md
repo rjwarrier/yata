@@ -16,6 +16,10 @@ test-only changes belong in the commit message, not here, unless they change beh
 ## [Unreleased]
 
 ### Added
+- Calendar events become tasks: share an event from a calendar app, or open an `.ics`/`.vcs`
+  file, and YATA opens a new task with the event's title, start date and time, and description
+  as notes, ready to edit before saving. A file with several events shows the import preview,
+  where each event has a checkbox so you can untick the ones you don't want before importing.
 - A "Support Dev" button in Settings → Help & About opens the developer's Buy Me a Coffee page.
 - Snoozing or rescheduling tasks can be undone: an Undo snackbar puts back the previous date,
   time and postponement count, while keeping any other edits made in the meantime.

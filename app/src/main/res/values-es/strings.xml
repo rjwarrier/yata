@@ -423,6 +423,7 @@
         <item quantity="other">Se añadieron %1$d tareas compartidas a la bandeja de entrada</item>
     </plurals>
     <string name="task_transfer_import_failed">No se pudo importar este enlace de tarea de YATA.</string>
+    <string name="ics_import_no_events">No se encontraron eventos en este archivo de calendario.</string>
     <string name="shared_task_import_title">Tarea compartida</string>
     <string name="shared_task_import_create_missing_title">¿Crear los elementos que faltan?</string>
     <string name="shared_task_import_create_missing_message">%1$s aún no existen en tu espacio de trabajo. ¿Los creamos y añadimos esta tarea?</string>

@@ -823,6 +823,7 @@
         <item quantity="other">%1$d tâches partagées ajoutées à la boîte de réception</item>
     </plurals>
     <string name="task_transfer_import_failed">Impossible d\'importer ce lien de tâche YATA.</string>
+    <string name="ics_import_no_events">Aucun événement trouvé dans ce fichier d\'agenda.</string>
     <string name="shared_task_import_title">Tâche partagée</string>
     <string name="shared_task_import_create_missing_title">Créer les éléments manquants ?</string>
     <string name="shared_task_import_create_missing_message">%1$s n\'existent pas encore dans votre espace de travail. Les créer et ajouter cette tâche ?</string>

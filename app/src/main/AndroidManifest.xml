@@ -103,6 +103,17 @@
                     android:host="ranjithj.in"
                     android:pathPrefix="/yata/i" />
             </intent-filter>
+            <!-- Calendar events: opening an .ics/.vcs file, or sharing an event from a calendar
+                 app, opens a new task prefilled from it (util/export/IcsTaskImport.kt). Matching
+                 on MIME type alone also matches content:// and file:// data. -->
+            <intent-filter android:label="@string/share_to_task_label">
+                <action android:name="android.intent.action.VIEW" />
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/calendar" />
+                <data android:mimeType="text/x-vcalendar" />
+                <data android:mimeType="application/ics" />
+            </intent-filter>
             <meta-data
                 android:name="android.app.shortcuts"
                 android:resource="@xml/shortcuts" />

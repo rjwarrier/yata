@@ -1077,6 +1077,7 @@
         <item quantity="other">%1$d શેર કરેલ ટાસ્ક ઇનબોક્સમાં ઉમેરાયા</item>
     </plurals>
     <string name="task_transfer_import_failed">આ YATA ટાસ્ક લિંક આયાત કરી શકાઈ નથી.</string>
+    <string name="ics_import_no_events">આ કૅલેન્ડર ફાઇલમાં કોઈ ઇવેન્ટ મળી નથી.</string>
     <string name="shared_task_import_title">શેર કરેલ ટાસ્ક</string>
     <string name="shared_task_import_create_missing_title">ખૂટતી વસ્તુઓ બનાવવી છે?</string>
     <string name="shared_task_import_create_missing_message">%1$s હજુ તમારા વર્કસ્પેસમાં નથી. તે બનાવીને આ ટાસ્ક ઉમેરવો છે?</string>

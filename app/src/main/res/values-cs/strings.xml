@@ -993,6 +993,7 @@
         <item quantity="other">Do schránky přidáno %1$d sdílených úkolů</item>
     </plurals>
     <string name="task_transfer_import_failed">Tento odkaz na úkol YATA se nepodařilo importovat.</string>
+    <string name="ics_import_no_events">V tomto souboru kalendáře nebyly nalezeny žádné události.</string>
     <string name="shared_task_import_title">Sdílený úkol</string>
     <string name="shared_task_import_create_missing_title">Vytvořit chybějící položky?</string>
     <string name="shared_task_import_create_missing_message">%1$s zatím nejsou ve vašem pracovním prostoru. Vytvořit je a přidat tento úkol?</string>

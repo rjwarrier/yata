@@ -1077,6 +1077,7 @@
         <item quantity="other">%1$d ಹಂಚಿಕೊಂಡ ಕಾರ್ಯಗಳನ್ನು ಇನ್‌ಬಾಕ್ಸ್‌ಗೆ ಸೇರಿಸಲಾಗಿದೆ</item>
     </plurals>
     <string name="task_transfer_import_failed">ಈ YATA ಕಾರ್ಯ ಲಿಂಕ್ ಅನ್ನು ಆಮದು ಮಾಡಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ.</string>
+    <string name="ics_import_no_events">ಈ ಕ್ಯಾಲೆಂಡರ್ ಫೈಲ್‌ನಲ್ಲಿ ಯಾವುದೇ ಈವೆಂಟ್‌ಗಳು ಕಂಡುಬಂದಿಲ್ಲ.</string>
     <string name="shared_task_import_title">ಹಂಚಿಕೊಂಡ ಕಾರ್ಯ</string>
     <string name="shared_task_import_create_missing_title">ಕಾಣೆಯಾದ ಐಟಂಗಳನ್ನು ರಚಿಸುವುದೇ?</string>
     <string name="shared_task_import_create_missing_message">%1$s ಇನ್ನೂ ನಿಮ್ಮ ವರ್ಕ್‌ಸ್ಪೇಸ್‌ನಲ್ಲಿ ಇಲ್ಲ. ಅವುಗಳನ್ನು ರಚಿಸಿ ಈ ಕಾರ್ಯವನ್ನು ಸೇರಿಸುವುದೇ?</string>

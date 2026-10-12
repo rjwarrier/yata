@@ -59,9 +59,14 @@ import com.mj.yata.util.PlainTextImporter
 import com.mj.yata.util.export.TaskTransferLinkError
 import com.mj.yata.util.export.TaskTransferLinkException
 import com.mj.yata.util.export.TaskTransferImporter
+import com.mj.yata.util.export.buildCalendarImportLink
+import com.mj.yata.util.export.isCalendarImportIntent
 import com.mj.yata.util.export.isTaskTransferUri
+import com.mj.yata.util.export.readCalendarText
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -486,8 +491,24 @@ class MainActivity : AppCompatActivity() {
                         // relevant screen if launched from a long-press launcher shortcut.
                         LaunchedEffect(currentIntent) {
                             val intent = currentIntent ?: return@LaunchedEffect
-                            val importUri = intent.data?.takeIf { isTaskTransferUri(it) }
-                            if (intent.action == Intent.ACTION_VIEW && importUri != null) {
+                            // A shared calendar event or opened .ics file is re-encoded as a task
+                            // link (see IcsTaskImport), so it gets the same validation and review.
+                            val importUri = if (isCalendarImportIntent(this@MainActivity, intent)) {
+                                withContext(Dispatchers.IO) {
+                                    runCatching {
+                                        readCalendarText(this@MainActivity, intent)?.let(::buildCalendarImportLink)
+                                    }.onFailure { Log.w("MainActivity", "Calendar import failed", it) }.getOrNull()
+                                }?.let(android.net.Uri::parse) ?: run {
+                                    currentIntent = null
+                                    Toast.makeText(this@MainActivity, getString(R.string.ics_import_no_events), Toast.LENGTH_LONG).show()
+                                    return@LaunchedEffect
+                                }
+                            } else {
+                                intent.data?.takeIf { intent.action == Intent.ACTION_VIEW && isTaskTransferUri(it) }
+                            }
+                            if (importUri != null) {
+                                // Cleared only here, after any read above: currentIntent keys this
+                                // effect, so clearing it before suspending would cancel the read.
                                 currentIntent = null
                                 // Parsing is still read-only here: it only decides whether this
                                 // really is an importable YATA task link. The shared-import screen

@@ -1077,6 +1077,7 @@
         <item quantity="other">%1$d భాగస్వామ్యం చేసిన టాస్క్‌లు ఇన్‌బాక్స్‌కు జోడించబడ్డాయి</item>
     </plurals>
     <string name="task_transfer_import_failed">ఈ YATA టాస్క్ లింక్‌ను దిగుమతి చేయలేకపోయింది.</string>
+    <string name="ics_import_no_events">ఈ క్యాలెండర్ ఫైల్‌లో ఈవెంట్‌లు ఏవీ కనుగొనబడలేదు.</string>
     <string name="shared_task_import_title">భాగస్వామ్యం చేసిన టాస్క్</string>
     <string name="shared_task_import_create_missing_title">లేని అంశాలను సృష్టించాలా?</string>
     <string name="shared_task_import_create_missing_message">%1$s ఇంకా మీ వర్క్‌స్పేస్‌లో లేవు. వాటిని సృష్టించి ఈ టాస్క్‌ను జోడించాలా?</string>

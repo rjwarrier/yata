@@ -1077,6 +1077,7 @@
         <item quantity="other">%1$d सामायिक केलेली कार्ये इनबॉक्समध्ये जोडली</item>
     </plurals>
     <string name="task_transfer_import_failed">हा YATA कार्य दुवा आयात करता आला नाही.</string>
+    <string name="ics_import_no_events">या कॅलेंडर फाइलमध्ये कोणतेही इव्हेंट सापडले नाहीत.</string>
     <string name="shared_task_import_title">सामायिक केलेले कार्य</string>
     <string name="shared_task_import_create_missing_title">गहाळ आयटम तयार करायचे?</string>
     <string name="shared_task_import_create_missing_message">%1$s अजून तुमच्या वर्कस्पेसमध्ये नाहीत. ते तयार करून हे कार्य जोडायचे?</string>

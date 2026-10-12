@@ -1077,6 +1077,7 @@
         <item quantity="other">Naidagdag ang %1$d na ibinahaging gawain sa Inbox</item>
     </plurals>
     <string name="task_transfer_import_failed">Hindi ma-import ang link ng gawain ng YATA na ito.</string>
+    <string name="ics_import_no_events">Walang nakitang event sa calendar file na ito.</string>
     <string name="shared_task_import_title">Ibinahaging Gawain</string>
     <string name="shared_task_import_create_missing_title">Gawin ang mga nawawalang item?</string>
     <string name="shared_task_import_create_missing_message">Wala pa ang %1$s sa iyong workspace. Gawin ang mga ito at idagdag ang gawaing ito?</string>

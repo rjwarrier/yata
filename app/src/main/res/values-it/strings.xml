@@ -993,6 +993,7 @@
         <item quantity="other">%1$d attività condivise aggiunte alla Posta in arrivo</item>
     </plurals>
     <string name="task_transfer_import_failed">Impossibile importare questo link attività YATA.</string>
+    <string name="ics_import_no_events">Nessun evento trovato in questo file di calendario.</string>
     <string name="shared_task_import_title">Attività condivisa</string>
     <string name="shared_task_import_create_missing_title">Creare gli elementi mancanti?</string>
     <string name="shared_task_import_create_missing_message">%1$s non esistono ancora nel tuo spazio di lavoro. Crearli e aggiungere questa attività?</string>

@@ -16,7 +16,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -26,6 +27,7 @@ import androidx.compose.material.icons.filled.Inbox
 import androidx.compose.material.icons.filled.Today
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -49,6 +51,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontSynthesis
 import androidx.compose.ui.text.font.FontWeight
@@ -239,8 +242,11 @@ private fun MultiTaskImportPreview(
     val scope = rememberCoroutineScope()
     var importing by rememberSaveable { mutableStateOf(false) }
     var failed by rememberSaveable { mutableStateOf(false) }
-    val missing = remember(parsed, lists, projects, tags) {
-        parsed.missingStructure(lists, projects, tags)
+    // Positions in parsed.tasks the receiver kept ticked; everything starts included.
+    var selected by rememberSaveable(parsed) { mutableStateOf(parsed.tasks.indices.toSet()) }
+    val missing = remember(parsed, selected, lists, projects, tags) {
+        parsed.copy(tasks = parsed.tasks.filterIndexed { i, _ -> i in selected })
+            .missingStructure(lists, projects, tags)
     }
 
     Scaffold(
@@ -280,7 +286,7 @@ private fun MultiTaskImportPreview(
                             importing = true
                             failed = false
                             scope.launch {
-                                runCatching { taskTransferImporter.importFrom(importUri) }
+                                runCatching { taskTransferImporter.importFrom(importUri, selected) }
                                     .onSuccess(onImported)
                                     .onFailure {
                                         failed = true
@@ -288,7 +294,7 @@ private fun MultiTaskImportPreview(
                                     }
                             }
                         },
-                        enabled = !importing,
+                        enabled = !importing && selected.isNotEmpty(),
                         modifier = Modifier.weight(1f)
                     ) {
                         if (importing) {
@@ -318,7 +324,7 @@ private fun MultiTaskImportPreview(
             ) {
                 item(key = "summary") {
                     MultiTaskImportSummaryCard(
-                        taskCount = parsed.tasks.size,
+                        taskCount = selected.size,
                         copyStructure = parsed.copyStructure,
                         missing = missing,
                         failed = failed,
@@ -331,9 +337,12 @@ private fun MultiTaskImportPreview(
                             )
                     )
                 }
-                items(parsed.tasks, key = { it.title + it.hashCode().toString() }) { task ->
+                itemsIndexed(parsed.tasks, key = { index, _ -> index }) { index, task ->
                     SharedTaskPreviewCard(
                         task = task,
+                        checked = index in selected,
+                        enabled = !importing,
+                        onCheckedChange = { checked -> selected = if (checked) selected + index else selected - index },
                         modifier = Modifier
                             .fillMaxWidth()
                             .animateItem(
@@ -437,34 +446,28 @@ private fun MultiTaskImportSummaryCard(
 @Composable
 private fun SharedTaskPreviewCard(
     task: SharedTaskDraft,
+    checked: Boolean,
+    enabled: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Surface(
-        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.82f),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = if (checked) 0.82f else 0.4f),
         shape = RoundedCornerShape(22.dp),
         modifier = modifier
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+            modifier = Modifier
+                .toggleable(value = checked, enabled = enabled, role = Role.Checkbox, onValueChange = onCheckedChange)
+                .padding(horizontal = 16.dp, vertical = 14.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Surface(
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                    contentColor = MaterialTheme.colorScheme.primary,
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Inbox,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .padding(9.dp)
-                            .size(20.dp)
-                    )
-                }
+                // Whole card is the toggle target, so the box itself takes no clicks.
+                Checkbox(checked = checked, onCheckedChange = null, enabled = enabled)
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
                         text = task.title,

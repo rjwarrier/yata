@@ -1077,6 +1077,7 @@
         <item quantity="other">Kazi %1$d zilizoshirikiwa zimeongezwa kwenye Kikasha</item>
     </plurals>
     <string name="task_transfer_import_failed">Imeshindwa kuingiza kiungo hiki cha kazi cha YATA.</string>
+    <string name="ics_import_no_events">Hakuna matukio yaliyopatikana kwenye faili hili la kalenda.</string>
     <string name="shared_task_import_title">Kazi Iliyoshirikiwa</string>
     <string name="shared_task_import_create_missing_title">Unda vitu vinavyokosekana?</string>
     <string name="shared_task_import_create_missing_message">%1$s bado hazipo kwenye nafasi yako ya kazi. Uunde na uongeze kazi hii?</string>

@@ -993,6 +993,7 @@
         <item quantity="other">%1$d tugas yang dibagikan ditambahkan ke Kotak Masuk</item>
     </plurals>
     <string name="task_transfer_import_failed">Tidak dapat mengimpor tautan tugas YATA ini.</string>
+    <string name="ics_import_no_events">Tidak ada acara di file kalender ini.</string>
     <string name="shared_task_import_title">Tugas Dibagikan</string>
     <string name="shared_task_import_create_missing_title">Buat item yang belum ada?</string>
     <string name="shared_task_import_create_missing_message">%1$s belum ada di ruang kerja Anda. Buat dan tambahkan tugas ini?</string>

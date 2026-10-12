@@ -1319,6 +1319,7 @@
         <item quantity="other">%1$d shared tasks added to Inbox</item>
     </plurals>
     <string name="task_transfer_import_failed">Could not import this YATA task link.</string>
+    <string name="ics_import_no_events">No events found in this calendar file.</string>
     <string name="task_transfer_import_incomplete">This shared task link looks incomplete. Try opening it from the original message.</string>
     <string name="task_transfer_import_too_many_tasks">This shared task link contains too many tasks to import at once.</string>
     <string name="task_transfer_import_too_large">This shared task link is too large to import.</string>

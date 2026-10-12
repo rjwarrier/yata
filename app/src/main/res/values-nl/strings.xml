@@ -1101,6 +1101,7 @@
         <item quantity="other">%1$d gedeelde taken toegevoegd aan Inbox</item>
     </plurals>
     <string name="task_transfer_import_failed">Deze YATA-taaklink kon niet worden geïmporteerd.</string>
+    <string name="ics_import_no_events">Geen afspraken gevonden in dit agendabestand.</string>
     <string name="shared_task_import_title">Gedeelde taak</string>
     <string name="shared_task_import_create_missing_title">Ontbrekende items aanmaken?</string>
     <string name="shared_task_import_create_missing_message">%1$s bestaan nog niet in je werkruimte. Aanmaken en deze taak toevoegen?</string>

@@ -1077,6 +1077,7 @@
         <item quantity="other">%1$d ਸਾਂਝੇ ਕੀਤੇ ਕਾਰਜ ਇਨਬਾਕਸ ਵਿੱਚ ਜੋੜੇ ਗਏ</item>
     </plurals>
     <string name="task_transfer_import_failed">ਇਹ YATA ਕਾਰਜ ਲਿੰਕ ਆਯਾਤ ਨਹੀਂ ਕੀਤਾ ਜਾ ਸਕਿਆ।</string>
+    <string name="ics_import_no_events">ਇਸ ਕੈਲੰਡਰ ਫ਼ਾਈਲ ਵਿੱਚ ਕੋਈ ਇਵੈਂਟ ਨਹੀਂ ਮਿਲਿਆ।</string>
     <string name="shared_task_import_title">ਸਾਂਝਾ ਕੀਤਾ ਕਾਰਜ</string>
     <string name="shared_task_import_create_missing_title">ਗੁੰਮ ਆਈਟਮਾਂ ਬਣਾਉਣੀਆਂ ਹਨ?</string>
     <string name="shared_task_import_create_missing_message">%1$s ਅਜੇ ਤੁਹਾਡੇ ਵਰਕਸਪੇਸ ਵਿੱਚ ਨਹੀਂ ਹਨ। ਇਹਨਾਂ ਨੂੰ ਬਣਾ ਕੇ ਇਹ ਕਾਰਜ ਜੋੜਨਾ ਹੈ?</string>

@@ -79,8 +79,8 @@ private const val MAX_SUBTASKS_PER_TASK = 100
 // compressed link could spend its whole decoded budget on one field). No legitimate share needs a
 // title/name this long, and without this check one field could bloat a row past what the rest of
 // the app assumes for a piece of task/entity text.
-private const val MAX_TEXT_FIELD_LENGTH = 2_000
-private const val MAX_NOTES_FIELD_LENGTH = 20_000
+internal const val MAX_TEXT_FIELD_LENGTH = 2_000
+internal const val MAX_NOTES_FIELD_LENGTH = 20_000
 
 private val PRIORITIES = listOf("none", "low", "med", "high")
 
@@ -784,14 +784,17 @@ private fun JSONArray?.entityRows(build: (JSONArray) -> SharedEntityRef): List<S
 class TaskTransferImporter @Inject constructor(
     private val repository: YataRepository
 ) {
-    /** Imports every task a link carries. Used for multi-task links; a single-task link goes
+    /** Imports the tasks a link carries — all of them, or only the positions in [include] when the
+     * receiver unticked some in the preview. Used for multi-task links; a single-task link goes
      * through the prefilled editor instead, so the user reviews it before anything is written. */
-    suspend fun importFrom(uri: Uri): TaskTransferImportResult {
+    suspend fun importFrom(uri: Uri, include: Set<Int>? = null): TaskTransferImportResult {
         // Parsing happens in full before the first write. Previously the structure dictionaries
         // were imported and only then was the task list checked, so a link carrying structure but
         // no usable task created lists, projects, tags and people and *then* reported failure —
         // leaving the receiver with entities they never asked for and no way to trace them.
-        val parsed = parseTransferLink(uri)
+        val parsed = parseTransferLink(uri).let { all ->
+            if (include == null) all else all.copy(tasks = all.tasks.filterIndexed { i, _ -> i in include })
+        }
         val tasks = materialise(parsed)
         repository.upsertTasks(tasks, notify = false)
         repository.notifyTasksChanged()
