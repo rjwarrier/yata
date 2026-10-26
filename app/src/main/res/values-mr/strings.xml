@@ -1503,6 +1503,10 @@
         <item quantity="one">%1$d मुदत उलटलेले खुले कार्य डुप्लिकेट करते, त्याची देय तारीख भविष्यात येईपर्यंत महिना-महिना पुढे नेते. पुनरावृत्ती होणारी कार्ये वगळली जातात.</item>
         <item quantity="other">%1$d मुदत उलटलेली खुली कार्ये डुप्लिकेट करते, प्रत्येकाची देय तारीख भविष्यात येईपर्यंत महिना-महिना पुढे नेते. पुनरावृत्ती होणारी कार्ये वगळली जातात.</item>
     </plurals>
+    <plurals name="projects_add_to_group_title">
+        <item quantity="one">%1$d प्रकल्प गटात जोडा</item>
+        <item quantity="other">%1$d प्रकल्प गटात जोडा</item>
+    </plurals>
     <plurals name="next_days_title">
         <item quantity="one">पुढील %1$d दिवस</item>
         <item quantity="other">पुढील %1$d दिवस</item>

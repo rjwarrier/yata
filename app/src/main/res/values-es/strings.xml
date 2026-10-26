@@ -661,6 +661,10 @@
         <item quantity="one">Duplica %1$d tarea abierta atrasada y mueve su fecha límite mes a mes hasta que quede en el futuro. Las tareas recurrentes se omiten.</item>
         <item quantity="other">Duplica %1$d tareas abiertas atrasadas y mueve cada fecha límite mes a mes hasta que quede en el futuro. Las tareas recurrentes se omiten.</item>
     </plurals>
+    <plurals name="projects_add_to_group_title">
+        <item quantity="one">Añadir %1$d proyecto al grupo</item>
+        <item quantity="other">Añadir %1$d proyectos al grupo</item>
+    </plurals>
     <plurals name="next_days_title">
         <item quantity="one">Próximo %1$d día</item>
         <item quantity="other">Próximos %1$d días</item>

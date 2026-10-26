@@ -7,6 +7,8 @@ import com.mj.yata.data.github.GitHubSyncManager
 import com.mj.yata.data.local.backup.LocalBackupManager
 import com.mj.yata.data.sftp.SftpBackupManager
 import com.mj.yata.data.sftp.SftpConnectionTestResult
+import com.mj.yata.data.sync.SnapshotSyncEngine
+import com.mj.yata.util.AutoBackupGate
 import android.content.Context
 import android.util.Log
 import com.mj.yata.data.backup.UnifiedBackupWorker
@@ -54,6 +56,7 @@ class BackupOperations @Inject constructor(
     private val sftpBackupManager: SftpBackupManager,
     private val ftpBackupManager: FtpBackupManager,
     private val gitHubSyncManager: GitHubSyncManager,
+    private val snapshotSyncEngine: SnapshotSyncEngine,
     private val userPreferences: UserPreferences,
     private val operationHistoryStore: OperationHistoryStore,
     @ApplicationContext private val context: Context
@@ -143,6 +146,33 @@ class BackupOperations @Inject constructor(
         if (userPreferences.localBackupEnabledFlow.first()) {
             add(attempt(BackupDestination.LOCAL) { localBackupManager.backupNow() })
         }
+    }
+
+    /**
+     * [backupAllConfigured], but for `UnifiedBackupWorker`'s periodic run specifically: returns
+     * `null` instead of running anything when nothing in the portable snapshot has changed since
+     * the last time this settled (see [AutoBackupGate]) - every enabled destination would otherwise
+     * re-upload/re-write a byte-identical copy on every scheduled tick regardless of whether the
+     * user touched the app since the last one. Never call this for a manual "sync now" or for the
+     * debounced post-edit backup - both of those only run because something *did* change, so there
+     * is nothing to short-circuit and skipping them would just make a real action silently do
+     * nothing.
+     *
+     * The fingerprint is [SnapshotSyncEngine.localCanonicalHash] - the same normalized, portable-
+     * settings-only hash GitHub sync already uses to detect "nothing to publish" - so this adds no
+     * second notion of "has anything changed" to keep in sync with the first.
+     */
+    suspend fun runScheduledBackupIfNeeded(remoteSyncRunReason: String): List<BackupRunResult>? {
+        val now = System.currentTimeMillis()
+        val fingerprint = snapshotSyncEngine.localCanonicalHash()
+        val skip = AutoBackupGate.shouldSkip(
+            lastFingerprint = userPreferences.autoBackupLastFingerprintFlow.first(),
+            currentFingerprint = fingerprint
+        )
+        if (skip) return null
+        val results = backupAllConfigured(remoteSyncRunReason = remoteSyncRunReason)
+        userPreferences.setAutoBackupSettledState(fingerprint, now)
+        return results
     }
 
     /**

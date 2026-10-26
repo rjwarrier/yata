@@ -16,6 +16,9 @@ test-only changes belong in the commit message, not here, unless they change beh
 ## [Unreleased]
 
 ### Added
+- Projects can be organized into groups, the same way Tags and People already are: create a group
+  from a project's editor or bulk-assign several projects to one from the Projects tab's selection
+  toolbar. A project's group shows as a label on its card.
 - A "Support Dev" button in Settings → Help & About opens the developer's Buy Me a Coffee page.
 - Snoozing or rescheduling tasks can be undone: an Undo snackbar puts back the previous date,
   time and postponement count, while keeping any other edits made in the meantime.
@@ -41,6 +44,10 @@ test-only changes belong in the commit message, not here, unless they change beh
   the work it used to on each keystroke.
 - Snooze, bulk edits and duplicate act on just the selected tasks instead of reloading the whole
   task list first, and restoring or syncing a large backup runs far fewer database lookups.
+- The "Floating bottom nav" appearance option now shows a centered floating capsule bar instead of
+  a bordered variant of the full-width one.
+- Scheduled background backups now skip entirely when nothing has changed since the last one, so
+  every enabled destination isn't re-written with a byte-identical copy on every periodic tick.
 
 ## [0.95.1] - 2026-09-14
 

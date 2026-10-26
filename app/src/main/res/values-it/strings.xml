@@ -1419,6 +1419,10 @@
         <item quantity="one">Duplica %1$d attività aperta in ritardo, spostando la sua scadenza avanti di un mese finché non ricade nel futuro. Le attività ricorrenti vengono saltate.</item>
         <item quantity="other">Duplica %1$d attività aperte in ritardo, spostando ciascuna scadenza avanti di un mese finché non ricade nel futuro. Le attività ricorrenti vengono saltate.</item>
     </plurals>
+    <plurals name="projects_add_to_group_title">
+        <item quantity="one">Aggiungi %1$d progetto al gruppo</item>
+        <item quantity="other">Aggiungi %1$d progetti al gruppo</item>
+    </plurals>
     <plurals name="next_days_title">
         <item quantity="one">Prossimo %1$d giorno</item>
         <item quantity="other">Prossimi %1$d giorni</item>

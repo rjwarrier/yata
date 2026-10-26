@@ -356,6 +356,10 @@
         <item quantity="one">Dupliceert %1$d achterstallige open taak, waarbij de vervaldatum maandelijks vooruit wordt geschoven tot deze in de toekomst valt. Terugkerende taken worden overgeslagen.</item>
         <item quantity="other">Dupliceert %1$d achterstallige open taken, waarbij elke vervaldatum maandelijks vooruit wordt geschoven tot deze in de toekomst valt. Terugkerende taken worden overgeslagen.</item>
     </plurals>
+    <plurals name="projects_add_to_group_title">
+        <item quantity="one">%1$d project aan groep toevoegen</item>
+        <item quantity="other">%1$d projecten aan groep toevoegen</item>
+    </plurals>
     <string name="search_in_list">Zoeken in %1$s</string>
     <string name="search_in_project">Zoeken in %1$s</string>
     <string name="search_in_tag">Zoeken in #%1$s</string>

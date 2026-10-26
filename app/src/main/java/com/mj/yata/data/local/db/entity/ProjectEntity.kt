@@ -1,9 +1,22 @@
 package com.mj.yata.data.local.db.entity
 
 import androidx.room.Entity
+import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "projects")
+@Entity(
+    tableName = "projects",
+    foreignKeys = [
+        ForeignKey(
+            entity = ProjectGroupEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["groupId"],
+            onDelete = ForeignKey.SET_NULL
+        )
+    ],
+    indices = [Index("groupId")]
+)
 data class ProjectEntity(
     @PrimaryKey val id: String,
     val name: String,
@@ -20,5 +33,6 @@ data class ProjectEntity(
     // Section names joined with U+001E (Record Separator) rather than a comma — unlike
     // commonTagIds these are free-typed display text, not IDs, so a comma could legitimately
     // appear in a name.
-    val sectionNames: String = ""
+    val sectionNames: String = "",
+    val groupId: String? = null
 )

@@ -1503,6 +1503,10 @@
         <item quantity="one">%1$d ਬਕਾਇਆ ਖੁੱਲ੍ਹੇ ਕਾਰਜ ਨੂੰ ਡੁਪਲੀਕੇਟ ਕਰਦਾ ਹੈ, ਇਸਦੀ ਨਿਯਤ ਮਿਤੀ ਭਵਿੱਖ ਵਿੱਚ ਆਉਣ ਤੱਕ ਮਹੀਨੇ ਅੱਗੇ ਵਧਾਉਂਦਾ ਹੈ। ਦੁਹਰਾਉਣ ਵਾਲੇ ਕਾਰਜ ਛੱਡੇ ਜਾਂਦੇ ਹਨ।</item>
         <item quantity="other">%1$d ਬਕਾਇਆ ਖੁੱਲ੍ਹੇ ਕਾਰਜਾਂ ਨੂੰ ਡੁਪਲੀਕੇਟ ਕਰਦਾ ਹੈ, ਹਰ ਨਿਯਤ ਮਿਤੀ ਭਵਿੱਖ ਵਿੱਚ ਆਉਣ ਤੱਕ ਮਹੀਨੇ ਅੱਗੇ ਵਧਾਉਂਦਾ ਹੈ। ਦੁਹਰਾਉਣ ਵਾਲੇ ਕਾਰਜ ਛੱਡੇ ਜਾਂਦੇ ਹਨ।</item>
     </plurals>
+    <plurals name="projects_add_to_group_title">
+        <item quantity="one">%1$d ਪ੍ਰੋਜੈਕਟ ਨੂੰ ਸਮੂਹ ਵਿੱਚ ਸ਼ਾਮਲ ਕਰੋ</item>
+        <item quantity="other">%1$d ਪ੍ਰੋਜੈਕਟਾਂ ਨੂੰ ਸਮੂਹ ਵਿੱਚ ਸ਼ਾਮਲ ਕਰੋ</item>
+    </plurals>
     <plurals name="next_days_title">
         <item quantity="one">ਅਗਲਾ %1$d ਦਿਨ</item>
         <item quantity="other">ਅਗਲੇ %1$d ਦਿਨ</item>

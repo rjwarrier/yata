@@ -87,6 +87,12 @@ interface YataRepository {
     suspend fun deleteProject(project: Project)
     suspend fun deleteProjectOnly(project: Project)
     suspend fun setProjectsArchived(ids: List<String>, archived: Boolean)
+    suspend fun setProjectsGroup(projectIds: List<String>, groupId: String?, pendingGroup: ProjectGroup? = null)
+
+    // Project groups
+    fun getProjectGroups(): Flow<List<ProjectGroup>>
+    suspend fun upsertProjectGroup(group: ProjectGroup)
+    suspend fun deleteProjectGroup(group: ProjectGroup)
 
     // Lists
     fun getLists(): Flow<List<YataList>>

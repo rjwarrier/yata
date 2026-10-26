@@ -1503,6 +1503,10 @@
         <item quantity="one">%1$d મુદતવીતી ખુલ્લા ટાસ્કને ડુપ્લિકેટ કરે છે, તેની નિયત તારીખ ભવિષ્યમાં ન આવે ત્યાં સુધી મહિનો-મહિનો આગળ ખસેડે છે. પુનરાવર્તિત ટાસ્ક છોડી દેવાય છે.</item>
         <item quantity="other">%1$d મુદતવીતી ખુલ્લા ટાસ્કને ડુપ્લિકેટ કરે છે, દરેકની નિયત તારીખ ભવિષ્યમાં ન આવે ત્યાં સુધી મહિનો-મહિનો આગળ ખસેડે છે. પુનરાવર્તિત ટાસ્ક છોડી દેવાય છે.</item>
     </plurals>
+    <plurals name="projects_add_to_group_title">
+        <item quantity="one">%1$d પ્રોજેક્ટને જૂથમાં ઉમેરો</item>
+        <item quantity="other">%1$d પ્રોજેક્ટ્સને જૂથમાં ઉમેરો</item>
+    </plurals>
     <plurals name="next_days_title">
         <item quantity="one">આગામી %1$d દિવસ</item>
         <item quantity="other">આગામી %1$d દિવસ</item>

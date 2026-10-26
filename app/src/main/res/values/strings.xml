@@ -470,6 +470,10 @@
         <item quantity="one">Duplicates %1$d overdue open task, moving its due date forward by month until it lands in the future. Recurring tasks are skipped.</item>
         <item quantity="other">Duplicates %1$d overdue open tasks, moving each due date forward by month until it lands in the future. Recurring tasks are skipped.</item>
     </plurals>
+    <plurals name="projects_add_to_group_title">
+        <item quantity="one">Add %1$d project to group</item>
+        <item quantity="other">Add %1$d projects to group</item>
+    </plurals>
 
     <string name="search_in_list">Search in %1$s</string>
     <string name="search_in_project">Search in %1$s</string>

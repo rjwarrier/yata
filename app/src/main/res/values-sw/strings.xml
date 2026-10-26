@@ -1503,6 +1503,10 @@
         <item quantity="one">Hunakili kazi %1$d wazi iliyochelewa, ikisogeza tarehe yake ya mwisho mbele kwa mwezi hadi ifike wakati ujao. Kazi zinazorudiarudia huruka.</item>
         <item quantity="other">Hunakili kazi %1$d wazi zilizochelewa, ikisogeza kila tarehe ya mwisho mbele kwa mwezi hadi ifike wakati ujao. Kazi zinazorudiarudia huruka.</item>
     </plurals>
+    <plurals name="projects_add_to_group_title">
+        <item quantity="one">Ongeza mradi %1$d kwenye kikundi</item>
+        <item quantity="other">Ongeza miradi %1$d kwenye kikundi</item>
+    </plurals>
     <plurals name="next_days_title">
         <item quantity="one">Siku %1$d Ijayo</item>
         <item quantity="other">Siku %1$d Zijazo</item>

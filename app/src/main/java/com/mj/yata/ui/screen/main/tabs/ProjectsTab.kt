@@ -37,16 +37,19 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mj.yata.R
 import com.mj.yata.domain.model.*
+import com.mj.yata.ui.sheets.GroupAssignSheet
 import com.mj.yata.ui.theme.LocalYataAccents
+import com.mj.yata.ui.util.rememberAdaptiveSheetMaxWidth
 import com.mj.yata.ui.widgets.DragDropReorderableColumn
 import com.mj.yata.ui.widgets.iconVectorFor
 import com.mj.yata.ui.widgets.PersonAvatar
 import com.mj.yata.ui.widgets.ProgressRing
 
-@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun ProjectsTab(
     projects: List<Project>,
+    projectGroups: List<ProjectGroup> = emptyList(),
     lists: List<YataList>,
     tasks: List<Task>,
     people: List<Person>,
@@ -61,12 +64,17 @@ fun ProjectsTab(
     onToggleProjectStar: (String) -> Unit,
     onProjectsReordered: (List<Project>) -> Unit = {},
     onBulkArchiveProjects: (List<String>) -> Unit = {},
+    onAssignProjectsGroup: (projectIds: List<String>, groupId: String) -> Unit = { _, _ -> },
+    onCreateProjectGroupAndAssign: (id: String, name: String, projectIds: List<String>) -> Unit = { _, _, _ -> },
     peopleEnabled: Boolean = true,
     useWideLayout: Boolean = false,
     /** See TodayTab's parameter of the same name. */
     initialDataLoaded: Boolean = true,
     modifier: Modifier = Modifier
 ) {
+    val groupsById = remember(projectGroups) { projectGroups.associateBy { it.id } }
+    var showGroupPicker by remember { mutableStateOf(false) }
+    val adaptiveSheetMaxWidth = rememberAdaptiveSheetMaxWidth()
     val activeProjects = remember(projects) { projects.activeProjects() }
     val archivedProjects = remember(projects) { projects.archivedProjects().sortedBy { it.sortOrder } }
     val sortedProjects = remember(activeProjects) { activeProjects.sortedBy { it.sortOrder } }
@@ -93,6 +101,9 @@ fun ProjectsTab(
                 selectedCount = selectedIds.size,
                 onCancel = { selectedIds.clear(); selectModeOn = false }
             ) {
+                TextButton(onClick = { showGroupPicker = true }, enabled = selectedIds.isNotEmpty()) {
+                    Text(stringResource(R.string.people_add_to_group))
+                }
                 IconButton(onClick = { showBulkDeleteDialog = true }, enabled = selectedIds.isNotEmpty()) {
                     Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.projects_archive_selected), tint = MaterialTheme.colorScheme.error)
                 }
@@ -165,6 +176,7 @@ fun ProjectsTab(
                         val archivedDoneTasks = archivedProjectTasks.count { it.done }
                         ProjectCard(
                             project = archivedProject,
+                            groupName = groupsById[archivedProject.groupId]?.name,
                             totalTasks = archivedProjectTasks.size,
                             doneTasks = archivedDoneTasks,
                             progress = if (archivedProjectTasks.isNotEmpty()) archivedDoneTasks.toFloat() / archivedProjectTasks.size else 0f,
@@ -187,6 +199,7 @@ fun ProjectsTab(
 
             ProjectCard(
                 project = project,
+                groupName = groupsById[project.groupId]?.name,
                 totalTasks = totalTasks,
                 doneTasks = doneTasks,
                 progress = progress,
@@ -225,11 +238,43 @@ fun ProjectsTab(
             }
         )
     }
+
+    if (showGroupPicker) {
+        ModalBottomSheet(
+            onDismissRequest = { showGroupPicker = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
+        ) {
+            GroupAssignSheet(
+                title = pluralStringResource(R.plurals.projects_add_to_group_title, selectedIds.size, selectedIds.size),
+                groups = projectGroups.sortedBy { it.name.lowercase() },
+                groupId = { it.id },
+                groupName = { it.name },
+                groupColorKey = { it.color },
+                onSelectGroup = { groupId ->
+                    onAssignProjectsGroup(selectedIds.toList(), groupId)
+                    selectedIds.clear()
+                    selectModeOn = false
+                    showGroupPicker = false
+                },
+                onCreateGroup = { id, name ->
+                    onCreateProjectGroupAndAssign(id, name, selectedIds.toList())
+                    selectedIds.clear()
+                    selectModeOn = false
+                    showGroupPicker = false
+                },
+                onDismiss = { showGroupPicker = false },
+                newGroupIdPrefix = "pjg_"
+            )
+        }
+    }
 }
 
 @Composable
 fun ProjectCard(
     project: Project,
+    groupName: String? = null,
     totalTasks: Int,
     doneTasks: Int,
     progress: Float,
@@ -311,6 +356,17 @@ fun ProjectCard(
                                 fontSize = 13.sp
                             )
                         )
+                        if (groupName != null) {
+                            Text(
+                                text = groupName,
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    color = projectColor,
+                                    fontWeight = FontWeight.Bold
+                                ),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
                     }
                 }
 

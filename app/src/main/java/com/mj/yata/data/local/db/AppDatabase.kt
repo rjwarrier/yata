@@ -21,10 +21,11 @@ import org.json.JSONArray
         TaskTagCrossRef::class,
         TagGroupEntity::class,
         PersonGroupEntity::class,
+        ProjectGroupEntity::class,
         SubtaskEntity::class,
         TaskCommentEntity::class
     ],
-    version = 33,
+    version = 34,
     // Exported to app/schemas — gives migration tests real historical schemas to open, and lets
     // purely-additive future changes use Room auto-migrations instead of hand-written ones.
     exportSchema = true
@@ -37,6 +38,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun taskDao(): TaskDao
     abstract fun tagGroupDao(): TagGroupDao
     abstract fun personGroupDao(): PersonGroupDao
+    abstract fun projectGroupDao(): ProjectGroupDao
     abstract fun subtaskDao(): SubtaskDao
     abstract fun taskCommentDao(): TaskCommentDao
 
@@ -376,6 +378,14 @@ abstract class AppDatabase : RoomDatabase() {
         val MIGRATION_32_33 = object : Migration(32, 33) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE tasks ADD COLUMN postponementCount INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
+        val MIGRATION_33_34 = object : Migration(33, 34) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("CREATE TABLE IF NOT EXISTS `project_groups` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `color` TEXT NOT NULL, PRIMARY KEY(`id`))")
+                db.execSQL("ALTER TABLE projects ADD COLUMN groupId TEXT DEFAULT NULL")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_projects_groupId` ON `projects` (`groupId`)")
             }
         }
     }

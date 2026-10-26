@@ -1419,6 +1419,10 @@
         <item quantity="one">Gecikmiş %1$d açık görevi, geleceğe düşene kadar bitiş tarihini ay ay ileri taşıyarak çoğaltır. Tekrarlanan görevler atlanır.</item>
         <item quantity="other">Gecikmiş %1$d açık görevi, her birinin bitiş tarihini geleceğe düşene kadar ay ay ileri taşıyarak çoğaltır. Tekrarlanan görevler atlanır.</item>
     </plurals>
+    <plurals name="projects_add_to_group_title">
+        <item quantity="one">%1$d projeyi gruba ekle</item>
+        <item quantity="other">%1$d projeyi gruba ekle</item>
+    </plurals>
     <plurals name="next_days_title">
         <item quantity="one">Sonraki %1$d Gün</item>
         <item quantity="other">Sonraki %1$d Gün</item>

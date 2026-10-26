@@ -1419,6 +1419,10 @@
         <item quantity="one">%1$d বকেয়া খোলা টাস্ক প্রতিলিপি করে, ভবিষ্যতে না পৌঁছানো পর্যন্ত এর শেষ তারিখ মাস অনুযায়ী এগিয়ে নেয়। পুনরাবৃত্ত টাস্ক এড়িয়ে যাওয়া হয়।</item>
         <item quantity="other">%1$d বকেয়া খোলা টাস্ক প্রতিলিপি করে, ভবিষ্যতে না পৌঁছানো পর্যন্ত প্রতিটির শেষ তারিখ মাস অনুযায়ী এগিয়ে নেয়। পুনরাবৃত্ত টাস্ক এড়িয়ে যাওয়া হয়।</item>
     </plurals>
+    <plurals name="projects_add_to_group_title">
+        <item quantity="one">%1$d প্রজেক্ট গ্রুপে যোগ করুন</item>
+        <item quantity="other">%1$d প্রজেক্ট গ্রুপে যোগ করুন</item>
+    </plurals>
     <plurals name="next_days_title">
         <item quantity="one">পরবর্তী %1$d দিন</item>
         <item quantity="other">পরবর্তী %1$d দিন</item>

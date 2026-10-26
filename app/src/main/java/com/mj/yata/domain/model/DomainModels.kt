@@ -41,7 +41,14 @@ data class Project(
     // or left over from before a rename/delete) falls into an implicit "No section" bucket rather
     // than being hidden. Empty means the project isn't using sections — ProjectDetailScreen then
     // renders its old flat Pending/Completed list unchanged.
-    val sectionNames: List<String> = emptyList()
+    val sectionNames: List<String> = emptyList(),
+    val groupId: String? = null
+)
+
+data class ProjectGroup(
+    val id: String,
+    val name: String,
+    val color: String // accentA - accentP
 )
 
 fun List<Project>.activeProjects(includeId: String? = null): List<Project> =

@@ -481,6 +481,31 @@ class YataRepositoryImpl @Inject constructor(
         widgetUpdater.notifyTasksChanged()
     }
 
+    override suspend fun setProjectsGroup(projectIds: List<String>, groupId: String?, pendingGroup: ProjectGroup?) {
+        if (projectIds.isEmpty()) return
+        db.withTransaction {
+            pendingGroup?.let { db.projectGroupDao().insert(it.toEntity()) }
+            db.projectDao().setGroup(projectIds, groupId)
+        }
+        widgetUpdater.notifyTasksChanged()
+    }
+
+    override fun getProjectGroups(): Flow<List<ProjectGroup>> = db.projectGroupDao().getAll()
+        .map { list -> list.map { it.toDomain() } }
+
+    override suspend fun upsertProjectGroup(group: ProjectGroup) {
+        db.projectGroupDao().insert(group.toEntity())
+        widgetUpdater.notifyTasksChanged()
+    }
+
+    override suspend fun deleteProjectGroup(group: ProjectGroup) {
+        db.withTransaction {
+            db.projectDao().clearGroup(group.id)
+            db.projectGroupDao().delete(group.toEntity())
+        }
+        widgetUpdater.notifyTasksChanged()
+    }
+
     override fun getLists(): Flow<List<YataList>> = db.listDao().getAll()
         .map { list -> list.map { it.toDomain() } }
 

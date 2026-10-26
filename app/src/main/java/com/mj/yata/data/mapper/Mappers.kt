@@ -123,7 +123,8 @@ fun ProjectEntity.toDomain() = Project(
     excludeFromToday = excludeFromToday,
     sortOrder = sortOrder,
     archived = archived,
-    sectionNames = if (sectionNames.isEmpty()) emptyList() else sectionNames.split(SECTION_NAME_DELIMITER)
+    sectionNames = if (sectionNames.isEmpty()) emptyList() else sectionNames.split(SECTION_NAME_DELIMITER),
+    groupId = groupId
 )
 fun Project.toEntity() = ProjectEntity(
     id = id,
@@ -138,7 +139,8 @@ fun Project.toEntity() = ProjectEntity(
     excludeFromToday = excludeFromToday,
     sortOrder = sortOrder,
     archived = archived,
-    sectionNames = sectionNames.joinToString(SECTION_NAME_DELIMITER.toString())
+    sectionNames = sectionNames.joinToString(SECTION_NAME_DELIMITER.toString()),
+    groupId = groupId
 )
 
 fun ListEntity.toDomain() = YataList(id, name, color, icon, starred, excludeFromToday, sortOrder, archived)
@@ -149,6 +151,9 @@ fun Tag.toEntity() = TagEntity(id, name, color, groupId, starred, hideCompletedB
 
 fun TagGroupEntity.toDomain() = TagGroup(id, name, color)
 fun TagGroup.toEntity() = TagGroupEntity(id, name, color)
+
+fun ProjectGroupEntity.toDomain() = ProjectGroup(id, name, color)
+fun ProjectGroup.toEntity() = ProjectGroupEntity(id, name, color)
 
 fun TaskEntity.toDomain(assigneeIds: List<String>, tagIds: List<String>, subtasks: List<Subtask> = emptyList()) = Task(
     id = id,

@@ -795,6 +795,47 @@ class AppDatabaseMigrationTest {
         }
     }
 
+    @Test
+    fun migrate33To34_addsProjectGroupsAndProjectGroupId() {
+        context.deleteDatabase(TEST_DB)
+        createVersion33ProjectsTableDatabase().apply {
+            execSQL(
+                "INSERT INTO `projects` (`id`,`name`,`color`,`icon`,`starred`,`archived`) " +
+                    "VALUES ('proj-yata','Yata','accentA','layers',0,0)"
+            )
+            close()
+        }
+
+        val configuration = SupportSQLiteOpenHelper.Configuration.builder(context)
+            .name(TEST_DB)
+            .callback(object : SupportSQLiteOpenHelper.Callback(34) {
+                override fun onCreate(db: SupportSQLiteDatabase) = Unit
+                override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) {
+                    AppDatabase.MIGRATION_33_34.migrate(db)
+                }
+            })
+            .build()
+
+        FrameworkSQLiteOpenHelperFactory().create(configuration).writableDatabase.apply {
+            query("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'project_groups'").use { cursor ->
+                assertTrue(cursor.moveToFirst())
+            }
+            query("PRAGMA table_info(`projects`)").use { cursor ->
+                val columnNames = mutableSetOf<String>()
+                while (cursor.moveToNext()) {
+                    columnNames += cursor.getString(cursor.getColumnIndexOrThrow("name"))
+                }
+                assertTrue(columnNames.contains("groupId"))
+            }
+            query("SELECT `name`, `groupId` FROM `projects` WHERE `id` = 'proj-yata'").use { cursor ->
+                assertTrue(cursor.moveToFirst())
+                assertEquals("Yata", cursor.getString(cursor.getColumnIndexOrThrow("name")))
+                assertTrue(cursor.isNull(cursor.getColumnIndexOrThrow("groupId")))
+            }
+            close()
+        }
+    }
+
     /** Minimal — only the `lists` table, since MIGRATION_21_22 only touches that one. */
     private fun createVersion21ListsTableDatabase(): SupportSQLiteDatabase {
         val configuration = SupportSQLiteOpenHelper.Configuration.builder(context)
@@ -857,6 +898,25 @@ class AppDatabaseMigrationTest {
                 override fun onCreate(db: SupportSQLiteDatabase) {
                     db.execSQL(
                         "CREATE TABLE IF NOT EXISTS `tasks` (`id` TEXT NOT NULL, `title` TEXT NOT NULL, `section` TEXT NOT NULL, `priority` TEXT NOT NULL, `flag` INTEGER NOT NULL, `done` INTEGER NOT NULL, PRIMARY KEY(`id`))"
+                    )
+                }
+                override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) = Unit
+            })
+            .build()
+        return FrameworkSQLiteOpenHelperFactory()
+            .create(configuration)
+            .writableDatabase
+    }
+
+    /** Minimal — only the `projects` table, since MIGRATION_33_34 only touches that one (plus
+     * creating `project_groups`, which doesn't need any pre-existing rows to migrate). */
+    private fun createVersion33ProjectsTableDatabase(): SupportSQLiteDatabase {
+        val configuration = SupportSQLiteOpenHelper.Configuration.builder(context)
+            .name(TEST_DB)
+            .callback(object : SupportSQLiteOpenHelper.Callback(33) {
+                override fun onCreate(db: SupportSQLiteDatabase) {
+                    db.execSQL(
+                        "CREATE TABLE IF NOT EXISTS `projects` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `color` TEXT NOT NULL, `icon` TEXT NOT NULL, `starred` INTEGER NOT NULL, `archived` INTEGER NOT NULL, PRIMARY KEY(`id`))"
                     )
                 }
                 override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) = Unit

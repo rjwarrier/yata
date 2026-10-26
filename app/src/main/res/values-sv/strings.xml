@@ -1419,6 +1419,10 @@
         <item quantity="one">Duplicerar %1$d försenad öppen uppgift och flyttar dess förfallodatum framåt månad för månad tills det hamnar i framtiden. Återkommande uppgifter hoppas över.</item>
         <item quantity="other">Duplicerar %1$d försenade öppna uppgifter och flyttar varje förfallodatum framåt månad för månad tills det hamnar i framtiden. Återkommande uppgifter hoppas över.</item>
     </plurals>
+    <plurals name="projects_add_to_group_title">
+        <item quantity="one">Lägg till %1$d projekt i grupp</item>
+        <item quantity="other">Lägg till %1$d projekt i grupp</item>
+    </plurals>
     <plurals name="next_days_title">
         <item quantity="one">Nästa %1$d dag</item>
         <item quantity="other">Nästa %1$d dagar</item>

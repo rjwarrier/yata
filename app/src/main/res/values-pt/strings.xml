@@ -317,6 +317,10 @@
         <item quantity="one">Duplica a tarefa aberta %1$d atrasada, avançando sua data de vencimento mês a mês até chegar no futuro. As tarefas recorrentes são ignoradas.</item>
         <item quantity="other">Duplica tarefas abertas %1$d atrasadas, avançando cada data de vencimento mês a mês até que chegue no futuro. As tarefas recorrentes são ignoradas.</item>
     </plurals>
+    <plurals name="projects_add_to_group_title">
+        <item quantity="one">Adicionar %1$d projeto ao grupo</item>
+        <item quantity="other">Adicionar %1$d projetos ao grupo</item>
+    </plurals>
     <string name="search_in_list">Pesquisar em %1$s</string>
     <string name="search_in_project">Pesquisar em %1$s</string>
     <string name="search_in_tag">Pesquisar em #%1$s</string>

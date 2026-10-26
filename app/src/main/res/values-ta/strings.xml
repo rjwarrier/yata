@@ -1503,6 +1503,10 @@
         <item quantity="one">அது எதிர்காலத்தில் விழும் வரை கடைசி தேதியை மாதம் மாதமாக முன்னோக்கி நகர்த்தி, தாமதமான %1$d நிலுவைப் பணியை நகலெடுக்கிறது. திரும்பும் பணிகள் தவிர்க்கப்படும்.</item>
         <item quantity="other">ஒவ்வொரு கடைசி தேதியும் எதிர்காலத்தில் விழும் வரை மாதம் மாதமாக முன்னோக்கி நகர்த்தி, தாமதமான %1$d நிலுவைப் பணிகளை நகலெடுக்கிறது. திரும்பும் பணிகள் தவிர்க்கப்படும்.</item>
     </plurals>
+    <plurals name="projects_add_to_group_title">
+        <item quantity="one">%1$d திட்டத்தை குழுவில் சேர்</item>
+        <item quantity="other">%1$d திட்டங்களை குழுவில் சேர்</item>
+    </plurals>
     <plurals name="next_days_title">
         <item quantity="one">அடுத்த %1$d நாள்</item>
         <item quantity="other">அடுத்த %1$d நாட்கள்</item>

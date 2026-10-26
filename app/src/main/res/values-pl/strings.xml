@@ -1419,6 +1419,10 @@
         <item quantity="one">Duplikuje %1$d zaległe otwarte zadanie, przesuwając jego termin do przodu o miesiąc, aż wypadnie w przyszłości. Zadania cykliczne są pomijane.</item>
         <item quantity="other">Duplikuje %1$d zaległych otwartych zadań, przesuwając każdy termin do przodu o miesiąc, aż wypadnie w przyszłości. Zadania cykliczne są pomijane.</item>
     </plurals>
+    <plurals name="projects_add_to_group_title">
+        <item quantity="one">Dodaj %1$d projekt do grupy</item>
+        <item quantity="other">Dodaj %1$d projektów do grupy</item>
+    </plurals>
     <plurals name="next_days_title">
         <item quantity="one">Następny %1$d dzień</item>
         <item quantity="other">Następne %1$d dni</item>

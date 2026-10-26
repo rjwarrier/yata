@@ -271,6 +271,7 @@ fun MainScreen(
     val tags = uiState.tags
     val tagGroups = uiState.tagGroups
     val personGroups = uiState.personGroups
+    val projectGroups = uiState.projectGroups
 
     // Preferences
     val userName = uiState.userName
@@ -1002,6 +1003,7 @@ fun MainScreen(
                         )
                         1 -> ProjectsTab(
                             projects = projects,
+                            projectGroups = projectGroups,
                             lists = lists,
                             tasks = tasks,
                             people = people,
@@ -1016,6 +1018,13 @@ fun MainScreen(
                             onToggleProjectStar = { viewModel.toggleProjectStarred(it) },
                             onProjectsReordered = { viewModel.commitProjectOrder(it) },
                             onBulkArchiveProjects = { viewModel.bulkArchiveProjects(it) },
+                            onAssignProjectsGroup = { ids, groupId -> viewModel.setProjectsGroup(ids, groupId) },
+                            onCreateProjectGroupAndAssign = { id, name, ids ->
+                                viewModel.createProjectGroupAndAssign(
+                                    com.mj.yata.domain.model.ProjectGroup(id = id, name = name, color = "accentA"),
+                                    ids
+                                )
+                            },
                             peopleEnabled = peopleFeatureEnabled,
                             useWideLayout = useWideNavigation,
                             initialDataLoaded = initialDataLoaded
@@ -1266,10 +1275,14 @@ fun MainScreen(
                 when (activeSheet) {
                     MainSheetType.NewProject -> ProjectEditorSheet(
                         tags = tags,
+                        groups = projectGroups,
                         existingNames = projects.map { it.name },
-                        onSave = { name, color, icon, due, commonTagIds, defaultReminder, description, excludeFromToday ->
-                            viewModel.addProject(name, color, icon, due, commonTagIds, defaultReminder, description, excludeFromToday)
+                        onSave = { name, color, icon, due, commonTagIds, defaultReminder, description, excludeFromToday, groupId ->
+                            viewModel.addProject(name, color, icon, due, commonTagIds, defaultReminder, description, excludeFromToday, groupId)
                             activeSheet = MainSheetType.None
+                        },
+                        onCreateGroup = { id, name, color ->
+                            viewModel.upsertProjectGroup(com.mj.yata.domain.model.ProjectGroup(id = id, name = name, color = color))
                         },
                         onDismiss = { activeSheet = MainSheetType.None }
                     )
@@ -1867,31 +1880,29 @@ fun CustomBottomNav(
     val isFloatingNav = com.mj.yata.ui.theme.LocalFloatingBottomNav.current
     val showLabels = com.mj.yata.ui.theme.LocalBottomNavLabelsEnabled.current
 
+    // The "Floating bottom nav" appearance setting gets its own presentation entirely — a
+    // centered capsule modeled on the sibling Vayana app's floating nav bar, rather than a
+    // variant of the full-width bar below. See FloatingBottomNav.kt.
+    if (isFloatingNav) {
+        com.mj.yata.ui.widgets.FloatingCapsuleBottomNav(
+            selectedTab = selectedTab,
+            todayBadgeCount = todayBadgeCount,
+            peopleEnabled = peopleEnabled,
+            tagsEnabled = tagsEnabled,
+            projectsEnabled = projectsEnabled,
+            todayEnabled = todayEnabled,
+            upcomingEnabled = upcomingEnabled,
+            onTabSelected = onTabSelected
+        )
+        return
+    }
+
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .then(
-                if (isFloatingNav) {
-                    Modifier
-                        .navigationBarsPadding()
-                        .padding(horizontal = 20.dp, vertical = 12.dp)
-                } else {
-                    Modifier
-                }
-            ),
+        modifier = Modifier.fillMaxWidth(),
         contentAlignment = Alignment.Center
     ) {
         Surface(
             modifier = when {
-                isFloatingNav -> Modifier
-                    .fillMaxWidth()
-                    .height(64.dp)
-                    .clip(RoundedCornerShape(32.dp))
-                    .border(
-                        width = 1.dp,
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
-                        shape = RoundedCornerShape(32.dp)
-                    )
                 isEnhancedM3 -> Modifier
                     .padding(horizontal = 16.dp, vertical = 8.dp)
                     .fillMaxWidth()
@@ -1915,17 +1926,15 @@ fun CustomBottomNav(
                     }
             },
             color = when {
-                isFloatingNav && isEnhancedM3 -> MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.9f)
-                isFloatingNav -> MaterialTheme.colorScheme.surfaceContainerHigh
                 isEnhancedM3 -> MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.88f)
                 else -> MaterialTheme.colorScheme.surfaceContainer
             },
-            shadowElevation = if (isFloatingNav) 6.dp else 0.dp
+            shadowElevation = 0.dp
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .then(if (isFloatingNav) Modifier else Modifier.navigationBarsPadding())
+                    .navigationBarsPadding()
                     .padding(vertical = 4.dp)
                     .onGloballyPositioned { containerCoords = it }
             ) {

@@ -422,6 +422,10 @@
         <item quantity="one">Dupliziert %1$d überfällige offene Aufgabe und verschiebt das Fälligkeitsdatum monatsweise nach vorn, bis es in der Zukunft liegt. Wiederkehrende Aufgaben werden übersprungen.</item>
         <item quantity="other">Dupliziert %1$d überfällige offene Aufgaben und verschiebt jedes Fälligkeitsdatum monatsweise nach vorn, bis es in der Zukunft liegt. Wiederkehrende Aufgaben werden übersprungen.</item>
     </plurals>
+    <plurals name="projects_add_to_group_title">
+        <item quantity="one">%1$d Projekt zur Gruppe hinzufügen</item>
+        <item quantity="other">%1$d Projekte zur Gruppe hinzufügen</item>
+    </plurals>
 
     <string name="search_in_list">In %1$s suchen</string>
     <string name="search_in_project">In %1$s suchen</string>

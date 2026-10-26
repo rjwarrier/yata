@@ -356,6 +356,10 @@
         <item quantity="one">%1$d समयसीमातीत खुले कार्य को डुप्लिकेट करता है, इसकी नियत तारीख को महीने-दर-महीने आगे बढ़ाते हुए जब तक वह भविष्य में न आ जाए। दोहराए जाने वाले कार्य छोड़े जाते हैं।</item>
         <item quantity="other">%1$d समयसीमातीत खुले कार्यों को डुप्लिकेट करता है, हर नियत तारीख को महीने-दर-महीने आगे बढ़ाते हुए जब तक वह भविष्य में न आ जाए। दोहराए जाने वाले कार्य छोड़े जाते हैं।</item>
     </plurals>
+    <plurals name="projects_add_to_group_title">
+        <item quantity="one">%1$d परियोजना को समूह में जोड़ें</item>
+        <item quantity="other">%1$d परियोजनाओं को समूह में जोड़ें</item>
+    </plurals>
     <string name="search_in_list">%1$s में खोजें</string>
     <string name="search_in_project">%1$s में खोजें</string>
     <string name="search_in_tag">#%1$s में खोजें</string>

@@ -70,6 +70,12 @@ interface ProjectDao {
 
     @Query("UPDATE projects SET archived = :archived WHERE id IN (:ids)")
     suspend fun setArchived(ids: List<String>, archived: Boolean)
+
+    @Query("UPDATE projects SET groupId = :groupId WHERE id IN (:projectIds)")
+    suspend fun setGroup(projectIds: List<String>, groupId: String?)
+
+    @Query("UPDATE projects SET groupId = NULL WHERE groupId = :groupId")
+    suspend fun clearGroup(groupId: String)
 }
 
 @Dao
@@ -159,6 +165,18 @@ interface PersonGroupDao {
 
     @Delete
     suspend fun delete(group: PersonGroupEntity)
+}
+
+@Dao
+interface ProjectGroupDao {
+    @Query("SELECT * FROM project_groups")
+    fun getAll(): Flow<List<ProjectGroupEntity>>
+
+    @Upsert
+    suspend fun insert(group: ProjectGroupEntity)
+
+    @Delete
+    suspend fun delete(group: ProjectGroupEntity)
 }
 
 @Dao

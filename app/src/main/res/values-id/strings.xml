@@ -1419,6 +1419,10 @@
         <item quantity="one">Menduplikasi %1$d tugas terbuka yang terlambat, menggeser tanggal jatuh temponya maju per bulan hingga jatuh di masa depan. Tugas berulang dilewati.</item>
         <item quantity="other">Menduplikasi %1$d tugas terbuka yang terlambat, menggeser setiap tanggal jatuh tempo maju per bulan hingga jatuh di masa depan. Tugas berulang dilewati.</item>
     </plurals>
+    <plurals name="projects_add_to_group_title">
+        <item quantity="one">Tambahkan %1$d proyek ke grup</item>
+        <item quantity="other">Tambahkan %1$d proyek ke grup</item>
+    </plurals>
     <plurals name="next_days_title">
         <item quantity="one">%1$d Hari ke Depan</item>
         <item quantity="other">%1$d Hari ke Depan</item>

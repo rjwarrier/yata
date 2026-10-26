@@ -5,6 +5,7 @@ import com.mj.yata.data.repository.YataRepositoryImpl
 import com.mj.yata.domain.model.Person
 import com.mj.yata.domain.model.PersonGroup
 import com.mj.yata.domain.model.Project
+import com.mj.yata.domain.model.ProjectGroup
 import com.mj.yata.domain.model.Tag
 import com.mj.yata.domain.model.TagGroup
 import com.mj.yata.domain.model.Task
@@ -94,6 +95,11 @@ class RoutingYataRepository @Inject constructor(
     override suspend fun deleteProject(project: Project) = write { real.deleteProject(project) }
     override suspend fun deleteProjectOnly(project: Project) = write { real.deleteProjectOnly(project) }
     override suspend fun setProjectsArchived(ids: List<String>, archived: Boolean) = write { real.setProjectsArchived(ids, archived) }
+    override suspend fun setProjectsGroup(projectIds: List<String>, groupId: String?, pendingGroup: ProjectGroup?) = write { real.setProjectsGroup(projectIds, groupId, pendingGroup) }
+
+    override fun getProjectGroups(): Flow<List<ProjectGroup>> = routed(real.getProjectGroups(), demo.getProjectGroups())
+    override suspend fun upsertProjectGroup(group: ProjectGroup) = write { real.upsertProjectGroup(group) }
+    override suspend fun deleteProjectGroup(group: ProjectGroup) = write { real.deleteProjectGroup(group) }
 
     override fun getLists(): Flow<List<YataList>> = routed(real.getLists(), demo.getLists())
     override fun getActiveLists(): Flow<List<YataList>> = routed(real.getActiveLists(), demo.getActiveLists())

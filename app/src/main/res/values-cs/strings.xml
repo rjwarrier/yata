@@ -1419,6 +1419,10 @@
         <item quantity="one">Duplikuje %1$d otevřený úkol po termínu a posouvá jeho termín po měsících vpřed, dokud se nedostane do budoucnosti. Opakující se úkoly se přeskočí.</item>
         <item quantity="other">Duplikuje %1$d otevřených úkolů po termínu a posouvá každý termín po měsících vpřed, dokud se nedostane do budoucnosti. Opakující se úkoly se přeskočí.</item>
     </plurals>
+    <plurals name="projects_add_to_group_title">
+        <item quantity="one">Přidat %1$d projekt do skupiny</item>
+        <item quantity="other">Přidat %1$d projektů do skupiny</item>
+    </plurals>
     <plurals name="next_days_title">
         <item quantity="one">Následující %1$d den</item>
         <item quantity="other">Následujících %1$d dní</item>

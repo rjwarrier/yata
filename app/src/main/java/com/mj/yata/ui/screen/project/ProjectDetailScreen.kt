@@ -84,6 +84,7 @@ fun ProjectDetailScreen(
     val allTasks by viewModel.tasks.collectAsStateWithLifecycle()
     val people by viewModel.people.collectAsStateWithLifecycle()
     val tags by viewModel.tags.collectAsStateWithLifecycle()
+    val projectGroups by viewModel.projectGroups.collectAsStateWithLifecycle()
     val taskRowDensity by viewModel.taskRowDensity.collectAsStateWithLifecycle()
     val weekendDays by viewModel.weekendDays.collectAsStateWithLifecycle()
     val holidaysRaw by viewModel.holidays.collectAsStateWithLifecycle()
@@ -1110,10 +1111,15 @@ fun ProjectDetailScreen(
                 initialDefaultReminder = project.defaultReminder,
                 initialDescription = project.description,
                 initialExcludeFromToday = project.excludeFromToday,
+                initialGroupId = project.groupId,
                 tags = tags,
-                onSave = { newName, newColor, newIcon, newDue, newCommonTagIds, newDefaultReminder, newDescription, newExcludeFromToday ->
-                    viewModel.upsertProject(project.copy(name = newName, color = newColor, icon = newIcon, due = newDue, commonTagIds = newCommonTagIds, defaultReminder = newDefaultReminder, description = newDescription, excludeFromToday = newExcludeFromToday))
+                groups = projectGroups,
+                onSave = { newName, newColor, newIcon, newDue, newCommonTagIds, newDefaultReminder, newDescription, newExcludeFromToday, newGroupId ->
+                    viewModel.upsertProject(project.copy(name = newName, color = newColor, icon = newIcon, due = newDue, commonTagIds = newCommonTagIds, defaultReminder = newDefaultReminder, description = newDescription, excludeFromToday = newExcludeFromToday, groupId = newGroupId))
                     isEditSheetOpen = false
+                },
+                onCreateGroup = { id, name, color ->
+                    viewModel.upsertProjectGroup(com.mj.yata.domain.model.ProjectGroup(id = id, name = name, color = color))
                 },
                 onDismiss = { isEditSheetOpen = false }
             )

@@ -261,6 +261,7 @@ data class MainScreenUiState(
     val tags: List<Tag> = emptyList(),
     val tagGroups: List<TagGroup> = emptyList(),
     val personGroups: List<PersonGroup> = emptyList(),
+    val projectGroups: List<ProjectGroup> = emptyList(),
     val userName: String = "",
     val userEmail: String = "",
     val userPhotoUri: String? = null,
@@ -458,7 +459,8 @@ private data class MainExtraDataState(
     val activePeople: List<Person>,
     val tags: List<Tag>,
     val tagGroups: List<TagGroup>,
-    val personGroups: List<PersonGroup>
+    val personGroups: List<PersonGroup>,
+    val projectGroups: List<ProjectGroup>
 )
 
 private data class MainProfileState(
@@ -567,6 +569,9 @@ data class WeekendRescheduleWarning(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val personGroups: StateFlow<List<PersonGroup>> = repository.getPersonGroups()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val projectGroups: StateFlow<List<ProjectGroup>> = repository.getProjectGroups()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val _initialDataLoaded = MutableStateFlow(false)
@@ -933,9 +938,10 @@ data class WeekendRescheduleWarning(
             activePeople,
             tags,
             tagGroups,
-            personGroups
-        ) { activePeople, tags, tagGroups, personGroups ->
-            MainExtraDataState(activePeople, tags, tagGroups, personGroups)
+            personGroups,
+            projectGroups
+        ) { activePeople, tags, tagGroups, personGroups, projectGroups ->
+            MainExtraDataState(activePeople, tags, tagGroups, personGroups, projectGroups)
         },
         combine(
             userPreferences.userNameFlow,
@@ -973,6 +979,7 @@ data class WeekendRescheduleWarning(
             tags = extraData.tags,
             tagGroups = extraData.tagGroups,
             personGroups = extraData.personGroups,
+            projectGroups = extraData.projectGroups,
             userName = profile.userName,
             userEmail = profile.userEmail,
             userPhotoUri = profile.userPhotoUri,
@@ -2118,7 +2125,7 @@ data class WeekendRescheduleWarning(
         }
     }
 
-    fun addProject(name: String, color: String, icon: String = "layers", due: String? = null, commonTagIds: List<String> = emptyList(), defaultReminder: String? = null, description: String? = null, excludeFromToday: Boolean = false) {
+    fun addProject(name: String, color: String, icon: String = "layers", due: String? = null, commonTagIds: List<String> = emptyList(), defaultReminder: String? = null, description: String? = null, excludeFromToday: Boolean = false, groupId: String? = null) {
         safeLaunch {
             val pid = "pr_" + UUID.randomUUID().toString()
             val project = Project(
@@ -2130,7 +2137,8 @@ data class WeekendRescheduleWarning(
                 commonTagIds = commonTagIds,
                 defaultReminder = defaultReminder,
                 description = description,
-                excludeFromToday = excludeFromToday
+                excludeFromToday = excludeFromToday,
+                groupId = groupId
             )
             repository.upsertProject(project)
         }
@@ -2513,6 +2521,30 @@ data class WeekendRescheduleWarning(
     fun deleteTagGroup(group: TagGroup) {
         safeLaunch {
             repository.deleteTagGroup(group)
+        }
+    }
+
+    fun setProjectsGroup(projectIds: List<String>, groupId: String?) {
+        safeLaunch {
+            repository.setProjectsGroup(projectIds, groupId, pendingGroup = null)
+        }
+    }
+
+    fun createProjectGroupAndAssign(group: ProjectGroup, projectIds: List<String>) {
+        safeLaunch {
+            repository.setProjectsGroup(projectIds, group.id, pendingGroup = group)
+        }
+    }
+
+    fun upsertProjectGroup(group: ProjectGroup) {
+        safeLaunch {
+            repository.upsertProjectGroup(group)
+        }
+    }
+
+    fun deleteProjectGroup(group: ProjectGroup) {
+        safeLaunch {
+            repository.deleteProjectGroup(group)
         }
     }
 

@@ -1503,6 +1503,10 @@
         <item quantity="one">Dini-duplicate ang %1$d late na bukas na gawain, inililipat ang takdang petsa nito buwan-buwan hanggang sa umabot ito sa hinaharap. Nilalaktawan ang mga umuulit na gawain.</item>
         <item quantity="other">Dini-duplicate ang %1$d na late na bukas na gawain, inililipat ang bawat takdang petsa buwan-buwan hanggang sa umabot ito sa hinaharap. Nilalaktawan ang mga umuulit na gawain.</item>
     </plurals>
+    <plurals name="projects_add_to_group_title">
+        <item quantity="one">Idagdag ang %1$d proyekto sa grupo</item>
+        <item quantity="other">Idagdag ang %1$d proyekto sa grupo</item>
+    </plurals>
     <plurals name="next_days_title">
         <item quantity="one">Susunod na %1$d Araw</item>
         <item quantity="other">Susunod na %1$d Araw</item>

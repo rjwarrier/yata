@@ -1419,6 +1419,10 @@
         <item quantity="one">Nhân bản %1$d việc quá hạn đang mở, dời hạn chót từng tháng cho đến khi rơi vào tương lai. Việc lặp lại bị bỏ qua.</item>
         <item quantity="other">Nhân bản %1$d việc quá hạn đang mở, dời từng hạn chót theo tháng cho đến khi rơi vào tương lai. Việc lặp lại bị bỏ qua.</item>
     </plurals>
+    <plurals name="projects_add_to_group_title">
+        <item quantity="one">Thêm %1$d dự án vào nhóm</item>
+        <item quantity="other">Thêm %1$d dự án vào nhóm</item>
+    </plurals>
     <plurals name="next_days_title">
         <item quantity="one">%1$d ngày tới</item>
         <item quantity="other">%1$d ngày tới</item>

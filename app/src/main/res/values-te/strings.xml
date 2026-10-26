@@ -1503,6 +1503,10 @@
         <item quantity="one">భవిష్యత్తులో పడేవరకు గడువు తేదీని నెల నెలకు ముందుకు మారుస్తూ %1$d గడువు మీరిన తెరిచిన టాస్క్‌ను నకిలీ చేస్తుంది. పునరావృత టాస్క్‌లు దాటవేయబడతాయి.</item>
         <item quantity="other">భవిష్యత్తులో పడేవరకు ప్రతి గడువు తేదీని నెల నెలకు ముందుకు మారుస్తూ %1$d గడువు మీరిన తెరిచిన టాస్క్‌లను నకిలీ చేస్తుంది. పునరావృత టాస్క్‌లు దాటవేయబడతాయి.</item>
     </plurals>
+    <plurals name="projects_add_to_group_title">
+        <item quantity="one">%1$d ప్రాజెక్ట్‌ను సమూహానికి జోడించండి</item>
+        <item quantity="other">%1$d ప్రాజెక్టులను సమూహానికి జోడించండి</item>
+    </plurals>
     <plurals name="next_days_title">
         <item quantity="one">తర్వాతి %1$d రోజు</item>
         <item quantity="other">తర్వాతి %1$d రోజులు</item>

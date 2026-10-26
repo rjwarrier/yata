@@ -1419,6 +1419,10 @@
         <item quantity="one">Duplică %1$d sarcină deschisă restantă, mutându-i termenul înainte lună de lună până ajunge în viitor. Sarcinile recurente sunt omise.</item>
         <item quantity="other">Duplică %1$d sarcini deschise restante, mutând fiecare termen înainte lună de lună până ajunge în viitor. Sarcinile recurente sunt omise.</item>
     </plurals>
+    <plurals name="projects_add_to_group_title">
+        <item quantity="one">Adaugă %1$d proiect în grup</item>
+        <item quantity="other">Adaugă %1$d proiecte în grup</item>
+    </plurals>
     <plurals name="next_days_title">
         <item quantity="one">Următoarea %1$d zi</item>
         <item quantity="other">Următoarele %1$d zile</item>

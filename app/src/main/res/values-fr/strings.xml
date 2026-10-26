@@ -317,6 +317,10 @@
         <item quantity="one">Duplique la tâche ouverte en retard %1$d, en avançant sa date d\'échéance de mois jusqu\'à ce qu\'elle arrive dans le futur. Les tâches récurrentes sont ignorées.</item>
         <item quantity="other">Duplique les tâches ouvertes en retard %1$d, en avançant chaque date d\'échéance de mois jusqu\'à ce qu\'elle arrive dans le futur. Les tâches récurrentes sont ignorées.</item>
     </plurals>
+    <plurals name="projects_add_to_group_title">
+        <item quantity="one">Ajouter %1$d projet au groupe</item>
+        <item quantity="other">Ajouter %1$d projets au groupe</item>
+    </plurals>
     <string name="search_in_list">Rechercher dans %1$s</string>
     <string name="search_in_project">Rechercher dans %1$s</string>
     <string name="search_in_tag">Rechercher dans #%1$s</string>

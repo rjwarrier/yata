@@ -16,3 +16,10 @@ data class PersonGroupEntity(
     val name: String,
     val color: String
 )
+
+@Entity(tableName = "project_groups")
+data class ProjectGroupEntity(
+    @PrimaryKey val id: String,
+    val name: String,
+    val color: String
+)

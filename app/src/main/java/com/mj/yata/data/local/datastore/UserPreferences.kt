@@ -145,6 +145,8 @@ class UserPreferences @Inject constructor(
             "github_token_expires_at",
             "github_last_head_sha",
             "github_last_canonical_hash",
+            "auto_backup_last_fingerprint",
+            "auto_backup_last_at",
             "last_primary_argb",
             "user_photo_uri"
         )
@@ -216,6 +218,11 @@ class UserPreferences @Inject constructor(
         val GITHUB_TOKEN_EXPIRES_AT = longPreferencesKey("github_token_expires_at")
         val GITHUB_LAST_HEAD_SHA    = stringPreferencesKey("github_last_head_sha")
         val GITHUB_LAST_CANONICAL_HASH = stringPreferencesKey("github_last_canonical_hash")
+        // Lets UnifiedBackupWorker's scheduled run skip entirely when nothing changed since the
+        // last time it settled - see AutoBackupGate. Device-local, like the GitHub sync-state keys
+        // above, so it's excluded from NON_PORTABLE_KEYS rather than carried into a backup/restore.
+        val AUTO_BACKUP_LAST_FINGERPRINT = stringPreferencesKey("auto_backup_last_fingerprint")
+        val AUTO_BACKUP_LAST_AT     = longPreferencesKey("auto_backup_last_at")
         // The theme_schedule_* keys that lived here went with the SCHEDULED theme mode. Any values
         // already written stay in the file harmlessly — nothing reads that name any more.
         val REDUCE_MOTION_ENABLED   = booleanPreferencesKey("reduce_motion_enabled")
@@ -482,6 +489,8 @@ class UserPreferences @Inject constructor(
     val githubTokenExpiresAtFlow: Flow<Long?> = prefsFlow.mapDistinct { it[GITHUB_TOKEN_EXPIRES_AT] }
     val githubLastHeadShaFlow: Flow<String?> = prefsFlow.mapDistinct { it[GITHUB_LAST_HEAD_SHA] }
     val githubLastCanonicalHashFlow: Flow<String?> = prefsFlow.mapDistinct { it[GITHUB_LAST_CANONICAL_HASH] }
+    val autoBackupLastFingerprintFlow: Flow<String?> = prefsFlow.mapDistinct { it[AUTO_BACKUP_LAST_FINGERPRINT] }
+    val autoBackupLastAtFlow: Flow<Long?> = prefsFlow.mapDistinct { it[AUTO_BACKUP_LAST_AT] }
     val hideCompletedTodayFlow: Flow<Boolean> = prefsFlow.mapDistinct { it[HIDE_COMPLETED_TODAY] ?: false }
     val hideCompletedNextDaysFlow: Flow<Boolean> = prefsFlow.mapDistinct { it[HIDE_COMPLETED_NEXT_DAYS] ?: false }
     val todayShowUpcomingWhenEmptyFlow: Flow<Boolean> = prefsFlow.mapDistinct { it[TODAY_SHOW_UPCOMING_WHEN_EMPTY] ?: false }
@@ -1115,6 +1124,15 @@ class UserPreferences @Inject constructor(
             } else {
                 prefs.remove(GITHUB_LAST_CANONICAL_HASH)
             }
+        }
+    }
+
+    /** Records the fingerprint UnifiedBackupWorker's scheduled run last settled on, and when -
+     * see [AutoBackupGate]. */
+    suspend fun setAutoBackupSettledState(fingerprint: String, atMillis: Long) {
+        dataStore.edit { prefs ->
+            prefs[AUTO_BACKUP_LAST_FINGERPRINT] = fingerprint
+            prefs[AUTO_BACKUP_LAST_AT] = atMillis
         }
     }
 
