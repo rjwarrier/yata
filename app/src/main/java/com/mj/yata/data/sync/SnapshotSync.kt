@@ -820,6 +820,30 @@ private fun peopleBeyondCurrentUser(snapshot: JSONObject): Int {
 
 private fun JSONArray?.orZero(): Int = this?.length() ?: 0
 
+/** Legacy clients cannot express project-group edits or deletions. Treat that metadata as
+ * unchanged from the baseline (or local state on first join), while merging their other edits. */
+internal fun preserveGroupsMissingFromLegacySnapshot(source: JSONObject, fallback: JSONObject): JSONObject {
+    if (source.optInt("version", -1) >= 5 || source.has("projectGroups")) return source
+    val copy = JSONObject(source.toString())
+    copy.put("projectGroups", JSONArray(fallback.optJSONArray("projectGroups")?.toString() ?: "[]"))
+    val memberships = mutableMapOf<String, Any>()
+    fallback.optJSONArray("projects")?.let { projects ->
+        for (i in 0 until projects.length()) {
+            val project = projects.getJSONObject(i)
+            memberships[project.getString("id")] = project.opt("groupId") ?: JSONObject.NULL
+        }
+    }
+    copy.optJSONArray("projects")?.let { projects ->
+        for (i in 0 until projects.length()) {
+            val project = projects.getJSONObject(i)
+            if (!project.has("groupId")) {
+                project.put("groupId", memberships[project.getString("id")] ?: JSONObject.NULL)
+            }
+        }
+    }
+    return copy
+}
+
 @Singleton
 class SnapshotSyncEngine @Inject constructor(
     @ApplicationContext private val context: Context,
@@ -835,7 +859,8 @@ class SnapshotSyncEngine @Inject constructor(
     ): PreparedSnapshotSync =
         withContext(Dispatchers.IO) {
             val local = normalized(jsonExporter.exportToBytes())
-            val observedRemote = remoteBytes?.let(::normalized)
+            val remoteSource = remoteBytes?.let { JSONObject(String(it, Charsets.UTF_8)) }
+            val observedRemote = remoteSource?.let(SnapshotMerger::normalizeForSync)
             val base = readBaseline(scopeKey)
             checkInitialJoinIsExplicit(base, local, observedRemote, allowInitialJoinMerge)
             checkLocalNotUnexpectedlyEmpty(base, local, observedRemote, allowEmptyLocalOverwrite)
@@ -847,7 +872,9 @@ class SnapshotSyncEngine @Inject constructor(
                 "The canonical sync file is missing or damaged. An automatic recovery copy is " +
                     "available, but it cannot be promoted safely; restore a chosen backup first"
             }
-            val remote = observedRemote
+            val remote = remoteSource?.let {
+                SnapshotMerger.normalizeForSync(preserveGroupsMissingFromLegacySnapshot(it, base ?: local))
+            }
             val result = SnapshotMerger.merge(base = base, local = local, remote = remote)
             PreparedSnapshotSync(
                 scopeKey = scopeKey,
@@ -856,7 +883,7 @@ class SnapshotSyncEngine @Inject constructor(
                 conflicts = result.conflicts,
                 conflictRecords = result.conflictRecords,
                 remoteNeedsPublish =
-                    remote == null || !SnapshotMerger.equivalent(remote, result.json),
+                    observedRemote == null || !SnapshotMerger.equivalent(observedRemote, result.json),
                 recordsRemoved = SnapshotMerger.removedAnyRecords(local, result.json)
             ).also {
                 // Do this before a transport publishes anything; exact apply repeats validation as

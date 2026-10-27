@@ -1411,7 +1411,12 @@ class JsonExporter @Inject constructor(
                                 sortOrder = o.optInt("sortOrder", 0),
                                 archived = o.optBoolean("archived", false),
                                 sectionNames = sectionNames,
-                                groupId = if (o.isNull("groupId")) null else o.getString("groupId")
+                                // Older backups never exported project membership. Importing
+                                // one into an existing project must not erase its local group.
+                                // Explicit null in current backups/sync still clears membership.
+                                groupId = if (!o.has("groupId")) {
+                                    repository.getProjectById(o.getString("id")).first()?.groupId
+                                } else if (o.isNull("groupId")) null else o.getString("groupId")
                             )
                         )
                     }

@@ -13,6 +13,35 @@ import org.junit.Test
 class SnapshotSyncTest {
 
     @Test
+    fun legacySyncPreservesPublishedMembershipWhileAcceptingOtherProjectEdits() {
+        val base = SnapshotMerger.normalizeForSync(snapshot(projects = listOf(project("p1").put("groupId", "g1")))
+            .put("version", 5).put("projectGroups", JSONArray().put(personGroup("g1", "Apps", "accentA"))))
+        val legacy = snapshot(projects = listOf(project("p1").put("name", "Remote edit")))
+        val observed = SnapshotMerger.normalizeForSync(legacy)
+        val effective = SnapshotMerger.normalizeForSync(preserveGroupsMissingFromLegacySnapshot(legacy, base))
+        val merged = SnapshotMerger.merge(base, base, effective)
+        assertEquals("g1", rows(merged.json, "projects").getValue("p1").getString("groupId"))
+        assertEquals("Remote edit", rows(merged.json, "projects").getValue("p1").getString("name"))
+        assertEquals(1, rows(merged.json, "projectGroups").size)
+        assertFalse(SnapshotMerger.equivalent(observed, merged.json)) // Must republish missing metadata.
+        assertFalse(legacy.has("projectGroups")) // Never mutate the evidence received from the server.
+        val repeated = SnapshotMerger.merge(merged.json, merged.json,
+            SnapshotMerger.normalizeForSync(preserveGroupsMissingFromLegacySnapshot(legacy, merged.json)))
+        assertTrue(SnapshotMerger.equivalent(merged.json, repeated.json))
+    }
+
+    @Test
+    fun currentFormatCanStillExplicitlyRemoveProjectGroups() {
+        val current = snapshot(projects = listOf(project("p1").put("groupId", JSONObject.NULL)))
+            .put("version", 5).put("projectGroups", JSONArray())
+        val fallback = snapshot(projects = listOf(project("p1").put("groupId", "g1")))
+            .put("projectGroups", JSONArray().put(personGroup("g1", "Apps", "accentA")))
+        val result = preserveGroupsMissingFromLegacySnapshot(current, fallback)
+        assertTrue(result.getJSONArray("projects").getJSONObject(0).isNull("groupId"))
+        assertEquals(0, result.getJSONArray("projectGroups").length())
+    }
+
+    @Test
     fun missingNullAndZeroTrackedTimeHaveOneCanonicalRepresentation() {
         val inputs = listOf(
             task("t1", "task"),

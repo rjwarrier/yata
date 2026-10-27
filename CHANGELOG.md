@@ -72,6 +72,10 @@ test-only changes belong in the commit message, not here, unless they change beh
   colour in Upcoming's month grid and week strip, next to the filled task dots.
 
 ### Fixed
+- Empty project groups remain visible as collapsible sections. Importing an older backup that
+  lacks project-group fields preserves existing assignments instead of silently clearing them.
+- Syncing an older snapshot that lacks project-group fields retains known groups and membership
+  while still accepting its other edits, and republishes the preserved metadata to the cloud.
 - Existing installations from both database histories now upgrade to one unified database while
   retaining projects, groups, tracked time, subtasks, comments, tags and assignees.
 - GitHub sync treats absent, null and zero tracked time consistently, preventing repeated

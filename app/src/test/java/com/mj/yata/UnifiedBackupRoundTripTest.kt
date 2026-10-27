@@ -7,6 +7,8 @@ import com.mj.yata.data.local.db.AppDatabase
 import com.mj.yata.data.local.db.entity.TaskEntity
 import com.mj.yata.data.repository.YataRepositoryImpl
 import com.mj.yata.data.sync.SnapshotMerger
+import com.mj.yata.data.sync.SnapshotSyncEngine
+import com.mj.yata.data.local.backup.RecoveryBackupManager
 import com.mj.yata.domain.model.Person
 import com.mj.yata.domain.model.Project
 import com.mj.yata.domain.model.ProjectGroup
@@ -81,6 +83,46 @@ class UnifiedBackupRoundTripTest {
                 assertFalse(target.exporter.replaceBytesForSync(invalid.toString().toByteArray()))
                 assertEquals("group", target.repository.getProjects().first().single().groupId)
             }
+        }
+    }
+
+    @Test fun repeatedLegacySyncKeepsAssignmentsAndRequestsCloudRepair() = runBlocking {
+        store().use { target ->
+            target.repository.upsertPerson(Person("me", "You", "Y", "accentA", isMe = true))
+            target.repository.upsertProjectGroup(ProjectGroup("group", "Apps", "accentB"))
+            target.repository.upsertProject(Project("project", "Project", "accentA", "work", groupId = "group"))
+            val canonical = target.exporter.exportToBytes()
+            val legacy = JSONObject(String(canonical)).put("version", 4).apply { remove("projectGroups") }
+            legacy.getJSONArray("projects").getJSONObject(0).remove("groupId")
+            val engine = SnapshotSyncEngine(context, target.exporter, RecoveryBackupManager(context, target.exporter))
+            val scope = "project-group-legacy-regression"
+            engine.commitRestoredBaseline(scope, canonical)
+            repeat(2) {
+                val prepared = engine.prepare(legacy.toString().toByteArray(), scope)
+                assertTrue(prepared.remoteNeedsPublish)
+                assertEquals("group", prepared.canonical.getJSONArray("projects").getJSONObject(0).getString("groupId"))
+                engine.commit(prepared)
+                assertEquals("group", target.repository.getProjects().first().single().groupId)
+                assertEquals(1, target.repository.getProjectGroups().first().size)
+            }
+        }
+    }
+
+    @Test fun legacyProjectImportPreservesMembershipButExplicitNullClearsIt() = runBlocking {
+        store().use { target ->
+            target.repository.upsertProjectGroup(ProjectGroup("group", "Apps", "accentB"))
+            target.repository.upsertProject(Project("project", "Project", "accentA", "work", groupId = "group"))
+            val project = JSONObject().put("id", "project").put("name", "Imported name")
+                .put("color", "accentA").put("icon", "work")
+            val legacy = JSONObject().put("version", 4).put("tasks", JSONArray())
+                .put("projects", JSONArray().put(project))
+            assertTrue(target.exporter.importBytes(legacy.toString().toByteArray()))
+            assertEquals("Imported name", target.repository.getProjects().first().single().name)
+            assertEquals("group", target.repository.getProjects().first().single().groupId)
+            project.put("groupId", JSONObject.NULL)
+            assertTrue(target.exporter.importBytes(legacy.toString().toByteArray()))
+            assertTrue(target.repository.getProjects().first().single().groupId == null)
+            assertEquals(1, target.repository.getProjectGroups().first().size)
         }
     }
 

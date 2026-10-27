@@ -92,7 +92,9 @@ fun ProjectsTab(
         } + listOf(Triple("ungrouped", ungroupedTitle, source.filter { it.groupId !in groupsById }))
         sections.forEach { (sectionKey, title, members) ->
             val key = prefix + sectionKey
-            if (members.isNotEmpty()) {
+            // Keep named groups visible even before a project is assigned. Archived sections
+            // and the implicit Ungrouped section still only appear when they contain projects.
+            if (members.isNotEmpty() || (prefix.isEmpty() && sectionKey != "ungrouped")) {
                 if (projectGroups.isNotEmpty()) add(ProjectSectionRow("header:$key", key, title))
                 if (projectGroups.isEmpty() || expandedGroups[key] != false) {
                     members.forEach { add(ProjectSectionRow("${prefix}project:${it.id}", key, project = it)) }

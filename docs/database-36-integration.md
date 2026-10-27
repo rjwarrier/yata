@@ -73,3 +73,16 @@ before making schema changes, preserve old exported schemas, add and register a
 migration, and extend migration tests. Avoid installing older APKs over the unified
 release: old builds contain their own downgrade behavior. Keep the previous branches
 and device backup until the release has been verified in normal use.
+
+## Project-group follow-up (0.96.1, build 30)
+
+Empty groups now stay visible in Projects. A normal import preserves an existing project's
+membership when a legacy backup omits that field; explicit null still clears membership.
+Before merging legacy remote snapshots, the sync engine fills unsupported group metadata
+from the baseline (or local state for a first join). It compares the result against the actual
+observed remote snapshot so preserved metadata is republished. Current-format group deletions
+retain their existing semantics.
+
+The build and 37 focused import/sync tests passed, including repeated legacy sync through
+the real sync engine, concurrent project edits, and explicit removal. App version 0.96.1
+uses the same database 36 and backup format 5.
