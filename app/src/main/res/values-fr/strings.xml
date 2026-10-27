@@ -1648,4 +1648,8 @@
     <string name="markdown_import_dates">Utiliser les dates des titres</string>
     <string name="markdown_import_dates_hint">Dates en anglais ou ISO ; les dates relatives se basent sur %1$s.</string>
     <string name="new_task_organize">Organiser</string>
+    <string name="action_select_all">Tout sélectionner</string>
+    <string name="action_select_none">Tout désélectionner</string>
+    <string name="markdown_import_select_tasks">Choisir les tâches à importer</string>
+    <string name="markdown_import_selection_hint">Seules les tâches principales sélectionnées et leurs sous-tâches seront ajoutées.</string>
 </resources>

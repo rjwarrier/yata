@@ -1815,4 +1815,8 @@
     <string name="markdown_import_destination">Choose at least one project or list.</string>
     <string name="markdown_import_dates">Use dates from headings</string>
     <string name="markdown_import_dates_hint">English or ISO dates; relative dates use %1$s.</string>
+    <string name="action_select_all">Select all</string>
+    <string name="action_select_none">Select none</string>
+    <string name="markdown_import_select_tasks">Choose tasks to import</string>
+    <string name="markdown_import_selection_hint">Only selected main tasks and their subtasks will be added.</string>
 </resources>

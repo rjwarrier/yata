@@ -1643,4 +1643,8 @@
     <string name="markdown_import_dates">Tumia tarehe za vichwa</string>
     <string name="markdown_import_dates_hint">Tarehe za Kiingereza au ISO; tarehe linganishi hutumia %1$s kama msingi.</string>
     <string name="new_task_organize">Panga</string>
+    <string name="action_select_all">Chagua zote</string>
+    <string name="action_select_none">Ondoa chaguo zote</string>
+    <string name="markdown_import_select_tasks">Chagua kazi za kuingiza</string>
+    <string name="markdown_import_selection_hint">Kazi kuu zilizochaguliwa na kazi zake ndogo pekee ndizo zitaongezwa.</string>
 </resources>

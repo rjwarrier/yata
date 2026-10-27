@@ -1646,4 +1646,8 @@
     <string name="markdown_import_dates">शीर्षकों की तारीखें इस्तेमाल करें</string>
     <string name="markdown_import_dates_hint">अंग्रेज़ी या ISO तारीखें; सापेक्ष तारीखों का आधार %1$s है।</string>
     <string name="new_task_organize">व्यवस्थित करें</string>
+    <string name="action_select_all">सभी चुनें</string>
+    <string name="action_select_none">सभी का चयन हटाएँ</string>
+    <string name="markdown_import_select_tasks">आयात करने के लिए कार्य चुनें</string>
+    <string name="markdown_import_selection_hint">केवल चुने गए मुख्य कार्य और उनके उपकार्य जोड़े जाएँगे।</string>
 </resources>

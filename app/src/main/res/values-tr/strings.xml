@@ -1646,4 +1646,8 @@
     <string name="markdown_import_dates">Başlıklardaki tarihleri kullan</string>
     <string name="markdown_import_dates_hint">İngilizce veya ISO tarihler; göreli tarihler %1$s temel alınarak hesaplanır.</string>
     <string name="new_task_organize">Düzenle</string>
+    <string name="action_select_all">Tümünü seç</string>
+    <string name="action_select_none">Tüm seçimleri kaldır</string>
+    <string name="markdown_import_select_tasks">İçe aktarılacak görevleri seçin</string>
+    <string name="markdown_import_selection_hint">Yalnızca seçilen ana görevler ve alt görevleri eklenecek.</string>
 </resources>

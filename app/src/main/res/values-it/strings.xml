@@ -1646,4 +1646,8 @@
     <string name="markdown_import_dates">Usa le date dei titoli</string>
     <string name="markdown_import_dates_hint">Date in inglese o ISO; le date relative si basano su %1$s.</string>
     <string name="new_task_organize">Organizza</string>
+    <string name="action_select_all">Seleziona tutto</string>
+    <string name="action_select_none">Deseleziona tutto</string>
+    <string name="markdown_import_select_tasks">Scegli le attività da importare</string>
+    <string name="markdown_import_selection_hint">Verranno aggiunte solo le attività principali selezionate e le relative sottoattività.</string>
 </resources>

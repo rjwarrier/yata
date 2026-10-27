@@ -1647,4 +1647,8 @@
     <string name="markdown_import_dates">Datums uit koppen gebruiken</string>
     <string name="markdown_import_dates_hint">Engelse of ISO-datums; relatieve datums gebruiken %1$s als uitgangspunt.</string>
     <string name="new_task_organize">Organiseren</string>
+    <string name="action_select_all">Alles selecteren</string>
+    <string name="action_select_none">Niets selecteren</string>
+    <string name="markdown_import_select_tasks">Kies taken om te importeren</string>
+    <string name="markdown_import_selection_hint">Alleen geselecteerde hoofdtaken en hun subtaken worden toegevoegd.</string>
 </resources>

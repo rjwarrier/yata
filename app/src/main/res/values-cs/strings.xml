@@ -1650,4 +1650,8 @@
     <string name="markdown_import_dates">Použít data z nadpisů</string>
     <string name="markdown_import_dates_hint">Anglická data nebo ISO; relativní data vycházejí z %1$s.</string>
     <string name="new_task_organize">Uspořádat</string>
+    <string name="action_select_all">Vybrat vše</string>
+    <string name="action_select_none">Zrušit výběr</string>
+    <string name="markdown_import_select_tasks">Vyberte úkoly k importu</string>
+    <string name="markdown_import_selection_hint">Přidají se pouze vybrané hlavní úkoly a jejich podúkoly.</string>
 </resources>

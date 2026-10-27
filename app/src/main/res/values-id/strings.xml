@@ -1646,4 +1646,8 @@
     <string name="markdown_import_dates">Gunakan tanggal dari judul</string>
     <string name="markdown_import_dates_hint">Tanggal bahasa Inggris atau ISO; tanggal relatif mengacu pada %1$s.</string>
     <string name="new_task_organize">Atur</string>
+    <string name="action_select_all">Pilih semua</string>
+    <string name="action_select_none">Batalkan semua pilihan</string>
+    <string name="markdown_import_select_tasks">Pilih tugas untuk diimpor</string>
+    <string name="markdown_import_selection_hint">Hanya tugas utama yang dipilih beserta subtugasnya yang akan ditambahkan.</string>
 </resources>

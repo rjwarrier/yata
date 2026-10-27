@@ -110,7 +110,9 @@ YATA is a single-user, offline-first task manager. Tasks can be organized under 
 
 Open **Import Markdown** from a project/list's overflow menu or **Settings → Data Management**.
 Choose a UTF-8 `.md` file, select a project, a list, or both, then review and select tasks before
-tapping **Import**. Checked tasks are shown in the preview but are initially unselected.
+tapping **Import**. Each main task has a selection checkbox; **Select all** and **Select none**
+change the whole selection. Only selected main tasks and their subtasks are added. Checked tasks
+are shown in the preview but are initially unselected.
 
 - Top-level `- [ ]` / `- [x]` items become tasks; indented checkboxes become nested subtasks.
 - Headings, ordinary bullet details, links, and reference sections are retained in task notes.

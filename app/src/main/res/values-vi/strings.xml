@@ -1646,4 +1646,8 @@
     <string name="markdown_import_dates">Dùng ngày trong tiêu đề</string>
     <string name="markdown_import_dates_hint">Ngày tiếng Anh hoặc ISO; ngày tương đối lấy %1$s làm mốc.</string>
     <string name="new_task_organize">Sắp xếp</string>
+    <string name="action_select_all">Chọn tất cả</string>
+    <string name="action_select_none">Bỏ chọn tất cả</string>
+    <string name="markdown_import_select_tasks">Chọn công việc để nhập</string>
+    <string name="markdown_import_selection_hint">Chỉ các công việc chính được chọn và việc phụ của chúng mới được thêm.</string>
 </resources>

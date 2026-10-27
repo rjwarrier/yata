@@ -1643,4 +1643,8 @@
     <string name="markdown_import_dates">Gamitin ang mga petsa sa heading</string>
     <string name="markdown_import_dates_hint">Mga petsang Ingles o ISO; ang batayan ng mga relatibong petsa ay %1$s.</string>
     <string name="new_task_organize">Ayusin</string>
+    <string name="action_select_all">Piliin lahat</string>
+    <string name="action_select_none">Alisin lahat ng pagpili</string>
+    <string name="markdown_import_select_tasks">Pumili ng mga gawaing i-import</string>
+    <string name="markdown_import_selection_hint">Ang napiling pangunahing gawain at mga subtask nito lang ang idadagdag.</string>
 </resources>

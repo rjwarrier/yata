@@ -1643,4 +1643,8 @@
     <string name="markdown_import_dates">തലക്കെട്ടുകളിലെ തീയതികൾ ഉപയോഗിക്കുക</string>
     <string name="markdown_import_dates_hint">ഇംഗ്ലീഷ് അല്ലെങ്കിൽ ISO തീയതികൾ; ആപേക്ഷിക തീയതികളുടെ അടിസ്ഥാനം %1$s ആണ്.</string>
     <string name="new_task_organize">ക്രമീകരിക്കുക</string>
+    <string name="action_select_all">എല്ലാം തിരഞ്ഞെടുക്കുക</string>
+    <string name="action_select_none">എല്ലാ തിരഞ്ഞെടുപ്പുകളും നീക്കുക</string>
+    <string name="markdown_import_select_tasks">ഇറക്കുമതി ചെയ്യേണ്ട ജോലികൾ തിരഞ്ഞെടുക്കുക</string>
+    <string name="markdown_import_selection_hint">തിരഞ്ഞെടുത്ത പ്രധാന ജോലികളും അവയുടെ ഉപജോലികളും മാത്രമേ ചേർക്കൂ.</string>
 </resources>

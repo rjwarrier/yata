@@ -1643,4 +1643,8 @@
     <string name="markdown_import_dates">శీర్షికల్లోని తేదీలను వాడండి</string>
     <string name="markdown_import_dates_hint">ఆంగ్ల లేదా ISO తేదీలు; సాపేక్ష తేదీలకు ఆధారం %1$s.</string>
     <string name="new_task_organize">నిర్వహించండి</string>
+    <string name="action_select_all">అన్నీ ఎంచుకోండి</string>
+    <string name="action_select_none">అన్ని ఎంపికలను తీసివేయండి</string>
+    <string name="markdown_import_select_tasks">దిగుమతి చేయాల్సిన పనులను ఎంచుకోండి</string>
+    <string name="markdown_import_selection_hint">ఎంచుకున్న ప్రధాన పనులు, వాటి ఉపపనులు మాత్రమే జోడించబడతాయి.</string>
 </resources>

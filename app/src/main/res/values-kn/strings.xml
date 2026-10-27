@@ -1643,4 +1643,8 @@
     <string name="markdown_import_dates">ಶೀರ್ಷಿಕೆಗಳ ದಿನಾಂಕಗಳನ್ನು ಬಳಸಿ</string>
     <string name="markdown_import_dates_hint">ಇಂಗ್ಲಿಷ್ ಅಥವಾ ISO ದಿನಾಂಕಗಳು; ಸಾಪೇಕ್ಷ ದಿನಾಂಕಗಳ ಆಧಾರ %1$s.</string>
     <string name="new_task_organize">ಸಂಘಟಿಸಿ</string>
+    <string name="action_select_all">ಎಲ್ಲವನ್ನೂ ಆಯ್ಕೆಮಾಡಿ</string>
+    <string name="action_select_none">ಎಲ್ಲ ಆಯ್ಕೆಗಳನ್ನು ತೆಗೆದುಹಾಕಿ</string>
+    <string name="markdown_import_select_tasks">ಆಮದು ಮಾಡಲು ಕಾರ್ಯಗಳನ್ನು ಆಯ್ಕೆಮಾಡಿ</string>
+    <string name="markdown_import_selection_hint">ಆಯ್ಕೆಮಾಡಿದ ಮುಖ್ಯ ಕಾರ್ಯಗಳು ಮತ್ತು ಅವುಗಳ ಉಪಕಾರ್ಯಗಳನ್ನು ಮಾತ್ರ ಸೇರಿಸಲಾಗುತ್ತದೆ.</string>
 </resources>

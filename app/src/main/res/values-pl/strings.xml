@@ -1650,4 +1650,8 @@
     <string name="markdown_import_dates">Użyj dat z nagłówków</string>
     <string name="markdown_import_dates_hint">Daty angielskie lub ISO; daty względne opierają się na %1$s.</string>
     <string name="new_task_organize">Organizuj</string>
+    <string name="action_select_all">Zaznacz wszystko</string>
+    <string name="action_select_none">Odznacz wszystko</string>
+    <string name="markdown_import_select_tasks">Wybierz zadania do importu</string>
+    <string name="markdown_import_selection_hint">Zostaną dodane tylko wybrane zadania główne i ich podzadania.</string>
 </resources>

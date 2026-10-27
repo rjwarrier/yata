@@ -1643,4 +1643,8 @@
     <string name="markdown_import_dates">ਸਿਰਲੇਖਾਂ ਦੀਆਂ ਤਾਰੀਖਾਂ ਵਰਤੋ</string>
     <string name="markdown_import_dates_hint">ਅੰਗਰੇਜ਼ੀ ਜਾਂ ISO ਤਾਰੀਖਾਂ; ਸਾਪੇਖ ਤਾਰੀਖਾਂ ਦਾ ਆਧਾਰ %1$s ਹੈ।</string>
     <string name="new_task_organize">ਤਰਤੀਬ ਦਿਓ</string>
+    <string name="action_select_all">ਸਭ ਚੁਣੋ</string>
+    <string name="action_select_none">ਸਭ ਦੀ ਚੋਣ ਹਟਾਓ</string>
+    <string name="markdown_import_select_tasks">ਆਯਾਤ ਕਰਨ ਲਈ ਕੰਮ ਚੁਣੋ</string>
+    <string name="markdown_import_selection_hint">ਸਿਰਫ਼ ਚੁਣੇ ਗਏ ਮੁੱਖ ਕੰਮ ਅਤੇ ਉਨ੍ਹਾਂ ਦੇ ਉਪਕੰਮ ਜੋੜੇ ਜਾਣਗੇ।</string>
 </resources>

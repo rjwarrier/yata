@@ -1803,4 +1803,8 @@
     <string name="markdown_import_dates">Daten aus Überschriften verwenden</string>
     <string name="markdown_import_dates_hint">Englische oder ISO-Daten; relative Daten beziehen sich auf %1$s.</string>
     <string name="new_task_organize">Organisieren</string>
+    <string name="action_select_all">Alle auswählen</string>
+    <string name="action_select_none">Keine auswählen</string>
+    <string name="markdown_import_select_tasks">Aufgaben zum Import auswählen</string>
+    <string name="markdown_import_selection_hint">Nur ausgewählte Hauptaufgaben und ihre Teilaufgaben werden hinzugefügt.</string>
 </resources>

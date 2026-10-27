@@ -1648,4 +1648,8 @@
     <string name="markdown_import_dates">Folosește datele din titluri</string>
     <string name="markdown_import_dates_hint">Date în engleză sau ISO; datele relative se bazează pe %1$s.</string>
     <string name="new_task_organize">Organizează</string>
+    <string name="action_select_all">Selectează tot</string>
+    <string name="action_select_none">Deselectează tot</string>
+    <string name="markdown_import_select_tasks">Alege sarcinile de importat</string>
+    <string name="markdown_import_selection_hint">Vor fi adăugate doar sarcinile principale selectate și subsarcinile lor.</string>
 </resources>

@@ -47,6 +47,8 @@ test-only changes belong in the commit message, not here, unless they change beh
   and older, which cap how many items a single database lookup can name.
 
 ### Changed
+- Markdown import shows explicit Select all and Select none buttons, with highlighted selections
+  and a clear reminder that only selected main tasks and their subtasks will be added.
 - The floating navigation bar uses icons only, with accessible tab names retained.
 - Project groups now appear as collapsible sections in the Projects tab, with a separate Ungrouped
   section and drag reordering within each group.

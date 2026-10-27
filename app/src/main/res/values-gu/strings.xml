@@ -1643,4 +1643,8 @@
     <string name="markdown_import_dates">મથાળાની તારીખો વાપરો</string>
     <string name="markdown_import_dates_hint">અંગ્રેજી અથવા ISO તારીખો; સાપેક્ષ તારીખોનો આધાર %1$s છે.</string>
     <string name="new_task_organize">ગોઠવો</string>
+    <string name="action_select_all">બધું પસંદ કરો</string>
+    <string name="action_select_none">બધી પસંદગી દૂર કરો</string>
+    <string name="markdown_import_select_tasks">આયાત કરવા માટે કાર્યો પસંદ કરો</string>
+    <string name="markdown_import_selection_hint">ફક્ત પસંદ કરેલાં મુખ્ય કાર્યો અને તેનાં પેટાકાર્યો ઉમેરાશે.</string>
 </resources>

@@ -158,8 +158,10 @@ fun MarkdownImportScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item {
-                Text(stringResource(R.string.markdown_import_help), style = MaterialTheme.typography.bodyMedium)
-                Spacer(Modifier.height(12.dp))
+                if (document == null) {
+                    Text(stringResource(R.string.markdown_import_help), style = MaterialTheme.typography.bodyMedium)
+                    Spacer(Modifier.height(12.dp))
+                }
                 OutlinedButton(
                     onClick = {
                         // Providers label .md as text/markdown, text/plain, octet-stream or no MIME.
@@ -215,22 +217,32 @@ fun MarkdownImportScreen(
                         }
                         Switch(checked = useDates, onCheckedChange = null, enabled = !importing)
                     }
-                    Row(
-                        Modifier.fillMaxWidth().toggleable(
-                            value = selectedSet.size == tasks.size,
-                            enabled = !importing,
-                            role = Role.Checkbox,
-                            onValueChange = { selected = if (it) tasks.indices.toList() else emptyList() }
-                        ),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Checkbox(checked = selectedSet.size == tasks.size, onCheckedChange = null, enabled = !importing)
-                        Text(stringResource(R.string.task_filter_all), Modifier.padding(start = 8.dp))
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        stringResource(R.string.markdown_import_select_tasks),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        stringResource(R.string.markdown_import_selection_hint),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        TextButton(
+                            onClick = { selected = tasks.indices.toList() },
+                            enabled = !importing && selectedSet.size < tasks.size,
+                            modifier = Modifier.weight(1f)
+                        ) { Text(stringResource(R.string.action_select_all)) }
+                        TextButton(
+                            onClick = { selected = emptyList() },
+                            enabled = !importing && selectedSet.isNotEmpty(),
+                            modifier = Modifier.weight(1f)
+                        ) { Text(stringResource(R.string.action_select_none)) }
                     }
                 }
                 itemsIndexed(tasks, key = { index, _ -> "$fileUri:$fileRevision:$index" }) { index, task ->
                     MarkdownTaskPreview(task, index in selectedSet, useDates, !importing) { checked ->
-                        selected = if (checked) selected.orEmpty() + index else selected.orEmpty() - index
+                        selected = if (checked) (selected.orEmpty() + index).distinct() else selected.orEmpty() - index
                     }
                 }
             }
@@ -276,7 +288,13 @@ private fun MarkdownTaskPreview(
     onSelected: (Boolean) -> Unit
 ) {
     var details by rememberSaveable { mutableStateOf(false) }
-    Card(Modifier.fillMaxWidth()) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = if (selected) MaterialTheme.colorScheme.secondaryContainer
+                else MaterialTheme.colorScheme.surfaceContainerLow
+        )
+    ) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(
                 Modifier.fillMaxWidth().toggleable(selected, enabled = enabled, role = Role.Checkbox, onValueChange = onSelected),

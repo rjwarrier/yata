@@ -1692,4 +1692,8 @@
     <string name="markdown_import_dates">Usar fechas de los encabezados</string>
     <string name="markdown_import_dates_hint">Fechas en inglés o ISO; las fechas relativas toman %1$s como referencia.</string>
     <string name="new_task_organize">Organizar</string>
+    <string name="action_select_all">Seleccionar todo</string>
+    <string name="action_select_none">No seleccionar nada</string>
+    <string name="markdown_import_select_tasks">Elegir tareas para importar</string>
+    <string name="markdown_import_selection_hint">Solo se añadirán las tareas principales seleccionadas y sus subtareas.</string>
 </resources>
