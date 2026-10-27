@@ -1663,4 +1663,25 @@
         <item quantity="one">దిగుమతి చేయడానికి: %1$d</item>
         <item quantity="other">దిగుమతి చేయడానికి: %1$d</item>
     </plurals>
+
+    <!-- Import review tools and staged tag editing -->
+    <string name="markdown_duplicates">సరిపోలే పనులు</string>
+    <string name="markdown_skip_matches">సరిపోలినవన్నీ దాటవేయండి</string>
+    <string name="markdown_copy_matches">అన్నింటినీ విడిగా దిగుమతి చేయండి</string>
+    <string name="markdown_summary">దిగుమతి సారాంశం</string>
+    <string name="markdown_unresolved">సరిపోలని ప్రస్తావనలు</string>
+    <string name="markdown_changes">ఇప్పటికే ఉన్న పనిలో మార్పులు</string>
+    <string name="markdown_no_changes">ఏ ఫీల్డ్ మారదు.</string>
+    <string name="markdown_remember_mappings">ప్రస్తావనల సరిపోలికలను గుర్తుంచుకోండి</string>
+    <string name="markdown_mapping_missing">సేవ్ చేసిన సరిపోలికను సమీక్షించండి: దాని గమ్యం తొలగించబడింది లేదా ఆర్కైవ్ చేయబడింది.</string>
+    <string name="markdown_filter_hint">ఫిల్టర్‌లు ఈ పరిదృశ్యాన్ని మాత్రమే మారుస్తాయి. ఎంచుకున్న అన్ని పనులు దిగుమతిలో ఉంటాయి.</string>
+    <string name="markdown_change_value">%1$s: %2$s → %3$s</string>
+    <plurals name="markdown_summary_counts">
+        <item quantity="one">కొత్తవి: %1$d\nనవీకరణలు: %2$d\nదాటవేసినవి: %3$d\nసరిపోలనివి: %4$d</item>
+        <item quantity="other">కొత్తవి: %1$d\nనవీకరణలు: %2$d\nదాటవేసినవి: %3$d\nసరిపోలనివి: %4$d</item>
+    </plurals>
+    <plurals name="bulk_tag_pending">
+        <item quantity="one">ట్యాగ్ మార్పులు: %1$d</item>
+        <item quantity="other">ట్యాగ్ మార్పులు: %1$d</item>
+    </plurals>
 </resources>

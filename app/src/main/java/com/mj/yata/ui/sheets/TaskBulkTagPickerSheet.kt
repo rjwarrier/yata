@@ -1,6 +1,13 @@
 package com.mj.yata.ui.sheets
 
 import androidx.compose.foundation.layout.*
+import androidx.activity.compose.BackHandler
+import kotlinx.coroutines.launch
+import com.mj.yata.domain.model.Project
+import com.mj.yata.domain.usecase.BulkTagEdit
+import com.mj.yata.domain.usecase.previewBulkTagEdit
+import java.util.UUID
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -24,6 +31,10 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.state.ToggleableState
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.toggleableState
 import com.mj.yata.R
 import com.mj.yata.domain.model.Tag
 import com.mj.yata.domain.model.Task
@@ -31,15 +42,14 @@ import com.mj.yata.ui.theme.LocalYataAccents
 import com.mj.yata.ui.widgets.YataFieldShape
 import com.mj.yata.ui.widgets.yataFieldColors
 
-/** Shared by every task multiselect surface; creation also applies the tag to the selection. */
+/** Draft all tag operations locally; only Apply writes tags and tasks. */
 @Composable
 fun TaskBulkTagPickerSheet(
     tags: List<Tag>,
-    onSelectTag: (String) -> Unit,
-    onCreateTag: (name: String, color: String) -> Unit,
+    onApply: suspend (BulkTagEdit) -> Boolean,
     onDismiss: () -> Unit,
     selectedTasks: List<Task>,
-    onRemoveTag: (String) -> Unit,
+    projects: List<Project> = emptyList(),
     modifier: Modifier = Modifier
 ) {
     val accents = LocalYataAccents.current
@@ -47,16 +57,65 @@ fun TaskBulkTagPickerSheet(
     var showCreateDialog by rememberSaveable { mutableStateOf(false) }
     var newTagName by rememberSaveable { mutableStateOf("") }
     var removing by rememberSaveable { mutableStateOf(false) }
-    val counts = remember(selectedTasks) {
-        buildMap<String, Int> { selectedTasks.forEach { task -> task.tagIds.distinct().forEach { put(it, getOrDefault(it, 0) + 1) } } }
+    val scope = rememberCoroutineScope()
+    var applying by remember { mutableStateOf(false) }
+    var failed by remember { mutableStateOf(false) }
+    var additions by rememberSaveable { mutableStateOf<List<String>>(emptyList()) }
+    var removals by rememberSaveable { mutableStateOf<List<String>>(emptyList()) }
+    var newTagValues by rememberSaveable { mutableStateOf<List<String>>(emptyList()) }
+    val newTags = remember(newTagValues) { newTagValues.chunked(3).filter { it.size == 3 }.map { Tag(it[0], it[1], it[2]) } }
+    val availableTags = remember(tags, newTags) { (tags + newTags).distinctBy { it.id } }
+    val changes = remember(additions, removals) { additions.associateWith { true } + removals.associateWith { false } }
+    val preview = remember(selectedTasks, projects, changes) { previewBulkTagEdit(selectedTasks, projects, changes) }
+    val counts = remember(preview, projects) {
+        val inherited = projects.associate { it.id to it.commonTagIds }
+        buildMap<String, Int> { preview.forEach { task ->
+            (task.tagIds + inherited[task.projectId].orEmpty()).distinct().forEach { put(it, getOrDefault(it, 0) + 1) }
+        } }
+    }
+    val baselineCounts = remember(selectedTasks, projects) {
+        val inherited = projects.associate { it.id to it.commonTagIds }
+        buildMap<String, Int> { selectedTasks.forEach { task ->
+            (task.tagIds + inherited[task.projectId].orEmpty()).distinct().forEach { put(it, getOrDefault(it, 0) + 1) }
+        } }
+    }
+    val removableCounts = remember(selectedTasks, projects) {
+        val inherited = projects.associate { it.id to it.commonTagIds.toSet() }
+        buildMap<String, Int> { selectedTasks.forEach { task ->
+            task.tagIds.distinct().filter { it !in inherited[task.projectId].orEmpty() }
+                .forEach { put(it, getOrDefault(it, 0) + 1) }
+        } }
+    }
+    val validIds = remember(availableTags) { availableTags.mapTo(hashSetOf()) { it.id } }
+    LaunchedEffect(validIds) { additions = additions.filter { it in validIds }; removals = removals.filter { it in validIds } }
+    BackHandler(enabled = applying) { }
+    fun stage(id: String) {
+        failed = false
+        if (removing) {
+            val already = id in removals
+            additions = additions - id
+            removals = if (already) removals - id else removals + id
+        } else {
+            val already = id in additions
+            removals = removals - id
+            additions = if (already) additions - id else additions + id
+        }
+    }
+    fun createTag(raw: String, color: String) {
+        val name = raw.trim().removePrefix("#").trim()
+        if (name.isBlank()) return
+        val existing = availableTags.firstOrNull { it.name.trim().equals(name, true) }
+        val id = existing?.id ?: "tag_${UUID.randomUUID()}".also { newTagValues = newTagValues + listOf(it, name, color) }
+        removals = removals - id
+        additions = (additions + id).distinct()
     }
     val search = query.trim().removePrefix("#").trim()
-    val sortedTags = remember(tags) { tags.sortedBy { it.name.lowercase() } }
+    val sortedTags = remember(availableTags) { availableTags.sortedBy { it.name.lowercase() } }
     val filtered = remember(sortedTags, search) {
         if (search.isEmpty()) sortedTags else sortedTags.filter { it.name.contains(search, ignoreCase = true) }
     }
-    val canCreateSearch = remember(tags, search) {
-        search.isNotBlank() && tags.none { it.name.trim().equals(search, ignoreCase = true) }
+    val canCreateSearch = remember(availableTags, search) {
+        search.isNotBlank() && availableTags.none { it.name.trim().equals(search, ignoreCase = true) }
     }
 
     Column(
@@ -74,17 +133,18 @@ fun TaskBulkTagPickerSheet(
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.weight(1f)
             )
-            IconButton(onClick = onDismiss) {
+            IconButton(onClick = onDismiss, enabled = !applying) {
                 Icon(Icons.Default.Close, contentDescription = stringResource(R.string.action_cancel))
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FilterChip(selected = !removing, onClick = { removing = false }, label = { Text(stringResource(R.string.action_add)) })
-            FilterChip(selected = removing, onClick = { removing = true }, label = { Text(stringResource(R.string.settings_remove)) })
+            FilterChip(enabled = !applying, selected = !removing, onClick = { removing = false }, label = { Text(stringResource(R.string.action_add)) })
+            FilterChip(enabled = !applying, selected = removing, onClick = { removing = true }, label = { Text(stringResource(R.string.settings_remove)) })
         }
         if (removing) Text(stringResource(R.string.task_detail_tags_sync_hint), style = MaterialTheme.typography.bodySmall)
         OutlinedTextField(
             value = query,
+            enabled = !applying,
             onValueChange = { query = it },
             placeholder = { Text(stringResource(R.string.mention_hint_tag), maxLines = 1, overflow = TextOverflow.Ellipsis) },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
@@ -101,7 +161,7 @@ fun TaskBulkTagPickerSheet(
         )
         if (!removing && canCreateSearch) {
             FilledTonalButton(
-                onClick = { onCreateTag(search, pickAccentFor(search)) },
+                onClick = { createTag(search, pickAccentFor(search)) }, enabled = !applying,
                 modifier = Modifier.fillMaxWidth(),
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
             ) {
@@ -111,7 +171,7 @@ fun TaskBulkTagPickerSheet(
             }
         } else if (!removing) {
             FilledTonalButton(
-                onClick = { newTagName = ""; showCreateDialog = true },
+                onClick = { newTagName = ""; showCreateDialog = true }, enabled = !applying,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Icon(Icons.Default.Add, contentDescription = null)
@@ -139,11 +199,13 @@ fun TaskBulkTagPickerSheet(
                     val state = when { count == 0 -> ToggleableState.Off; count == selectedTasks.size -> ToggleableState.On; else -> ToggleableState.Indeterminate }
                     val color = if (tag.color == "error") MaterialTheme.colorScheme.error else accents.getAccent(tag.color)
                     val ink = accents.onAccentFor(color)
-                    val canApply = selectedTasks.isNotEmpty() && (if (removing) count > 0 else count < selectedTasks.size)
+                    val originalCount = baselineCounts[tag.id] ?: 0
+                    val canApply = !applying && selectedTasks.isNotEmpty() &&
+                        (tag.id in changes || if (removing) (removableCounts[tag.id] ?: 0) > 0 else originalCount < selectedTasks.size)
                     Surface(
-                        onClick = { if (removing) onRemoveTag(tag.id) else onSelectTag(tag.id) },
+                        onClick = { stage(tag.id) },
                         enabled = canApply,
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().semantics { toggleableState = state; role = Role.Checkbox },
                         shape = CircleShape,
                         color = color,
                         contentColor = ink
@@ -168,7 +230,7 @@ fun TaskBulkTagPickerSheet(
                             )
                             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                                 Text(
-                                    tag.name,
+                                    (if (changes[tag.id] == true) "+ " else if (changes[tag.id] == false) "− " else "") + tag.name,
                                     style = MaterialTheme.typography.labelLarge,
                                     maxLines = 2,
                                     overflow = TextOverflow.Ellipsis
@@ -184,6 +246,23 @@ fun TaskBulkTagPickerSheet(
                 }
             }
         }
+        HorizontalDivider()
+        if (failed) Text(stringResource(R.string.error_action_failed), color = MaterialTheme.colorScheme.error)
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(pluralStringResource(R.plurals.bulk_tag_pending, changes.size, changes.size),
+                style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+            Button(enabled = !applying && selectedTasks.isNotEmpty() && changes.isNotEmpty(), onClick = {
+                applying = true
+                failed = false
+                scope.launch {
+                    try { if (!onApply(BulkTagEdit(changes, newTags))) failed = true }
+                    finally { applying = false }
+                }
+            }) {
+                if (applying) { CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp); Spacer(Modifier.width(8.dp)) }
+                Text(stringResource(R.string.custom_color_picker_apply))
+            }
+        }
     }
 
     if (showCreateDialog) {
@@ -192,7 +271,7 @@ fun TaskBulkTagPickerSheet(
         fun create() {
             if (name.isNotBlank()) {
                 showCreateDialog = false
-                onCreateTag(name, pickAccentFor(name))
+                createTag(name, pickAccentFor(name))
             }
         }
         AlertDialog(

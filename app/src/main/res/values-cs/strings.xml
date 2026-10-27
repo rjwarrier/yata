@@ -1670,4 +1670,25 @@
         <item quantity="one">K importu: %1$d</item>
         <item quantity="other">K importu: %1$d</item>
     </plurals>
+
+    <!-- Import review tools and staged tag editing -->
+    <string name="markdown_duplicates">Shodné úkoly</string>
+    <string name="markdown_skip_matches">Přeskočit všechny shody</string>
+    <string name="markdown_copy_matches">Importovat vše samostatně</string>
+    <string name="markdown_summary">Souhrn importu</string>
+    <string name="markdown_unresolved">Nepřiřazené odkazy</string>
+    <string name="markdown_changes">Změny existujícího úkolu</string>
+    <string name="markdown_no_changes">Žádná pole se nezmění.</string>
+    <string name="markdown_remember_mappings">Pamatovat přiřazení odkazů</string>
+    <string name="markdown_mapping_missing">Uložené přiřazení vyžaduje kontrolu: cíl byl odstraněn nebo archivován.</string>
+    <string name="markdown_filter_hint">Filtry mění pouze tento náhled. Import zahrnuje všechny vybrané úkoly.</string>
+    <string name="markdown_change_value">%1$s: %2$s → %3$s</string>
+    <plurals name="markdown_summary_counts">
+        <item quantity="one">Nové: %1$d\nAktualizace: %2$d\nPřeskočeno: %3$d\nNepřiřazeno: %4$d</item>
+        <item quantity="other">Nové: %1$d\nAktualizace: %2$d\nPřeskočeno: %3$d\nNepřiřazeno: %4$d</item>
+    </plurals>
+    <plurals name="bulk_tag_pending">
+        <item quantity="one">Změny štítků: %1$d</item>
+        <item quantity="other">Změny štítků: %1$d</item>
+    </plurals>
 </resources>

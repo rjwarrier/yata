@@ -1663,4 +1663,25 @@
         <item quantity="one">I-i-import: %1$d</item>
         <item quantity="other">I-i-import: %1$d</item>
     </plurals>
+
+    <!-- Import review tools and staged tag editing -->
+    <string name="markdown_duplicates">Mga tumutugmang gawain</string>
+    <string name="markdown_skip_matches">Laktawan ang lahat ng tugma</string>
+    <string name="markdown_copy_matches">I-import lahat nang hiwalay</string>
+    <string name="markdown_summary">Buod ng pag-import</string>
+    <string name="markdown_unresolved">Mga sangguniang hindi naitugma</string>
+    <string name="markdown_changes">Mga pagbabago sa kasalukuyang gawain</string>
+    <string name="markdown_no_changes">Walang field na magbabago.</string>
+    <string name="markdown_remember_mappings">Tandaan ang mga pagtutugma ng sanggunian</string>
+    <string name="markdown_mapping_missing">Suriin ang naka-save na pagtutugma: inalis o in-archive ang patutunguhan nito.</string>
+    <string name="markdown_filter_hint">Binabago lang ng mga filter ang preview na ito. Kasama pa rin sa pag-import ang lahat ng napiling gawain.</string>
+    <string name="markdown_change_value">%1$s: %2$s → %3$s</string>
+    <plurals name="markdown_summary_counts">
+        <item quantity="one">Bago: %1$d\nMga update: %2$d\nNilaktawan: %3$d\nHindi naitugma: %4$d</item>
+        <item quantity="other">Bago: %1$d\nMga update: %2$d\nNilaktawan: %3$d\nHindi naitugma: %4$d</item>
+    </plurals>
+    <plurals name="bulk_tag_pending">
+        <item quantity="one">Mga pagbabago sa tag: %1$d</item>
+        <item quantity="other">Mga pagbabago sa tag: %1$d</item>
+    </plurals>
 </resources>

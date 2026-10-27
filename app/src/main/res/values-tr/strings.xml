@@ -1666,4 +1666,25 @@
         <item quantity="one">İçe aktarılacak: %1$d</item>
         <item quantity="other">İçe aktarılacak: %1$d</item>
     </plurals>
+
+    <!-- Import review tools and staged tag editing -->
+    <string name="markdown_duplicates">Eşleşen görevler</string>
+    <string name="markdown_skip_matches">Tüm eşleşmeleri atla</string>
+    <string name="markdown_copy_matches">Tümünü ayrı içe aktar</string>
+    <string name="markdown_summary">İçe aktarma özeti</string>
+    <string name="markdown_unresolved">Eşleştirilmeyen başvurular</string>
+    <string name="markdown_changes">Mevcut görevdeki değişiklikler</string>
+    <string name="markdown_no_changes">Hiçbir alan değişmeyecek.</string>
+    <string name="markdown_remember_mappings">Başvuru eşleştirmelerini hatırla</string>
+    <string name="markdown_mapping_missing">Kayıtlı bir eşleştirmeyi inceleyin: hedefi kaldırılmış veya arşivlenmiş.</string>
+    <string name="markdown_filter_hint">Filtreler yalnızca bu önizlemeyi değiştirir. Seçilen tüm görevler içe aktarmaya dahildir.</string>
+    <string name="markdown_change_value">%1$s: %2$s → %3$s</string>
+    <plurals name="markdown_summary_counts">
+        <item quantity="one">Yeni: %1$d\nGüncellemeler: %2$d\nAtlanan: %3$d\nEşleştirilmeyen: %4$d</item>
+        <item quantity="other">Yeni: %1$d\nGüncellemeler: %2$d\nAtlanan: %3$d\nEşleştirilmeyen: %4$d</item>
+    </plurals>
+    <plurals name="bulk_tag_pending">
+        <item quantity="one">Etiket değişiklikleri: %1$d</item>
+        <item quantity="other">Etiket değişiklikleri: %1$d</item>
+    </plurals>
 </resources>

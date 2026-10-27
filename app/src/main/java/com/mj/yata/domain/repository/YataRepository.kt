@@ -33,12 +33,14 @@ interface YataRepository {
     // no bearing on reminders (tags, project/list, sort order, flag) pass false — rescheduling
     // an alarm that can't have changed was pure waste, and multiplied per item in a bulk loop.
     suspend fun upsertTask(task: Task, notify: Boolean = true, resyncReminder: Boolean = true)
+    /** [pendingTags] are new draft tags inserted in the same transaction as these task writes. */
     suspend fun upsertTasks(
         tasks: List<Task>,
         notify: Boolean = true,
         resyncReminder: Boolean = true,
         preserveExistingCreatedAt: Boolean = true,
-        trackPostponements: Boolean = true
+        trackPostponements: Boolean = true,
+        pendingTags: List<Tag> = emptyList()
     )
     suspend fun toggleTaskDone(id: String, notify: Boolean = true)
     suspend fun skipTaskOccurrence(id: String)

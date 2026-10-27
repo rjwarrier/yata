@@ -16,6 +16,11 @@ test-only changes belong in the commit message, not here, unless they change beh
 ## [Unreleased]
 
 ### Added
+- Markdown import offers bulk duplicate decisions, filters for selected tasks, matches and
+  unresolved references, and an import summary before saving. Updates show field-level changes
+  using the same merge rules as the actual write.
+- Reference mappings can be remembered for later Markdown files. Deleted or archived targets
+  require review; mappings remain local to the device and can be cleared or switched off.
 - Markdown import previews can be edited before saving, including dates, people, tags and
   destinations. Unknown references can be mapped or explicitly created once for the whole file.
 - Markdown imports flag existing task matches, with Skip, Import separately and Update existing
@@ -61,6 +66,8 @@ test-only changes belong in the commit message, not here, unless they change beh
   and older, which cap how many items a single database lookup can name.
 
 ### Changed
+- Bulk tagging stages multiple additions, removals and new tags until Apply. Tags and task
+  changes save in one transaction; cancelling discards the draft and failures allow retry.
 - Markdown import uses Material 3 section cards, dropdown fields, a collapsing app bar and a
   persistent import action. Task cards have clearer selection outlines, inline edit actions,
   metadata chips and accessible full-row duplicate choices.

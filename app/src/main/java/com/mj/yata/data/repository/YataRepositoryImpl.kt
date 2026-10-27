@@ -93,11 +93,15 @@ class YataRepositoryImpl @Inject constructor(
         notify: Boolean,
         resyncReminder: Boolean,
         preserveExistingCreatedAt: Boolean,
-        trackPostponements: Boolean
+        trackPostponements: Boolean,
+        pendingTags: List<Tag>
     ) {
         if (tasks.isEmpty()) return
 
         val sanitizedTasks = db.withTransaction {
+            require(pendingTags.map { it.id }.distinct().size == pendingTags.size)
+            require(pendingTags.all { db.tagDao().getByIdDirect(it.id) == null })
+            if (pendingTags.isNotEmpty()) db.tagDao().insertAll(pendingTags.map { it.toEntity() })
             val references = existingReferences(tasks)
             val sanitizedTasks = tasks.map { sanitizeTaskForWrite(it, references) }
             // Batch-fetch existing cross-refs for every task up front — 3 queries total instead

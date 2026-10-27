@@ -18,6 +18,9 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
+import com.mj.yata.util.MarkdownImportSummary
+import com.mj.yata.util.MarkdownPreviewFilter
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -35,7 +38,8 @@ import com.mj.yata.util.MarkdownImportContext
 @Composable
 internal fun MarkdownReferenceControls(
     tokens: List<String>, context: MarkdownImportContext, mappings: Map<String, String>, enabled: Boolean,
-    onMap: (String, String?) -> Unit, onCreate: (String, (String?) -> Unit) -> Unit
+    onMap: (String, String?) -> Unit, onCreate: (String, (String?) -> Unit) -> Unit,
+    rememberMappings: Boolean, stale: Boolean, onRemember: (Boolean) -> Unit
 ) {
     var expanded by rememberSaveable { mutableStateOf(false) }
     var creating by remember { mutableStateOf<String?>(null) }
@@ -57,6 +61,13 @@ internal fun MarkdownReferenceControls(
             trailingContent = { Icon(if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore, contentDescription = null) },
             colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)
         )
+        if (stale) MarkdownMessage(stringResource(R.string.markdown_mapping_missing), isError = true,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+        if (expanded) Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically) {
+            Text(stringResource(R.string.markdown_remember_mappings), Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+            Switch(checked = rememberMappings, onCheckedChange = onRemember, enabled = enabled)
+        }
         Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             if (expanded) LazyColumn(
                 modifier = Modifier.fillMaxWidth().heightIn(max = 360.dp),
@@ -92,7 +103,8 @@ internal fun MarkdownReferenceControls(
 
 @Composable
 internal fun MarkdownDuplicateControls(
-    existing: Task, targetContext: String, action: MarkdownDuplicateAction, enabled: Boolean, onAction: (MarkdownDuplicateAction) -> Unit
+    existing: Task, targetContext: String, action: MarkdownDuplicateAction, enabled: Boolean, onAction: (MarkdownDuplicateAction) -> Unit,
+    changes: @Composable () -> Unit = {}
 ) {
     Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.surfaceContainerHigh) {
         Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -117,8 +129,11 @@ internal fun MarkdownDuplicateControls(
                     }
                 }
             }
-            if (action == MarkdownDuplicateAction.UPDATE) Text(stringResource(R.string.markdown_update_keeps_context),
-                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (action == MarkdownDuplicateAction.UPDATE) {
+                Text(stringResource(R.string.markdown_update_keeps_context), style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                changes()
+            }
         }
     }
 }
@@ -165,5 +180,46 @@ internal fun MarkdownPreviewEditor(
                 }
                 }
             }
+    }
+}
+
+@Composable
+internal fun MarkdownSummaryText(summary: MarkdownImportSummary) {
+    Text(pluralStringResource(R.plurals.markdown_summary_counts, summary.newTasks + summary.updatedTasks,
+        summary.newTasks, summary.updatedTasks, summary.skippedRows, summary.unresolved), style = MaterialTheme.typography.bodyMedium)
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+internal fun MarkdownReviewToolbar(
+    summary: MarkdownImportSummary, filter: MarkdownPreviewFilter, hasDuplicates: Boolean, enabled: Boolean,
+    onFilter: (MarkdownPreviewFilter) -> Unit, onDuplicates: (MarkdownDuplicateAction) -> Unit
+) {
+    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)) {
+        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(stringResource(R.string.markdown_summary), style = MaterialTheme.typography.titleMedium)
+            MarkdownSummaryText(summary)
+            if (hasDuplicates) FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(onClick = { onDuplicates(MarkdownDuplicateAction.SKIP) }, enabled = enabled) {
+                    Text(stringResource(R.string.markdown_skip_matches))
+                }
+                OutlinedButton(onClick = { onDuplicates(MarkdownDuplicateAction.COPY) }, enabled = enabled) {
+                    Text(stringResource(R.string.markdown_copy_matches))
+                }
+            }
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                MarkdownPreviewFilter.entries.forEach { value ->
+                    FilterChip(selected = filter == value, onClick = { onFilter(value) }, enabled = enabled,
+                        label = { Text(stringResource(when (value) {
+                            MarkdownPreviewFilter.ALL -> R.string.task_filter_all
+                            MarkdownPreviewFilter.SELECTED -> R.string.settings_language_selected
+                            MarkdownPreviewFilter.DUPLICATES -> R.string.markdown_duplicates
+                            MarkdownPreviewFilter.UNRESOLVED -> R.string.markdown_unresolved
+                        })) })
+                }
+            }
+            Text(stringResource(R.string.markdown_filter_hint), style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
     }
 }

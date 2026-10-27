@@ -1663,4 +1663,25 @@
         <item quantity="one">ಆಮದು ಮಾಡಲು: %1$d</item>
         <item quantity="other">ಆಮದು ಮಾಡಲು: %1$d</item>
     </plurals>
+
+    <!-- Import review tools and staged tag editing -->
+    <string name="markdown_duplicates">ಹೊಂದಾಣಿಕೆಯ ಕಾರ್ಯಗಳು</string>
+    <string name="markdown_skip_matches">ಎಲ್ಲ ಹೊಂದಾಣಿಕೆಗಳನ್ನು ಬಿಟ್ಟುಬಿಡಿ</string>
+    <string name="markdown_copy_matches">ಎಲ್ಲವನ್ನೂ ಪ್ರತ್ಯೇಕವಾಗಿ ಆಮದು ಮಾಡಿ</string>
+    <string name="markdown_summary">ಆಮದು ಸಾರಾಂಶ</string>
+    <string name="markdown_unresolved">ಹೊಂದಿಕೆಯಾಗದ ಉಲ್ಲೇಖಗಳು</string>
+    <string name="markdown_changes">ಅಸ್ತಿತ್ವದಲ್ಲಿರುವ ಕಾರ್ಯದ ಬದಲಾವಣೆಗಳು</string>
+    <string name="markdown_no_changes">ಯಾವುದೇ ಕ್ಷೇತ್ರ ಬದಲಾಗುವುದಿಲ್ಲ.</string>
+    <string name="markdown_remember_mappings">ಉಲ್ಲೇಖಗಳ ಹೊಂದಾಣಿಕೆಗಳನ್ನು ನೆನಪಿಡಿ</string>
+    <string name="markdown_mapping_missing">ಉಳಿಸಿದ ಹೊಂದಾಣಿಕೆಯನ್ನು ಪರಿಶೀಲಿಸಿ: ಗುರಿಯನ್ನು ತೆಗೆದುಹಾಕಲಾಗಿದೆ ಅಥವಾ ಸಂಗ್ರಹಿಸಲಾಗಿದೆ.</string>
+    <string name="markdown_filter_hint">ಫಿಲ್ಟರ್‌ಗಳು ಈ ಮುನ್ನೋಟವನ್ನು ಮಾತ್ರ ಬದಲಾಯಿಸುತ್ತವೆ. ಆಯ್ದ ಎಲ್ಲ ಕಾರ್ಯಗಳು ಆಮದಿನಲ್ಲಿ ಸೇರಿರುತ್ತವೆ.</string>
+    <string name="markdown_change_value">%1$s: %2$s → %3$s</string>
+    <plurals name="markdown_summary_counts">
+        <item quantity="one">ಹೊಸದು: %1$d\nನವೀಕರಣಗಳು: %2$d\nಬಿಟ್ಟವು: %3$d\nಹೊಂದಿಕೆಯಾಗದವು: %4$d</item>
+        <item quantity="other">ಹೊಸದು: %1$d\nನವೀಕರಣಗಳು: %2$d\nಬಿಟ್ಟವು: %3$d\nಹೊಂದಿಕೆಯಾಗದವು: %4$d</item>
+    </plurals>
+    <plurals name="bulk_tag_pending">
+        <item quantity="one">ಟ್ಯಾಗ್ ಬದಲಾವಣೆಗಳು: %1$d</item>
+        <item quantity="other">ಟ್ಯಾಗ್ ಬದಲಾವಣೆಗಳು: %1$d</item>
+    </plurals>
 </resources>

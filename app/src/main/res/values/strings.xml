@@ -1835,4 +1835,25 @@
         <item quantity="one">To import: %1$d</item>
         <item quantity="other">To import: %1$d</item>
     </plurals>
+
+    <!-- Import review tools and staged tag editing -->
+    <string name="markdown_duplicates">Duplicate matches</string>
+    <string name="markdown_skip_matches">Skip all matches</string>
+    <string name="markdown_copy_matches">Import all separately</string>
+    <string name="markdown_summary">Import summary</string>
+    <string name="markdown_unresolved">Unresolved references</string>
+    <string name="markdown_changes">Changes to existing task</string>
+    <string name="markdown_no_changes">No fields will change.</string>
+    <string name="markdown_remember_mappings">Remember reference mappings</string>
+    <string name="markdown_mapping_missing">A saved mapping needs review: its destination was removed or archived.</string>
+    <string name="markdown_filter_hint">Filters only change this preview. All selected tasks are included in the import.</string>
+    <string name="markdown_change_value">%1$s: %2$s → %3$s</string>
+    <plurals name="markdown_summary_counts">
+        <item quantity="one">New: %1$d\nUpdates: %2$d\nSkipped: %3$d\nUnresolved: %4$d</item>
+        <item quantity="other">New: %1$d\nUpdates: %2$d\nSkipped: %3$d\nUnresolved: %4$d</item>
+    </plurals>
+    <plurals name="bulk_tag_pending">
+        <item quantity="one">Tag changes: %1$d</item>
+        <item quantity="other">Tag changes: %1$d</item>
+    </plurals>
 </resources>

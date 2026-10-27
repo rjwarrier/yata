@@ -10,6 +10,8 @@ data class MarkdownImportReview(
     val edits: Map<Int, MarkdownTaskEdit> = emptyMap(),
     val excludedSubtasks: Map<Int, Set<Int>> = emptyMap(),
     val references: Map<String, String> = emptyMap(),
+    val ignoredSavedReferences: Set<String> = emptySet(),
+    val rememberMappings: Boolean? = null,
     val duplicateActions: Map<Int, MarkdownDuplicateDecision> = emptyMap()
 )
 
@@ -25,6 +27,7 @@ fun reviewMarkdownTasks(
     val lists = context.lists.filter { !it.archived }.mapTo(hashSetOf()) { it.id }
     val people = context.people.filter { !it.archived }.mapTo(hashSetOf()) { it.id }
     val tags = context.tags.mapTo(hashSetOf()) { it.id }
+    val ignoredReferences = review.ignoredSavedReferences.mapTo(hashSetOf()) { it.lowercase() }
     val mappings = review.references.entries.associate { it.key.lowercase() to it.value }
     fun mapped(token: String): String? = mappings[token.lowercase()]?.takeIf { id -> when (token.first()) {
         '+' -> !manualDestination && context.projectsEnabled && id in projects
@@ -37,16 +40,25 @@ fun reviewMarkdownTasks(
         var task = preview.task
         val parsed = preview.source.quickAdd
         val tokens = (preview.unmatched + listOfNotNull(parsed?.projectName?.let { "+$it" }, parsed?.listName?.let { "=$it" })).distinct()
-        tokens.forEach { token -> mapped(token)?.let { id ->
+        tokens.forEach { token ->
+            if (!manualDestination && token.lowercase() in ignoredReferences) {
+                when (token.first()) {
+                    '+' -> task = task.copy(projectId = null, due = if (parsed?.due == null) null else task.due)
+                    '=' -> task = task.copy(listId = null)
+                }
+            }
+            mapped(token)?.let { id ->
             when (token.first()) {
                 '+' -> task = task.copy(projectId = id, listId = null, due = if (useDates && parsed?.due == null) context.projects.first { it.id == id }.due else task.due)
                 '=' -> task = task.copy(listId = id, projectId = null, due = if (useDates && parsed?.due == null) null else task.due)
             }
         } }
         fun remapNames(names: List<String>, trigger: String, base: List<String>, resolve: (String) -> String?): List<String> {
-            if (names.none { mapped(trigger + it) != null }) return base
+            if (names.none { mapped(trigger + it) != null || (trigger + it).lowercase() in ignoredReferences }) return base
             val prior = names.mapNotNull(resolve).toSet()
-            val replacements = names.mapNotNull { mapped(trigger + it) ?: resolve(it) }
+            val replacements = names.mapNotNull {
+                if ((trigger + it).lowercase() in ignoredReferences) null else mapped(trigger + it) ?: resolve(it)
+            }
             return ((base - prior) + replacements).distinct()
         }
         task = task.copy(
@@ -57,8 +69,18 @@ fun reviewMarkdownTasks(
         if (edit != null) task = applyMarkdownEdit(task, edit)
         task = task.withExcludedMarkdownSubtasks(review.excludedSubtasks[index].orEmpty())
         val ignored = edit?.fields.orEmpty()
-        preview.copy(task = task, unmatched = preview.unmatched.filter { token ->
-            mapped(token) == null && when (token.first()) {
+        val sourceTokens = markdownReferenceTokens(listOf(preview))
+        val invalidMappings = review.references.keys.filter { token ->
+            token.lowercase() in sourceTokens && !validMarkdownReference(token, review.references.getValue(token), context) &&
+                when (token.first()) {
+                    '+', '=' -> !manualDestination
+                    '#' -> context.tagsEnabled
+                    '@' -> context.peopleEnabled
+                    else -> false
+                }
+        }
+        preview.copy(task = task, unmatched = (preview.unmatched + invalidMappings).distinctBy { it.lowercase() }.filter { token ->
+            token.lowercase() !in ignoredReferences && mapped(token) == null && when (token.first()) {
                 '+', '=' -> "destination" !in ignored
                 '#' -> "tags" !in ignored
                 '@' -> "people" !in ignored

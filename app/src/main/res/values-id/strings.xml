@@ -1666,4 +1666,25 @@
         <item quantity="one">Untuk diimpor: %1$d</item>
         <item quantity="other">Untuk diimpor: %1$d</item>
     </plurals>
+
+    <!-- Import review tools and staged tag editing -->
+    <string name="markdown_duplicates">Tugas yang cocok</string>
+    <string name="markdown_skip_matches">Lewati semua kecocokan</string>
+    <string name="markdown_copy_matches">Impor semua secara terpisah</string>
+    <string name="markdown_summary">Ringkasan impor</string>
+    <string name="markdown_unresolved">Referensi belum cocok</string>
+    <string name="markdown_changes">Perubahan pada tugas yang ada</string>
+    <string name="markdown_no_changes">Tidak ada kolom yang akan berubah.</string>
+    <string name="markdown_remember_mappings">Ingat pasangan referensi</string>
+    <string name="markdown_mapping_missing">Pasangan tersimpan perlu ditinjau: tujuannya telah dihapus atau diarsipkan.</string>
+    <string name="markdown_filter_hint">Filter hanya mengubah pratinjau ini. Semua tugas terpilih tetap disertakan dalam impor.</string>
+    <string name="markdown_change_value">%1$s: %2$s → %3$s</string>
+    <plurals name="markdown_summary_counts">
+        <item quantity="one">Baru: %1$d\nPembaruan: %2$d\nDilewati: %3$d\nBelum cocok: %4$d</item>
+        <item quantity="other">Baru: %1$d\nPembaruan: %2$d\nDilewati: %3$d\nBelum cocok: %4$d</item>
+    </plurals>
+    <plurals name="bulk_tag_pending">
+        <item quantity="one">Perubahan tag: %1$d</item>
+        <item quantity="other">Perubahan tag: %1$d</item>
+    </plurals>
 </resources>

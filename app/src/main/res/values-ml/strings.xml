@@ -1663,4 +1663,25 @@
         <item quantity="one">ഇറക്കുമതി ചെയ്യാനുള്ളത്: %1$d</item>
         <item quantity="other">ഇറക്കുമതി ചെയ്യാനുള്ളത്: %1$d</item>
     </plurals>
+
+    <!-- Import review tools and staged tag editing -->
+    <string name="markdown_duplicates">പൊരുത്തപ്പെടുന്ന ജോലികൾ</string>
+    <string name="markdown_skip_matches">എല്ലാ പൊരുത്തങ്ങളും ഒഴിവാക്കുക</string>
+    <string name="markdown_copy_matches">എല്ലാം വേർതിരിച്ച് ഇറക്കുമതി ചെയ്യുക</string>
+    <string name="markdown_summary">ഇറക്കുമതി സംഗ്രഹം</string>
+    <string name="markdown_unresolved">പൊരുത്തപ്പെടാത്ത പരാമർശങ്ങൾ</string>
+    <string name="markdown_changes">നിലവിലുള്ള ജോലിയിലെ മാറ്റങ്ങൾ</string>
+    <string name="markdown_no_changes">ഒരു ഫീൽഡും മാറില്ല.</string>
+    <string name="markdown_remember_mappings">പരാമർശങ്ങളുടെ പൊരുത്തങ്ങൾ ഓർക്കുക</string>
+    <string name="markdown_mapping_missing">സംരക്ഷിച്ച പൊരുത്തം പരിശോധിക്കുക: ലക്ഷ്യം നീക്കുകയോ ആർക്കൈവ് ചെയ്യുകയോ ചെയ്തിരിക്കുന്നു.</string>
+    <string name="markdown_filter_hint">ഫിൽട്ടറുകൾ ഈ പ്രിവ്യൂ മാത്രം മാറ്റുന്നു. തിരഞ്ഞെടുത്ത എല്ലാ ജോലികളും ഇറക്കുമതിയിൽ ഉൾപ്പെടും.</string>
+    <string name="markdown_change_value">%1$s: %2$s → %3$s</string>
+    <plurals name="markdown_summary_counts">
+        <item quantity="one">പുതിയത്: %1$d\nപുതുക്കലുകൾ: %2$d\nഒഴിവാക്കിയത്: %3$d\nപൊരുത്തപ്പെടാത്തത്: %4$d</item>
+        <item quantity="other">പുതിയത്: %1$d\nപുതുക്കലുകൾ: %2$d\nഒഴിവാക്കിയത്: %3$d\nപൊരുത്തപ്പെടാത്തത്: %4$d</item>
+    </plurals>
+    <plurals name="bulk_tag_pending">
+        <item quantity="one">ടാഗ് മാറ്റങ്ങൾ: %1$d</item>
+        <item quantity="other">ടാഗ് മാറ്റങ്ങൾ: %1$d</item>
+    </plurals>
 </resources>

@@ -1503,7 +1503,8 @@ private class FakeYataRepository : YataRepository {
         notify: Boolean,
         resyncReminder: Boolean,
         preserveExistingCreatedAt: Boolean,
-        trackPostponements: Boolean
+        trackPostponements: Boolean,
+        pendingTags: List<Tag>
     ) {
         tasksFlow.value = tasksFlow.value + tasks
     }

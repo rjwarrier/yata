@@ -1666,4 +1666,25 @@
         <item quantity="one">Sẽ nhập: %1$d</item>
         <item quantity="other">Sẽ nhập: %1$d</item>
     </plurals>
+
+    <!-- Import review tools and staged tag editing -->
+    <string name="markdown_duplicates">Tác vụ trùng khớp</string>
+    <string name="markdown_skip_matches">Bỏ qua mọi tác vụ khớp</string>
+    <string name="markdown_copy_matches">Nhập tất cả riêng biệt</string>
+    <string name="markdown_summary">Tóm tắt nhập</string>
+    <string name="markdown_unresolved">Tham chiếu chưa được ghép</string>
+    <string name="markdown_changes">Thay đổi tác vụ hiện có</string>
+    <string name="markdown_no_changes">Không có trường nào sẽ thay đổi.</string>
+    <string name="markdown_remember_mappings">Ghi nhớ cách ghép tham chiếu</string>
+    <string name="markdown_mapping_missing">Cần kiểm tra cách ghép đã lưu: đích của nó đã bị xóa hoặc lưu trữ.</string>
+    <string name="markdown_filter_hint">Bộ lọc chỉ thay đổi bản xem trước này. Mọi tác vụ đã chọn vẫn được đưa vào lần nhập.</string>
+    <string name="markdown_change_value">%1$s: %2$s → %3$s</string>
+    <plurals name="markdown_summary_counts">
+        <item quantity="one">Mới: %1$d\nCập nhật: %2$d\nBỏ qua: %3$d\nChưa ghép: %4$d</item>
+        <item quantity="other">Mới: %1$d\nCập nhật: %2$d\nBỏ qua: %3$d\nChưa ghép: %4$d</item>
+    </plurals>
+    <plurals name="bulk_tag_pending">
+        <item quantity="one">Thay đổi thẻ: %1$d</item>
+        <item quantity="other">Thay đổi thẻ: %1$d</item>
+    </plurals>
 </resources>

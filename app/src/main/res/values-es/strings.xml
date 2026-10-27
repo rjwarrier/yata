@@ -1712,4 +1712,25 @@
         <item quantity="one">Por importar: %1$d</item>
         <item quantity="other">Por importar: %1$d</item>
     </plurals>
+
+    <!-- Import review tools and staged tag editing -->
+    <string name="markdown_duplicates">Tareas coincidentes</string>
+    <string name="markdown_skip_matches">Omitir todas las coincidencias</string>
+    <string name="markdown_copy_matches">Importar todas por separado</string>
+    <string name="markdown_summary">Resumen de importación</string>
+    <string name="markdown_unresolved">Referencias sin resolver</string>
+    <string name="markdown_changes">Cambios en la tarea existente</string>
+    <string name="markdown_no_changes">No cambiará ningún campo.</string>
+    <string name="markdown_remember_mappings">Recordar asociaciones de referencias</string>
+    <string name="markdown_mapping_missing">Revisa una asociación guardada: su destino se eliminó o archivó.</string>
+    <string name="markdown_filter_hint">Los filtros solo cambian esta vista previa. La importación incluye todas las tareas seleccionadas.</string>
+    <string name="markdown_change_value">%1$s: %2$s → %3$s</string>
+    <plurals name="markdown_summary_counts">
+        <item quantity="one">Nuevas: %1$d\nActualizaciones: %2$d\nOmitidas: %3$d\nSin resolver: %4$d</item>
+        <item quantity="other">Nuevas: %1$d\nActualizaciones: %2$d\nOmitidas: %3$d\nSin resolver: %4$d</item>
+    </plurals>
+    <plurals name="bulk_tag_pending">
+        <item quantity="one">Cambios de etiquetas: %1$d</item>
+        <item quantity="other">Cambios de etiquetas: %1$d</item>
+    </plurals>
 </resources>

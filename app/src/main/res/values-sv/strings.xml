@@ -1666,4 +1666,25 @@
         <item quantity="one">Att importera: %1$d</item>
         <item quantity="other">Att importera: %1$d</item>
     </plurals>
+
+    <!-- Import review tools and staged tag editing -->
+    <string name="markdown_duplicates">Matchande uppgifter</string>
+    <string name="markdown_skip_matches">Hoppa över alla matchningar</string>
+    <string name="markdown_copy_matches">Importera alla separat</string>
+    <string name="markdown_summary">Importsammanfattning</string>
+    <string name="markdown_unresolved">Okopplade referenser</string>
+    <string name="markdown_changes">Ändringar i befintlig uppgift</string>
+    <string name="markdown_no_changes">Inga fält kommer att ändras.</string>
+    <string name="markdown_remember_mappings">Kom ihåg referenskopplingar</string>
+    <string name="markdown_mapping_missing">Kontrollera en sparad koppling: målet har tagits bort eller arkiverats.</string>
+    <string name="markdown_filter_hint">Filter ändrar bara denna förhandsvisning. Alla valda uppgifter ingår i importen.</string>
+    <string name="markdown_change_value">%1$s: %2$s → %3$s</string>
+    <plurals name="markdown_summary_counts">
+        <item quantity="one">Nya: %1$d\nUppdateringar: %2$d\nÖverhoppade: %3$d\nOkopplade: %4$d</item>
+        <item quantity="other">Nya: %1$d\nUppdateringar: %2$d\nÖverhoppade: %3$d\nOkopplade: %4$d</item>
+    </plurals>
+    <plurals name="bulk_tag_pending">
+        <item quantity="one">Taggändringar: %1$d</item>
+        <item quantity="other">Taggändringar: %1$d</item>
+    </plurals>
 </resources>

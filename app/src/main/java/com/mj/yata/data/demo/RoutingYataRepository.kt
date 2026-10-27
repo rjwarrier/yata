@@ -59,9 +59,10 @@ class RoutingYataRepository @Inject constructor(
         notify: Boolean,
         resyncReminder: Boolean,
         preserveExistingCreatedAt: Boolean,
-        trackPostponements: Boolean
+        trackPostponements: Boolean,
+        pendingTags: List<Tag>
     ) = write {
-        real.upsertTasks(tasks, notify, resyncReminder, preserveExistingCreatedAt, trackPostponements)
+        real.upsertTasks(tasks, notify, resyncReminder, preserveExistingCreatedAt, trackPostponements, pendingTags)
     }
     override suspend fun toggleTaskDone(id: String, notify: Boolean) = write { real.toggleTaskDone(id, notify) }
     override suspend fun skipTaskOccurrence(id: String) = write { real.skipTaskOccurrence(id) }

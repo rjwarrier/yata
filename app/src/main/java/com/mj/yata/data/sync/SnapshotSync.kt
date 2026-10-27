@@ -307,6 +307,8 @@ internal object SnapshotMerger {
         name == "backup_interval_minutes" ||
             name == "remote_backup_protocol" ||
             name == "ftp_use_tls" ||
+            name == "markdown_reference_mappings" ||
+            name == "markdown_remember_mappings" ||
             name.startsWith("app_lock_") ||
             name.startsWith("github_") ||
             name.startsWith("sftp_") ||

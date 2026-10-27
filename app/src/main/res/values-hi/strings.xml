@@ -1666,4 +1666,25 @@
         <item quantity="one">आयात करने के लिए: %1$d</item>
         <item quantity="other">आयात करने के लिए: %1$d</item>
     </plurals>
+
+    <!-- Import review tools and staged tag editing -->
+    <string name="markdown_duplicates">मिलते-जुलते कार्य</string>
+    <string name="markdown_skip_matches">सभी मिलान छोड़ें</string>
+    <string name="markdown_copy_matches">सभी अलग से आयात करें</string>
+    <string name="markdown_summary">आयात सारांश</string>
+    <string name="markdown_unresolved">अनसुलझे संदर्भ</string>
+    <string name="markdown_changes">मौजूदा कार्य में बदलाव</string>
+    <string name="markdown_no_changes">कोई फ़ील्ड नहीं बदलेगी।</string>
+    <string name="markdown_remember_mappings">संदर्भों के मिलान याद रखें</string>
+    <string name="markdown_mapping_missing">सहेजे गए मिलान की समीक्षा करें: उसका गंतव्य हटाया या संग्रहित किया गया है।</string>
+    <string name="markdown_filter_hint">फ़िल्टर केवल यह पूर्वावलोकन बदलते हैं। सभी चयनित कार्य आयात में शामिल रहते हैं।</string>
+    <string name="markdown_change_value">%1$s: %2$s → %3$s</string>
+    <plurals name="markdown_summary_counts">
+        <item quantity="one">नए: %1$d\nअपडेट: %2$d\nछोड़े गए: %3$d\nअनसुलझे: %4$d</item>
+        <item quantity="other">नए: %1$d\nअपडेट: %2$d\nछोड़े गए: %3$d\nअनसुलझे: %4$d</item>
+    </plurals>
+    <plurals name="bulk_tag_pending">
+        <item quantity="one">टैग बदलाव: %1$d</item>
+        <item quantity="other">टैग बदलाव: %1$d</item>
+    </plurals>
 </resources>

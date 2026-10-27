@@ -1663,4 +1663,25 @@
         <item quantity="one">ਆਯਾਤ ਕਰਨ ਲਈ: %1$d</item>
         <item quantity="other">ਆਯਾਤ ਕਰਨ ਲਈ: %1$d</item>
     </plurals>
+
+    <!-- Import review tools and staged tag editing -->
+    <string name="markdown_duplicates">ਮਿਲਦੇ-ਜੁਲਦੇ ਕੰਮ</string>
+    <string name="markdown_skip_matches">ਸਾਰੇ ਮੇਲ ਛੱਡੋ</string>
+    <string name="markdown_copy_matches">ਸਾਰੇ ਵੱਖਰੇ ਆਯਾਤ ਕਰੋ</string>
+    <string name="markdown_summary">ਆਯਾਤ ਸਾਰ</string>
+    <string name="markdown_unresolved">ਨਾ ਮਿਲੇ ਹਵਾਲੇ</string>
+    <string name="markdown_changes">ਮੌਜੂਦਾ ਕੰਮ ਵਿੱਚ ਬਦਲਾਅ</string>
+    <string name="markdown_no_changes">ਕੋਈ ਖੇਤਰ ਨਹੀਂ ਬਦਲੇਗਾ।</string>
+    <string name="markdown_remember_mappings">ਹਵਾਲਿਆਂ ਦੇ ਮੇਲ ਯਾਦ ਰੱਖੋ</string>
+    <string name="markdown_mapping_missing">ਸੰਭਾਲੇ ਮੇਲ ਦੀ ਸਮੀਖਿਆ ਕਰੋ: ਇਸ ਦੀ ਮੰਜ਼ਿਲ ਹਟਾਈ ਜਾਂ ਆਰਕਾਈਵ ਕੀਤੀ ਗਈ ਹੈ।</string>
+    <string name="markdown_filter_hint">ਫਿਲਟਰ ਸਿਰਫ਼ ਇਹ ਝਲਕ ਬਦਲਦੇ ਹਨ। ਸਾਰੇ ਚੁਣੇ ਕੰਮ ਆਯਾਤ ਵਿੱਚ ਸ਼ਾਮਲ ਹਨ।</string>
+    <string name="markdown_change_value">%1$s: %2$s → %3$s</string>
+    <plurals name="markdown_summary_counts">
+        <item quantity="one">ਨਵੇਂ: %1$d\nਅੱਪਡੇਟ: %2$d\nਛੱਡੇ: %3$d\nਨਾ ਮਿਲੇ: %4$d</item>
+        <item quantity="other">ਨਵੇਂ: %1$d\nਅੱਪਡੇਟ: %2$d\nਛੱਡੇ: %3$d\nਨਾ ਮਿਲੇ: %4$d</item>
+    </plurals>
+    <plurals name="bulk_tag_pending">
+        <item quantity="one">ਟੈਗ ਬਦਲਾਅ: %1$d</item>
+        <item quantity="other">ਟੈਗ ਬਦਲਾਅ: %1$d</item>
+    </plurals>
 </resources>

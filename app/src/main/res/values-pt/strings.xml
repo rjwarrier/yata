@@ -1668,4 +1668,25 @@
         <item quantity="one">A importar: %1$d</item>
         <item quantity="other">A importar: %1$d</item>
     </plurals>
+
+    <!-- Import review tools and staged tag editing -->
+    <string name="markdown_duplicates">Tarefas correspondentes</string>
+    <string name="markdown_skip_matches">Ignorar todas as correspondências</string>
+    <string name="markdown_copy_matches">Importar todas separadamente</string>
+    <string name="markdown_summary">Resumo da importação</string>
+    <string name="markdown_unresolved">Referências não associadas</string>
+    <string name="markdown_changes">Alterações na tarefa existente</string>
+    <string name="markdown_no_changes">Nenhum campo será alterado.</string>
+    <string name="markdown_remember_mappings">Lembrar associações de referências</string>
+    <string name="markdown_mapping_missing">Reveja uma associação guardada: o destino foi eliminado ou arquivado.</string>
+    <string name="markdown_filter_hint">Os filtros alteram apenas esta pré-visualização. Todas as tarefas selecionadas são incluídas na importação.</string>
+    <string name="markdown_change_value">%1$s: %2$s → %3$s</string>
+    <plurals name="markdown_summary_counts">
+        <item quantity="one">Novas: %1$d\nAtualizações: %2$d\nIgnoradas: %3$d\nNão associadas: %4$d</item>
+        <item quantity="other">Novas: %1$d\nAtualizações: %2$d\nIgnoradas: %3$d\nNão associadas: %4$d</item>
+    </plurals>
+    <plurals name="bulk_tag_pending">
+        <item quantity="one">Alterações de etiquetas: %1$d</item>
+        <item quantity="other">Alterações de etiquetas: %1$d</item>
+    </plurals>
 </resources>

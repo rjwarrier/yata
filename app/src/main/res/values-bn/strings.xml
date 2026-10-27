@@ -1666,4 +1666,25 @@
         <item quantity="one">আমদানি হবে: %1$d</item>
         <item quantity="other">আমদানি হবে: %1$d</item>
     </plurals>
+
+    <!-- Import review tools and staged tag editing -->
+    <string name="markdown_duplicates">সম্ভাব্য সদৃশ কাজ</string>
+    <string name="markdown_skip_matches">সব মিলে যাওয়া কাজ বাদ দিন</string>
+    <string name="markdown_copy_matches">সব আলাদাভাবে আমদানি করুন</string>
+    <string name="markdown_summary">আমদানির সারাংশ</string>
+    <string name="markdown_unresolved">অমীমাংসিত উল্লেখ</string>
+    <string name="markdown_changes">বিদ্যমান কাজের পরিবর্তন</string>
+    <string name="markdown_no_changes">কোনো ক্ষেত্র পরিবর্তন হবে না।</string>
+    <string name="markdown_remember_mappings">উল্লেখের মিলগুলি মনে রাখুন</string>
+    <string name="markdown_mapping_missing">সংরক্ষিত মিলটি পর্যালোচনা করুন: গন্তব্যটি সরানো বা আর্কাইভ করা হয়েছে।</string>
+    <string name="markdown_filter_hint">ফিল্টার শুধু এই পূর্বরূপ বদলায়। সব নির্বাচিত কাজ আমদানিতে অন্তর্ভুক্ত থাকে।</string>
+    <string name="markdown_change_value">%1$s: %2$s → %3$s</string>
+    <plurals name="markdown_summary_counts">
+        <item quantity="one">নতুন: %1$d\nআপডেট: %2$d\nবাদ দেওয়া: %3$d\nঅমীমাংসিত: %4$d</item>
+        <item quantity="other">নতুন: %1$d\nআপডেট: %2$d\nবাদ দেওয়া: %3$d\nঅমীমাংসিত: %4$d</item>
+    </plurals>
+    <plurals name="bulk_tag_pending">
+        <item quantity="one">ট্যাগ পরিবর্তন: %1$d</item>
+        <item quantity="other">ট্যাগ পরিবর্তন: %1$d</item>
+    </plurals>
 </resources>

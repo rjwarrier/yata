@@ -92,9 +92,7 @@ fun TodayTab(
     onBulkComplete: (List<String>) -> Unit = {},
     onBulkDelete: (List<String>) -> Unit = {},
     onSelectionDeleteActionChanged: ((() -> Unit)?) -> Unit = {},
-    onBulkAddTag: (List<String>, String) -> Unit = { _, _ -> },
-    onBulkRemoveTag: (List<String>, String) -> Unit = { _, _ -> },
-    onBulkCreateAndAddTag: (List<String>, String, String) -> Unit = { _, _, _ -> },
+    onBulkApplyTagChanges: suspend (List<String>, com.mj.yata.domain.usecase.BulkTagEdit) -> Boolean = { _, _ -> false },
     onBulkSetProject: (List<String>, String?) -> Unit = { _, _ -> },
     onBulkSetList: (List<String>, String?) -> Unit = { _, _ -> },
     onBulkDuplicate: (List<String>) -> Unit = {},
@@ -141,6 +139,7 @@ fun TodayTab(
     val selectedIds = remember { mutableStateListOf<String>() }
     val selectionMode = selectedIds.isNotEmpty()
     var showBulkTagSheet by remember { mutableStateOf(false) }
+    var bulkTagsApplying by remember { mutableStateOf(false) }
     var showBulkMoveSheet by remember { mutableStateOf(false) }
     var showBulkAssignSheet by remember { mutableStateOf(false) }
     var showBulkRescheduleSheet by remember { mutableStateOf(false) }
@@ -861,30 +860,24 @@ fun TodayTab(
 
     if (showBulkTagSheet) {
         ModalBottomSheet(
-            onDismissRequest = { showBulkTagSheet = false },
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            onDismissRequest = { if (!bulkTagsApplying) showBulkTagSheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true, confirmValueChange = { !bulkTagsApplying }),
             shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
             sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             com.mj.yata.ui.sheets.TaskBulkTagPickerSheet(
                 tags = tags,
+                projects = projects,
                 selectedTasks = tasks.filter { it.id in selectedIds },
-                onRemoveTag = { tagId ->
-                    onBulkRemoveTag(selectedIds.toList(), tagId)
-                    selectedIds.clear()
-                    showBulkTagSheet = false
+                onApply = { edit ->
+                    bulkTagsApplying = true
+                    try {
+                        val success = onBulkApplyTagChanges(selectedIds.toList(), edit)
+                        if (success) { selectedIds.clear(); showBulkTagSheet = false }
+                        success
+                    } finally { bulkTagsApplying = false }
                 },
-                onCreateTag = { name, color ->
-                    onBulkCreateAndAddTag(selectedIds.toList(), name, color)
-                    selectedIds.clear()
-                    showBulkTagSheet = false
-                },
-                onSelectTag = { tagId ->
-                    onBulkAddTag(selectedIds.toList(), tagId)
-                    selectedIds.clear()
-                    showBulkTagSheet = false
-                },
-                onDismiss = { showBulkTagSheet = false }
+                onDismiss = { if (!bulkTagsApplying) showBulkTagSheet = false }
             )
         }
     }

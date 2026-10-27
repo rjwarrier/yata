@@ -1667,4 +1667,25 @@
         <item quantity="one">Te importeren: %1$d</item>
         <item quantity="other">Te importeren: %1$d</item>
     </plurals>
+
+    <!-- Import review tools and staged tag editing -->
+    <string name="markdown_duplicates">Overeenkomende taken</string>
+    <string name="markdown_skip_matches">Alle overeenkomsten overslaan</string>
+    <string name="markdown_copy_matches">Alles afzonderlijk importeren</string>
+    <string name="markdown_summary">Importoverzicht</string>
+    <string name="markdown_unresolved">Niet-gekoppelde verwijzingen</string>
+    <string name="markdown_changes">Wijzigingen aan bestaande taak</string>
+    <string name="markdown_no_changes">Er worden geen velden gewijzigd.</string>
+    <string name="markdown_remember_mappings">Verwijzingskoppelingen onthouden</string>
+    <string name="markdown_mapping_missing">Controleer een opgeslagen koppeling: het doel is verwijderd of gearchiveerd.</string>
+    <string name="markdown_filter_hint">Filters wijzigen alleen dit voorbeeld. Alle geselecteerde taken worden meegenomen in de import.</string>
+    <string name="markdown_change_value">%1$s: %2$s → %3$s</string>
+    <plurals name="markdown_summary_counts">
+        <item quantity="one">Nieuw: %1$d\nUpdates: %2$d\nOvergeslagen: %3$d\nNiet gekoppeld: %4$d</item>
+        <item quantity="other">Nieuw: %1$d\nUpdates: %2$d\nOvergeslagen: %3$d\nNiet gekoppeld: %4$d</item>
+    </plurals>
+    <plurals name="bulk_tag_pending">
+        <item quantity="one">Tagwijzigingen: %1$d</item>
+        <item quantity="other">Tagwijzigingen: %1$d</item>
+    </plurals>
 </resources>

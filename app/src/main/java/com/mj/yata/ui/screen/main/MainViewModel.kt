@@ -1732,6 +1732,12 @@ data class WeekendRescheduleWarning(
         safeLaunch { taskOperations.bulkAddTag(ids, tagId) }
     }
 
+    suspend fun applyBulkTagChanges(ids: List<String>, edit: com.mj.yata.domain.usecase.BulkTagEdit): Boolean = try {
+        withContext(Dispatchers.IO) { com.mj.yata.domain.usecase.applyBulkTagEdit(repository, ids, edit) }
+        true
+    } catch (e: CancellationException) { throw e }
+    catch (e: Exception) { Log.e("MainViewModel", "Bulk tag edit failed", e); errorBus.emit(R.string.error_action_failed); false }
+
     fun bulkRemoveTag(ids: List<String>, tagId: String) {
         safeLaunch { com.mj.yata.domain.usecase.removeBulkTag(repository, ids, tagId) }
     }
@@ -1850,6 +1856,11 @@ data class WeekendRescheduleWarning(
 
     private val _markdownImportStatus = MutableStateFlow<MarkdownImportStatus?>(null)
     val markdownImportStatus = _markdownImportStatus.asStateFlow()
+
+    val markdownReferenceMemory = userPreferences.markdownReferenceMemoryFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+    fun rememberMarkdownMappings(enabled: Boolean) { safeLaunch { userPreferences.setMarkdownRememberMappings(enabled) } }
+    fun saveMarkdownReference(token: String, id: String?) { safeLaunch { userPreferences.setMarkdownReference(token, id) } }
 
     private val markdownReviews = linkedMapOf<String, MutableStateFlow<com.mj.yata.util.MarkdownImportReview>>()
     fun markdownReview(sessionId: String): StateFlow<com.mj.yata.util.MarkdownImportReview> =

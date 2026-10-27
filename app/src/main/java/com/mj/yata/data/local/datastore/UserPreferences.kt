@@ -100,6 +100,19 @@ class UserPreferences @Inject constructor(
         crossinline transform: suspend (Preferences) -> T
     ): Flow<T> = map { transform(it) }.distinctUntilChanged()
 
+    val markdownReferenceMemoryFlow: Flow<com.mj.yata.util.MarkdownReferenceMemory> = prefsFlow.mapDistinct { prefs ->
+        com.mj.yata.util.MarkdownReferenceMemory(prefs[MARKDOWN_REMEMBER_MAPPINGS] ?: true,
+            com.mj.yata.util.MarkdownReferenceCodec.decode(prefs[MARKDOWN_REFERENCE_MAPPINGS].orEmpty()))
+    }
+    suspend fun setMarkdownRememberMappings(enabled: Boolean) { dataStore.edit { it[MARKDOWN_REMEMBER_MAPPINGS] = enabled } }
+    suspend fun setMarkdownReference(token: String, id: String?) {
+        dataStore.edit { prefs ->
+            val key = token.trim().lowercase()
+            val current = com.mj.yata.util.MarkdownReferenceCodec.decode(prefs[MARKDOWN_REFERENCE_MAPPINGS].orEmpty()) - key
+            prefs[MARKDOWN_REFERENCE_MAPPINGS] = com.mj.yata.util.MarkdownReferenceCodec.encode(if (id == null) current else current + (key to id))
+        }
+    }
+
     val snapshotFlow: Flow<UserPreferencesSnapshot> = prefsFlow.mapDistinct { prefs ->
         UserPreferencesSnapshot(
             themeMode = when (prefs[THEME_MODE]) {
@@ -113,6 +126,8 @@ class UserPreferences @Inject constructor(
     }
 
     companion object {
+        val MARKDOWN_REFERENCE_MAPPINGS = stringSetPreferencesKey("markdown_reference_mappings")
+        val MARKDOWN_REMEMBER_MAPPINGS = booleanPreferencesKey("markdown_remember_mappings")
         /**
          * Preferences deliberately left out of a backup, by key name.
          *
@@ -146,6 +161,8 @@ class UserPreferences @Inject constructor(
             "github_last_head_sha",
             "github_last_canonical_hash",
             "auto_backup_last_fingerprint",
+            "markdown_reference_mappings",
+            "markdown_remember_mappings",
             "auto_backup_last_at",
             "last_primary_argb",
             "user_photo_uri"

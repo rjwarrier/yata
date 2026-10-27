@@ -1668,4 +1668,25 @@
         <item quantity="one">De importat: %1$d</item>
         <item quantity="other">De importat: %1$d</item>
     </plurals>
+
+    <!-- Import review tools and staged tag editing -->
+    <string name="markdown_duplicates">Sarcini potrivite</string>
+    <string name="markdown_skip_matches">Omite toate potrivirile</string>
+    <string name="markdown_copy_matches">Importă toate separat</string>
+    <string name="markdown_summary">Rezumatul importului</string>
+    <string name="markdown_unresolved">Referințe neasociate</string>
+    <string name="markdown_changes">Modificări la sarcina existentă</string>
+    <string name="markdown_no_changes">Niciun câmp nu se va modifica.</string>
+    <string name="markdown_remember_mappings">Reține asocierile referințelor</string>
+    <string name="markdown_mapping_missing">Verifică o asociere salvată: destinația a fost eliminată sau arhivată.</string>
+    <string name="markdown_filter_hint">Filtrele schimbă doar această previzualizare. Toate sarcinile selectate sunt incluse în import.</string>
+    <string name="markdown_change_value">%1$s: %2$s → %3$s</string>
+    <plurals name="markdown_summary_counts">
+        <item quantity="one">Noi: %1$d\nActualizări: %2$d\nOmise: %3$d\nNeasociate: %4$d</item>
+        <item quantity="other">Noi: %1$d\nActualizări: %2$d\nOmise: %3$d\nNeasociate: %4$d</item>
+    </plurals>
+    <plurals name="bulk_tag_pending">
+        <item quantity="one">Modificări ale etichetelor: %1$d</item>
+        <item quantity="other">Modificări ale etichetelor: %1$d</item>
+    </plurals>
 </resources>

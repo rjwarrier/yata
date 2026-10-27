@@ -1663,4 +1663,25 @@
         <item quantity="one">Za kuingiza: %1$d</item>
         <item quantity="other">Za kuingiza: %1$d</item>
     </plurals>
+
+    <!-- Import review tools and staged tag editing -->
+    <string name="markdown_duplicates">Kazi zinazolingana</string>
+    <string name="markdown_skip_matches">Ruka zote zinazolingana</string>
+    <string name="markdown_copy_matches">Ingiza zote kando</string>
+    <string name="markdown_summary">Muhtasari wa uingizaji</string>
+    <string name="markdown_unresolved">Marejeleo yasiyolinganishwa</string>
+    <string name="markdown_changes">Mabadiliko ya kazi iliyopo</string>
+    <string name="markdown_no_changes">Hakuna sehemu itakayobadilika.</string>
+    <string name="markdown_remember_mappings">Kumbuka ulinganishaji wa marejeleo</string>
+    <string name="markdown_mapping_missing">Kagua ulinganishaji uliohifadhiwa: lengwa lake limeondolewa au kuhifadhiwa kwenye kumbukumbu.</string>
+    <string name="markdown_filter_hint">Vichujio hubadilisha hakikisho hili pekee. Kazi zote ulizochagua zinajumuishwa katika uingizaji.</string>
+    <string name="markdown_change_value">%1$s: %2$s → %3$s</string>
+    <plurals name="markdown_summary_counts">
+        <item quantity="one">Mpya: %1$d\nMasasisho: %2$d\nZilizorukwa: %3$d\nYasiyolinganishwa: %4$d</item>
+        <item quantity="other">Mpya: %1$d\nMasasisho: %2$d\nZilizorukwa: %3$d\nYasiyolinganishwa: %4$d</item>
+    </plurals>
+    <plurals name="bulk_tag_pending">
+        <item quantity="one">Mabadiliko ya lebo: %1$d</item>
+        <item quantity="other">Mabadiliko ya lebo: %1$d</item>
+    </plurals>
 </resources>
