@@ -46,11 +46,13 @@ fun TaskBulkTagPickerSheet(
     var showCreateDialog by rememberSaveable { mutableStateOf(false) }
     var newTagName by rememberSaveable { mutableStateOf("") }
     val search = query.trim().removePrefix("#").trim()
-    val filtered = remember(tags, search) {
-        tags.filter { it.name.contains(search, ignoreCase = true) }
-            .sortedBy { it.name.lowercase() }
+    val sortedTags = remember(tags) { tags.sortedBy { it.name.lowercase() } }
+    val filtered = remember(sortedTags, search) {
+        if (search.isEmpty()) sortedTags else sortedTags.filter { it.name.contains(search, ignoreCase = true) }
     }
-    val canCreateSearch = search.isNotBlank() && tags.none { it.name.trim().equals(search, ignoreCase = true) }
+    val canCreateSearch = remember(tags, search) {
+        search.isNotBlank() && tags.none { it.name.trim().equals(search, ignoreCase = true) }
+    }
 
     Column(
         modifier = modifier

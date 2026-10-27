@@ -117,6 +117,27 @@ class MarkdownSmartImportTest {
         assertEquals("2026-10-28", task.due)
     }
 
+    @Test fun `repeated section names and task text do not reuse another sections defaults`() {
+        val tasks = parse("""
+            # Tasks
+            ## Checklist
+            Project: Work
+            Tags: home
+            Due: 2026-11-01
+            - [ ] Review
+            - [ ] Send
+            ## Checklist
+            Project: School
+            Tags: school
+            Due: 2026-11-02
+            - [ ] Review
+            - [ ] Send
+        """).prepareSmartImport(context, null, null, true).map { it.task }
+        assertEquals(listOf("work", "work", "school", "school"), tasks.map { it.projectId })
+        assertEquals(listOf(listOf("home"), listOf("home"), listOf("school-tag"), listOf("school-tag")), tasks.map { it.tagIds })
+        assertEquals(listOf("2026-11-01", "2026-11-01", "2026-11-02", "2026-11-02"), tasks.map { it.due })
+    }
+
     @Test fun `bullet numbered and indented list tasks keep their hierarchy`() {
         val document = parse("""
             # Work

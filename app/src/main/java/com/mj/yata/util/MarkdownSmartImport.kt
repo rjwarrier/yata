@@ -6,8 +6,8 @@ import com.mj.yata.domain.model.Tag
 import com.mj.yata.domain.model.Task
 import com.mj.yata.domain.model.YataList
 import com.mj.yata.domain.model.activeLists
-import com.mj.yata.domain.model.activePeople
 import com.mj.yata.domain.model.activeProjects
+import java.util.TreeMap
 
 /** Snapshot of the same local entities and feature settings used by individual smart add. */
 data class MarkdownImportContext(
@@ -32,46 +32,61 @@ fun MarkdownDocument.prepareSmartImport(
     useDates: Boolean
 ): List<MarkdownTaskPreview> {
     if (tasks.isEmpty()) return emptyList()
-    val base = createTasks(tasks.indices.toSet(), projectId, listId, useDates,
-        context.defaultAssigneeIds, context.defaultPriority, allowInbox = true)
-    return tasks.zip(base).map { (source, task) ->
-        val parsed = source.quickAdd ?: emptyMarkdownQuickAdd(source.title)
-        // A bare heading that exactly names a local project/list is also useful context.
-        val headingDestination = source.headings.asReversed().firstNotNullOfOrNull { heading ->
-            val project = if (context.projectsEnabled) context.projects.activeProjects()
-                .firstOrNull { it.name.equals(heading.trim(), ignoreCase = true) } else null
-            val list = context.lists.activeLists().firstOrNull { it.name.equals(heading.trim(), ignoreCase = true) }
+    val lookup = QuickAddEntityLookup(context.lists, context.projects, context.people, context.tags)
+    val manualDestination = projectId != null || listId != null
+    val ignored = buildSet {
+        if (manualDestination) { add("project"); add("list") }
+        if (!useDates) addAll(listOf("due", "start", "time", "recurrence", "reminder"))
+    }
+    val headingProjects = TreeMap<String, Project>(String.CASE_INSENSITIVE_ORDER).apply {
+        context.projects.activeProjects().forEach { putIfAbsent(it.name, it) }
+    }
+    val headingLists = TreeMap<String, YataList>(String.CASE_INSENSITIVE_ORDER).apply {
+        context.lists.activeLists().forEach { putIfAbsent(it.name, it) }
+    }
+    val headingDestinations = mutableMapOf<List<String>, Pair<String?, String?>?>()
+    fun headingDestination(headings: List<String>): Pair<String?, String?>? {
+        if (headingDestinations.containsKey(headings)) return headingDestinations[headings]
+        val match = headings.asReversed().firstNotNullOfOrNull { heading ->
+            val key = heading.trim()
+            val project = if (context.projectsEnabled) headingProjects[key] else null
+            val list = headingLists[key]
             when { project != null -> project.name to null; list != null -> null to list.name; else -> null }
         }
+        headingDestinations[headings] = match
+        return match
+    }
+    val base = createTasks(tasks.indices.toSet(), projectId, listId, useDates,
+        context.defaultAssigneeIds, context.defaultPriority, allowInbox = true)
+    return tasks.mapIndexed { index, source ->
+        val task = base[index]
+        val parsed = source.quickAdd ?: emptyMarkdownQuickAdd(source.title)
+        // A bare heading that exactly names a local project/list is also useful context.
         val parsedDestination = parsed.projectName != null || parsed.listName != null
+        val headingDestination = if (!parsedDestination && !manualDestination) headingDestination(source.headings) else null
         val quickAdd = parsed.copy(
             projectName = if (parsedDestination) parsed.projectName else headingDestination?.first,
             listName = if (parsedDestination) parsed.listName else headingDestination?.second
         )
-        val manualDestination = projectId != null || listId != null
-        val ignored = buildSet {
-            if (manualDestination) { add("project"); add("list") }
-            if (!useDates) addAll(listOf("due", "start", "time", "recurrence", "reminder"))
-        }
         var resolved = task.copy(title = quickAdd.title.ifBlank { source.title }).withParsedQuickAdd(
             quickAdd, ignored, context.lists, context.projects, context.people, context.tags,
-            context.projectsEnabled, context.tagsEnabled, context.peopleEnabled
+            context.projectsEnabled, context.tagsEnabled, context.peopleEnabled, entityLookup = lookup
         )
         if (!useDates) resolved = resolved.copy(due = null)
         // A reminder without a due date cannot be scheduled (same constraint as the editor).
         if (resolved.due == null) resolved = resolved.copy(reminder = null)
         val unmatched = buildList {
             if (!manualDestination && context.projectsEnabled) quickAdd.projectName?.let { name ->
-                if (findBestEntityMatch(name, context.projects.activeProjects(), { it.name }) == null) add("+$name")
+                if (lookup.project(name) == null) add("+$name")
             }
             if (!manualDestination) quickAdd.listName?.let { name ->
-                if (findBestEntityMatch(name, context.lists.activeLists(), { it.name }) == null) add("=$name")
+                if (lookup.list(name) == null) add("=$name")
             }
             if (context.tagsEnabled) quickAdd.tagNames.forEach { name ->
-                if (findBestEntityMatch(name, context.tags, { it.name }) == null) add("#$name")
+                if (lookup.tag(name) == null) add("#$name")
             }
             if (context.peopleEnabled) quickAdd.assigneeNames.forEach { name ->
-                if (findBestEntityMatch(name, context.people.activePeople(), { it.name }) == null) add("@$name")
+                if (lookup.person(name) == null) add("@$name")
             }
         }.distinct()
         MarkdownTaskPreview(source, resolved, unmatched)
@@ -97,17 +112,24 @@ internal fun ParsedQuickAdd.withMarkdownDefaults(defaults: ParsedQuickAdd): Pars
 )
 
 /** Adapt Markdown presentation only; field recognition remains NaturalLanguageParser's job. */
+private val markdownInlineCode = Regex("`+([^`]+)`+")
+private val markdownUrl = Regex("https?://[^\\s<>)\\]]+")
+private val markdownLink = Regex("!?\\[([^]]+)]\\(([^)]+)\\)")
+private val markdownEmphasis = Regex("(?<!\\w)[*_](\\S(?:.*?\\S)?)[*_](?!\\w)")
+private val markdownMetadataName = Regex("[*_` ]+")
+private val markdownTagSeparator = Regex("[,\\s]+")
+
 internal fun parseMarkdownSmartText(raw: String, parse: (String) -> ParsedQuickAdd): ParsedQuickAdd {
     val protected = mutableListOf<String>()
     fun protect(value: String): String {
         protected += value
         return "YATAMDPROTECTEDTOKEN${protected.lastIndex}END"
     }
-    var text = raw.replace(Regex("`+([^`]+)`+")) { protect(it.groupValues[1]) }
-    text = text.replace(Regex("https?://[^\\s<>)\\]]+")) { protect(it.value) }
-        .replace(Regex("!?\\[([^]]+)]\\(([^)]+)\\)"), "$1 ($2)")
+    var text = raw.replace(markdownInlineCode) { protect(it.groupValues[1]) }
+    text = text.replace(markdownUrl) { protect(it.value) }
+        .replace(markdownLink, "$1 ($2)")
         .replace("**", "").replace("__", "").replace("~~", "")
-        .replace(Regex("(?<!\\w)[*_](\\S(?:.*?\\S)?)[*_](?!\\w)"), "$1")
+        .replace(markdownEmphasis, "$1")
     val result = parse(text)
     var title = result.title
     protected.forEachIndexed { index, value -> title = title.replace("YATAMDPROTECTEDTOKEN${index}END", value) }
@@ -118,7 +140,7 @@ internal fun parseMarkdownSmartText(raw: String, parse: (String) -> ParsedQuickA
 internal fun markdownMetadata(label: String, value: String): String? {
     val clean = value.trim().trim('*', '_', '`')
     if (clean.isBlank() || clean == "-") return ""
-    val name = label.lowercase().trim().replace(Regex("[*_` ]+"), " ").trim()
+    val name = label.lowercase().trim().replace(markdownMetadataName, " ").trim()
     fun names(trigger: String): String = clean.split(',').map(String::trim).filter(String::isNotEmpty)
         .joinToString(" ") { "$trigger\"${it.trimStart('#', '@', '+', '=').replace("\"", "") }\"" }
     return when (name) {
@@ -127,7 +149,7 @@ internal fun markdownMetadata(label: String, value: String): String? {
         "time" -> "at $clean"
         "project" -> names("+")
         "list" -> names("=")
-        "tag", "tags", "labels" -> clean.split(Regex("[,\\s]+"))
+        "tag", "tags", "labels" -> clean.split(markdownTagSeparator)
             .filter(String::isNotBlank).joinToString(" ") { "#${it.trimStart('#')}" }
         "person", "people", "assignee", "assignees", "assigned to", "owner" -> names("@")
         "priority" -> when (clean.lowercase()) {

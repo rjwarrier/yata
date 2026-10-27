@@ -51,6 +51,12 @@ private data class MarkdownPreviewRequest(
     val useDates: Boolean
 )
 private data class PreparedMarkdownPreview(val request: MarkdownPreviewRequest, val tasks: List<MarkdownTaskPreview>)
+private data class MarkdownEntityLabels(
+    val projects: Map<String, String>,
+    val lists: Map<String, String>,
+    val people: Map<String, String>,
+    val tags: Map<String, String>
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -88,6 +94,14 @@ fun MarkdownImportScreen(
     var readError by remember { mutableIntStateOf(0) }
     val activeProjects = remember(projects) { projects.filter { !it.archived }.sortedBy { it.name.lowercase() } }
     val activeLists = remember(lists) { lists.filter { !it.archived }.sortedBy { it.name.lowercase() } }
+    val activeProjectIds = remember(activeProjects) { activeProjects.mapTo(hashSetOf()) { it.id } }
+    val activeListIds = remember(activeLists) { activeLists.mapTo(hashSetOf()) { it.id } }
+    val projectOptions = remember(activeProjects) { activeProjects.map { it.id to it.name } }
+    val listOptions = remember(activeLists) { activeLists.map { it.id to it.name } }
+    val entityLabels = remember(projects, lists, people, tags) {
+        MarkdownEntityLabels(projects.associate { it.id to it.name }, lists.associate { it.id to it.name },
+            people.associate { it.id to it.name }, tags.associate { it.id to it.name })
+    }
     val importContext = remember(projects, lists, people, tags, projectsEnabled, tagsEnabled, peopleEnabled, defaultPriority, autoAssignToMe) {
         MarkdownImportContext(projects, lists, people, tags, projectsEnabled, peopleEnabled, tagsEnabled,
             defaultPriority, if (autoAssignToMe) people.firstOrNull { it.isMe }?.let { listOf(it.id) }.orEmpty() else emptyList())
@@ -102,12 +116,17 @@ fun MarkdownImportScreen(
         }
     }
     val previews = prepared?.takeIf { it.request === request }?.tasks
-    val destinationValid = previews?.filterIndexed { index, _ -> index in selectedSet }?.all { preview ->
-        val task = preview.task
-        (task.projectId != null || task.listId != null) &&
-            (task.projectId == null || activeProjects.any { it.id == task.projectId }) &&
-            (task.listId == null || activeLists.any { it.id == task.listId })
-    } == true
+    val invalidDestinations = remember(previews, activeProjectIds, activeListIds) {
+        previews?.mapIndexedNotNull { index, preview ->
+            val task = preview.task
+            index.takeIf {
+                (task.projectId == null && task.listId == null) ||
+                    (task.projectId != null && task.projectId !in activeProjectIds) ||
+                    (task.listId != null && task.listId !in activeListIds)
+            }
+        }?.toSet().orEmpty()
+    }
+    val destinationValid = previews != null && selectedSet.all { it in previews.indices && it !in invalidDestinations }
 
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
@@ -221,16 +240,16 @@ fun MarkdownImportScreen(
             item {
                 MarkdownDestinationPicker(
                     label = stringResource(R.string.settings_default_project),
-                    selectedName = activeProjects.firstOrNull { it.id == projectId }?.name,
-                    options = activeProjects.map { it.id to it.name },
+                    selectedName = entityLabels.projects[projectId].takeIf { projectId in activeProjectIds },
+                    options = projectOptions,
                     enabled = !importing,
                     onSelected = { projectId = it }
                 )
                 Spacer(Modifier.height(8.dp))
                 MarkdownDestinationPicker(
                     label = stringResource(R.string.settings_default_list),
-                    selectedName = activeLists.firstOrNull { it.id == listId }?.name,
-                    options = activeLists.map { it.id to it.name },
+                    selectedName = entityLabels.lists[listId].takeIf { listId in activeListIds },
+                    options = listOptions,
                     enabled = !importing,
                     onSelected = { listId = it }
                 )
@@ -282,7 +301,7 @@ fun MarkdownImportScreen(
                     }
                 }
                 itemsIndexed(tasks, key = { index, _ -> "$fileUri:$fileRevision:$index" }) { index, task ->
-                    MarkdownTaskCard(task, previews?.getOrNull(index), importContext, index in selectedSet, !importing) { checked ->
+                    MarkdownTaskCard(task, previews?.getOrNull(index), entityLabels, index in selectedSet, !importing) { checked ->
                         selected = if (checked) (selected.orEmpty() + index).distinct() else selected.orEmpty() - index
                     }
                 }
@@ -324,7 +343,7 @@ private fun MarkdownDestinationPicker(
 private fun MarkdownTaskCard(
     task: MarkdownTask,
     preview: MarkdownTaskPreview?,
-    context: MarkdownImportContext,
+    labels: MarkdownEntityLabels,
     selected: Boolean,
     enabled: Boolean,
     onSelected: (Boolean) -> Unit
@@ -351,7 +370,7 @@ private fun MarkdownTaskCard(
                 else stringResource(R.string.search_filter_no_due_date),
                 style = MaterialTheme.typography.bodySmall
             )
-            preview?.let { MarkdownDetectedFields(it, context) }
+            preview?.let { MarkdownDetectedFields(it, labels) }
             if (task.done) Text(stringResource(R.string.export_done_label), style = MaterialTheme.typography.labelMedium)
             if (task.subtasks.isNotEmpty()) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -389,15 +408,15 @@ private fun MarkdownTaskCard(
 }
 
 @Composable
-private fun MarkdownDetectedFields(preview: MarkdownTaskPreview, context: MarkdownImportContext) {
+private fun MarkdownDetectedFields(preview: MarkdownTaskPreview, entities: MarkdownEntityLabels) {
     val task = preview.task
-    val project = context.projects.firstOrNull { it.id == task.projectId }
-    val list = context.lists.firstOrNull { it.id == task.listId }
+    val project = entities.projects[task.projectId]
+    val list = entities.lists[task.listId]
     val labels = buildList {
-        project?.let { add("+${it.name}") }
-        list?.let { add("=${it.name}") }
-        task.tagIds.mapNotNull { id -> context.tags.firstOrNull { it.id == id } }.forEach { add("#${it.name}") }
-        task.assigneeIds.mapNotNull { id -> context.people.firstOrNull { it.id == id } }.forEach { add("@${it.name}") }
+        project?.let { add("+$it") }
+        list?.let { add("=$it") }
+        task.tagIds.mapNotNull { entities.tags[it] }.forEach { add("#$it") }
+        task.assigneeIds.mapNotNull { entities.people[it] }.forEach { add("@$it") }
         task.startDate?.let { add(stringResource(R.string.smart_add_starts, it)) }
         task.time?.let { add(stringResource(R.string.quick_add_preview_time, it)) }
         task.recurrence?.let { add(stringResource(R.string.quick_add_preview_repeat, RecurrenceEvaluator.recurrenceSummary(it))) }

@@ -53,6 +53,8 @@ test-only changes belong in the commit message, not here, unless they change beh
   and older, which cap how many items a single database lookup can name.
 
 ### Changed
+- Large Markdown import previews reuse entity matches and heading metadata, and the bulk tag
+  picker avoids re-sorting tags on every search keystroke.
 - The bulk task tag picker now has search, a scrollable two-column tag grid, and inline tag
   creation that applies the new tag to the selected tasks. Matching names reuse existing tags.
 - Markdown import shows explicit Select all and Select none buttons, with highlighted selections

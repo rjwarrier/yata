@@ -26,23 +26,15 @@ fun Task.withParsedQuickAdd(
     tags: List<Tag>,
     projectsEnabled: Boolean,
     tagsEnabled: Boolean,
-    peopleEnabled: Boolean
+    peopleEnabled: Boolean,
+    entityLookup: QuickAddEntityLookup? = null
 ): Task {
-    var updated = this
-    if ("due" !in ignoredFields && quickAdd.due != null) updated = updated.copy(due = quickAdd.due)
-    if ("start" !in ignoredFields && quickAdd.startDate != null) updated = updated.copy(startDate = quickAdd.startDate)
-    if ("time" !in ignoredFields && quickAdd.time != null) updated = updated.copy(time = quickAdd.time)
-    if ("recurrence" !in ignoredFields && quickAdd.recurrence != null) updated = updated.copy(recurrence = quickAdd.recurrence)
-    if ("reminder" !in ignoredFields && quickAdd.reminder != null) updated = updated.copy(reminder = quickAdd.reminder)
-    if ("priority" !in ignoredFields && quickAdd.priority != null) updated = updated.copy(priority = quickAdd.priority)
-    if ("flag" !in ignoredFields && quickAdd.flag) updated = updated.copy(flag = true)
-
     val resolved = resolveParsedQuickAddEntities(
         quickAdd = quickAdd,
-        baseListId = updated.listId,
-        baseProjectId = updated.projectId,
-        baseTagIds = updated.tagIds,
-        baseAssigneeIds = updated.assigneeIds,
+        baseListId = listId,
+        baseProjectId = projectId,
+        baseTagIds = tagIds,
+        baseAssigneeIds = assigneeIds,
         lists = lists,
         projects = projects,
         people = people,
@@ -50,18 +42,22 @@ fun Task.withParsedQuickAdd(
         projectsEnabled = projectsEnabled,
         tagsEnabled = tagsEnabled,
         peopleEnabled = peopleEnabled,
-        ignoredFields = ignoredFields
+        ignoredFields = ignoredFields,
+        entityLookup = entityLookup
     )
-    updated = updated.copy(
+    return copy(
+        due = if ("due" in ignoredFields) due else quickAdd.due ?: resolved.projectDue ?: due,
+        startDate = if ("start" in ignoredFields) startDate else quickAdd.startDate ?: startDate,
+        time = if ("time" in ignoredFields) time else quickAdd.time ?: time,
+        recurrence = if ("recurrence" in ignoredFields) recurrence else quickAdd.recurrence ?: recurrence,
+        reminder = if ("reminder" in ignoredFields) reminder else quickAdd.reminder ?: reminder,
+        priority = if ("priority" in ignoredFields) priority else quickAdd.priority ?: priority,
+        flag = flag || ("flag" !in ignoredFields && quickAdd.flag),
         listId = resolved.listId,
         projectId = resolved.projectId,
         tagIds = resolved.tagIds,
         assigneeIds = resolved.assigneeIds
     )
-    if ("due" !in ignoredFields && quickAdd.due == null && resolved.projectDue != null) {
-        updated = updated.copy(due = resolved.projectDue)
-    }
-    return updated
 }
 
 fun resolveParsedQuickAddEntities(
@@ -77,7 +73,8 @@ fun resolveParsedQuickAddEntities(
     projectsEnabled: Boolean,
     tagsEnabled: Boolean,
     peopleEnabled: Boolean,
-    ignoredFields: Set<String> = emptySet()
+    ignoredFields: Set<String> = emptySet(),
+    entityLookup: QuickAddEntityLookup? = null
 ): ParsedQuickAddEntityResolution {
     var listId = baseListId
     var projectId = baseProjectId
@@ -86,14 +83,18 @@ fun resolveParsedQuickAddEntities(
     var assigneeIds = baseAssigneeIds
 
     if (projectsEnabled && "project" !in ignoredFields && quickAdd.projectName != null) {
-        findBestEntityMatch(quickAdd.projectName, projects.activeProjects(includeId = projectId), { it.name })?.let { project ->
+        val match = if (entityLookup != null) entityLookup.project(quickAdd.projectName, projectId)
+            else findBestEntityMatch(quickAdd.projectName, projects.activeProjects(includeId = projectId), { it.name })
+        match?.let { project ->
             projectId = project.id
             listId = null
             projectDue = project.due
         }
     }
     if ("list" !in ignoredFields && quickAdd.listName != null) {
-        findBestEntityMatch(quickAdd.listName, lists.activeLists(includeId = listId), { it.name })?.let { list ->
+        val match = if (entityLookup != null) entityLookup.list(quickAdd.listName, listId)
+            else findBestEntityMatch(quickAdd.listName, lists.activeLists(includeId = listId), { it.name })
+        match?.let { list ->
             listId = list.id
             projectId = null
             projectDue = null
@@ -101,13 +102,14 @@ fun resolveParsedQuickAddEntities(
     }
     if (tagsEnabled && "tags" !in ignoredFields && quickAdd.tagNames.isNotEmpty()) {
         val matchedTagIds = quickAdd.tagNames.mapNotNull { target ->
-            findBestEntityMatch(target, tags, { it.name })?.id
+            (if (entityLookup != null) entityLookup.tag(target) else findBestEntityMatch(target, tags, { it.name }))?.id
         }.distinct()
         if (matchedTagIds.isNotEmpty()) tagIds = (tagIds + matchedTagIds).distinct()
     }
     if (peopleEnabled && "people" !in ignoredFields && quickAdd.assigneeNames.isNotEmpty()) {
         val matchedAssigneeIds = quickAdd.assigneeNames.mapNotNull { target ->
-            findBestEntityMatch(target, people.activePeople(includeIds = assigneeIds.toSet()), { it.name })?.id
+            (if (entityLookup != null) entityLookup.person(target, assigneeIds.toSet())
+                else findBestEntityMatch(target, people.activePeople(includeIds = assigneeIds.toSet()), { it.name }))?.id
         }.distinct()
         if (matchedAssigneeIds.isNotEmpty()) assigneeIds = (assigneeIds + matchedAssigneeIds).distinct()
     }

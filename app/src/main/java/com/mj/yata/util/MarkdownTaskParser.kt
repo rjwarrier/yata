@@ -48,7 +48,9 @@ data class MarkdownDocument(
     ): List<Task> {
         require(allowInbox || projectId != null || listId != null)
         require(selectedIndices.isNotEmpty() && selectedIndices.all { it in tasks.indices })
-        return tasks.withIndex().filter { it.index in selectedIndices }.mapIndexed { order, (_, task) ->
+        var nextSortOrder = firstSortOrder
+        return tasks.mapIndexedNotNull { index, task ->
+            if (index !in selectedIndices) return@mapIndexedNotNull null
             val subtaskIds = task.subtasks.map { "s_${UUID.randomUUID()}" }
             Task(
                 id = "t_${UUID.randomUUID()}",
@@ -75,7 +77,7 @@ data class MarkdownDocument(
                     )
                 },
                 notes = task.notes,
-                sortOrder = firstSortOrder + order
+                sortOrder = nextSortOrder++
             )
         }
     }
@@ -88,6 +90,17 @@ object MarkdownTaskParser {
     private val property = Regex("^\\s*(?:[-+*]\\s+)?[*_`]*([\\p{L} ]+?)[*_`]*\\s*:\\s*(.+)$")
     private val tableSeparator = Regex("^\\s*\\|?\\s*:?-{3,}:?\\s*(?:\\|\\s*:?-{3,}:?\\s*)*\\|?\\s*$")
     private val taskColumnNames = setOf("task", "tasks", "title", "todo", "to-do", "to do", "action", "action item", "task name", "task title")
+    private val htmlComment = Regex("<!--[\\s\\S]*?(?:-->|\\z)")
+    private val setextUnderline = Regex("^ {0,3}(?:=+|-+)\\s*$")
+    private val horizontalRule = Regex("[-*_]{3,}")
+    private val tableCellSeparator = Regex("(?<!\\\\)\\|")
+    private val markdownImage = Regex("!\\[([^]]*)]\\(([^)]+)\\)")
+    private val markdownLink = Regex("\\[([^]]+)]\\(([^)]+)\\)")
+    private val markdownEmphasis = Regex("(?<!\\w)[*_](\\S(?:.*?\\S)?)[*_](?!\\w)")
+    private val markdownCode = Regex("`([^`]+)`")
+    private val tomorrow = Regex("\\btomorrow\\b", RegexOption.IGNORE_CASE)
+    private val todayWord = Regex("\\btoday\\b", RegexOption.IGNORE_CASE)
+    private val yesterday = Regex("\\byesterday\\b", RegexOption.IGNORE_CASE)
     private data class Item(val indent: Int, val body: String, val done: Boolean, val metadata: List<String> = emptyList(), val note: String? = null)
     private val heading = Regex("^ {0,3}(#{1,6})\\s+(.+?)(?:\\s+#+)?\\s*$")
     private val fence = Regex("^ {0,3}(`{3,}|~{3,}).*$")
@@ -101,6 +114,7 @@ object MarkdownTaskParser {
 
     private data class Heading(val level: Int, val text: String, val due: LocalDate?)
     private data class Section(val headings: List<Heading>, val prelude: MutableList<String> = mutableListOf(), var hasTasks: Boolean = false)
+    private data class SectionImportData(val notes: String, val headings: List<String>, val defaults: ParsedQuickAdd)
     private data class PendingTask(
         val title: String, val done: Boolean, val due: LocalDate?, val section: Section,
         val indent: Int, val notes: MutableList<String> = mutableListOf(),
@@ -118,7 +132,7 @@ object MarkdownTaskParser {
     ): MarkdownDocument {
         if (markdown.toByteArray(Charsets.UTF_8).size > MAX_MARKDOWN_BYTES) throw MarkdownImportTooLargeException()
         val lines = markdown.removePrefix("\uFEFF")
-            .replace(Regex("<!--[\\s\\S]*?(?:-->|\\z)"), "")
+            .replace(htmlComment, "")
             .replace('\u2028', '\n').replace('\u2029', '\n').lines()
         var scanFence: String? = null
         val visibleLines = lines.filter { line ->
@@ -171,7 +185,7 @@ object MarkdownTaskParser {
             }
             if (skipSetextUnderline) { skipSetextUnderline = false; return@forEachIndexed }
             val setext = line.isNotBlank() && !bullet.matches(line) && '|' !in line &&
-                !line.trimStart().startsWith('#') && lines.getOrNull(lineIndex + 1)?.matches(Regex("^ {0,3}(?:=+|-+)\\s*$")) == true
+                !line.trimStart().startsWith('#') && lines.getOrNull(lineIndex + 1)?.matches(setextUnderline) == true
             val headingLine = if (setext) {
                 val marker = if (lines[lineIndex + 1].trimStart().startsWith('=')) "#" else "##"
                 "$marker ${line.trim()}"
@@ -219,7 +233,7 @@ object MarkdownTaskParser {
                 listed != null -> Item(indentation(line), listed.groupValues[2].trim(), false)
                 !checklistMode && !hasListItems && line.isNotBlank() &&
                     !line.trimStart().startsWith('>') && '|' !in line &&
-                    !line.trim().matches(Regex("[-*_]{3,}")) && !updated.matches(line) -> Item(0, line.trim(), false)
+                    !line.trim().matches(horizontalRule) && !updated.matches(line) -> Item(0, line.trim(), false)
                 else -> null
             }
             if (item != null) {
@@ -259,34 +273,47 @@ object MarkdownTaskParser {
         val parseSmart: (String) -> ParsedQuickAdd = { text ->
             parseMemo.getOrPut(text) { NaturalLanguageParser.parse(text, referenceDate, referenceTime, dayFirst) }
         }
-        return MarkdownDocument(documentTitle, referenceDate, tasks.map { task ->
-            val notes = (listOf(sectionNotes(task.section), "- [${if (task.done) "x" else " "}] ${task.body}", task.notes.joinToString("\n").trim()) + references)
-                .filter(String::isNotBlank).distinct().joinToString("\n\n").takeIf(String::isNotBlank)
-            // Shared reference text is copied into task notes. Bound that expansion as well.
-            totalNotesLength += notes?.length ?: 0
-            if (totalNotesLength > MAX_MARKDOWN_BYTES * 4) throw MarkdownImportTooLargeException()
+        fun parseMarkdown(text: String) = parseMarkdownSmartText(text, parseSmart)
+        // Tasks arrive in source order, so one section cache covers all shared defaults without
+        // retaining formatted data for every earlier section in a large document.
+        var cachedSection: Section? = null
+        var cachedSectionData: SectionImportData? = null
+        fun importData(section: Section): SectionImportData {
+            if (cachedSection === section) return checkNotNull(cachedSectionData)
             var defaults = emptyMarkdownQuickAdd()
-            task.section.headings.forEach { h ->
+            section.headings.forEach { h ->
                 val labelled = property.matchEntire(h.text)
                 val input = labelled?.let { markdownMetadata(it.groupValues[1], it.groupValues[2]) } ?: h.text
-                defaults = parseMarkdownSmartText(input, parseSmart).withMarkdownDefaults(defaults)
+                defaults = parseMarkdown(input).withMarkdownDefaults(defaults)
             }
-            task.section.prelude.forEach { line ->
+            section.prelude.forEach { line ->
                 property.matchEntire(line)?.let { field ->
                     markdownMetadata(field.groupValues[1], field.groupValues[2])?.let { metadata ->
                         defaults = parseSmart(metadata).withMarkdownDefaults(defaults)
                     }
                 }
             }
+            val data = SectionImportData(sectionNotes(section), section.headings.map { plainTitle(it.text) }, defaults)
+            cachedSection = section
+            cachedSectionData = data
+            return data
+        }
+        return MarkdownDocument(documentTitle, referenceDate, tasks.map { task ->
+            val section = importData(task.section)
+            val notes = (listOf(section.notes, "- [${if (task.done) "x" else " "}] ${task.body}", task.notes.joinToString("\n").trim()) + references)
+                .filter(String::isNotBlank).distinct().joinToString("\n\n").takeIf(String::isNotBlank)
+            // Shared reference text is copied into task notes. Bound that expansion as well.
+            totalNotesLength += notes?.length ?: 0
+            if (totalNotesLength > MAX_MARKDOWN_BYTES * 4) throw MarkdownImportTooLargeException()
             // Concrete heading dates retain their source year; inline task fields override them.
-            defaults = defaults.copy(due = task.due?.toString() ?: defaults.due)
-            var parsed = parseMarkdownSmartText(task.body, parseSmart)
+            val defaults = section.defaults.copy(due = task.due?.toString() ?: section.defaults.due)
+            var parsed = parseMarkdown(task.body)
             task.metadata.forEach { metadata ->
                 parsed = parseSmart(metadata).withMarkdownDefaults(parsed).copy(title = parsed.title)
             }
             parsed = parsed.withMarkdownDefaults(defaults)
             MarkdownTask(task.title, task.done, task.due?.toString(), task.section.headings.lastOrNull()?.text,
-                notes, task.subtasks.toList(), parsed, task.section.headings.map { plainTitle(it.text) })
+                notes, task.subtasks.toList(), parsed, section.headings)
         })
     }
 
@@ -294,7 +321,7 @@ object MarkdownTaskParser {
         .fold(0) { width, char -> width + if (char == '\t') 4 else 1 }
 
     private fun tableCells(line: String): List<String> = line.trim().removePrefix("|").removeSuffix("|")
-        .split(Regex("(?<!\\\\)\\|")).map { it.trim().replace("\\|", "|") }
+        .split(tableCellSeparator).map { it.trim().replace("\\|", "|") }
 
     private fun tableItem(columns: List<String>, cells: List<String>): Item? {
         val titleIndex = columns.indexOfFirst { it in taskColumnNames }
@@ -317,11 +344,11 @@ object MarkdownTaskParser {
     }
 
     private fun plainTitle(value: String): String = value
-        .replace(Regex("!\\[([^]]*)]\\(([^)]+)\\)"), "$1 ($2)")
-        .replace(Regex("\\[([^]]+)]\\(([^)]+)\\)"), "$1 ($2)")
+        .replace(markdownImage, "$1 ($2)")
+        .replace(markdownLink, "$1 ($2)")
         .replace("**", "").replace("__", "").replace("~~", "")
-        .replace(Regex("(?<!\\w)[*_](\\S(?:.*?\\S)?)[*_](?!\\w)"), "$1")
-        .replace(Regex("`([^`]+)`"), "$1").trim()
+        .replace(markdownEmphasis, "$1")
+        .replace(markdownCode, "$1").trim()
 
     private fun dateIn(value: String, anchor: LocalDate, relativeAnchor: LocalDate = anchor): LocalDate? {
         val text = value.trim().trim('*', '_', '`')
@@ -335,9 +362,9 @@ object MarkdownTaskParser {
             return namedDate(match.groupValues[3], match.groupValues[1], match.groupValues[2], anchor)
         }
         return when {
-            Regex("\\btomorrow\\b", RegexOption.IGNORE_CASE).containsMatchIn(text) -> relativeAnchor.plusDays(1)
-            Regex("\\btoday\\b", RegexOption.IGNORE_CASE).containsMatchIn(text) -> relativeAnchor
-            Regex("\\byesterday\\b", RegexOption.IGNORE_CASE).containsMatchIn(text) -> relativeAnchor.minusDays(1)
+            tomorrow.containsMatchIn(text) -> relativeAnchor.plusDays(1)
+            todayWord.containsMatchIn(text) -> relativeAnchor
+            yesterday.containsMatchIn(text) -> relativeAnchor.minusDays(1)
             else -> null
         }
     }
