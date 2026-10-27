@@ -317,6 +317,10 @@
         <item quantity="one">Duplica a tarefa aberta %1$d atrasada, avançando sua data de vencimento mês a mês até chegar no futuro. As tarefas recorrentes são ignoradas.</item>
         <item quantity="other">Duplica tarefas abertas %1$d atrasadas, avançando cada data de vencimento mês a mês até que chegue no futuro. As tarefas recorrentes são ignoradas.</item>
     </plurals>
+    <plurals name="projects_add_to_group_title">
+        <item quantity="one">Adicionar %1$d projeto ao grupo</item>
+        <item quantity="other">Adicionar %1$d projetos ao grupo</item>
+    </plurals>
     <string name="search_in_list">Pesquisar em %1$s</string>
     <string name="search_in_project">Pesquisar em %1$s</string>
     <string name="search_in_tag">Pesquisar em #%1$s</string>
@@ -436,6 +440,8 @@
     <string name="settings_backup_passphrase">Senha de criptografia de backup</string>
     <string name="settings_backup_passphrase_set">Uma senha já está definida. Deixe em branco para mantê-lo ou digite um novo para substituí-lo.</string>
     <string name="settings_backup_passphrase_hint">Criptografa o próprio arquivo de backup antes de sair do dispositivo, para que ele permaneça privado mesmo em um servidor que você não controla totalmente. Mantenha uma cópia em algum lugar seguro – sem esta senha o backup não pode ser restaurado, neste telefone ou em qualquer outro.</string>
+    <string name="cd_reveal_backup_passphrase">Mostrar senha de criptografia de backup</string>
+    <string name="cd_hide_backup_passphrase">Ocultar senha de criptografia de backup</string>
     <string name="settings_sftp_host">Hospedar</string>
     <string name="settings_sftp_port">Porta</string>
     <string name="settings_sftp_username">Nome de usuário</string>
@@ -1658,4 +1664,57 @@
     <string name="task_detail_tracked_hours">Horas</string>
     <string name="task_detail_tracked_minutes">Minutos</string>
     <string name="task_detail_tracked_none">Nenhum tempo registrado ainda</string>
+    <string name="markdown_import_title">Importar Markdown</string>
+    <string name="markdown_import_summary">Confira uma lista de verificação e adicione tarefas a um projeto ou lista.</string>
+    <string name="markdown_import_help">A adição inteligente detecta campos em listas e tabelas de tarefas. Confira a prévia antes de importar.</string>
+    <string name="markdown_import_choose_file">Escolher arquivo Markdown</string>
+    <string name="markdown_import_empty">Nenhuma tarefa encontrada. Use uma lista, tabela de tarefas ou uma tarefa por linha.</string>
+    <string name="markdown_import_too_large">Use um arquivo menor que 1 MB com no máximo 1.000 tarefas e 200 subtarefas por tarefa.</string>
+    <string name="markdown_import_read_failed">Não foi possível ler o arquivo. Escolha um arquivo Markdown UTF-8.</string>
+    <string name="markdown_import_success">Tarefas importadas</string>
+    <string name="markdown_import_destination">Escolha pelo menos um projeto ou lista.</string>
+    <string name="markdown_import_dates">Usar agendamento detectado</string>
+    <string name="markdown_import_dates_hint">Datas relativas usam %1$s. Os valores das tarefas têm prioridade sobre os títulos.</string>
+    <string name="new_task_organize">Organizar</string>
+    <string name="action_select_all">Selecionar tudo</string>
+    <string name="action_select_none">Desmarcar tudo</string>
+    <string name="markdown_import_select_tasks">Escolher tarefas para importar</string>
+    <string name="markdown_import_selection_hint">Somente as tarefas principais selecionadas e suas subtarefas serão adicionadas.</string>
+    <string name="markdown_import_unmatched">Sem vínculo: %1$s. As referências originais ficam nas notas.</string>
+
+    <!-- Markdown review and batch undo -->
+    <string name="markdown_resolve_references">Associar referências</string>
+    <string name="markdown_create_reference">Criar %1$s</string>
+    <string name="markdown_import_separately">Importar separadamente</string>
+    <string name="markdown_update_existing">Atualizar existente</string>
+    <string name="markdown_update_keeps_context">As notas e subtarefas existentes são mantidas.</string>
+    <plurals name="markdown_tasks_imported">
+        <item quantity="one">Tarefas importadas: %1$d</item>
+        <item quantity="other">Tarefas importadas: %1$d</item>
+    </plurals>
+    <plurals name="markdown_tasks_to_import">
+        <item quantity="one">A importar: %1$d</item>
+        <item quantity="other">A importar: %1$d</item>
+    </plurals>
+
+    <!-- Import review tools and staged tag editing -->
+    <string name="markdown_duplicates">Tarefas correspondentes</string>
+    <string name="markdown_skip_matches">Ignorar todas as correspondências</string>
+    <string name="markdown_copy_matches">Importar todas separadamente</string>
+    <string name="markdown_summary">Resumo da importação</string>
+    <string name="markdown_unresolved">Referências não associadas</string>
+    <string name="markdown_changes">Alterações na tarefa existente</string>
+    <string name="markdown_no_changes">Nenhum campo será alterado.</string>
+    <string name="markdown_remember_mappings">Lembrar associações de referências</string>
+    <string name="markdown_mapping_missing">Reveja uma associação guardada: o destino foi eliminado ou arquivado.</string>
+    <string name="markdown_filter_hint">Os filtros alteram apenas esta pré-visualização. Todas as tarefas selecionadas são incluídas na importação.</string>
+    <string name="markdown_change_value">%1$s: %2$s → %3$s</string>
+    <plurals name="markdown_summary_counts">
+        <item quantity="one">Novas: %1$d\nAtualizações: %2$d\nIgnoradas: %3$d\nNão associadas: %4$d</item>
+        <item quantity="other">Novas: %1$d\nAtualizações: %2$d\nIgnoradas: %3$d\nNão associadas: %4$d</item>
+    </plurals>
+    <plurals name="bulk_tag_pending">
+        <item quantity="one">Alterações de etiquetas: %1$d</item>
+        <item quantity="other">Alterações de etiquetas: %1$d</item>
+    </plurals>
 </resources>

@@ -486,6 +486,8 @@
     <string name="settings_backup_passphrase">Passphrase di crittografia del backup</string>
     <string name="settings_backup_passphrase_set">È già impostata una passphrase. Lascia vuoto per mantenerla, oppure digitane una nuova per sostituirla.</string>
     <string name="settings_backup_passphrase_hint">Crittografa il file di backup stesso prima che lasci il tuo dispositivo, così rimane privato anche su un server che non controlli del tutto. Conservane una copia in un posto sicuro — senza questa passphrase il backup non può essere ripristinato, né su questo telefono né su un altro.</string>
+    <string name="cd_reveal_backup_passphrase">Mostra passphrase di crittografia del backup</string>
+    <string name="cd_hide_backup_passphrase">Nascondi passphrase di crittografia del backup</string>
     <string name="settings_sftp_host">Host</string>
     <string name="settings_sftp_port">Porta</string>
     <string name="settings_sftp_username">Nome utente</string>
@@ -1419,6 +1421,10 @@
         <item quantity="one">Duplica %1$d attività aperta in ritardo, spostando la sua scadenza avanti di un mese finché non ricade nel futuro. Le attività ricorrenti vengono saltate.</item>
         <item quantity="other">Duplica %1$d attività aperte in ritardo, spostando ciascuna scadenza avanti di un mese finché non ricade nel futuro. Le attività ricorrenti vengono saltate.</item>
     </plurals>
+    <plurals name="projects_add_to_group_title">
+        <item quantity="one">Aggiungi %1$d progetto al gruppo</item>
+        <item quantity="other">Aggiungi %1$d progetti al gruppo</item>
+    </plurals>
     <plurals name="next_days_title">
         <item quantity="one">Prossimo %1$d giorno</item>
         <item quantity="other">Prossimi %1$d giorni</item>
@@ -1656,4 +1662,57 @@
     <string name="task_detail_tracked_hours">Ore</string>
     <string name="task_detail_tracked_minutes">Minuti</string>
     <string name="task_detail_tracked_none">Nessun tempo tracciato</string>
+    <string name="markdown_import_title">Importa Markdown</string>
+    <string name="markdown_import_summary">Controlla una lista e aggiungi attività a un progetto o elenco.</string>
+    <string name="markdown_import_help">L’aggiunta intelligente rileva i campi in liste e tabelle di attività. Controlla l’anteprima prima di importare.</string>
+    <string name="markdown_import_choose_file">Scegli file Markdown</string>
+    <string name="markdown_import_empty">Nessuna attività trovata. Usa una lista, una tabella di attività o una attività per riga.</string>
+    <string name="markdown_import_too_large">Usa un file inferiore a 1 MB con al massimo 1.000 attività e 200 sottoattività per attività.</string>
+    <string name="markdown_import_read_failed">Impossibile leggere il file. Scegli un file Markdown UTF-8.</string>
+    <string name="markdown_import_success">Attività importate</string>
+    <string name="markdown_import_destination">Scegli almeno un progetto o elenco.</string>
+    <string name="markdown_import_dates">Usa la pianificazione rilevata</string>
+    <string name="markdown_import_dates_hint">Le date relative si basano su %1$s. I valori delle attività prevalgono su quelli dei titoli.</string>
+    <string name="new_task_organize">Organizza</string>
+    <string name="action_select_all">Seleziona tutto</string>
+    <string name="action_select_none">Deseleziona tutto</string>
+    <string name="markdown_import_select_tasks">Scegli le attività da importare</string>
+    <string name="markdown_import_selection_hint">Verranno aggiunte solo le attività principali selezionate e le relative sottoattività.</string>
+    <string name="markdown_import_unmatched">Non collegato: %1$s. I riferimenti originali restano nelle note.</string>
+
+    <!-- Markdown review and batch undo -->
+    <string name="markdown_resolve_references">Associa riferimenti</string>
+    <string name="markdown_create_reference">Crea %1$s</string>
+    <string name="markdown_import_separately">Importa separatamente</string>
+    <string name="markdown_update_existing">Aggiorna esistente</string>
+    <string name="markdown_update_keeps_context">Le note e le sottoattività esistenti vengono mantenute.</string>
+    <plurals name="markdown_tasks_imported">
+        <item quantity="one">Attività importate: %1$d</item>
+        <item quantity="other">Attività importate: %1$d</item>
+    </plurals>
+    <plurals name="markdown_tasks_to_import">
+        <item quantity="one">Da importare: %1$d</item>
+        <item quantity="other">Da importare: %1$d</item>
+    </plurals>
+
+    <!-- Import review tools and staged tag editing -->
+    <string name="markdown_duplicates">Attività corrispondenti</string>
+    <string name="markdown_skip_matches">Salta tutte le corrispondenze</string>
+    <string name="markdown_copy_matches">Importa tutte separatamente</string>
+    <string name="markdown_summary">Riepilogo importazione</string>
+    <string name="markdown_unresolved">Riferimenti non associati</string>
+    <string name="markdown_changes">Modifiche all’attività esistente</string>
+    <string name="markdown_no_changes">Nessun campo verrà modificato.</string>
+    <string name="markdown_remember_mappings">Ricorda le associazioni dei riferimenti</string>
+    <string name="markdown_mapping_missing">Un’associazione salvata richiede una verifica: la destinazione è stata eliminata o archiviata.</string>
+    <string name="markdown_filter_hint">I filtri modificano solo questa anteprima. Tutte le attività selezionate sono incluse nell’importazione.</string>
+    <string name="markdown_change_value">%1$s: %2$s → %3$s</string>
+    <plurals name="markdown_summary_counts">
+        <item quantity="one">Nuove: %1$d\nAggiornamenti: %2$d\nSaltate: %3$d\nNon associati: %4$d</item>
+        <item quantity="other">Nuove: %1$d\nAggiornamenti: %2$d\nSaltate: %3$d\nNon associati: %4$d</item>
+    </plurals>
+    <plurals name="bulk_tag_pending">
+        <item quantity="one">Modifiche alle etichette: %1$d</item>
+        <item quantity="other">Modifiche alle etichette: %1$d</item>
+    </plurals>
 </resources>

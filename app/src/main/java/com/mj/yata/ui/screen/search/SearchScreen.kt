@@ -445,6 +445,7 @@ fun SearchScreen(
     val selectedIds = remember { mutableStateListOf<String>() }
     val selectionMode = selectedIds.isNotEmpty()
     var showBulkTagSheet by remember { mutableStateOf(false) }
+    var bulkTagsApplying by remember { mutableStateOf(false) }
     var showBulkMoveSheet by remember { mutableStateOf(false) }
     var showBulkAssignSheet by remember { mutableStateOf(false) }
     var showBulkRescheduleSheet by remember { mutableStateOf(false) }
@@ -581,6 +582,9 @@ fun SearchScreen(
                     upcomingEnabled = upcomingTabEnabled,
                     onTabSelected = onNavigateToTab
                 )
+            },
+            floatingActionButton = {
+                com.mj.yata.ui.widgets.TaskSelectionDeleteFab(onClick = { showBulkDeleteDialog = true })
             },
             topBar = {
                 com.mj.yata.ui.sheets.TaskSelectionTopBar(
@@ -817,19 +821,24 @@ fun SearchScreen(
 
     if (showBulkTagSheet) {
         ModalBottomSheet(
-            onDismissRequest = { showBulkTagSheet = false },
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            onDismissRequest = { if (!bulkTagsApplying) showBulkTagSheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true, confirmValueChange = { !bulkTagsApplying }),
             shape = androidx.compose.foundation.shape.RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
             sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             com.mj.yata.ui.sheets.TaskBulkTagPickerSheet(
                 tags = tags,
-                onSelectTag = { tagId ->
-                    viewModel.bulkAddTag(selectedIds.toList(), tagId)
-                    selectedIds.clear()
-                    showBulkTagSheet = false
+                projects = projects,
+                selectedTasks = tasks.filter { it.id in selectedIds },
+                onApply = { edit ->
+                    bulkTagsApplying = true
+                    try {
+                        val success = viewModel.applyBulkTagChanges(selectedIds.toList(), edit)
+                        if (success) { selectedIds.clear(); showBulkTagSheet = false }
+                        success
+                    } finally { bulkTagsApplying = false }
                 },
-                onDismiss = { showBulkTagSheet = false }
+                onDismiss = { if (!bulkTagsApplying) showBulkTagSheet = false }
             )
         }
     }

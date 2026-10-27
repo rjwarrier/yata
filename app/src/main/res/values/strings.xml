@@ -470,6 +470,10 @@
         <item quantity="one">Duplicates %1$d overdue open task, moving its due date forward by month until it lands in the future. Recurring tasks are skipped.</item>
         <item quantity="other">Duplicates %1$d overdue open tasks, moving each due date forward by month until it lands in the future. Recurring tasks are skipped.</item>
     </plurals>
+    <plurals name="projects_add_to_group_title">
+        <item quantity="one">Add %1$d project to group</item>
+        <item quantity="other">Add %1$d projects to group</item>
+    </plurals>
 
     <string name="search_in_list">Search in %1$s</string>
     <string name="search_in_project">Search in %1$s</string>
@@ -749,6 +753,8 @@
     <string name="settings_backup_passphrase">Backup encryption passphrase</string>
     <string name="settings_backup_passphrase_set">A passphrase is already set. Leave this blank to keep it, or type a new one to replace it.</string>
     <string name="settings_backup_passphrase_hint">Required before remote sync can save or publish. It encrypts the backup file itself before it leaves your device, so it stays private even on a server you don\'t fully control. Keep a copy somewhere safe; without this passphrase the backup cannot be restored, on this phone or any other.</string>
+    <string name="cd_reveal_backup_passphrase">Show backup encryption passphrase</string>
+    <string name="cd_hide_backup_passphrase">Hide backup encryption passphrase</string>
     <string name="settings_sftp_host">Host</string>
     <string name="settings_sftp_port">Port</string>
     <string name="settings_sftp_username">Username</string>
@@ -1425,7 +1431,7 @@
     <string name="new_task_assign">Assign</string>
     <string name="new_task_tags">Tags</string>
     <string name="new_task_tag">Tag</string>
-    <string name="new_task_organize" translatable="false">Organize</string>
+    <string name="new_task_organize">Organize</string>
     <string name="new_task_notes">Notes</string>
     <string name="new_task_subtasks">Subtasks</string>
     <string name="new_task_create_another">Create another</string>
@@ -1826,4 +1832,56 @@
     <string name="task_detail_tracked_hours">Hours</string>
     <string name="task_detail_tracked_minutes">Minutes</string>
     <string name="task_detail_tracked_none">No time tracked yet</string>
+    <string name="markdown_import_title">Import Markdown</string>
+    <string name="markdown_import_summary">Preview a checklist and add tasks to a project or list.</string>
+    <string name="markdown_import_help">Smart add detects fields in checklists, lists and task tables. Review the preview before importing.</string>
+    <string name="markdown_import_choose_file">Choose Markdown file</string>
+    <string name="markdown_import_empty">No tasks found. Use a checklist, list, task table or one task per line.</string>
+    <string name="markdown_import_too_large">Use a file under 1 MB with at most 1,000 tasks and 200 subtasks per task.</string>
+    <string name="markdown_import_read_failed">Could not read this file. Choose a UTF-8 Markdown file.</string>
+    <string name="markdown_import_success">Tasks imported</string>
+    <string name="markdown_import_destination">Choose at least one project or list.</string>
+    <string name="markdown_import_dates">Use detected schedules</string>
+    <string name="markdown_import_dates_hint">Relative dates use %1$s. Task values override heading defaults.</string>
+    <string name="action_select_all">Select all</string>
+    <string name="action_select_none">Select none</string>
+    <string name="markdown_import_select_tasks">Choose tasks to import</string>
+    <string name="markdown_import_selection_hint">Only selected main tasks and their subtasks will be added.</string>
+    <string name="markdown_import_unmatched">Not linked: %1$s. Original references are kept in notes.</string>
+
+    <!-- Markdown review and batch undo -->
+    <string name="markdown_resolve_references">Resolve references</string>
+    <string name="markdown_create_reference">Create %1$s</string>
+    <string name="markdown_import_separately">Import separately</string>
+    <string name="markdown_update_existing">Update existing</string>
+    <string name="markdown_update_keeps_context">Existing notes and subtasks are kept.</string>
+    <plurals name="markdown_tasks_imported">
+        <item quantity="one">Imported tasks: %1$d</item>
+        <item quantity="other">Imported tasks: %1$d</item>
+    </plurals>
+    <plurals name="markdown_tasks_to_import">
+        <item quantity="one">To import: %1$d</item>
+        <item quantity="other">To import: %1$d</item>
+    </plurals>
+
+    <!-- Import review tools and staged tag editing -->
+    <string name="markdown_duplicates">Duplicate matches</string>
+    <string name="markdown_skip_matches">Skip all matches</string>
+    <string name="markdown_copy_matches">Import all separately</string>
+    <string name="markdown_summary">Import summary</string>
+    <string name="markdown_unresolved">Unresolved references</string>
+    <string name="markdown_changes">Changes to existing task</string>
+    <string name="markdown_no_changes">No fields will change.</string>
+    <string name="markdown_remember_mappings">Remember reference mappings</string>
+    <string name="markdown_mapping_missing">A saved mapping needs review: its destination was removed or archived.</string>
+    <string name="markdown_filter_hint">Filters only change this preview. All selected tasks are included in the import.</string>
+    <string name="markdown_change_value">%1$s: %2$s → %3$s</string>
+    <plurals name="markdown_summary_counts">
+        <item quantity="one">New: %1$d\nUpdates: %2$d\nSkipped: %3$d\nUnresolved: %4$d</item>
+        <item quantity="other">New: %1$d\nUpdates: %2$d\nSkipped: %3$d\nUnresolved: %4$d</item>
+    </plurals>
+    <plurals name="bulk_tag_pending">
+        <item quantity="one">Tag changes: %1$d</item>
+        <item quantity="other">Tag changes: %1$d</item>
+    </plurals>
 </resources>

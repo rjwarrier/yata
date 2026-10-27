@@ -486,6 +486,8 @@
     <string name="settings_backup_passphrase">ব্যাকআপ এনক্রিপশন পাসফ্রেজ</string>
     <string name="settings_backup_passphrase_set">একটি পাসফ্রেজ ইতিমধ্যে সেট করা আছে। এটি রাখতে খালি রাখুন, অথবা প্রতিস্থাপন করতে নতুন একটি টাইপ করুন।</string>
     <string name="settings_backup_passphrase_hint">ডিভাইস ছাড়ার আগেই ব্যাকআপ ফাইল এনক্রিপ্ট করে, তাই আপনি পুরোপুরি নিয়ন্ত্রণ না করা সার্ভারেও এটি ব্যক্তিগত থাকে। এর একটি কপি নিরাপদ জায়গায় রাখুন — এই পাসফ্রেজ ছাড়া ব্যাকআপ পুনরুদ্ধার করা যাবে না, এই ফোনে বা অন্য কোথাও।</string>
+    <string name="cd_reveal_backup_passphrase">ব্যাকআপ এনক্রিপশন পাসফ্রেজ দেখান</string>
+    <string name="cd_hide_backup_passphrase">ব্যাকআপ এনক্রিপশন পাসফ্রেজ লুকান</string>
     <string name="settings_sftp_host">হোস্ট</string>
     <string name="settings_sftp_port">পোর্ট</string>
     <string name="settings_sftp_username">ব্যবহারকারীর নাম</string>
@@ -1419,6 +1421,10 @@
         <item quantity="one">%1$d বকেয়া খোলা টাস্ক প্রতিলিপি করে, ভবিষ্যতে না পৌঁছানো পর্যন্ত এর শেষ তারিখ মাস অনুযায়ী এগিয়ে নেয়। পুনরাবৃত্ত টাস্ক এড়িয়ে যাওয়া হয়।</item>
         <item quantity="other">%1$d বকেয়া খোলা টাস্ক প্রতিলিপি করে, ভবিষ্যতে না পৌঁছানো পর্যন্ত প্রতিটির শেষ তারিখ মাস অনুযায়ী এগিয়ে নেয়। পুনরাবৃত্ত টাস্ক এড়িয়ে যাওয়া হয়।</item>
     </plurals>
+    <plurals name="projects_add_to_group_title">
+        <item quantity="one">%1$d প্রজেক্ট গ্রুপে যোগ করুন</item>
+        <item quantity="other">%1$d প্রজেক্ট গ্রুপে যোগ করুন</item>
+    </plurals>
     <plurals name="next_days_title">
         <item quantity="one">পরবর্তী %1$d দিন</item>
         <item quantity="other">পরবর্তী %1$d দিন</item>
@@ -1656,4 +1662,57 @@
     <string name="task_detail_tracked_hours">ঘণ্টা</string>
     <string name="task_detail_tracked_minutes">মিনিট</string>
     <string name="task_detail_tracked_none">এখনও কোনো সময় ট্র্যাক করা হয়নি</string>
+    <string name="markdown_import_title">Markdown আমদানি</string>
+    <string name="markdown_import_summary">চেকলিস্ট দেখে কোনো প্রকল্প বা তালিকায় কাজ যোগ করুন।</string>
+    <string name="markdown_import_help">স্মার্ট অ্যাড চেকলিস্ট, তালিকা ও কাজের টেবিল থেকে তথ্য শনাক্ত করে। আমদানির আগে প্রিভিউ দেখুন।</string>
+    <string name="markdown_import_choose_file">Markdown ফাইল বাছুন</string>
+    <string name="markdown_import_empty">কাজ পাওয়া যায়নি। চেকলিস্ট, তালিকা, কাজের টেবিল বা প্রতি লাইনে একটি কাজ ব্যবহার করুন।</string>
+    <string name="markdown_import_too_large">১ MB-এর ছোট ফাইলে সর্বোচ্চ ১,০০০ কাজ এবং প্রতি কাজে ২০০ উপকাজ রাখুন।</string>
+    <string name="markdown_import_read_failed">ফাইলটি পড়া যায়নি। UTF-8 Markdown ফাইল বাছুন।</string>
+    <string name="markdown_import_success">কাজ আমদানি হয়েছে</string>
+    <string name="markdown_import_destination">অন্তত একটি প্রকল্প বা তালিকা বাছুন।</string>
+    <string name="markdown_import_dates">শনাক্ত করা সময়সূচি ব্যবহার করুন</string>
+    <string name="markdown_import_dates_hint">আপেক্ষিক তারিখের ভিত্তি %1$s। কাজের তথ্য শিরোনামের তথ্যের চেয়ে অগ্রাধিকার পায়।</string>
+    <string name="new_task_organize">সাজান</string>
+    <string name="action_select_all">সব নির্বাচন করুন</string>
+    <string name="action_select_none">সব নির্বাচন সরান</string>
+    <string name="markdown_import_select_tasks">আমদানির জন্য কাজ বাছুন</string>
+    <string name="markdown_import_selection_hint">শুধু নির্বাচিত মূল কাজ এবং সেগুলির উপকাজ যোগ করা হবে।</string>
+    <string name="markdown_import_unmatched">যুক্ত হয়নি: %1$s। মূল উল্লেখগুলি নোটে রাখা হয়েছে।</string>
+
+    <!-- Markdown review and batch undo -->
+    <string name="markdown_resolve_references">উল্লেখগুলি মিলিয়ে নিন</string>
+    <string name="markdown_create_reference">%1$s তৈরি করুন</string>
+    <string name="markdown_import_separately">আলাদাভাবে আমদানি করুন</string>
+    <string name="markdown_update_existing">বিদ্যমানটি হালনাগাদ করুন</string>
+    <string name="markdown_update_keeps_context">বিদ্যমান নোট ও উপকাজগুলি রাখা হবে।</string>
+    <plurals name="markdown_tasks_imported">
+        <item quantity="one">আমদানি করা কাজ: %1$d</item>
+        <item quantity="other">আমদানি করা কাজ: %1$d</item>
+    </plurals>
+    <plurals name="markdown_tasks_to_import">
+        <item quantity="one">আমদানি হবে: %1$d</item>
+        <item quantity="other">আমদানি হবে: %1$d</item>
+    </plurals>
+
+    <!-- Import review tools and staged tag editing -->
+    <string name="markdown_duplicates">সম্ভাব্য সদৃশ কাজ</string>
+    <string name="markdown_skip_matches">সব মিলে যাওয়া কাজ বাদ দিন</string>
+    <string name="markdown_copy_matches">সব আলাদাভাবে আমদানি করুন</string>
+    <string name="markdown_summary">আমদানির সারাংশ</string>
+    <string name="markdown_unresolved">অমীমাংসিত উল্লেখ</string>
+    <string name="markdown_changes">বিদ্যমান কাজের পরিবর্তন</string>
+    <string name="markdown_no_changes">কোনো ক্ষেত্র পরিবর্তন হবে না।</string>
+    <string name="markdown_remember_mappings">উল্লেখের মিলগুলি মনে রাখুন</string>
+    <string name="markdown_mapping_missing">সংরক্ষিত মিলটি পর্যালোচনা করুন: গন্তব্যটি সরানো বা আর্কাইভ করা হয়েছে।</string>
+    <string name="markdown_filter_hint">ফিল্টার শুধু এই পূর্বরূপ বদলায়। সব নির্বাচিত কাজ আমদানিতে অন্তর্ভুক্ত থাকে।</string>
+    <string name="markdown_change_value">%1$s: %2$s → %3$s</string>
+    <plurals name="markdown_summary_counts">
+        <item quantity="one">নতুন: %1$d\nআপডেট: %2$d\nবাদ দেওয়া: %3$d\nঅমীমাংসিত: %4$d</item>
+        <item quantity="other">নতুন: %1$d\nআপডেট: %2$d\nবাদ দেওয়া: %3$d\nঅমীমাংসিত: %4$d</item>
+    </plurals>
+    <plurals name="bulk_tag_pending">
+        <item quantity="one">ট্যাগ পরিবর্তন: %1$d</item>
+        <item quantity="other">ট্যাগ পরিবর্তন: %1$d</item>
+    </plurals>
 </resources>

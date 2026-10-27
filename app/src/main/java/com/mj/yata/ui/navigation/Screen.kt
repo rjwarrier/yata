@@ -80,6 +80,10 @@ sealed class Screen(val route: String) {
     object ShareApp : Screen("share_app")
     object RemoteSync : Screen("remote_sync")
     object SyncHistory : Screen("sync_history")
+    object MarkdownImport : Screen("markdown_import?projectId={projectId}&listId={listId}") {
+        fun createRoute(projectId: String? = null, listId: String? = null) =
+            "markdown_import?projectId=${Uri.encode(projectId.orEmpty())}&listId=${Uri.encode(listId.orEmpty())}"
+    }
     object SharedTaskImport : Screen("shared_task_import?link={link}") {
         fun createRoute(link: String) = "shared_task_import?link=${Uri.encode(link)}"
     }

@@ -35,6 +35,7 @@ internal object SnapshotMerger {
     private val keyedCollections = linkedMapOf(
         "people" to "id",
         "personGroups" to "id",
+        "projectGroups" to "id",
         "projects" to "id",
         "lists" to "id",
         "tags" to "id",
@@ -187,7 +188,8 @@ internal object SnapshotMerger {
                     project.normalizeNullableFields(
                         "due",
                         "defaultReminder",
-                        "description"
+                        "description",
+                        "groupId"
                     )
                 }
             }
@@ -223,7 +225,7 @@ internal object SnapshotMerger {
                     "estimateMinutes"
                 )
                 if (!task.has("postponementCount")) task.put("postponementCount", 0)
-                if (!task.has("trackedMinutes")) task.put("trackedMinutes", 0)
+                if (task.isNull("trackedMinutes")) task.put("trackedMinutes", 0)
                 task.optJSONArray("tagIds")?.let { ids ->
                     task.put("tagIds", JSONArray((0 until ids.length()).map { ids.getString(it) }.sorted()))
                 }
@@ -305,6 +307,8 @@ internal object SnapshotMerger {
         name == "backup_interval_minutes" ||
             name == "remote_backup_protocol" ||
             name == "ftp_use_tls" ||
+            name == "markdown_reference_mappings" ||
+            name == "markdown_remember_mappings" ||
             name.startsWith("app_lock_") ||
             name.startsWith("github_") ||
             name.startsWith("sftp_") ||
@@ -605,6 +609,7 @@ internal object SnapshotMerger {
         val peopleIds = ids("people")
         val personGroupIds = ids("personGroups")
         val projectIds = ids("projects")
+        val projectGroupIds = ids("projectGroups")
         val listIds = ids("lists")
         val tagIds = ids("tags")
         val tagGroupIds = ids("tagGroups")
@@ -630,6 +635,7 @@ internal object SnapshotMerger {
         root.getJSONArray("projects").let { rows ->
             for (i in 0 until rows.length()) {
                 val row = rows.getJSONObject(i)
+                row.clearMissing("groupId", projectGroupIds)
                 row.optJSONArray("commonTagIds")?.let {
                     row.put("commonTagIds", filterIds(it, tagIds))
                 }
@@ -798,6 +804,7 @@ internal fun hasUserData(snapshot: JSONObject): Boolean =
         snapshot.optJSONArray("tags").orZero() > 0 ||
         snapshot.optJSONArray("tagGroups").orZero() > 0 ||
         snapshot.optJSONArray("personGroups").orZero() > 0 ||
+        snapshot.optJSONArray("projectGroups").orZero() > 0 ||
         snapshot.optJSONArray("comments").orZero() > 0 ||
         peopleBeyondCurrentUser(snapshot) > 0
 
@@ -923,6 +930,19 @@ class SnapshotSyncEngine @Inject constructor(
         SnapshotMerger.canonicalHash(normalized(jsonExporter.exportToBytes()))
     }
 
+    /**
+     * Establishes the sync baseline directly from a snapshot that was just force-imported outside
+     * the normal [prepare]/[commit] flow (e.g. [GitHubSyncManager.restore] via "Use latest GitHub
+     * snapshot"). Without this, [checkInitialJoinIsExplicit] keeps seeing no baseline for this
+     * [scopeKey] and throws [InitialSyncConfirmationRequiredException] on every sync afterward,
+     * even though local now matches the remote exactly — the device looks like it has never joined
+     * when it just did, deliberately and explicitly.
+     */
+    internal suspend fun commitRestoredBaseline(scopeKey: String, canonicalBytes: ByteArray) =
+        withContext(Dispatchers.IO) {
+            writeBaseline(scopeKey, normalized(canonicalBytes))
+        }
+
     private fun normalized(bytes: ByteArray): JSONObject =
         SnapshotMerger.normalizeForSync(JSONObject(String(bytes, Charsets.UTF_8)))
 
@@ -933,6 +953,9 @@ class SnapshotSyncEngine @Inject constructor(
         allowInitialJoinMerge: Boolean
     ) {
         if (base != null || remote == null || allowInitialJoinMerge) return
+        // An identical snapshot needs no merge decision. This also lets a retry establish the
+        // baseline after an earlier apply succeeded but verification/baseline persistence failed.
+        if (SnapshotMerger.equivalent(local, remote)) return
         if (hasUserData(local) && hasUserData(remote)) {
             throw InitialSyncConfirmationRequiredException(
                 localSummary = initialSyncSummary(local),

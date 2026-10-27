@@ -486,6 +486,8 @@
     <string name="settings_backup_passphrase">Lösenfras för kryptering av säkerhetskopior</string>
     <string name="settings_backup_passphrase_set">En lösenfras är redan inställd. Lämna tomt för att behålla den, eller skriv en ny för att ersätta den.</string>
     <string name="settings_backup_passphrase_hint">Krypterar själva säkerhetskopian innan den lämnar din enhet, så den förblir privat även på en server du inte har full kontroll över. Spara en kopia på ett säkert ställe — utan denna lösenfras kan säkerhetskopian inte återställas, varken på den här telefonen eller någon annan.</string>
+    <string name="cd_reveal_backup_passphrase">Visa lösenfras för kryptering av säkerhetskopior</string>
+    <string name="cd_hide_backup_passphrase">Dölj lösenfras för kryptering av säkerhetskopior</string>
     <string name="settings_sftp_host">Värd</string>
     <string name="settings_sftp_port">Port</string>
     <string name="settings_sftp_username">Användarnamn</string>
@@ -1419,6 +1421,10 @@
         <item quantity="one">Duplicerar %1$d försenad öppen uppgift och flyttar dess förfallodatum framåt månad för månad tills det hamnar i framtiden. Återkommande uppgifter hoppas över.</item>
         <item quantity="other">Duplicerar %1$d försenade öppna uppgifter och flyttar varje förfallodatum framåt månad för månad tills det hamnar i framtiden. Återkommande uppgifter hoppas över.</item>
     </plurals>
+    <plurals name="projects_add_to_group_title">
+        <item quantity="one">Lägg till %1$d projekt i grupp</item>
+        <item quantity="other">Lägg till %1$d projekt i grupp</item>
+    </plurals>
     <plurals name="next_days_title">
         <item quantity="one">Nästa %1$d dag</item>
         <item quantity="other">Nästa %1$d dagar</item>
@@ -1656,4 +1662,57 @@
     <string name="task_detail_tracked_hours">Timmar</string>
     <string name="task_detail_tracked_minutes">Minuter</string>
     <string name="task_detail_tracked_none">Ingen tid spårad ännu</string>
+    <string name="markdown_import_title">Importera Markdown</string>
+    <string name="markdown_import_summary">Granska en checklista och lägg till uppgifter i ett projekt eller en lista.</string>
+    <string name="markdown_import_help">Smart tillägg hittar fält i checklistor, listor och uppgiftstabeller. Granska förhandsvisningen före import.</string>
+    <string name="markdown_import_choose_file">Välj Markdown-fil</string>
+    <string name="markdown_import_empty">Inga uppgifter hittades. Använd en lista, uppgiftstabell eller en uppgift per rad.</string>
+    <string name="markdown_import_too_large">Använd en fil under 1 MB med högst 1 000 uppgifter och 200 deluppgifter per uppgift.</string>
+    <string name="markdown_import_read_failed">Filen kunde inte läsas. Välj en Markdown-fil i UTF-8.</string>
+    <string name="markdown_import_success">Uppgifter importerade</string>
+    <string name="markdown_import_destination">Välj minst ett projekt eller en lista.</string>
+    <string name="markdown_import_dates">Använd identifierad schemaläggning</string>
+    <string name="markdown_import_dates_hint">Relativa datum utgår från %1$s. Uppgiftsvärden går före rubrikvärden.</string>
+    <string name="new_task_organize">Organisera</string>
+    <string name="action_select_all">Markera alla</string>
+    <string name="action_select_none">Avmarkera alla</string>
+    <string name="markdown_import_select_tasks">Välj uppgifter att importera</string>
+    <string name="markdown_import_selection_hint">Bara valda huvuduppgifter och deras deluppgifter läggs till.</string>
+    <string name="markdown_import_unmatched">Inte kopplat: %1$s. Ursprungliga hänvisningar sparas i anteckningarna.</string>
+
+    <!-- Markdown review and batch undo -->
+    <string name="markdown_resolve_references">Koppla referenser</string>
+    <string name="markdown_create_reference">Skapa %1$s</string>
+    <string name="markdown_import_separately">Importera separat</string>
+    <string name="markdown_update_existing">Uppdatera befintlig</string>
+    <string name="markdown_update_keeps_context">Befintliga anteckningar och deluppgifter behålls.</string>
+    <plurals name="markdown_tasks_imported">
+        <item quantity="one">Importerade uppgifter: %1$d</item>
+        <item quantity="other">Importerade uppgifter: %1$d</item>
+    </plurals>
+    <plurals name="markdown_tasks_to_import">
+        <item quantity="one">Att importera: %1$d</item>
+        <item quantity="other">Att importera: %1$d</item>
+    </plurals>
+
+    <!-- Import review tools and staged tag editing -->
+    <string name="markdown_duplicates">Matchande uppgifter</string>
+    <string name="markdown_skip_matches">Hoppa över alla matchningar</string>
+    <string name="markdown_copy_matches">Importera alla separat</string>
+    <string name="markdown_summary">Importsammanfattning</string>
+    <string name="markdown_unresolved">Okopplade referenser</string>
+    <string name="markdown_changes">Ändringar i befintlig uppgift</string>
+    <string name="markdown_no_changes">Inga fält kommer att ändras.</string>
+    <string name="markdown_remember_mappings">Kom ihåg referenskopplingar</string>
+    <string name="markdown_mapping_missing">Kontrollera en sparad koppling: målet har tagits bort eller arkiverats.</string>
+    <string name="markdown_filter_hint">Filter ändrar bara denna förhandsvisning. Alla valda uppgifter ingår i importen.</string>
+    <string name="markdown_change_value">%1$s: %2$s → %3$s</string>
+    <plurals name="markdown_summary_counts">
+        <item quantity="one">Nya: %1$d\nUppdateringar: %2$d\nÖverhoppade: %3$d\nOkopplade: %4$d</item>
+        <item quantity="other">Nya: %1$d\nUppdateringar: %2$d\nÖverhoppade: %3$d\nOkopplade: %4$d</item>
+    </plurals>
+    <plurals name="bulk_tag_pending">
+        <item quantity="one">Taggändringar: %1$d</item>
+        <item quantity="other">Taggändringar: %1$d</item>
+    </plurals>
 </resources>

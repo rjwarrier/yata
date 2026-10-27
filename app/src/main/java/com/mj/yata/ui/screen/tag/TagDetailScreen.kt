@@ -209,6 +209,7 @@ fun TagDetailScreen(
     val selectedIds = remember { mutableStateListOf<String>() }
     val selectionMode = selectedIds.isNotEmpty()
     var showBulkTagSheet by remember { mutableStateOf(false) }
+    var bulkTagsApplying by remember { mutableStateOf(false) }
     var showBulkMoveSheet by remember { mutableStateOf(false) }
     var showBulkAssignSheet by remember { mutableStateOf(false) }
     var showBulkRescheduleSheet by remember { mutableStateOf(false) }
@@ -233,21 +234,25 @@ fun TagDetailScreen(
             )
         },
         floatingActionButton = {
-            com.mj.yata.ui.widgets.PressableScaleBox(
-                onClick = { isNewTaskSheetOpen = true }
-            ) {
-                Surface(
-                    color = tagColor,
-                    contentColor = accents.onAccentFor(tagColor),
-                    shape = RoundedCornerShape(16.dp),
-                    tonalElevation = 6.dp,
-                    shadowElevation = 6.dp
+            if (selectionMode) {
+                com.mj.yata.ui.widgets.TaskSelectionDeleteFab(onClick = { showBulkDeleteDialog = true })
+            } else {
+                com.mj.yata.ui.widgets.PressableScaleBox(
+                    onClick = { isNewTaskSheetOpen = true }
                 ) {
-                    Box(
-                        modifier = Modifier.size(56.dp),
-                        contentAlignment = Alignment.Center
+                    Surface(
+                        color = tagColor,
+                        contentColor = accents.onAccentFor(tagColor),
+                        shape = RoundedCornerShape(16.dp),
+                        tonalElevation = 6.dp,
+                        shadowElevation = 6.dp
                     ) {
-                        Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_add_task_tagged, tag.name))
+                        Box(
+                            modifier = Modifier.size(56.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_add_task_tagged, tag.name))
+                        }
                     }
                 }
             }
@@ -695,19 +700,24 @@ fun TagDetailScreen(
 
     if (showBulkTagSheet) {
         ModalBottomSheet(
-            onDismissRequest = { showBulkTagSheet = false },
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            onDismissRequest = { if (!bulkTagsApplying) showBulkTagSheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true, confirmValueChange = { !bulkTagsApplying }),
             shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
             sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             TaskBulkTagPickerSheet(
                 tags = tags,
-                onSelectTag = { tagIdToAdd ->
-                    viewModel.bulkAddTag(selectedIds.toList(), tagIdToAdd)
-                    selectedIds.clear()
-                    showBulkTagSheet = false
+                projects = projects,
+                selectedTasks = tasks.filter { it.id in selectedIds },
+                onApply = { edit ->
+                    bulkTagsApplying = true
+                    try {
+                        val success = viewModel.applyBulkTagChanges(selectedIds.toList(), edit)
+                        if (success) { selectedIds.clear(); showBulkTagSheet = false }
+                        success
+                    } finally { bulkTagsApplying = false }
                 },
-                onDismiss = { showBulkTagSheet = false }
+                onDismiss = { if (!bulkTagsApplying) showBulkTagSheet = false }
             )
         }
     }

@@ -486,6 +486,8 @@
     <string name="settings_backup_passphrase">Heslová fráze pro šifrování zálohy</string>
     <string name="settings_backup_passphrase_set">Heslová fráze je již nastavena. Ponechte prázdné, chcete-li ji zachovat, nebo zadejte novou pro její nahrazení.</string>
     <string name="settings_backup_passphrase_hint">Zašifruje samotný soubor zálohy dřív, než opustí vaše zařízení, takže zůstane soukromý i na serveru, který zcela nekontrolujete. Uchovejte si kopii na bezpečném místě — bez této heslové fráze nelze zálohu obnovit, ani na tomto telefonu, ani na jiném.</string>
+    <string name="cd_reveal_backup_passphrase">Zobrazit heslovou frázi pro šifrování zálohy</string>
+    <string name="cd_hide_backup_passphrase">Skrýt heslovou frázi pro šifrování zálohy</string>
     <string name="settings_sftp_host">Hostitel</string>
     <string name="settings_sftp_port">Port</string>
     <string name="settings_sftp_username">Uživatelské jméno</string>
@@ -1419,6 +1421,10 @@
         <item quantity="one">Duplikuje %1$d otevřený úkol po termínu a posouvá jeho termín po měsících vpřed, dokud se nedostane do budoucnosti. Opakující se úkoly se přeskočí.</item>
         <item quantity="other">Duplikuje %1$d otevřených úkolů po termínu a posouvá každý termín po měsících vpřed, dokud se nedostane do budoucnosti. Opakující se úkoly se přeskočí.</item>
     </plurals>
+    <plurals name="projects_add_to_group_title">
+        <item quantity="one">Přidat %1$d projekt do skupiny</item>
+        <item quantity="other">Přidat %1$d projektů do skupiny</item>
+    </plurals>
     <plurals name="next_days_title">
         <item quantity="one">Následující %1$d den</item>
         <item quantity="other">Následujících %1$d dní</item>
@@ -1662,4 +1668,57 @@
     <string name="task_detail_tracked_hours">Hodiny</string>
     <string name="task_detail_tracked_minutes">Minuty</string>
     <string name="task_detail_tracked_none">Zatím žádný změřený čas</string>
+    <string name="markdown_import_title">Importovat Markdown</string>
+    <string name="markdown_import_summary">Prohlédněte si seznam a přidejte úkoly do projektu nebo seznamu.</string>
+    <string name="markdown_import_help">Chytré přidávání rozpozná údaje v seznamech i tabulkách úkolů. Před importem zkontrolujte náhled.</string>
+    <string name="markdown_import_choose_file">Vybrat soubor Markdown</string>
+    <string name="markdown_import_empty">Nebyly nalezeny úkoly. Použijte seznam, tabulku úkolů nebo jeden úkol na řádek.</string>
+    <string name="markdown_import_too_large">Použijte soubor menší než 1 MB s nejvýše 1 000 úkoly a 200 podúkoly na úkol.</string>
+    <string name="markdown_import_read_failed">Soubor nelze přečíst. Vyberte soubor Markdown v UTF-8.</string>
+    <string name="markdown_import_success">Úkoly importovány</string>
+    <string name="markdown_import_destination">Vyberte alespoň jeden projekt nebo seznam.</string>
+    <string name="markdown_import_dates">Použít rozpoznaný rozvrh</string>
+    <string name="markdown_import_dates_hint">Relativní data vycházejí z %1$s. Údaje úkolu mají přednost před nadpisy.</string>
+    <string name="new_task_organize">Uspořádat</string>
+    <string name="action_select_all">Vybrat vše</string>
+    <string name="action_select_none">Zrušit výběr</string>
+    <string name="markdown_import_select_tasks">Vyberte úkoly k importu</string>
+    <string name="markdown_import_selection_hint">Přidají se pouze vybrané hlavní úkoly a jejich podúkoly.</string>
+    <string name="markdown_import_unmatched">Nepřiřazeno: %1$s. Původní odkazy zůstávají v poznámkách.</string>
+
+    <!-- Markdown review and batch undo -->
+    <string name="markdown_resolve_references">Přiřadit odkazy</string>
+    <string name="markdown_create_reference">Vytvořit %1$s</string>
+    <string name="markdown_import_separately">Importovat samostatně</string>
+    <string name="markdown_update_existing">Aktualizovat existující</string>
+    <string name="markdown_update_keeps_context">Stávající poznámky a podúkoly zůstanou zachovány.</string>
+    <plurals name="markdown_tasks_imported">
+        <item quantity="one">Importované úkoly: %1$d</item>
+        <item quantity="other">Importované úkoly: %1$d</item>
+    </plurals>
+    <plurals name="markdown_tasks_to_import">
+        <item quantity="one">K importu: %1$d</item>
+        <item quantity="other">K importu: %1$d</item>
+    </plurals>
+
+    <!-- Import review tools and staged tag editing -->
+    <string name="markdown_duplicates">Shodné úkoly</string>
+    <string name="markdown_skip_matches">Přeskočit všechny shody</string>
+    <string name="markdown_copy_matches">Importovat vše samostatně</string>
+    <string name="markdown_summary">Souhrn importu</string>
+    <string name="markdown_unresolved">Nepřiřazené odkazy</string>
+    <string name="markdown_changes">Změny existujícího úkolu</string>
+    <string name="markdown_no_changes">Žádná pole se nezmění.</string>
+    <string name="markdown_remember_mappings">Pamatovat přiřazení odkazů</string>
+    <string name="markdown_mapping_missing">Uložené přiřazení vyžaduje kontrolu: cíl byl odstraněn nebo archivován.</string>
+    <string name="markdown_filter_hint">Filtry mění pouze tento náhled. Import zahrnuje všechny vybrané úkoly.</string>
+    <string name="markdown_change_value">%1$s: %2$s → %3$s</string>
+    <plurals name="markdown_summary_counts">
+        <item quantity="one">Nové: %1$d\nAktualizace: %2$d\nPřeskočeno: %3$d\nNepřiřazeno: %4$d</item>
+        <item quantity="other">Nové: %1$d\nAktualizace: %2$d\nPřeskočeno: %3$d\nNepřiřazeno: %4$d</item>
+    </plurals>
+    <plurals name="bulk_tag_pending">
+        <item quantity="one">Změny štítků: %1$d</item>
+        <item quantity="other">Změny štítků: %1$d</item>
+    </plurals>
 </resources>

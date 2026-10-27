@@ -75,6 +75,7 @@ fun ProjectDetailScreen(
     onNavigateBack: () -> Unit,
     onNavigateToTaskDetail: (String) -> Unit,
     onNavigateToTab: (Int) -> Unit,
+    onImportMarkdownRequested: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val projects by viewModel.projects.collectAsStateWithLifecycle()
@@ -84,6 +85,7 @@ fun ProjectDetailScreen(
     val allTasks by viewModel.tasks.collectAsStateWithLifecycle()
     val people by viewModel.people.collectAsStateWithLifecycle()
     val tags by viewModel.tags.collectAsStateWithLifecycle()
+    val projectGroups by viewModel.projectGroups.collectAsStateWithLifecycle()
     val taskRowDensity by viewModel.taskRowDensity.collectAsStateWithLifecycle()
     val weekendDays by viewModel.weekendDays.collectAsStateWithLifecycle()
     val holidaysRaw by viewModel.holidays.collectAsStateWithLifecycle()
@@ -195,6 +197,7 @@ fun ProjectDetailScreen(
     val selectedIds = remember { mutableStateListOf<String>() }
     val selectionMode = selectedIds.isNotEmpty()
     var showBulkTagSheet by remember { mutableStateOf(false) }
+    var bulkTagsApplying by remember { mutableStateOf(false) }
     var showBulkMoveSheet by remember { mutableStateOf(false) }
     var showBulkAssignSheet by remember { mutableStateOf(false) }
     var showBulkRescheduleSheet by remember { mutableStateOf(false) }
@@ -385,6 +388,14 @@ fun ProjectDetailScreen(
                                 leadingIcon = { Icon(Icons.AutoMirrored.Filled.ViewList, contentDescription = null) }
                             )
                             YataDropdownMenuItem(
+                                text = { Text(stringResource(R.string.markdown_import_title)) },
+                                onClick = {
+                                    showMenu = false
+                                    onImportMarkdownRequested()
+                                },
+                                leadingIcon = { Icon(Icons.Default.Add, contentDescription = null) }
+                            )
+                            YataDropdownMenuItem(
                                 text = { Text(stringResource(R.string.action_export_as_markdown)) },
                                 onClick = {
                                     showMenu = false
@@ -477,22 +488,26 @@ fun ProjectDetailScreen(
             }
         },
         floatingActionButton = {
-            if (!project.archived) {
-                com.mj.yata.ui.widgets.PressableScaleBox(
-                    onClick = { isNewTaskSheetOpen = true }
-                ) {
-                    Surface(
-                        color = projectColor,
-                        contentColor = accents.onAccentFor(projectColor),
-                        shape = RoundedCornerShape(16.dp),
-                        tonalElevation = 6.dp,
-                        shadowElevation = 6.dp
+            if (selectionMode) {
+                com.mj.yata.ui.widgets.TaskSelectionDeleteFab(onClick = { showBulkDeleteDialog = true })
+            } else {
+                if (!project.archived) {
+                    com.mj.yata.ui.widgets.PressableScaleBox(
+                        onClick = { isNewTaskSheetOpen = true }
                     ) {
-                        Box(
-                            modifier = Modifier.size(56.dp),
-                            contentAlignment = Alignment.Center
+                        Surface(
+                            color = projectColor,
+                            contentColor = accents.onAccentFor(projectColor),
+                            shape = RoundedCornerShape(16.dp),
+                            tonalElevation = 6.dp,
+                            shadowElevation = 6.dp
                         ) {
-                            Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_add_task))
+                            Box(
+                                modifier = Modifier.size(56.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_add_task))
+                            }
                         }
                     }
                 }
@@ -824,19 +839,24 @@ fun ProjectDetailScreen(
 
     if (showBulkTagSheet) {
         ModalBottomSheet(
-            onDismissRequest = { showBulkTagSheet = false },
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            onDismissRequest = { if (!bulkTagsApplying) showBulkTagSheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true, confirmValueChange = { !bulkTagsApplying }),
             shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
             sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             TaskBulkTagPickerSheet(
                 tags = tags,
-                onSelectTag = { tagId ->
-                    viewModel.bulkAddTag(selectedIds.toList(), tagId)
-                    selectedIds.clear()
-                    showBulkTagSheet = false
+                projects = projects,
+                selectedTasks = allTasks.filter { it.id in selectedIds },
+                onApply = { edit ->
+                    bulkTagsApplying = true
+                    try {
+                        val success = viewModel.applyBulkTagChanges(selectedIds.toList(), edit)
+                        if (success) { selectedIds.clear(); showBulkTagSheet = false }
+                        success
+                    } finally { bulkTagsApplying = false }
                 },
-                onDismiss = { showBulkTagSheet = false }
+                onDismiss = { if (!bulkTagsApplying) showBulkTagSheet = false }
             )
         }
     }
@@ -1110,10 +1130,15 @@ fun ProjectDetailScreen(
                 initialDefaultReminder = project.defaultReminder,
                 initialDescription = project.description,
                 initialExcludeFromToday = project.excludeFromToday,
+                initialGroupId = project.groupId,
                 tags = tags,
-                onSave = { newName, newColor, newIcon, newDue, newCommonTagIds, newDefaultReminder, newDescription, newExcludeFromToday ->
-                    viewModel.upsertProject(project.copy(name = newName, color = newColor, icon = newIcon, due = newDue, commonTagIds = newCommonTagIds, defaultReminder = newDefaultReminder, description = newDescription, excludeFromToday = newExcludeFromToday))
+                groups = projectGroups,
+                onSave = { newName, newColor, newIcon, newDue, newCommonTagIds, newDefaultReminder, newDescription, newExcludeFromToday, newGroupId ->
+                    viewModel.upsertProject(project.copy(name = newName, color = newColor, icon = newIcon, due = newDue, commonTagIds = newCommonTagIds, defaultReminder = newDefaultReminder, description = newDescription, excludeFromToday = newExcludeFromToday, groupId = newGroupId))
                     isEditSheetOpen = false
+                },
+                onCreateGroup = { id, name, color ->
+                    viewModel.upsertProjectGroup(com.mj.yata.domain.model.ProjectGroup(id = id, name = name, color = color))
                 },
                 onDismiss = { isEditSheetOpen = false }
             )

@@ -356,6 +356,10 @@
         <item quantity="one">%1$d समयसीमातीत खुले कार्य को डुप्लिकेट करता है, इसकी नियत तारीख को महीने-दर-महीने आगे बढ़ाते हुए जब तक वह भविष्य में न आ जाए। दोहराए जाने वाले कार्य छोड़े जाते हैं।</item>
         <item quantity="other">%1$d समयसीमातीत खुले कार्यों को डुप्लिकेट करता है, हर नियत तारीख को महीने-दर-महीने आगे बढ़ाते हुए जब तक वह भविष्य में न आ जाए। दोहराए जाने वाले कार्य छोड़े जाते हैं।</item>
     </plurals>
+    <plurals name="projects_add_to_group_title">
+        <item quantity="one">%1$d परियोजना को समूह में जोड़ें</item>
+        <item quantity="other">%1$d परियोजनाओं को समूह में जोड़ें</item>
+    </plurals>
     <string name="search_in_list">%1$s में खोजें</string>
     <string name="search_in_project">%1$s में खोजें</string>
     <string name="search_in_tag">#%1$s में खोजें</string>
@@ -586,6 +590,8 @@
     <string name="settings_backup_passphrase">बैकअप एन्क्रिप्शन पासफ़्रेज़</string>
     <string name="settings_backup_passphrase_set">एक पासफ़्रेज़ पहले से सेट है। इसे बनाए रखने के लिए इसे खाली छोड़ें, या इसे बदलने के लिए नया टाइप करें।</string>
     <string name="settings_backup_passphrase_hint">आपके डिवाइस से निकलने से पहले बैकअप फ़ाइल को ही एन्क्रिप्ट करता है, ताकि यह ऐसे सर्वर पर भी निजी रहे जिस पर आपका पूरा नियंत्रण नहीं है। इसे कहीं सुरक्षित रखें — इस पासफ़्रेज़ के बिना बैकअप को इस फ़ोन पर या किसी और पर पुनर्स्थापित नहीं किया जा सकता।</string>
+    <string name="cd_reveal_backup_passphrase">बैकअप एन्क्रिप्शन पासफ़्रेज़ दिखाएं</string>
+    <string name="cd_hide_backup_passphrase">बैकअप एन्क्रिप्शन पासफ़्रेज़ छिपाएं</string>
     <string name="settings_sftp_host">होस्ट</string>
     <string name="settings_sftp_port">पोर्ट</string>
     <string name="settings_sftp_username">उपयोगकर्ता नाम</string>
@@ -1656,4 +1662,57 @@
     <string name="task_detail_tracked_hours">घंटे</string>
     <string name="task_detail_tracked_minutes">मिनट</string>
     <string name="task_detail_tracked_none">अभी तक कोई समय ट्रैक नहीं किया</string>
+    <string name="markdown_import_title">Markdown आयात करें</string>
+    <string name="markdown_import_summary">चेकलिस्ट देखकर किसी प्रोजेक्ट या सूची में कार्य जोड़ें।</string>
+    <string name="markdown_import_help">स्मार्ट ऐड चेकलिस्ट, सूचियों और कार्य तालिकाओं से जानकारी पहचानता है। आयात से पहले पूर्वावलोकन जाँचें।</string>
+    <string name="markdown_import_choose_file">Markdown फ़ाइल चुनें</string>
+    <string name="markdown_import_empty">कार्य नहीं मिले। चेकलिस्ट, सूची, कार्य तालिका या हर पंक्ति में एक कार्य इस्तेमाल करें।</string>
+    <string name="markdown_import_too_large">१ MB से छोटी फ़ाइल में अधिकतम १,००० कार्य और प्रति कार्य २०० उपकार्य रखें।</string>
+    <string name="markdown_import_read_failed">फ़ाइल पढ़ी नहीं जा सकी। UTF-8 Markdown फ़ाइल चुनें।</string>
+    <string name="markdown_import_success">कार्य आयात हो गए</string>
+    <string name="markdown_import_destination">कम से कम एक प्रोजेक्ट या सूची चुनें।</string>
+    <string name="markdown_import_dates">पहचानी गई समय-सारणी इस्तेमाल करें</string>
+    <string name="markdown_import_dates_hint">सापेक्ष तारीखों का आधार %1$s है। कार्य की जानकारी को शीर्षकों से अधिक प्राथमिकता मिलेगी।</string>
+    <string name="new_task_organize">व्यवस्थित करें</string>
+    <string name="action_select_all">सभी चुनें</string>
+    <string name="action_select_none">सभी का चयन हटाएँ</string>
+    <string name="markdown_import_select_tasks">आयात करने के लिए कार्य चुनें</string>
+    <string name="markdown_import_selection_hint">केवल चुने गए मुख्य कार्य और उनके उपकार्य जोड़े जाएँगे।</string>
+    <string name="markdown_import_unmatched">लिंक नहीं हुआ: %1$s। मूल उल्लेख नोट्स में रखे गए हैं।</string>
+
+    <!-- Markdown review and batch undo -->
+    <string name="markdown_resolve_references">संदर्भों का मिलान करें</string>
+    <string name="markdown_create_reference">%1$s बनाएँ</string>
+    <string name="markdown_import_separately">अलग से आयात करें</string>
+    <string name="markdown_update_existing">मौजूदा कार्य अपडेट करें</string>
+    <string name="markdown_update_keeps_context">मौजूदा नोट्स और उपकार्य रखे जाएँगे।</string>
+    <plurals name="markdown_tasks_imported">
+        <item quantity="one">आयात किए गए कार्य: %1$d</item>
+        <item quantity="other">आयात किए गए कार्य: %1$d</item>
+    </plurals>
+    <plurals name="markdown_tasks_to_import">
+        <item quantity="one">आयात करने के लिए: %1$d</item>
+        <item quantity="other">आयात करने के लिए: %1$d</item>
+    </plurals>
+
+    <!-- Import review tools and staged tag editing -->
+    <string name="markdown_duplicates">मिलते-जुलते कार्य</string>
+    <string name="markdown_skip_matches">सभी मिलान छोड़ें</string>
+    <string name="markdown_copy_matches">सभी अलग से आयात करें</string>
+    <string name="markdown_summary">आयात सारांश</string>
+    <string name="markdown_unresolved">अनसुलझे संदर्भ</string>
+    <string name="markdown_changes">मौजूदा कार्य में बदलाव</string>
+    <string name="markdown_no_changes">कोई फ़ील्ड नहीं बदलेगी।</string>
+    <string name="markdown_remember_mappings">संदर्भों के मिलान याद रखें</string>
+    <string name="markdown_mapping_missing">सहेजे गए मिलान की समीक्षा करें: उसका गंतव्य हटाया या संग्रहित किया गया है।</string>
+    <string name="markdown_filter_hint">फ़िल्टर केवल यह पूर्वावलोकन बदलते हैं। सभी चयनित कार्य आयात में शामिल रहते हैं।</string>
+    <string name="markdown_change_value">%1$s: %2$s → %3$s</string>
+    <plurals name="markdown_summary_counts">
+        <item quantity="one">नए: %1$d\nअपडेट: %2$d\nछोड़े गए: %3$d\nअनसुलझे: %4$d</item>
+        <item quantity="other">नए: %1$d\nअपडेट: %2$d\nछोड़े गए: %3$d\nअनसुलझे: %4$d</item>
+    </plurals>
+    <plurals name="bulk_tag_pending">
+        <item quantity="one">टैग बदलाव: %1$d</item>
+        <item quantity="other">टैग बदलाव: %1$d</item>
+    </plurals>
 </resources>

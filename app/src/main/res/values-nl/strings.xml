@@ -356,6 +356,10 @@
         <item quantity="one">Dupliceert %1$d achterstallige open taak, waarbij de vervaldatum maandelijks vooruit wordt geschoven tot deze in de toekomst valt. Terugkerende taken worden overgeslagen.</item>
         <item quantity="other">Dupliceert %1$d achterstallige open taken, waarbij elke vervaldatum maandelijks vooruit wordt geschoven tot deze in de toekomst valt. Terugkerende taken worden overgeslagen.</item>
     </plurals>
+    <plurals name="projects_add_to_group_title">
+        <item quantity="one">%1$d project aan groep toevoegen</item>
+        <item quantity="other">%1$d projecten aan groep toevoegen</item>
+    </plurals>
     <string name="search_in_list">Zoeken in %1$s</string>
     <string name="search_in_project">Zoeken in %1$s</string>
     <string name="search_in_tag">Zoeken in #%1$s</string>
@@ -586,6 +590,8 @@
     <string name="settings_backup_passphrase">Wachtwoordzin voor back-upversleuteling</string>
     <string name="settings_backup_passphrase_set">Er is al een wachtwoordzin ingesteld. Laat dit leeg om te behouden, of typ een nieuwe om deze te vervangen.</string>
     <string name="settings_backup_passphrase_hint">Versleutelt het back-upbestand zelf voordat het je apparaat verlaat, zodat het privé blijft zelfs op een server die je niet volledig beheert. Bewaar een kopie op een veilige plek — zonder deze wachtwoordzin kan de back-up niet worden hersteld, op deze telefoon of een andere.</string>
+    <string name="cd_reveal_backup_passphrase">Wachtwoordzin voor back-upversleuteling weergeven</string>
+    <string name="cd_hide_backup_passphrase">Wachtwoordzin voor back-upversleuteling verbergen</string>
     <string name="settings_sftp_host">Host</string>
     <string name="settings_sftp_port">Poort</string>
     <string name="settings_sftp_username">Gebruikersnaam</string>
@@ -1657,4 +1663,57 @@
     <string name="task_detail_tracked_hours">Uren</string>
     <string name="task_detail_tracked_minutes">Minuten</string>
     <string name="task_detail_tracked_none">Nog geen tijd bijgehouden</string>
+    <string name="markdown_import_title">Markdown importeren</string>
+    <string name="markdown_import_summary">Bekijk een checklist en voeg taken toe aan een project of lijst.</string>
+    <string name="markdown_import_help">Slim toevoegen herkent velden in checklists, lijsten en taaktabellen. Controleer het voorbeeld voor het importeren.</string>
+    <string name="markdown_import_choose_file">Markdown-bestand kiezen</string>
+    <string name="markdown_import_empty">Geen taken gevonden. Gebruik een checklist, lijst, taaktabel of één taak per regel.</string>
+    <string name="markdown_import_too_large">Gebruik een bestand kleiner dan 1 MB met maximaal 1.000 taken en 200 subtaken per taak.</string>
+    <string name="markdown_import_read_failed">Dit bestand kon niet worden gelezen. Kies een UTF-8 Markdown-bestand.</string>
+    <string name="markdown_import_success">Taken geïmporteerd</string>
+    <string name="markdown_import_destination">Kies minstens één project of lijst.</string>
+    <string name="markdown_import_dates">Herkende planning gebruiken</string>
+    <string name="markdown_import_dates_hint">Relatieve datums gebruiken %1$s. Taakwaarden gaan voor kopwaarden.</string>
+    <string name="new_task_organize">Organiseren</string>
+    <string name="action_select_all">Alles selecteren</string>
+    <string name="action_select_none">Niets selecteren</string>
+    <string name="markdown_import_select_tasks">Kies taken om te importeren</string>
+    <string name="markdown_import_selection_hint">Alleen geselecteerde hoofdtaken en hun subtaken worden toegevoegd.</string>
+    <string name="markdown_import_unmatched">Niet gekoppeld: %1$s. Oorspronkelijke verwijzingen blijven in de notities.</string>
+
+    <!-- Markdown review and batch undo -->
+    <string name="markdown_resolve_references">Verwijzingen koppelen</string>
+    <string name="markdown_create_reference">%1$s maken</string>
+    <string name="markdown_import_separately">Afzonderlijk importeren</string>
+    <string name="markdown_update_existing">Bestaande taak bijwerken</string>
+    <string name="markdown_update_keeps_context">Bestaande notities en subtaken blijven behouden.</string>
+    <plurals name="markdown_tasks_imported">
+        <item quantity="one">Geïmporteerde taken: %1$d</item>
+        <item quantity="other">Geïmporteerde taken: %1$d</item>
+    </plurals>
+    <plurals name="markdown_tasks_to_import">
+        <item quantity="one">Te importeren: %1$d</item>
+        <item quantity="other">Te importeren: %1$d</item>
+    </plurals>
+
+    <!-- Import review tools and staged tag editing -->
+    <string name="markdown_duplicates">Overeenkomende taken</string>
+    <string name="markdown_skip_matches">Alle overeenkomsten overslaan</string>
+    <string name="markdown_copy_matches">Alles afzonderlijk importeren</string>
+    <string name="markdown_summary">Importoverzicht</string>
+    <string name="markdown_unresolved">Niet-gekoppelde verwijzingen</string>
+    <string name="markdown_changes">Wijzigingen aan bestaande taak</string>
+    <string name="markdown_no_changes">Er worden geen velden gewijzigd.</string>
+    <string name="markdown_remember_mappings">Verwijzingskoppelingen onthouden</string>
+    <string name="markdown_mapping_missing">Controleer een opgeslagen koppeling: het doel is verwijderd of gearchiveerd.</string>
+    <string name="markdown_filter_hint">Filters wijzigen alleen dit voorbeeld. Alle geselecteerde taken worden meegenomen in de import.</string>
+    <string name="markdown_change_value">%1$s: %2$s → %3$s</string>
+    <plurals name="markdown_summary_counts">
+        <item quantity="one">Nieuw: %1$d\nUpdates: %2$d\nOvergeslagen: %3$d\nNiet gekoppeld: %4$d</item>
+        <item quantity="other">Nieuw: %1$d\nUpdates: %2$d\nOvergeslagen: %3$d\nNiet gekoppeld: %4$d</item>
+    </plurals>
+    <plurals name="bulk_tag_pending">
+        <item quantity="one">Tagwijzigingen: %1$d</item>
+        <item quantity="other">Tagwijzigingen: %1$d</item>
+    </plurals>
 </resources>

@@ -18,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -35,18 +36,23 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import com.mj.yata.R
 import com.mj.yata.domain.model.*
+import com.mj.yata.ui.sheets.GroupAssignSheet
 import com.mj.yata.ui.theme.LocalYataAccents
+import com.mj.yata.ui.util.rememberAdaptiveSheetMaxWidth
 import com.mj.yata.ui.widgets.DragDropReorderableColumn
 import com.mj.yata.ui.widgets.iconVectorFor
 import com.mj.yata.ui.widgets.PersonAvatar
 import com.mj.yata.ui.widgets.ProgressRing
 
-@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun ProjectsTab(
     projects: List<Project>,
+    projectGroups: List<ProjectGroup> = emptyList(),
     lists: List<YataList>,
     tasks: List<Task>,
     people: List<Person>,
@@ -61,18 +67,40 @@ fun ProjectsTab(
     onToggleProjectStar: (String) -> Unit,
     onProjectsReordered: (List<Project>) -> Unit = {},
     onBulkArchiveProjects: (List<String>) -> Unit = {},
+    onAssignProjectsGroup: (projectIds: List<String>, groupId: String) -> Unit = { _, _ -> },
+    onCreateProjectGroupAndAssign: (id: String, name: String, projectIds: List<String>) -> Unit = { _, _, _ -> },
     peopleEnabled: Boolean = true,
     useWideLayout: Boolean = false,
     /** See TodayTab's parameter of the same name. */
     initialDataLoaded: Boolean = true,
     modifier: Modifier = Modifier
 ) {
+    val groupsById = remember(projectGroups) { projectGroups.associateBy { it.id } }
+    var showGroupPicker by remember { mutableStateOf(false) }
+    val adaptiveSheetMaxWidth = rememberAdaptiveSheetMaxWidth()
     val activeProjects = remember(projects) { projects.activeProjects() }
     val archivedProjects = remember(projects) { projects.archivedProjects().sortedBy { it.sortOrder } }
     val sortedProjects = remember(activeProjects) { activeProjects.sortedBy { it.sortOrder } }
     val tasksByProject = remember(tasks) { tasks.groupBy { it.projectId } }
     var localOrder by remember { mutableStateOf(sortedProjects) }
     var isDragging by remember { mutableStateOf(false) }
+    val expandedGroups = remember { mutableStateMapOf<String, Boolean>() }
+    val ungroupedTitle = stringResource(R.string.people_ungrouped)
+    fun sectionRows(source: List<Project>, prefix: String = ""): List<ProjectSectionRow> = buildList {
+        val sections = projectGroups.sortedBy { it.name.lowercase() }.map { group ->
+            Triple("group:${group.id}", group.name, source.filter { it.groupId == group.id })
+        } + listOf(Triple("ungrouped", ungroupedTitle, source.filter { it.groupId !in groupsById }))
+        sections.forEach { (sectionKey, title, members) ->
+            val key = prefix + sectionKey
+            if (members.isNotEmpty()) {
+                if (projectGroups.isNotEmpty()) add(ProjectSectionRow("header:$key", key, title))
+                if (projectGroups.isEmpty() || expandedGroups[key] != false) {
+                    members.forEach { add(ProjectSectionRow("${prefix}project:${it.id}", key, project = it)) }
+                }
+            }
+        }
+    }
+    val visibleRows = sectionRows(localOrder)
     LaunchedEffect(sortedProjects) {
         if (!isDragging) localOrder = sortedProjects
     }
@@ -93,6 +121,9 @@ fun ProjectsTab(
                 selectedCount = selectedIds.size,
                 onCancel = { selectedIds.clear(); selectModeOn = false }
             ) {
+                TextButton(onClick = { showGroupPicker = true }, enabled = selectedIds.isNotEmpty()) {
+                    Text(stringResource(R.string.people_add_to_group))
+                }
                 IconButton(onClick = { showBulkDeleteDialog = true }, enabled = selectedIds.isNotEmpty()) {
                     Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.projects_archive_selected), tint = MaterialTheme.colorScheme.error)
                 }
@@ -123,9 +154,17 @@ fun ProjectsTab(
 
         // 2. List of Projects — long-press drag to reorder.
         DragDropReorderableColumn(
-            items = localOrder,
-            key = { it.id },
-            onMove = { from, to -> localOrder = localOrder.toMutableList().apply { add(to, removeAt(from)) } },
+            items = visibleRows,
+            key = { it.key },
+            canDrag = { it.project != null },
+            canMove = { from, to -> to.project != null && from.groupKey == to.groupKey },
+            onMove = { from, to ->
+                val fromIndex = localOrder.indexOfFirst { it.id == visibleRows[from].project?.id }
+                val toIndex = localOrder.indexOfFirst { it.id == visibleRows[to].project?.id }
+                if (fromIndex >= 0 && toIndex >= 0) {
+                    localOrder = localOrder.toMutableList().apply { add(toIndex, removeAt(fromIndex)) }
+                }
+            },
             onDragEnd = { onProjectsReordered(localOrder) },
             onDragStateChanged = { isDragging = it },
             contentPadding = PaddingValues(
@@ -160,7 +199,15 @@ fun ProjectsTab(
                             modifier = Modifier.padding(top = 20.dp, bottom = 8.dp)
                         )
                     }
-                    items(archivedProjects, key = { "archived_${it.id}" }) { archivedProject ->
+                    items(sectionRows(archivedProjects, "archived:"), key = { it.key }) { row ->
+                        val archivedProject = row.project
+                        if (archivedProject == null) {
+                            ProjectGroupSectionHeader(
+                                title = row.title.orEmpty(),
+                                expanded = expandedGroups[row.groupKey] != false,
+                                onToggle = { expandedGroups[row.groupKey] = !(expandedGroups[row.groupKey] ?: true) }
+                            )
+                        } else {
                         val archivedProjectTasks = tasksByProject[archivedProject.id] ?: emptyList()
                         val archivedDoneTasks = archivedProjectTasks.count { it.done }
                         ProjectCard(
@@ -172,11 +219,20 @@ fun ProjectsTab(
                             onToggleStar = { onToggleProjectStar(archivedProject.id) },
                             modifier = Modifier.padding(bottom = 16.dp)
                         )
+                        }
                     }
                 }
             },
             modifier = Modifier.weight(1f)
-        ) { project ->
+        ) { row ->
+            val project = row.project
+            if (project == null) {
+                ProjectGroupSectionHeader(
+                    title = row.title.orEmpty(),
+                    expanded = expandedGroups[row.groupKey] != false,
+                    onToggle = { expandedGroups[row.groupKey] = !(expandedGroups[row.groupKey] ?: true) }
+                )
+            } else {
             val projectTasks = remember(tasksByProject, project.id) {
                 tasksByProject[project.id] ?: emptyList()
             }
@@ -202,6 +258,7 @@ fun ProjectsTab(
                 onToggleStar = { onToggleProjectStar(project.id) },
                 modifier = Modifier.padding(bottom = 16.dp)
             )
+            }
         }
     }
 
@@ -225,11 +282,65 @@ fun ProjectsTab(
             }
         )
     }
+
+    if (showGroupPicker) {
+        ModalBottomSheet(
+            onDismissRequest = { showGroupPicker = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
+        ) {
+            GroupAssignSheet(
+                title = pluralStringResource(R.plurals.projects_add_to_group_title, selectedIds.size, selectedIds.size),
+                groups = projectGroups.sortedBy { it.name.lowercase() },
+                groupId = { it.id },
+                groupName = { it.name },
+                groupColorKey = { it.color },
+                onSelectGroup = { groupId ->
+                    onAssignProjectsGroup(selectedIds.toList(), groupId)
+                    selectedIds.clear()
+                    selectModeOn = false
+                    showGroupPicker = false
+                },
+                onCreateGroup = { id, name ->
+                    onCreateProjectGroupAndAssign(id, name, selectedIds.toList())
+                    selectedIds.clear()
+                    selectModeOn = false
+                    showGroupPicker = false
+                },
+                onDismiss = { showGroupPicker = false },
+                newGroupIdPrefix = "pjg_"
+            )
+        }
+    }
+}
+
+private data class ProjectSectionRow(
+    val key: String,
+    val groupKey: String,
+    val title: String? = null,
+    val project: Project? = null
+)
+
+@Composable
+private fun ProjectGroupSectionHeader(title: String, expanded: Boolean, onToggle: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onToggle).padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(title, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+        Icon(
+            if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+            contentDescription = stringResource(if (expanded) R.string.cd_collapse_group else R.string.cd_expand_group)
+        )
+    }
 }
 
 @Composable
 fun ProjectCard(
     project: Project,
+    groupName: String? = null,
     totalTasks: Int,
     doneTasks: Int,
     progress: Float,
@@ -311,6 +422,17 @@ fun ProjectCard(
                                 fontSize = 13.sp
                             )
                         )
+                        if (groupName != null) {
+                            Text(
+                                text = groupName,
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    color = projectColor,
+                                    fontWeight = FontWeight.Bold
+                                ),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
                     }
                 }
 

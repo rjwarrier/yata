@@ -570,6 +570,8 @@
     <string name="settings_backup_passphrase">బ్యాకప్ ఎన్‌క్రిప్షన్ పాస్‌ఫ్రేజ్</string>
     <string name="settings_backup_passphrase_set">పాస్‌ఫ్రేజ్ ఇప్పటికే సెట్ చేయబడింది. దాన్ని ఉంచడానికి దీన్ని ఖాళీగా వదిలేయండి, లేదా భర్తీ చేయడానికి కొత్తది టైప్ చేయండి.</string>
     <string name="settings_backup_passphrase_hint">బ్యాకప్ ఫైల్ మీ పరికరం నుండి వెళ్ళే ముందు దాన్ని ఎన్‌క్రిప్ట్ చేస్తుంది, కాబట్టి మీరు పూర్తిగా నియంత్రించని సర్వర్‌లో కూడా ఇది ప్రైవేట్‌గా ఉంటుంది. దీన్ని సురక్షితమైన చోట కాపీ ఉంచుకోండి — ఈ పాస్‌ఫ్రేజ్ లేకుండా బ్యాకప్‌ను ఈ ఫోన్‌లో గానీ మరే ఇతర దానిలో గానీ పునరుద్ధరించలేరు.</string>
+    <string name="cd_reveal_backup_passphrase">బ్యాకప్ ఎన్‌క్రిప్షన్ పాస్‌ఫ్రేజ్ చూపించు</string>
+    <string name="cd_hide_backup_passphrase">బ్యాకప్ ఎన్‌క్రిప్షన్ పాస్‌ఫ్రేజ్ దాచు</string>
     <string name="settings_sftp_host">హోస్ట్</string>
     <string name="settings_sftp_port">పోర్ట్</string>
     <string name="settings_sftp_username">వినియోగదారు పేరు</string>
@@ -1503,6 +1505,10 @@
         <item quantity="one">భవిష్యత్తులో పడేవరకు గడువు తేదీని నెల నెలకు ముందుకు మారుస్తూ %1$d గడువు మీరిన తెరిచిన టాస్క్‌ను నకిలీ చేస్తుంది. పునరావృత టాస్క్‌లు దాటవేయబడతాయి.</item>
         <item quantity="other">భవిష్యత్తులో పడేవరకు ప్రతి గడువు తేదీని నెల నెలకు ముందుకు మారుస్తూ %1$d గడువు మీరిన తెరిచిన టాస్క్‌లను నకిలీ చేస్తుంది. పునరావృత టాస్క్‌లు దాటవేయబడతాయి.</item>
     </plurals>
+    <plurals name="projects_add_to_group_title">
+        <item quantity="one">%1$d ప్రాజెక్ట్‌ను సమూహానికి జోడించండి</item>
+        <item quantity="other">%1$d ప్రాజెక్టులను సమూహానికి జోడించండి</item>
+    </plurals>
     <plurals name="next_days_title">
         <item quantity="one">తర్వాతి %1$d రోజు</item>
         <item quantity="other">తర్వాతి %1$d రోజులు</item>
@@ -1653,4 +1659,57 @@
     <string name="task_detail_tracked_hours">గంటలు</string>
     <string name="task_detail_tracked_minutes">నిమిషాలు</string>
     <string name="task_detail_tracked_none">ఇంకా సమయం ట్రాక్ చేయలేదు</string>
+    <string name="markdown_import_title">Markdown దిగుమతి</string>
+    <string name="markdown_import_summary">చెక్‌లిస్ట్‌ను చూసి ప్రాజెక్ట్ లేదా జాబితాకు పనులను జోడించండి.</string>
+    <string name="markdown_import_help">స్మార్ట్ యాడ్ చెక్‌లిస్ట్‌లు, జాబితాలు, పనుల పట్టికల్లో వివరాలను గుర్తిస్తుంది. దిగుమతికి ముందు ప్రివ్యూ చూడండి.</string>
+    <string name="markdown_import_choose_file">Markdown ఫైల్‌ను ఎంచుకోండి</string>
+    <string name="markdown_import_empty">పనులు కనిపించలేదు. చెక్‌లిస్ట్, జాబితా, పనుల పట్టిక లేదా ప్రతి పంక్తిలో ఒక పని వాడండి.</string>
+    <string name="markdown_import_too_large">1 MB కంటే చిన్న ఫైల్‌లో గరిష్ఠంగా 1,000 పనులు, ఒక్కో పనికి 200 ఉపపనులు ఉంచండి.</string>
+    <string name="markdown_import_read_failed">ఫైల్‌ను చదవలేకపోయాం. UTF-8 Markdown ఫైల్‌ను ఎంచుకోండి.</string>
+    <string name="markdown_import_success">పనులు దిగుమతయ్యాయి</string>
+    <string name="markdown_import_destination">కనీసం ఒక ప్రాజెక్ట్ లేదా జాబితాను ఎంచుకోండి.</string>
+    <string name="markdown_import_dates">గుర్తించిన షెడ్యూల్‌ను వాడండి</string>
+    <string name="markdown_import_dates_hint">సాపేక్ష తేదీలకు ఆధారం %1$s. పని వివరాలకు శీర్షికల కంటే ప్రాధాన్యం ఉంటుంది.</string>
+    <string name="new_task_organize">నిర్వహించండి</string>
+    <string name="action_select_all">అన్నీ ఎంచుకోండి</string>
+    <string name="action_select_none">అన్ని ఎంపికలను తీసివేయండి</string>
+    <string name="markdown_import_select_tasks">దిగుమతి చేయాల్సిన పనులను ఎంచుకోండి</string>
+    <string name="markdown_import_selection_hint">ఎంచుకున్న ప్రధాన పనులు, వాటి ఉపపనులు మాత్రమే జోడించబడతాయి.</string>
+    <string name="markdown_import_unmatched">లింక్ కాలేదు: %1$s. అసలు ప్రస్తావనలు గమనికల్లో ఉంటాయి.</string>
+
+    <!-- Markdown review and batch undo -->
+    <string name="markdown_resolve_references">ప్రస్తావనలను సరిపోల్చండి</string>
+    <string name="markdown_create_reference">%1$s సృష్టించండి</string>
+    <string name="markdown_import_separately">విడిగా దిగుమతి చేయండి</string>
+    <string name="markdown_update_existing">ఇప్పటికే ఉన్నదాన్ని నవీకరించండి</string>
+    <string name="markdown_update_keeps_context">ఇప్పటికే ఉన్న గమనికలు మరియు ఉపపనులు ఉంచబడతాయి.</string>
+    <plurals name="markdown_tasks_imported">
+        <item quantity="one">దిగుమతి చేసిన పనులు: %1$d</item>
+        <item quantity="other">దిగుమతి చేసిన పనులు: %1$d</item>
+    </plurals>
+    <plurals name="markdown_tasks_to_import">
+        <item quantity="one">దిగుమతి చేయడానికి: %1$d</item>
+        <item quantity="other">దిగుమతి చేయడానికి: %1$d</item>
+    </plurals>
+
+    <!-- Import review tools and staged tag editing -->
+    <string name="markdown_duplicates">సరిపోలే పనులు</string>
+    <string name="markdown_skip_matches">సరిపోలినవన్నీ దాటవేయండి</string>
+    <string name="markdown_copy_matches">అన్నింటినీ విడిగా దిగుమతి చేయండి</string>
+    <string name="markdown_summary">దిగుమతి సారాంశం</string>
+    <string name="markdown_unresolved">సరిపోలని ప్రస్తావనలు</string>
+    <string name="markdown_changes">ఇప్పటికే ఉన్న పనిలో మార్పులు</string>
+    <string name="markdown_no_changes">ఏ ఫీల్డ్ మారదు.</string>
+    <string name="markdown_remember_mappings">ప్రస్తావనల సరిపోలికలను గుర్తుంచుకోండి</string>
+    <string name="markdown_mapping_missing">సేవ్ చేసిన సరిపోలికను సమీక్షించండి: దాని గమ్యం తొలగించబడింది లేదా ఆర్కైవ్ చేయబడింది.</string>
+    <string name="markdown_filter_hint">ఫిల్టర్‌లు ఈ పరిదృశ్యాన్ని మాత్రమే మారుస్తాయి. ఎంచుకున్న అన్ని పనులు దిగుమతిలో ఉంటాయి.</string>
+    <string name="markdown_change_value">%1$s: %2$s → %3$s</string>
+    <plurals name="markdown_summary_counts">
+        <item quantity="one">కొత్తవి: %1$d\nనవీకరణలు: %2$d\nదాటవేసినవి: %3$d\nసరిపోలనివి: %4$d</item>
+        <item quantity="other">కొత్తవి: %1$d\nనవీకరణలు: %2$d\nదాటవేసినవి: %3$d\nసరిపోలనివి: %4$d</item>
+    </plurals>
+    <plurals name="bulk_tag_pending">
+        <item quantity="one">ట్యాగ్ మార్పులు: %1$d</item>
+        <item quantity="other">ట్యాగ్ మార్పులు: %1$d</item>
+    </plurals>
 </resources>

@@ -570,6 +570,8 @@
     <string name="settings_backup_passphrase">ബാക്കപ്പ് എൻക്രിപ്ഷൻ പാസ്‌ഫ്രെയ്സ്</string>
     <string name="settings_backup_passphrase_set">ഒരു പാസ്‌ഫ്രെയ്സ് ഇതിനകം സെറ്റ് ചെയ്തിട്ടുണ്ട്. അത് നിലനിർത്താൻ ഇത് ശൂന്യമായി വിടുക, അല്ലെങ്കിൽ പകരം വയ്ക്കാൻ പുതിയത് ടൈപ്പ് ചെയ്യുക.</string>
     <string name="settings_backup_passphrase_hint">ബാക്കപ്പ് ഫയൽ നിങ്ങളുടെ ഉപകരണം വിടുന്നതിന് മുൻപ് തന്നെ എൻക്രിപ്റ്റ് ചെയ്യുന്നു, അതിനാൽ നിങ്ങൾ പൂർണ്ണമായി നിയന്ത്രിക്കാത്ത സെർവറിലും ഇത് സ്വകാര്യമായി തുടരും. ഒരു പകർപ്പ് സുരക്ഷിതമായി സൂക്ഷിക്കുക — ഈ പാസ്‌ഫ്രെയ്സ് ഇല്ലാതെ ബാക്കപ്പ് ഈ ഫോണിലോ മറ്റേതെങ്കിലുമോ വീണ്ടെടുക്കാൻ കഴിയില്ല.</string>
+    <string name="cd_reveal_backup_passphrase">ബാക്കപ്പ് എൻക്രിപ്ഷൻ പാസ്‌ഫ്രെയ്സ് കാണിക്കുക</string>
+    <string name="cd_hide_backup_passphrase">ബാക്കപ്പ് എൻക്രിപ്ഷൻ പാസ്‌ഫ്രെയ്സ് മറയ്ക്കുക</string>
     <string name="settings_sftp_host">ഹോസ്റ്റ്</string>
     <string name="settings_sftp_port">പോർട്ട്</string>
     <string name="settings_sftp_username">ഉപയോക്തൃനാമം</string>
@@ -1503,6 +1505,10 @@
         <item quantity="one">കാലാവധി കഴിഞ്ഞ %1$d ബാക്കിയുള്ള ടാസ്ക് തനിപ്പകർത്തുന്നു, അതിന്റെ സമയപരിധി ഭാവിയിൽ എത്തുന്നത് വരെ മാസം തോറും മുന്നോട്ട് നീക്കുന്നു. ആവർത്തന ടാസ്കുകൾ ഒഴിവാക്കുന്നു.</item>
         <item quantity="other">കാലാവധി കഴിഞ്ഞ %1$d ബാക്കിയുള്ള ടാസ്കുകൾ തനിപ്പകർത്തുന്നു, ഓരോ സമയപരിധിയും ഭാവിയിൽ എത്തുന്നത് വരെ മാസം തോറും മുന്നോട്ട് നീക്കുന്നു. ആവർത്തന ടാസ്കുകൾ ഒഴിവാക്കുന്നു.</item>
     </plurals>
+    <plurals name="projects_add_to_group_title">
+        <item quantity="one">%1$d പ്രോജക്റ്റ് ഗ്രൂപ്പിലേക്ക് ചേർക്കുക</item>
+        <item quantity="other">%1$d പ്രോജക്റ്റുകൾ ഗ്രൂപ്പിലേക്ക് ചേർക്കുക</item>
+    </plurals>
     <plurals name="next_days_title">
         <item quantity="one">അടുത്ത %1$d ദിവസം</item>
         <item quantity="other">അടുത്ത %1$d ദിവസങ്ങൾ</item>
@@ -1653,4 +1659,57 @@
     <string name="task_detail_tracked_hours">മണിക്കൂർ</string>
     <string name="task_detail_tracked_minutes">മിനിറ്റ്</string>
     <string name="task_detail_tracked_none">ഇതുവരെ സമയം ട്രാക്ക് ചെയ്തിട്ടില്ല</string>
+    <string name="markdown_import_title">Markdown ഇറക്കുമതി ചെയ്യുക</string>
+    <string name="markdown_import_summary">ചെക്ക്‌ലിസ്റ്റ് പരിശോധിച്ച് ഒരു പ്രോജക്റ്റിലേക്കോ ലിസ്റ്റിലേക്കോ ജോലികൾ ചേർക്കുക.</string>
+    <string name="markdown_import_help">സ്മാർട്ട് ആഡ് ചെക്ക്‌ലിസ്റ്റുകൾ, ലിസ്റ്റുകൾ, ജോലി പട്ടികകൾ എന്നിവയിലെ വിവരങ്ങൾ തിരിച്ചറിയുന്നു. ഇറക്കുമതിക്ക് മുമ്പ് പ്രിവ്യൂ പരിശോധിക്കുക.</string>
+    <string name="markdown_import_choose_file">Markdown ഫയൽ തിരഞ്ഞെടുക്കുക</string>
+    <string name="markdown_import_empty">ജോലികൾ കണ്ടെത്തിയില്ല. ചെക്ക്‌ലിസ്റ്റ്, ലിസ്റ്റ്, ജോലി പട്ടിക, അല്ലെങ്കിൽ ഓരോ വരിയിലും ഒരു ജോലി ഉപയോഗിക്കുക.</string>
+    <string name="markdown_import_too_large">1 MB-ൽ താഴെയുള്ള ഫയലിൽ പരമാവധി 1,000 ജോലികളും ഓരോ ജോലിക്കും 200 ഉപജോലികളും ഉപയോഗിക്കുക.</string>
+    <string name="markdown_import_read_failed">ഫയൽ വായിക്കാനായില്ല. UTF-8 Markdown ഫയൽ തിരഞ്ഞെടുക്കുക.</string>
+    <string name="markdown_import_success">ജോലികൾ ഇറക്കുമതി ചെയ്തു</string>
+    <string name="markdown_import_destination">ഒരു പ്രോജക്റ്റോ ലിസ്റ്റോ എങ്കിലും തിരഞ്ഞെടുക്കുക.</string>
+    <string name="markdown_import_dates">തിരിച്ചറിഞ്ഞ സമയക്രമം ഉപയോഗിക്കുക</string>
+    <string name="markdown_import_dates_hint">ആപേക്ഷിക തീയതികളുടെ അടിസ്ഥാനം %1$s ആണ്. ജോലിയിലെ വിവരങ്ങൾക്ക് തലക്കെട്ടുകളേക്കാൾ മുൻഗണനയുണ്ട്.</string>
+    <string name="new_task_organize">ക്രമീകരിക്കുക</string>
+    <string name="action_select_all">എല്ലാം തിരഞ്ഞെടുക്കുക</string>
+    <string name="action_select_none">എല്ലാ തിരഞ്ഞെടുപ്പുകളും നീക്കുക</string>
+    <string name="markdown_import_select_tasks">ഇറക്കുമതി ചെയ്യേണ്ട ജോലികൾ തിരഞ്ഞെടുക്കുക</string>
+    <string name="markdown_import_selection_hint">തിരഞ്ഞെടുത്ത പ്രധാന ജോലികളും അവയുടെ ഉപജോലികളും മാത്രമേ ചേർക്കൂ.</string>
+    <string name="markdown_import_unmatched">ബന്ധിപ്പിച്ചിട്ടില്ല: %1$s. യഥാർഥ പരാമർശങ്ങൾ കുറിപ്പുകളിൽ സൂക്ഷിക്കും.</string>
+
+    <!-- Markdown review and batch undo -->
+    <string name="markdown_resolve_references">പരാമർശങ്ങൾ പൊരുത്തപ്പെടുത്തുക</string>
+    <string name="markdown_create_reference">%1$s സൃഷ്ടിക്കുക</string>
+    <string name="markdown_import_separately">വേർതിരിച്ച് ഇറക്കുമതി ചെയ്യുക</string>
+    <string name="markdown_update_existing">നിലവിലുള്ളത് പുതുക്കുക</string>
+    <string name="markdown_update_keeps_context">നിലവിലുള്ള കുറിപ്പുകളും ഉപജോലികളും നിലനിർത്തും.</string>
+    <plurals name="markdown_tasks_imported">
+        <item quantity="one">ഇറക്കുമതി ചെയ്ത ജോലികൾ: %1$d</item>
+        <item quantity="other">ഇറക്കുമതി ചെയ്ത ജോലികൾ: %1$d</item>
+    </plurals>
+    <plurals name="markdown_tasks_to_import">
+        <item quantity="one">ഇറക്കുമതി ചെയ്യാനുള്ളത്: %1$d</item>
+        <item quantity="other">ഇറക്കുമതി ചെയ്യാനുള്ളത്: %1$d</item>
+    </plurals>
+
+    <!-- Import review tools and staged tag editing -->
+    <string name="markdown_duplicates">പൊരുത്തപ്പെടുന്ന ജോലികൾ</string>
+    <string name="markdown_skip_matches">എല്ലാ പൊരുത്തങ്ങളും ഒഴിവാക്കുക</string>
+    <string name="markdown_copy_matches">എല്ലാം വേർതിരിച്ച് ഇറക്കുമതി ചെയ്യുക</string>
+    <string name="markdown_summary">ഇറക്കുമതി സംഗ്രഹം</string>
+    <string name="markdown_unresolved">പൊരുത്തപ്പെടാത്ത പരാമർശങ്ങൾ</string>
+    <string name="markdown_changes">നിലവിലുള്ള ജോലിയിലെ മാറ്റങ്ങൾ</string>
+    <string name="markdown_no_changes">ഒരു ഫീൽഡും മാറില്ല.</string>
+    <string name="markdown_remember_mappings">പരാമർശങ്ങളുടെ പൊരുത്തങ്ങൾ ഓർക്കുക</string>
+    <string name="markdown_mapping_missing">സംരക്ഷിച്ച പൊരുത്തം പരിശോധിക്കുക: ലക്ഷ്യം നീക്കുകയോ ആർക്കൈവ് ചെയ്യുകയോ ചെയ്തിരിക്കുന്നു.</string>
+    <string name="markdown_filter_hint">ഫിൽട്ടറുകൾ ഈ പ്രിവ്യൂ മാത്രം മാറ്റുന്നു. തിരഞ്ഞെടുത്ത എല്ലാ ജോലികളും ഇറക്കുമതിയിൽ ഉൾപ്പെടും.</string>
+    <string name="markdown_change_value">%1$s: %2$s → %3$s</string>
+    <plurals name="markdown_summary_counts">
+        <item quantity="one">പുതിയത്: %1$d\nപുതുക്കലുകൾ: %2$d\nഒഴിവാക്കിയത്: %3$d\nപൊരുത്തപ്പെടാത്തത്: %4$d</item>
+        <item quantity="other">പുതിയത്: %1$d\nപുതുക്കലുകൾ: %2$d\nഒഴിവാക്കിയത്: %3$d\nപൊരുത്തപ്പെടാത്തത്: %4$d</item>
+    </plurals>
+    <plurals name="bulk_tag_pending">
+        <item quantity="one">ടാഗ് മാറ്റങ്ങൾ: %1$d</item>
+        <item quantity="other">ടാഗ് മാറ്റങ്ങൾ: %1$d</item>
+    </plurals>
 </resources>

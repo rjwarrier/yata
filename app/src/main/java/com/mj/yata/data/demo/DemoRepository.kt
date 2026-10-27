@@ -63,7 +63,8 @@ class DemoRepository @Inject constructor() : YataRepository {
         notify: Boolean,
         resyncReminder: Boolean,
         preserveExistingCreatedAt: Boolean,
-        trackPostponements: Boolean
+        trackPostponements: Boolean,
+        pendingTags: List<Tag>
     ) = Unit
     override suspend fun toggleTaskDone(id: String, notify: Boolean) = Unit
     override suspend fun skipTaskOccurrence(id: String) = Unit
@@ -96,6 +97,11 @@ class DemoRepository @Inject constructor() : YataRepository {
     override suspend fun deleteProject(project: Project) = Unit
     override suspend fun deleteProjectOnly(project: Project) = Unit
     override suspend fun setProjectsArchived(ids: List<String>, archived: Boolean) = Unit
+    override suspend fun setProjectsGroup(projectIds: List<String>, groupId: String?, pendingGroup: com.mj.yata.domain.model.ProjectGroup?) = Unit
+
+    override fun getProjectGroups(): Flow<List<com.mj.yata.domain.model.ProjectGroup>> = dataset.map { emptyList() }
+    override suspend fun upsertProjectGroup(group: com.mj.yata.domain.model.ProjectGroup) = Unit
+    override suspend fun deleteProjectGroup(group: com.mj.yata.domain.model.ProjectGroup) = Unit
 
     override fun getLists(): Flow<List<YataList>> = dataset.map { it.lists }
     override fun getListById(id: String): Flow<YataList?> = dataset.map { d -> d.lists.find { it.id == id } }

@@ -570,6 +570,8 @@
     <string name="settings_backup_passphrase">காப்புப்பிரதி மறைகுறியாக்க கடவுச்சொற்றொடர்</string>
     <string name="settings_backup_passphrase_set">ஒரு கடவுச்சொற்றொடர் ஏற்கனவே அமைக்கப்பட்டுள்ளது. அதைத் தக்க வைக்க இதைக் காலியாக விடவும், அல்லது மாற்ற புதியதைத் தட்டச்சு செய்யவும்.</string>
     <string name="settings_backup_passphrase_hint">காப்புப்பிரதி கோப்பு உங்கள் சாதனத்தை விட்டு வெளியேறும் முன் அதை மறைகுறியாக்குகிறது, எனவே நீங்கள் முழுவதுமாகக் கட்டுப்படுத்தாத சர்வரிலும் அது தனிப்பட்டதாகவே இருக்கும். ஒரு நகலைப் பாதுகாப்பான இடத்தில் வைத்திருங்கள் — இந்தக் கடவுச்சொற்றொடர் இல்லாமல் காப்புப்பிரதியை இந்த போனிலோ வேறு எந்த போனிலோ மீட்க முடியாது.</string>
+    <string name="cd_reveal_backup_passphrase">காப்புப்பிரதி மறைகுறியாக்க கடவுச்சொற்றொடரைக் காட்டு</string>
+    <string name="cd_hide_backup_passphrase">காப்புப்பிரதி மறைகுறியாக்க கடவுச்சொற்றொடரை மறை</string>
     <string name="settings_sftp_host">ஹோஸ்ட்</string>
     <string name="settings_sftp_port">போர்ட்</string>
     <string name="settings_sftp_username">பயனர்பெயர்</string>
@@ -1503,6 +1505,10 @@
         <item quantity="one">அது எதிர்காலத்தில் விழும் வரை கடைசி தேதியை மாதம் மாதமாக முன்னோக்கி நகர்த்தி, தாமதமான %1$d நிலுவைப் பணியை நகலெடுக்கிறது. திரும்பும் பணிகள் தவிர்க்கப்படும்.</item>
         <item quantity="other">ஒவ்வொரு கடைசி தேதியும் எதிர்காலத்தில் விழும் வரை மாதம் மாதமாக முன்னோக்கி நகர்த்தி, தாமதமான %1$d நிலுவைப் பணிகளை நகலெடுக்கிறது. திரும்பும் பணிகள் தவிர்க்கப்படும்.</item>
     </plurals>
+    <plurals name="projects_add_to_group_title">
+        <item quantity="one">%1$d திட்டத்தை குழுவில் சேர்</item>
+        <item quantity="other">%1$d திட்டங்களை குழுவில் சேர்</item>
+    </plurals>
     <plurals name="next_days_title">
         <item quantity="one">அடுத்த %1$d நாள்</item>
         <item quantity="other">அடுத்த %1$d நாட்கள்</item>
@@ -1653,4 +1659,57 @@
     <string name="task_detail_tracked_hours">மணிநேரம்</string>
     <string name="task_detail_tracked_minutes">நிமிடங்கள்</string>
     <string name="task_detail_tracked_none">இன்னும் நேரம் கண்காணிக்கப்படவில்லை</string>
+    <string name="markdown_import_title">Markdown இறக்குமதி</string>
+    <string name="markdown_import_summary">சரிபார்ப்புப் பட்டியலைப் பார்த்து திட்டம் அல்லது பட்டியலில் பணிகளைச் சேர்க்கவும்.</string>
+    <string name="markdown_import_help">ஸ்மார்ட் ஆட் சரிபார்ப்புப் பட்டியல்கள், பட்டியல்கள், பணி அட்டவணைகளில் விவரங்களைக் கண்டறியும். இறக்குமதிக்கு முன் முன்னோட்டத்தைச் சரிபார்க்கவும்.</string>
+    <string name="markdown_import_choose_file">Markdown கோப்பைத் தேர்ந்தெடுக்கவும்</string>
+    <string name="markdown_import_empty">பணிகள் இல்லை. பட்டியல், பணி அட்டவணை அல்லது ஒவ்வொரு வரியிலும் ஒரு பணியைப் பயன்படுத்தவும்.</string>
+    <string name="markdown_import_too_large">1 MB-க்கும் குறைவான கோப்பில் அதிகபட்சம் 1,000 பணிகளும் ஒவ்வொரு பணிக்கும் 200 துணைப் பணிகளும் இருக்கலாம்.</string>
+    <string name="markdown_import_read_failed">கோப்பைப் படிக்க முடியவில்லை. UTF-8 Markdown கோப்பைத் தேர்ந்தெடுக்கவும்.</string>
+    <string name="markdown_import_success">பணிகள் இறக்குமதி செய்யப்பட்டன</string>
+    <string name="markdown_import_destination">குறைந்தது ஒரு திட்டம் அல்லது பட்டியலைத் தேர்ந்தெடுக்கவும்.</string>
+    <string name="markdown_import_dates">கண்டறிந்த நேர அட்டவணையைப் பயன்படுத்து</string>
+    <string name="markdown_import_dates_hint">சார்புத் தேதிகளின் அடிப்படை %1$s. பணியின் விவரங்கள் தலைப்புகளை விட முன்னுரிமை பெறும்.</string>
+    <string name="new_task_organize">ஒழுங்கமைக்கவும்</string>
+    <string name="action_select_all">அனைத்தையும் தேர்ந்தெடு</string>
+    <string name="action_select_none">அனைத்து தேர்வுகளையும் நீக்கு</string>
+    <string name="markdown_import_select_tasks">இறக்குமதி செய்ய பணிகளைத் தேர்ந்தெடுக்கவும்</string>
+    <string name="markdown_import_selection_hint">தேர்ந்தெடுத்த முதன்மைப் பணிகளும் அவற்றின் துணைப் பணிகளும் மட்டுமே சேர்க்கப்படும்.</string>
+    <string name="markdown_import_unmatched">இணைக்கப்படவில்லை: %1$s. அசல் குறிப்புகள் குறிப்புகளில் சேமிக்கப்படும்.</string>
+
+    <!-- Markdown review and batch undo -->
+    <string name="markdown_resolve_references">குறிப்புகளைப் பொருத்துக</string>
+    <string name="markdown_create_reference">%1$s உருவாக்குக</string>
+    <string name="markdown_import_separately">தனியாக இறக்குமதி செய்க</string>
+    <string name="markdown_update_existing">ஏற்கனவே உள்ளதைப் புதுப்பிக்கவும்</string>
+    <string name="markdown_update_keeps_context">ஏற்கனவே உள்ள குறிப்புகளும் துணைப் பணிகளும் தக்கவைக்கப்படும்.</string>
+    <plurals name="markdown_tasks_imported">
+        <item quantity="one">இறக்குமதி செய்யப்பட்ட பணிகள்: %1$d</item>
+        <item quantity="other">இறக்குமதி செய்யப்பட்ட பணிகள்: %1$d</item>
+    </plurals>
+    <plurals name="markdown_tasks_to_import">
+        <item quantity="one">இறக்குமதி செய்ய வேண்டியவை: %1$d</item>
+        <item quantity="other">இறக்குமதி செய்ய வேண்டியவை: %1$d</item>
+    </plurals>
+
+    <!-- Import review tools and staged tag editing -->
+    <string name="markdown_duplicates">பொருந்தும் பணிகள்</string>
+    <string name="markdown_skip_matches">எல்லாப் பொருத்தங்களையும் தவிர்க்கவும்</string>
+    <string name="markdown_copy_matches">அனைத்தையும் தனித்தனியாக இறக்குமதி செய்க</string>
+    <string name="markdown_summary">இறக்குமதி சுருக்கம்</string>
+    <string name="markdown_unresolved">பொருத்தப்படாத குறிப்புகள்</string>
+    <string name="markdown_changes">ஏற்கனவே உள்ள பணியின் மாற்றங்கள்</string>
+    <string name="markdown_no_changes">எந்தப் புலமும் மாறாது.</string>
+    <string name="markdown_remember_mappings">குறிப்புகளின் பொருத்தங்களை நினைவில் கொள்க</string>
+    <string name="markdown_mapping_missing">சேமித்த பொருத்தத்தைச் சரிபார்க்கவும்: அதன் இலக்கு நீக்கப்பட்டது அல்லது காப்பகப்படுத்தப்பட்டது.</string>
+    <string name="markdown_filter_hint">வடிகட்டிகள் இந்த முன்னோட்டத்தை மட்டுமே மாற்றும். தேர்ந்தெடுத்த அனைத்துப் பணிகளும் இறக்குமதியில் சேர்க்கப்படும்.</string>
+    <string name="markdown_change_value">%1$s: %2$s → %3$s</string>
+    <plurals name="markdown_summary_counts">
+        <item quantity="one">புதியவை: %1$d\nபுதுப்பிப்புகள்: %2$d\nதவிர்த்தவை: %3$d\nபொருத்தப்படாதவை: %4$d</item>
+        <item quantity="other">புதியவை: %1$d\nபுதுப்பிப்புகள்: %2$d\nதவிர்த்தவை: %3$d\nபொருத்தப்படாதவை: %4$d</item>
+    </plurals>
+    <plurals name="bulk_tag_pending">
+        <item quantity="one">குறிச்சொல் மாற்றங்கள்: %1$d</item>
+        <item quantity="other">குறிச்சொல் மாற்றங்கள்: %1$d</item>
+    </plurals>
 </resources>

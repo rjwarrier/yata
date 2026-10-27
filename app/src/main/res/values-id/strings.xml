@@ -486,6 +486,8 @@
     <string name="settings_backup_passphrase">Frasa sandi enkripsi cadangan</string>
     <string name="settings_backup_passphrase_set">Frasa sandi sudah diatur. Biarkan kosong untuk mempertahankannya, atau ketik yang baru untuk menggantinya.</string>
     <string name="settings_backup_passphrase_hint">Mengenkripsi file cadangan itu sendiri sebelum meninggalkan perangkat Anda, sehingga tetap privat meskipun di server yang tidak sepenuhnya Anda kendalikan. Simpan salinannya di tempat aman — tanpa frasa sandi ini cadangan tidak dapat dipulihkan, baik di ponsel ini maupun yang lain.</string>
+    <string name="cd_reveal_backup_passphrase">Tampilkan frasa sandi enkripsi cadangan</string>
+    <string name="cd_hide_backup_passphrase">Sembunyikan frasa sandi enkripsi cadangan</string>
     <string name="settings_sftp_host">Host</string>
     <string name="settings_sftp_port">Port</string>
     <string name="settings_sftp_username">Nama pengguna</string>
@@ -1419,6 +1421,10 @@
         <item quantity="one">Menduplikasi %1$d tugas terbuka yang terlambat, menggeser tanggal jatuh temponya maju per bulan hingga jatuh di masa depan. Tugas berulang dilewati.</item>
         <item quantity="other">Menduplikasi %1$d tugas terbuka yang terlambat, menggeser setiap tanggal jatuh tempo maju per bulan hingga jatuh di masa depan. Tugas berulang dilewati.</item>
     </plurals>
+    <plurals name="projects_add_to_group_title">
+        <item quantity="one">Tambahkan %1$d proyek ke grup</item>
+        <item quantity="other">Tambahkan %1$d proyek ke grup</item>
+    </plurals>
     <plurals name="next_days_title">
         <item quantity="one">%1$d Hari ke Depan</item>
         <item quantity="other">%1$d Hari ke Depan</item>
@@ -1656,4 +1662,57 @@
     <string name="task_detail_tracked_hours">Jam</string>
     <string name="task_detail_tracked_minutes">Menit</string>
     <string name="task_detail_tracked_none">Belum ada waktu tercatat</string>
+    <string name="markdown_import_title">Impor Markdown</string>
+    <string name="markdown_import_summary">Pratinjau daftar periksa dan tambahkan tugas ke proyek atau daftar.</string>
+    <string name="markdown_import_help">Tambah cerdas mendeteksi bidang dalam daftar periksa, daftar, dan tabel tugas. Periksa pratinjau sebelum mengimpor.</string>
+    <string name="markdown_import_choose_file">Pilih berkas Markdown</string>
+    <string name="markdown_import_empty">Tidak ada tugas. Gunakan daftar periksa, daftar, tabel tugas, atau satu tugas per baris.</string>
+    <string name="markdown_import_too_large">Gunakan berkas di bawah 1 MB dengan maksimal 1.000 tugas dan 200 subtugas per tugas.</string>
+    <string name="markdown_import_read_failed">Berkas tidak dapat dibaca. Pilih berkas Markdown UTF-8.</string>
+    <string name="markdown_import_success">Tugas diimpor</string>
+    <string name="markdown_import_destination">Pilih setidaknya satu proyek atau daftar.</string>
+    <string name="markdown_import_dates">Gunakan jadwal yang terdeteksi</string>
+    <string name="markdown_import_dates_hint">Tanggal relatif mengacu pada %1$s. Nilai tugas mengesampingkan nilai judul.</string>
+    <string name="new_task_organize">Atur</string>
+    <string name="action_select_all">Pilih semua</string>
+    <string name="action_select_none">Batalkan semua pilihan</string>
+    <string name="markdown_import_select_tasks">Pilih tugas untuk diimpor</string>
+    <string name="markdown_import_selection_hint">Hanya tugas utama yang dipilih beserta subtugasnya yang akan ditambahkan.</string>
+    <string name="markdown_import_unmatched">Belum ditautkan: %1$s. Referensi asli disimpan dalam catatan.</string>
+
+    <!-- Markdown review and batch undo -->
+    <string name="markdown_resolve_references">Cocokkan referensi</string>
+    <string name="markdown_create_reference">Buat %1$s</string>
+    <string name="markdown_import_separately">Impor secara terpisah</string>
+    <string name="markdown_update_existing">Perbarui yang ada</string>
+    <string name="markdown_update_keeps_context">Catatan dan subtugas yang ada tetap disimpan.</string>
+    <plurals name="markdown_tasks_imported">
+        <item quantity="one">Tugas yang diimpor: %1$d</item>
+        <item quantity="other">Tugas yang diimpor: %1$d</item>
+    </plurals>
+    <plurals name="markdown_tasks_to_import">
+        <item quantity="one">Untuk diimpor: %1$d</item>
+        <item quantity="other">Untuk diimpor: %1$d</item>
+    </plurals>
+
+    <!-- Import review tools and staged tag editing -->
+    <string name="markdown_duplicates">Tugas yang cocok</string>
+    <string name="markdown_skip_matches">Lewati semua kecocokan</string>
+    <string name="markdown_copy_matches">Impor semua secara terpisah</string>
+    <string name="markdown_summary">Ringkasan impor</string>
+    <string name="markdown_unresolved">Referensi belum cocok</string>
+    <string name="markdown_changes">Perubahan pada tugas yang ada</string>
+    <string name="markdown_no_changes">Tidak ada kolom yang akan berubah.</string>
+    <string name="markdown_remember_mappings">Ingat pasangan referensi</string>
+    <string name="markdown_mapping_missing">Pasangan tersimpan perlu ditinjau: tujuannya telah dihapus atau diarsipkan.</string>
+    <string name="markdown_filter_hint">Filter hanya mengubah pratinjau ini. Semua tugas terpilih tetap disertakan dalam impor.</string>
+    <string name="markdown_change_value">%1$s: %2$s → %3$s</string>
+    <plurals name="markdown_summary_counts">
+        <item quantity="one">Baru: %1$d\nPembaruan: %2$d\nDilewati: %3$d\nBelum cocok: %4$d</item>
+        <item quantity="other">Baru: %1$d\nPembaruan: %2$d\nDilewati: %3$d\nBelum cocok: %4$d</item>
+    </plurals>
+    <plurals name="bulk_tag_pending">
+        <item quantity="one">Perubahan tag: %1$d</item>
+        <item quantity="other">Perubahan tag: %1$d</item>
+    </plurals>
 </resources>

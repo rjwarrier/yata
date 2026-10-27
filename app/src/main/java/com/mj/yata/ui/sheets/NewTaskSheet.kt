@@ -43,6 +43,7 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.List
@@ -299,6 +300,9 @@ data class NewTaskDraft(
     val estimateMinutes: Int?
 )
 
+/** Review an existing draft without switching a pasted title into bulk task creation. */
+data class TaskDraftEditorOptions(val canSave: Boolean = true)
+
 /** Lists/projects/tags a shared task named that don't exist locally yet. Populated only for the
  * kinds the sender's structure-copy choice actually carried. Presenting this before anything is
  * created is what turns "tap a link, silently gain three new lists" into a choice the receiver
@@ -505,6 +509,7 @@ fun NewTaskSheet(
     /** Lets the shared-task-import flow show "Shared Task" instead of "New Task" in the header,
      * without a separate copy of this screen's chrome. */
     @androidx.annotation.StringRes headerTitleRes: Int = R.string.new_task_title,
+    editorOptions: TaskDraftEditorOptions? = null,
     projectsEnabled: Boolean = true,
     tagsEnabled: Boolean = true,
     peopleEnabled: Boolean = true,
@@ -538,7 +543,7 @@ fun NewTaskSheet(
     // form's parameter count over the register-allocation limit it already hit once, see
     // NewTaskDraft's doc comment). A new task starts in the project's implicit "No section"
     // bucket and gets assigned to one later, from TaskDetailScreen.
-    var selectedSection by rememberSaveable { mutableStateOf("") }
+    var selectedSection by rememberSaveable { mutableStateOf(initialDraft?.section ?: "") }
 
     // Initial due date: an explicit override (e.g. the day tapped on the calendar) wins,
     // otherwise the pre-selected project's due date, otherwise the user's configured default
@@ -546,7 +551,7 @@ fun NewTaskSheet(
     // task's own due date takes priority over all of that — it describes the work, not this
     // device's usual defaults.
     val initialDueDate = remember(projects, effectiveInitialProjectId, initialDueDateOverride, defaultDueDate, initialDraft) {
-        if (initialDraft?.due != null) {
+        if (initialDraft != null) {
             initialDraft.due
         } else if (initialDueDateOverride != null) {
             initialDueDateOverride
@@ -560,10 +565,8 @@ fun NewTaskSheet(
     var selectedDueDate by rememberSaveable { mutableStateOf<String?>(initialDueDate) }
     var selectedStartDate by rememberSaveable { mutableStateOf(initialDraft?.startDate) }
     var selectedTime by rememberSaveable { mutableStateOf(initialDraft?.time) }
-    // A shared task's reminder is never carried (it's the sender's own nudge preference, not the
-    // recipient's — see docs/app-links-team-sharing-design.md §2), so initialDraft.reminder is
-    // always null here; nothing to seed.
-    var selectedReminder by rememberSaveable { mutableStateOf<String?>(null) }
+    // Shared drafts omit reminders; local import-review drafts keep their approved reminder.
+    var selectedReminder by rememberSaveable { mutableStateOf(initialDraft?.reminder) }
     val context = androidx.compose.ui.platform.LocalContext.current
     var selectedRecurrence by rememberSaveable(stateSaver = recurrenceSaver) {
         mutableStateOf(initialDraft?.recurrence)
@@ -584,12 +587,12 @@ fun NewTaskSheet(
     // A shared task's own values are as deliberate as anything the user picks by hand, so each
     // is marked manually-set the same way a tap on its picker would — otherwise quick-add's
     // parse of the (already-final) title could silently overwrite what the sender actually sent.
-    var dueManuallySet by rememberSaveable { mutableStateOf(initialDueDateOverride != null || initialDraft?.due != null) }
-    var startDateManuallySet by rememberSaveable { mutableStateOf(initialDraft?.startDate != null) }
+    var dueManuallySet by rememberSaveable { mutableStateOf(initialDueDateOverride != null || initialDraft != null) }
+    var startDateManuallySet by rememberSaveable { mutableStateOf(initialDraft != null) }
     var startDateDaysBeforeDue by rememberSaveable { mutableStateOf<Int?>(null) }
-    var timeManuallySet by rememberSaveable { mutableStateOf(initialDraft?.time != null) }
-    var recurrenceManuallySet by rememberSaveable { mutableStateOf(initialDraft?.recurrence != null) }
-    var reminderManuallySet by rememberSaveable { mutableStateOf(false) }
+    var timeManuallySet by rememberSaveable { mutableStateOf(initialDraft != null) }
+    var recurrenceManuallySet by rememberSaveable { mutableStateOf(initialDraft != null) }
+    var reminderManuallySet by rememberSaveable { mutableStateOf(initialDraft != null) }
     var priorityManuallySet by rememberSaveable { mutableStateOf(initialDraft != null) }
     var quickAddDismissed by rememberSaveable { mutableStateOf(initialDraft != null) }
     var ignoredQuickAddFields by rememberSaveable(stateSaver = stringSetSaver) { mutableStateOf(setOf<String>()) }
@@ -617,14 +620,14 @@ fun NewTaskSheet(
     val setPriority: (String) -> Unit = { selectedPriority = it; priorityManuallySet = true }
 
     val myId = remember(people) { people.find { it.isMe }?.id ?: "me" }
-    val selectedAssigneeIds = rememberSaveable(saver = stringStateListSaver) { mutableStateListOf<String>() }
+    val selectedAssigneeIds = rememberSaveable(saver = stringStateListSaver) { mutableStateListOf(*(initialDraft?.assigneeIds.orEmpty()).toTypedArray()) }
 
     // initialAssigneeId still wins regardless of the setting: it's only non-null when the sheet
     // was opened from a specific person's screen, which is an explicit choice of assignee, not a
     // default. The setting governs only the fallback to the user themselves.
     val initialAssignee = initialAssigneeId ?: myId.takeIf { autoAssignToMe }
     LaunchedEffect(initialAssignee, peopleEnabled) {
-        if (peopleEnabled && selectedAssigneeIds.isEmpty() && initialAssignee != null) {
+        if (initialDraft == null && peopleEnabled && selectedAssigneeIds.isEmpty() && initialAssignee != null) {
             selectedAssigneeIds.add(initialAssignee)
         }
     }
@@ -637,9 +640,9 @@ fun NewTaskSheet(
             (defaultTagIds.filter { it in existingTagIds } + listOfNotNull(initialTagId) + (initialDraft?.tagIds ?: emptyList())).toSet()
         }
     }
-    val selectedTagIds = rememberSaveable(saver = stringStateListSaver) { mutableStateListOf<String>() }
+    val selectedTagIds = rememberSaveable(saver = stringStateListSaver) { mutableStateListOf(*(initialDraft?.tagIds.orEmpty()).toTypedArray()) }
     LaunchedEffect(effectiveInitialTagIds, tagsEnabled) {
-        if (tagsEnabled && selectedTagIds.isEmpty()) {
+        if (initialDraft == null && tagsEnabled && selectedTagIds.isEmpty()) {
             selectedTagIds.addAll(effectiveInitialTagIds)
         }
     }
@@ -663,7 +666,7 @@ fun NewTaskSheet(
     val activePeople = remember(people, selectedAssigneeIds.toList()) {
         people.activePeople(includeIds = selectedAssigneeIds.toSet())
     }
-    val canCreateTask = title.text.isNotBlank()
+    val canCreateTask = (editorOptions?.canSave ?: true) && title.text.isNotBlank()
     val hasMeaningfulDraft = title.text.isNotBlank() || notes.isNotBlank() || subtasks.isNotEmpty() ||
         selectedListId != initialListId || selectedProjectId != effectiveInitialProjectId ||
         selectedPriority != defaultPriority || selectedFlag || selectedTime != null ||
@@ -683,7 +686,7 @@ fun NewTaskSheet(
     // rather than dropped quietly — see the truncation warning in the preview card.
     val bulkTaskLines = remember(bulkAllLines) { bulkAllLines.take(MAX_BULK_TASKS) }
     val bulkTruncatedCount = bulkAllLines.size - bulkTaskLines.size
-    val isBulkTasks = !bulkModeDismissed && bulkTaskLines.size > 1
+    val isBulkTasks = editorOptions == null && !bulkModeDismissed && bulkTaskLines.size > 1
 
     // What a bulk paste will actually produce. Bulk mode suppresses the single-task smart-add
     // preview, so without this the whole operation is blind: every line is parsed and resolved at
@@ -843,7 +846,7 @@ fun NewTaskSheet(
                 // overriding it if the user later types a due phrase into the title.
                 selectedDueDate = projectObj.due
             }
-            if (selectedReminder == null) {
+            if (selectedReminder == null && !reminderManuallySet) {
                 selectedReminder = projectObj.defaultReminder
             }
         }
@@ -2164,8 +2167,8 @@ fun NewTaskSheet(
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = Icons.AutoMirrored.Default.Send,
-                    contentDescription = if (isBulkTasks) pluralStringResource(R.plurals.new_task_create_tasks, bulkTaskLines.size, bulkTaskLines.size) else stringResource(R.string.new_task_create_task),
+                    imageVector = if (editorOptions != null) Icons.Default.Done else Icons.AutoMirrored.Default.Send,
+                    contentDescription = if (editorOptions != null) stringResource(R.string.action_save) else if (isBulkTasks) pluralStringResource(R.plurals.new_task_create_tasks, bulkTaskLines.size, bulkTaskLines.size) else stringResource(R.string.new_task_create_task),
                     tint = if (canCreateTask) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
                     modifier = Modifier.size(20.dp)
                 )

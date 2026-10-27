@@ -486,6 +486,8 @@
     <string name="settings_backup_passphrase">Frază de acces pentru criptarea backupului</string>
     <string name="settings_backup_passphrase_set">Există deja o frază de acces setată. Lasă acest câmp gol pentru a o păstra sau scrie una nouă pentru a o înlocui.</string>
     <string name="settings_backup_passphrase_hint">Criptează fișierul de backup chiar înainte să părăsească dispozitivul, astfel încât să rămână privat chiar și pe un server pe care nu îl controlezi complet. Păstrează o copie într-un loc sigur — fără această frază de acces, backupul nu poate fi restaurat, nici pe acest telefon, nici pe altul.</string>
+    <string name="cd_reveal_backup_passphrase">Afișează fraza de acces pentru criptarea backupului</string>
+    <string name="cd_hide_backup_passphrase">Ascunde fraza de acces pentru criptarea backupului</string>
     <string name="settings_sftp_host">Gazdă</string>
     <string name="settings_sftp_port">Port</string>
     <string name="settings_sftp_username">Nume utilizator</string>
@@ -1419,6 +1421,10 @@
         <item quantity="one">Duplică %1$d sarcină deschisă restantă, mutându-i termenul înainte lună de lună până ajunge în viitor. Sarcinile recurente sunt omise.</item>
         <item quantity="other">Duplică %1$d sarcini deschise restante, mutând fiecare termen înainte lună de lună până ajunge în viitor. Sarcinile recurente sunt omise.</item>
     </plurals>
+    <plurals name="projects_add_to_group_title">
+        <item quantity="one">Adaugă %1$d proiect în grup</item>
+        <item quantity="other">Adaugă %1$d proiecte în grup</item>
+    </plurals>
     <plurals name="next_days_title">
         <item quantity="one">Următoarea %1$d zi</item>
         <item quantity="other">Următoarele %1$d zile</item>
@@ -1659,4 +1665,57 @@
     <string name="task_detail_tracked_hours">Ore</string>
     <string name="task_detail_tracked_minutes">Minute</string>
     <string name="task_detail_tracked_none">Niciun timp înregistrat încă</string>
+    <string name="markdown_import_title">Importă Markdown</string>
+    <string name="markdown_import_summary">Verifică o listă și adaugă sarcini într-un proiect sau o listă.</string>
+    <string name="markdown_import_help">Adăugarea inteligentă detectează câmpuri în liste și tabele de sarcini. Verifică previzualizarea înainte de import.</string>
+    <string name="markdown_import_choose_file">Alege fișierul Markdown</string>
+    <string name="markdown_import_empty">Nu s-au găsit sarcini. Folosește o listă, un tabel de sarcini sau o sarcină pe rând.</string>
+    <string name="markdown_import_too_large">Folosește un fișier sub 1 MB cu cel mult 1.000 de sarcini și 200 de subsarcini pe sarcină.</string>
+    <string name="markdown_import_read_failed">Fișierul nu a putut fi citit. Alege un fișier Markdown UTF-8.</string>
+    <string name="markdown_import_success">Sarcini importate</string>
+    <string name="markdown_import_destination">Alege cel puțin un proiect sau o listă.</string>
+    <string name="markdown_import_dates">Folosește programarea detectată</string>
+    <string name="markdown_import_dates_hint">Datele relative se bazează pe %1$s. Valorile sarcinilor au prioritate față de titluri.</string>
+    <string name="new_task_organize">Organizează</string>
+    <string name="action_select_all">Selectează tot</string>
+    <string name="action_select_none">Deselectează tot</string>
+    <string name="markdown_import_select_tasks">Alege sarcinile de importat</string>
+    <string name="markdown_import_selection_hint">Vor fi adăugate doar sarcinile principale selectate și subsarcinile lor.</string>
+    <string name="markdown_import_unmatched">Neasociat: %1$s. Referințele originale rămân în note.</string>
+
+    <!-- Markdown review and batch undo -->
+    <string name="markdown_resolve_references">Asociază referințele</string>
+    <string name="markdown_create_reference">Creează %1$s</string>
+    <string name="markdown_import_separately">Importă separat</string>
+    <string name="markdown_update_existing">Actualizează sarcina existentă</string>
+    <string name="markdown_update_keeps_context">Notele și subsarcinile existente sunt păstrate.</string>
+    <plurals name="markdown_tasks_imported">
+        <item quantity="one">Sarcini importate: %1$d</item>
+        <item quantity="other">Sarcini importate: %1$d</item>
+    </plurals>
+    <plurals name="markdown_tasks_to_import">
+        <item quantity="one">De importat: %1$d</item>
+        <item quantity="other">De importat: %1$d</item>
+    </plurals>
+
+    <!-- Import review tools and staged tag editing -->
+    <string name="markdown_duplicates">Sarcini potrivite</string>
+    <string name="markdown_skip_matches">Omite toate potrivirile</string>
+    <string name="markdown_copy_matches">Importă toate separat</string>
+    <string name="markdown_summary">Rezumatul importului</string>
+    <string name="markdown_unresolved">Referințe neasociate</string>
+    <string name="markdown_changes">Modificări la sarcina existentă</string>
+    <string name="markdown_no_changes">Niciun câmp nu se va modifica.</string>
+    <string name="markdown_remember_mappings">Reține asocierile referințelor</string>
+    <string name="markdown_mapping_missing">Verifică o asociere salvată: destinația a fost eliminată sau arhivată.</string>
+    <string name="markdown_filter_hint">Filtrele schimbă doar această previzualizare. Toate sarcinile selectate sunt incluse în import.</string>
+    <string name="markdown_change_value">%1$s: %2$s → %3$s</string>
+    <plurals name="markdown_summary_counts">
+        <item quantity="one">Noi: %1$d\nActualizări: %2$d\nOmise: %3$d\nNeasociate: %4$d</item>
+        <item quantity="other">Noi: %1$d\nActualizări: %2$d\nOmise: %3$d\nNeasociate: %4$d</item>
+    </plurals>
+    <plurals name="bulk_tag_pending">
+        <item quantity="one">Modificări ale etichetelor: %1$d</item>
+        <item quantity="other">Modificări ale etichetelor: %1$d</item>
+    </plurals>
 </resources>

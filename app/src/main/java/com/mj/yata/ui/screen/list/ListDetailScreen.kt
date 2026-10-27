@@ -72,6 +72,7 @@ fun ListDetailScreen(
     onNavigateBack: () -> Unit,
     onNavigateToTaskDetail: (String) -> Unit,
     onNavigateToTab: (Int) -> Unit,
+    onImportMarkdownRequested: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val lists by viewModel.lists.collectAsStateWithLifecycle()
@@ -185,6 +186,7 @@ fun ListDetailScreen(
     val selectedIds = remember { mutableStateListOf<String>() }
     val selectionMode = selectedIds.isNotEmpty()
     var showBulkTagSheet by remember { mutableStateOf(false) }
+    var bulkTagsApplying by remember { mutableStateOf(false) }
     var showBulkMoveSheet by remember { mutableStateOf(false) }
     var showBulkAssignSheet by remember { mutableStateOf(false) }
     var showBulkRescheduleSheet by remember { mutableStateOf(false) }
@@ -354,6 +356,14 @@ fun ListDetailScreen(
                                 leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) }
                             )
                             YataDropdownMenuItem(
+                                text = { Text(stringResource(R.string.markdown_import_title)) },
+                                onClick = {
+                                    showMenu = false
+                                    onImportMarkdownRequested()
+                                },
+                                leadingIcon = { Icon(Icons.Default.Add, contentDescription = null) }
+                            )
+                            YataDropdownMenuItem(
                                 text = { Text(stringResource(R.string.action_export_as_image)) },
                                 onClick = {
                                     showMenu = false
@@ -403,21 +413,25 @@ fun ListDetailScreen(
             }
         },
         floatingActionButton = {
-            com.mj.yata.ui.widgets.PressableScaleBox(
-                onClick = { isNewTaskSheetOpen = true }
-            ) {
-                Surface(
-                    color = listColor,
-                    contentColor = accents.onAccentFor(listColor),
-                    shape = RoundedCornerShape(16.dp),
-                    tonalElevation = 6.dp,
-                    shadowElevation = 6.dp
+            if (selectionMode) {
+                com.mj.yata.ui.widgets.TaskSelectionDeleteFab(onClick = { showBulkDeleteDialog = true })
+            } else {
+                com.mj.yata.ui.widgets.PressableScaleBox(
+                    onClick = { isNewTaskSheetOpen = true }
                 ) {
-                    Box(
-                        modifier = Modifier.size(56.dp),
-                        contentAlignment = Alignment.Center
+                    Surface(
+                        color = listColor,
+                        contentColor = accents.onAccentFor(listColor),
+                        shape = RoundedCornerShape(16.dp),
+                        tonalElevation = 6.dp,
+                        shadowElevation = 6.dp
                     ) {
-                        Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_add_task))
+                        Box(
+                            modifier = Modifier.size(56.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_add_task))
+                        }
                     }
                 }
             }
@@ -704,19 +718,24 @@ fun ListDetailScreen(
 
     if (showBulkTagSheet) {
         ModalBottomSheet(
-            onDismissRequest = { showBulkTagSheet = false },
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            onDismissRequest = { if (!bulkTagsApplying) showBulkTagSheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true, confirmValueChange = { !bulkTagsApplying }),
             shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
             sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             TaskBulkTagPickerSheet(
                 tags = tags,
-                onSelectTag = { tagId ->
-                    viewModel.bulkAddTag(selectedIds.toList(), tagId)
-                    selectedIds.clear()
-                    showBulkTagSheet = false
+                projects = projects,
+                selectedTasks = allTasks.filter { it.id in selectedIds },
+                onApply = { edit ->
+                    bulkTagsApplying = true
+                    try {
+                        val success = viewModel.applyBulkTagChanges(selectedIds.toList(), edit)
+                        if (success) { selectedIds.clear(); showBulkTagSheet = false }
+                        success
+                    } finally { bulkTagsApplying = false }
                 },
-                onDismiss = { showBulkTagSheet = false }
+                onDismiss = { if (!bulkTagsApplying) showBulkTagSheet = false }
             )
         }
     }

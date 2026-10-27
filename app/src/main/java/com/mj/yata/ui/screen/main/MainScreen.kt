@@ -138,6 +138,7 @@ fun MainScreen(
     var showClearSyncLockDialog by remember { mutableStateOf(false) }
     var clearSyncLockDialogMessage by remember { mutableStateOf<String?>(null) }
     var initialSyncMergeMessage by remember { mutableStateOf<String?>(null) }
+    var confirmFirstSyncRestore by remember { mutableStateOf(false) }
     var emptyLocalSyncMessage by remember { mutableStateOf<String?>(null) }
     var isClearingSyncLock by remember { mutableStateOf(false) }
 
@@ -210,7 +211,16 @@ fun MainScreen(
 
     // Main tabs state: 0=Today, 1=Projects, 2=People, 3=Tags, 4=Upcoming (Week/Month toggle inside)
     var selectedTab by rememberSaveable { mutableIntStateOf(if (initialTab >= 0) initialTab.coerceIn(0, 4) else 0) }
-    var restoredHomeTab by remember { mutableStateOf(initialTab >= 0) }
+    var todaySelectionDeleteAction by remember { mutableStateOf<(() -> Unit)?>(null) }
+    var upcomingSelectionDeleteAction by remember { mutableStateOf<(() -> Unit)?>(null) }
+    val selectionDeleteAction = when (selectedTab) {
+        0 -> todaySelectionDeleteAction
+        4 -> upcomingSelectionDeleteAction
+        else -> null
+    }
+    // Keep the initialization guard with selectedTab in the navigation entry's saved state.
+    // Returning from a detail screen must not reapply the startup tab over the restored tab.
+    var restoredHomeTab by rememberSaveable { mutableStateOf(initialTab >= 0) }
     var calendarSelectedDay by remember { mutableStateOf(java.time.LocalDate.now()) }
 
     // Confetti trigger
@@ -282,6 +292,7 @@ fun MainScreen(
     val tags = uiState.tags
     val tagGroups = uiState.tagGroups
     val personGroups = uiState.personGroups
+    val projectGroups = uiState.projectGroups
 
     // Preferences
     val userName = uiState.userName
@@ -726,6 +737,10 @@ fun MainScreen(
                 }
             },
             floatingActionButton = {
+                if (selectionDeleteAction != null) {
+                    com.mj.yata.ui.widgets.TaskSelectionDeleteFab(onClick = selectionDeleteAction)
+                }
+
                 // Each tab offers its own primary creation action; others show no FAB.
                 val fabTarget = when (selectedTab) {
                     0 -> stringResource(R.string.new_task_title) to MainSheetType.NewTask
@@ -742,7 +757,7 @@ fun MainScreen(
                     Alignment.End
                 }
 
-                Column(
+                if (selectionDeleteAction == null) Column(
                     horizontalAlignment = fabAlign,
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     modifier = Modifier.width(IntrinsicSize.Max)
@@ -979,7 +994,8 @@ fun MainScreen(
                             onSwipeToDelete = { bulkDeleteWithUndo(listOf(it)) },
                             onBulkComplete = { bulkCompleteWithUndo(it) },
                             onBulkDelete = { bulkDeleteWithUndo(it) },
-                            onBulkAddTag = { ids, tagId -> viewModel.bulkAddTag(ids, tagId) },
+                            onSelectionDeleteActionChanged = { todaySelectionDeleteAction = it },
+                            onBulkApplyTagChanges = { ids, edit -> viewModel.applyBulkTagChanges(ids, edit) },
                             onBulkSetProject = { ids, projectId -> viewModel.bulkSetProject(ids, projectId) },
                             onBulkSetList = { ids, listId -> viewModel.bulkSetList(ids, listId) },
                             onBulkDuplicate = { ids -> viewModel.bulkDuplicateTasks(ids) { single -> onNavigateToTaskDetail(single.id) } },
@@ -1016,6 +1032,7 @@ fun MainScreen(
                         )
                         1 -> ProjectsTab(
                             projects = projects,
+                            projectGroups = projectGroups,
                             lists = lists,
                             tasks = tasks,
                             people = people,
@@ -1030,6 +1047,13 @@ fun MainScreen(
                             onToggleProjectStar = { viewModel.toggleProjectStarred(it) },
                             onProjectsReordered = { viewModel.commitProjectOrder(it) },
                             onBulkArchiveProjects = { viewModel.bulkArchiveProjects(it) },
+                            onAssignProjectsGroup = { ids, groupId -> viewModel.setProjectsGroup(ids, groupId) },
+                            onCreateProjectGroupAndAssign = { id, name, ids ->
+                                viewModel.createProjectGroupAndAssign(
+                                    com.mj.yata.domain.model.ProjectGroup(id = id, name = name, color = "accentA"),
+                                    ids
+                                )
+                            },
                             peopleEnabled = peopleFeatureEnabled,
                             useWideLayout = useWideNavigation,
                             initialDataLoaded = initialDataLoaded
@@ -1108,7 +1132,8 @@ fun MainScreen(
                             onSwipeToDelete = { bulkDeleteWithUndo(listOf(it)) },
                             onBulkComplete = { bulkCompleteWithUndo(it) },
                             onBulkDelete = { bulkDeleteWithUndo(it) },
-                            onBulkAddTag = { ids, tagId -> viewModel.bulkAddTag(ids, tagId) },
+                            onSelectionDeleteActionChanged = { upcomingSelectionDeleteAction = it },
+                            onBulkApplyTagChanges = { ids, edit -> viewModel.applyBulkTagChanges(ids, edit) },
                             onBulkSetProject = { ids, projectId -> viewModel.bulkSetProject(ids, projectId) },
                             onBulkSetList = { ids, listId -> viewModel.bulkSetList(ids, listId) },
                             onBulkDuplicate = { ids -> viewModel.bulkDuplicateTasks(ids) { single -> onNavigateToTaskDetail(single.id) } },
@@ -1314,10 +1339,14 @@ fun MainScreen(
                 when (activeSheet) {
                     MainSheetType.NewProject -> ProjectEditorSheet(
                         tags = tags,
+                        groups = projectGroups,
                         existingNames = projects.map { it.name },
-                        onSave = { name, color, icon, due, commonTagIds, defaultReminder, description, excludeFromToday ->
-                            viewModel.addProject(name, color, icon, due, commonTagIds, defaultReminder, description, excludeFromToday)
+                        onSave = { name, color, icon, due, commonTagIds, defaultReminder, description, excludeFromToday, groupId ->
+                            viewModel.addProject(name, color, icon, due, commonTagIds, defaultReminder, description, excludeFromToday, groupId)
                             activeSheet = MainSheetType.None
+                        },
+                        onCreateGroup = { id, name, color ->
+                            viewModel.upsertProjectGroup(com.mj.yata.domain.model.ProjectGroup(id = id, name = name, color = color))
                         },
                         onDismiss = { activeSheet = MainSheetType.None }
                     )
@@ -1427,7 +1456,17 @@ fun MainScreen(
         AlertDialog(
             onDismissRequest = { initialSyncMergeMessage = null },
             title = { Text(stringResource(R.string.settings_initial_sync_merge_title)) },
-            text = { Text(initialSyncMergeMessage ?: stringResource(R.string.settings_initial_sync_merge_body)) },
+            text = {
+                Column {
+                    Text(initialSyncMergeMessage ?: stringResource(R.string.settings_initial_sync_merge_body))
+                    TextButton(onClick = {
+                        initialSyncMergeMessage = null
+                        confirmFirstSyncRestore = true
+                    }) {
+                        Text(stringResource(R.string.settings_empty_local_sync_restore_action))
+                    }
+                }
+            },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -1441,6 +1480,23 @@ fun MainScreen(
             dismissButton = {
                 TextButton(onClick = { initialSyncMergeMessage = null }) {
                     Text(stringResource(R.string.action_cancel))
+                }
+            }
+        )
+    }
+
+    if (confirmFirstSyncRestore) {
+        com.mj.yata.ui.widgets.FirstSyncRestoreDialog(
+            onDismiss = { confirmFirstSyncRestore = false },
+            onRestore = {
+                confirmFirstSyncRestore = false
+                viewModel.restoreLatestRemoteSnapshot { result ->
+                    scope.launch {
+                        snackbarHostState.showSnackbar(
+                            if (result.isSuccess) context.getString(R.string.settings_remote_restore_success)
+                            else context.getString(R.string.settings_remote_restore_failed, result.exceptionOrNull()?.message.orEmpty())
+                        )
+                    }
                 }
             }
         )
@@ -1942,31 +1998,29 @@ fun CustomBottomNav(
     val isFloatingNav = com.mj.yata.ui.theme.LocalFloatingBottomNav.current
     val showLabels = com.mj.yata.ui.theme.LocalBottomNavLabelsEnabled.current
 
+    // The "Floating bottom nav" appearance setting gets its own presentation entirely — a
+    // centered capsule modeled on the sibling Vayana app's floating nav bar, rather than a
+    // variant of the full-width bar below. See FloatingBottomNav.kt.
+    if (isFloatingNav) {
+        com.mj.yata.ui.widgets.FloatingCapsuleBottomNav(
+            selectedTab = selectedTab,
+            todayBadgeCount = todayBadgeCount,
+            peopleEnabled = peopleEnabled,
+            tagsEnabled = tagsEnabled,
+            projectsEnabled = projectsEnabled,
+            todayEnabled = todayEnabled,
+            upcomingEnabled = upcomingEnabled,
+            onTabSelected = onTabSelected
+        )
+        return
+    }
+
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .then(
-                if (isFloatingNav) {
-                    Modifier
-                        .navigationBarsPadding()
-                        .padding(horizontal = 20.dp, vertical = 12.dp)
-                } else {
-                    Modifier
-                }
-            ),
+        modifier = Modifier.fillMaxWidth(),
         contentAlignment = Alignment.Center
     ) {
         Surface(
             modifier = when {
-                isFloatingNav -> Modifier
-                    .fillMaxWidth()
-                    .height(64.dp)
-                    .clip(RoundedCornerShape(32.dp))
-                    .border(
-                        width = 1.dp,
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
-                        shape = RoundedCornerShape(32.dp)
-                    )
                 isEnhancedM3 -> Modifier
                     .padding(horizontal = 16.dp, vertical = 8.dp)
                     .fillMaxWidth()
@@ -1990,17 +2044,15 @@ fun CustomBottomNav(
                     }
             },
             color = when {
-                isFloatingNav && isEnhancedM3 -> MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.9f)
-                isFloatingNav -> MaterialTheme.colorScheme.surfaceContainerHigh
                 isEnhancedM3 -> MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.88f)
                 else -> MaterialTheme.colorScheme.surfaceContainer
             },
-            shadowElevation = if (isFloatingNav) 6.dp else 0.dp
+            shadowElevation = 0.dp
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .then(if (isFloatingNav) Modifier else Modifier.navigationBarsPadding())
+                    .navigationBarsPadding()
                     .padding(vertical = 4.dp)
                     .onGloballyPositioned { containerCoords = it }
             ) {

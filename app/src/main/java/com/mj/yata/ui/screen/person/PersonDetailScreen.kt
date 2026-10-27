@@ -204,6 +204,7 @@ fun PersonDetailScreen(
     val selectedIds = remember { mutableStateListOf<String>() }
     val selectionMode = selectedIds.isNotEmpty()
     var showBulkTagSheet by remember { mutableStateOf(false) }
+    var bulkTagsApplying by remember { mutableStateOf(false) }
     var showBulkMoveSheet by remember { mutableStateOf(false) }
     var showBulkAssignSheet by remember { mutableStateOf(false) }
     var showBulkRescheduleSheet by remember { mutableStateOf(false) }
@@ -403,20 +404,24 @@ fun PersonDetailScreen(
             }
         },
         floatingActionButton = {
-            Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                SmallFloatingActionButton(
-                    onClick = { isEditSheetOpen = true },
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                ) {
-                    Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.person_detail_edit_person))
-                }
-                FloatingActionButton(
-                    onClick = { isNewTaskSheetOpen = true },
-                    containerColor = personColor,
-                    contentColor = accents.onAccentFor(personColor)
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_add_task_for_person, person.name))
+            if (selectionMode) {
+                com.mj.yata.ui.widgets.TaskSelectionDeleteFab(onClick = { showBulkDeleteDialog = true })
+            } else {
+                Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    SmallFloatingActionButton(
+                        onClick = { isEditSheetOpen = true },
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                    ) {
+                        Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.person_detail_edit_person))
+                    }
+                    FloatingActionButton(
+                        onClick = { isNewTaskSheetOpen = true },
+                        containerColor = personColor,
+                        contentColor = accents.onAccentFor(personColor)
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_add_task_for_person, person.name))
+                    }
                 }
             }
         }
@@ -894,19 +899,24 @@ fun PersonDetailScreen(
 
     if (showBulkTagSheet) {
         ModalBottomSheet(
-            onDismissRequest = { showBulkTagSheet = false },
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            onDismissRequest = { if (!bulkTagsApplying) showBulkTagSheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true, confirmValueChange = { !bulkTagsApplying }),
             shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
             sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             TaskBulkTagPickerSheet(
                 tags = tags,
-                onSelectTag = { tagId ->
-                    viewModel.bulkAddTag(selectedIds.toList(), tagId)
-                    selectedIds.clear()
-                    showBulkTagSheet = false
+                projects = projects,
+                selectedTasks = allTasks.filter { it.id in selectedIds },
+                onApply = { edit ->
+                    bulkTagsApplying = true
+                    try {
+                        val success = viewModel.applyBulkTagChanges(selectedIds.toList(), edit)
+                        if (success) { selectedIds.clear(); showBulkTagSheet = false }
+                        success
+                    } finally { bulkTagsApplying = false }
                 },
-                onDismiss = { showBulkTagSheet = false }
+                onDismiss = { if (!bulkTagsApplying) showBulkTagSheet = false }
             )
         }
     }

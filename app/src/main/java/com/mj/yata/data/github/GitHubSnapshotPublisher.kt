@@ -3,6 +3,8 @@ package com.mj.yata.data.github
 import com.mj.yata.domain.sync.SyncRunReport
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 
 internal data class GitHubSyncConfig(
     val owner: String,
@@ -43,7 +45,9 @@ internal class GitHubSnapshotPublisher(
                 attempt++
                 progress(30, "Reading GitHub repo")
                 val head = readHead(config)
+                progress(34, "Checking GitHub history")
                 ensureHeadHasNotRewound(config, head.commitSha)
+                progress(40, "Downloading GitHub snapshot")
                 val remoteSnapshot = readRemoteSnapshot(config, head, progress)
 
                 progress(56, "Merging GitHub changes")
@@ -230,10 +234,11 @@ internal class GitHubSnapshotPublisher(
             return HeadState(commitSha = null, treeSha = null, snapshotBlobSha = null, hasReadme = false)
         }
         val commit = api.getCommit(config.owner, config.repo, ref.sha)
-        val snapshot = api.getContent(config.owner, config.repo, SNAPSHOT_PATH, commit.sha)
-            ?.takeIf { it.type == "file" }
-        val readme = api.getContent(config.owner, config.repo, README_PATH, commit.sha)
-            ?.takeIf { it.type == "file" }
+        val (snapshot, readme) = coroutineScope {
+            val snapshot = async { api.getContent(config.owner, config.repo, SNAPSHOT_PATH, commit.sha)?.takeIf { it.type == "file" } }
+            val readme = async { api.getContent(config.owner, config.repo, README_PATH, commit.sha)?.takeIf { it.type == "file" } }
+            snapshot.await() to readme.await()
+        }
         return HeadState(
             commitSha = commit.sha,
             treeSha = commit.treeSha,
@@ -307,7 +312,7 @@ internal class GitHubSnapshotPublisher(
         if (ancestorSha == descendantSha) return true
         val compareResult = try {
             api.compareCommits(config.owner, config.repo, base = ancestorSha, head = descendantSha)
-        } catch (_: GitHubException) {
+        } catch (_: GitHubNotFoundException) {
             null
         }
         if (compareResult != null) {
@@ -343,8 +348,7 @@ internal class GitHubSnapshotPublisher(
         retryDelay(CAS_RETRY_BASE_DELAY_MS * (1L shl (attempt - 1).coerceAtLeast(0)).coerceAtMost(8L))
     }
 
-    private fun scopeKey(config: GitHubSyncConfig): String =
-        "github|${config.owner}/${config.repo}@${config.branch}:$SNAPSHOT_PATH"
+    private fun scopeKey(config: GitHubSyncConfig): String = scopeKeyFor(config)
 
     private data class HeadState(
         val commitSha: String?,
@@ -405,6 +409,12 @@ internal class GitHubSnapshotPublisher(
         const val MAX_RECOVERY_COMMITS = 20
         const val MAX_ANCESTRY_COMMITS = 250
         const val MAX_SNAPSHOT_BYTES = 60 * 1024 * 1024
+
+        /** The same sync-baseline identity a normal publish/commit uses for this destination —
+         * shared with [com.mj.yata.data.github.GitHubSyncManager.restore] so a forced restore can
+         * establish the baseline too, not just a normal prepare/commit sync. */
+        fun scopeKeyFor(config: GitHubSyncConfig): String =
+            "github|${config.owner}/${config.repo}@${config.branch}:$SNAPSHOT_PATH"
 
         val README_TEXT = """
             # YATA sync repository

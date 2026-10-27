@@ -184,10 +184,13 @@ fun ProjectEditorSheet(
     initialDefaultReminder: String? = null,
     initialDescription: String? = null,
     initialExcludeFromToday: Boolean = false,
+    initialGroupId: String? = null,
     tags: List<com.mj.yata.domain.model.Tag> = emptyList(),
+    groups: List<com.mj.yata.domain.model.ProjectGroup> = emptyList(),
     /** Names of the other projects, for the case-insensitive collision check — see [nameCollides]. */
     existingNames: List<String> = emptyList(),
-    onSave: (String, String, String, String?, List<String>, String?, String?, Boolean) -> Unit,
+    onSave: (String, String, String, String?, List<String>, String?, String?, Boolean, String?) -> Unit,
+    onCreateGroup: (id: String, name: String, color: String) -> Unit = { _, _, _ -> },
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -202,10 +205,12 @@ fun ProjectEditorSheet(
     var defaultReminder by remember { mutableStateOf(initialDefaultReminder) }
     var description by remember { mutableStateOf(initialDescription ?: "") }
     var excludeFromToday by remember { mutableStateOf(initialExcludeFromToday) }
+    var selectedGroupId by remember { mutableStateOf(initialGroupId) }
     val selectedTagIds = remember { mutableStateListOf<String>().apply { addAll(initialCommonTagIds) } }
     var reminderExpanded by remember { mutableStateOf(initialDefaultReminder != null) }
     var tagsExpanded by remember { mutableStateOf(initialCommonTagIds.isNotEmpty()) }
     var appearanceExpanded by remember { mutableStateOf(false) }
+    var groupExpanded by remember { mutableStateOf(initialGroupId != null) }
     val descriptionLimit = 100
 
     val entranceScale = remember { androidx.compose.animation.core.Animatable(0.92f) }
@@ -406,6 +411,30 @@ fun ProjectEditorSheet(
         }
 
         ProjectEditorSection(
+            title = stringResource(R.string.entity_editors_group_label),
+            summary = groups.firstOrNull { it.id == selectedGroupId }?.name ?: stringResource(R.string.settings_none),
+            leadingIcon = { Icon(Icons.Default.Groups, contentDescription = null) },
+            expanded = groupExpanded,
+            onToggle = { groupExpanded = !groupExpanded }
+        ) {
+            GroupPickerSection(
+                label = stringResource(R.string.entity_editors_group_label),
+                groups = groups,
+                groupId = { it.id },
+                groupName = { it.name },
+                groupColorKey = { it.color },
+                selectedGroupId = selectedGroupId,
+                onSelect = { selectedGroupId = it },
+                onCreateGroup = { groupName ->
+                    val id = "pjg_" + java.util.UUID.randomUUID().toString()
+                    onCreateGroup(id, groupName, selectedColor)
+                    selectedGroupId = id
+                },
+                showLabel = false
+            )
+        }
+
+        ProjectEditorSection(
             title = stringResource(R.string.settings_section_appearance),
             summary = stringResource(R.string.projects_project_icon),
             leadingIcon = { Icon(Icons.Default.Palette, contentDescription = null) },
@@ -458,7 +487,7 @@ fun ProjectEditorSheet(
             }
             Spacer(modifier = Modifier.width(8.dp))
             Button(
-                onClick = { if (name.isNotBlank() && !nameTaken) onSave(name, selectedColor, selectedIcon, dueDate, selectedTagIds.toList(), defaultReminder, description.trim().ifBlank { null }, excludeFromToday) },
+                onClick = { if (name.isNotBlank() && !nameTaken) onSave(name, selectedColor, selectedIcon, dueDate, selectedTagIds.toList(), defaultReminder, description.trim().ifBlank { null }, excludeFromToday, selectedGroupId) },
                 enabled = name.isNotBlank() && !nameTaken
             ) {
                 Text(buttonText)

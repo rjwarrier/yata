@@ -76,6 +76,10 @@ class TaskOperations @Inject constructor(
         }
     }
 
+    suspend fun bulkCreateAndAddTag(ids: List<String>, name: String, color: String) {
+        createAndApplyBulkTag(repository, ids, name, color)
+    }
+
     suspend fun bulkAssignPerson(ids: List<String>, personId: String) {
         val byId = tasksById(ids)
         val updated = ids.mapNotNull { id ->

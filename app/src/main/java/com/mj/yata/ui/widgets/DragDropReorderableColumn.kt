@@ -55,6 +55,8 @@ fun <T> DragDropReorderableColumn(
     onDragToTopEdge: ((T) -> Unit)? = null,
     onDragToBottomEdge: ((T) -> Unit)? = null,
     onDragStateChanged: (Boolean) -> Unit = {},
+    canDrag: (T) -> Boolean = { true },
+    canMove: (T, T) -> Boolean = { _, _ -> true },
     /** Non-draggable content emitted before [items] (e.g. a "PENDING (n)" section header) — must
      * emit exactly [headerItemCount] `item{}`/`items{}` entries, so index math stays correct. */
     headerItemCount: Int = 0,
@@ -129,6 +131,7 @@ fun <T> DragDropReorderableColumn(
                         shadowElevation = if (isDragging) 8f else 0f
                     }
                     .pointerInput(item, items.size) {
+                        if (!canDrag(item)) return@pointerInput
                         detectDragGesturesAfterLongPress(
                             onDragStart = {
                                 if (hapticsEnabled) haptics.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
@@ -161,7 +164,8 @@ fun <T> DragDropReorderableColumn(
                                 // any footer content (e.g. the Completed section), so a fast drag
                                 // can't accidentally reorder into either.
                                 val others = listState.layoutInfo.visibleItemsInfo.filter {
-                                    it.index != currentIndex && it.index >= headerItemCount && it.index < headerItemCount + items.size
+                                    it.index != currentIndex && it.index >= headerItemCount && it.index < headerItemCount + items.size &&
+                                        canMove(items[currentIndex - headerItemCount], items[it.index - headerItemCount])
                                 }
                                 // Fast path: the dragged center actually lands inside a neighbor's band.
                                 // Fallback: on a fast/large drag delta, the center can jump clear over a

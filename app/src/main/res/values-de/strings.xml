@@ -422,6 +422,10 @@
         <item quantity="one">Dupliziert %1$d überfällige offene Aufgabe und verschiebt das Fälligkeitsdatum monatsweise nach vorn, bis es in der Zukunft liegt. Wiederkehrende Aufgaben werden übersprungen.</item>
         <item quantity="other">Dupliziert %1$d überfällige offene Aufgaben und verschiebt jedes Fälligkeitsdatum monatsweise nach vorn, bis es in der Zukunft liegt. Wiederkehrende Aufgaben werden übersprungen.</item>
     </plurals>
+    <plurals name="projects_add_to_group_title">
+        <item quantity="one">%1$d Projekt zur Gruppe hinzufügen</item>
+        <item quantity="other">%1$d Projekte zur Gruppe hinzufügen</item>
+    </plurals>
 
     <string name="search_in_list">In %1$s suchen</string>
     <string name="search_in_project">In %1$s suchen</string>
@@ -667,6 +671,8 @@
     <string name="settings_backup_passphrase">Backup-Verschlüsselungspassphrase</string>
     <string name="settings_backup_passphrase_set">Es ist bereits eine Passphrase festgelegt. Leer lassen, um sie zu behalten, oder eine neue eingeben, um sie zu ersetzen.</string>
     <string name="settings_backup_passphrase_hint">Verschlüsselt die Backup-Datei selbst, bevor sie dein Gerät verlässt, sodass sie auch auf einem Server, den du nicht vollständig kontrollierst, privat bleibt. Bewahre eine Kopie sicher auf — ohne diese Passphrase kann das Backup weder auf diesem noch auf einem anderen Gerät wiederhergestellt werden.</string>
+    <string name="cd_reveal_backup_passphrase">Backup-Verschlüsselungspassphrase anzeigen</string>
+    <string name="cd_hide_backup_passphrase">Backup-Verschlüsselungspassphrase verbergen</string>
     <string name="settings_sftp_host">Host</string>
     <string name="settings_sftp_port">Port</string>
     <string name="settings_sftp_username">Benutzername</string>
@@ -1813,4 +1819,57 @@
     <string name="task_detail_tracked_hours">Stunden</string>
     <string name="task_detail_tracked_minutes">Minuten</string>
     <string name="task_detail_tracked_none">Noch keine Zeit erfasst</string>
+    <string name="markdown_import_title">Markdown importieren</string>
+    <string name="markdown_import_summary">Checkliste prüfen und Aufgaben zu einem Projekt oder einer Liste hinzufügen.</string>
+    <string name="markdown_import_help">Smart Add erkennt Angaben in Checklisten, Listen und Aufgabentabellen. Prüfe die Vorschau vor dem Import.</string>
+    <string name="markdown_import_choose_file">Markdown-Datei auswählen</string>
+    <string name="markdown_import_empty">Keine Aufgaben gefunden. Verwende eine Liste, Aufgabentabelle oder eine Aufgabe pro Zeile.</string>
+    <string name="markdown_import_too_large">Verwende eine Datei unter 1 MB mit höchstens 1.000 Aufgaben und 200 Teilaufgaben pro Aufgabe.</string>
+    <string name="markdown_import_read_failed">Datei konnte nicht gelesen werden. Wähle eine Markdown-Datei in UTF-8.</string>
+    <string name="markdown_import_success">Aufgaben importiert</string>
+    <string name="markdown_import_destination">Wähle mindestens ein Projekt oder eine Liste.</string>
+    <string name="markdown_import_dates">Erkannte Zeitplanung verwenden</string>
+    <string name="markdown_import_dates_hint">Relative Daten beziehen sich auf %1$s. Aufgabenangaben haben Vorrang vor Überschriften.</string>
+    <string name="new_task_organize">Organisieren</string>
+    <string name="action_select_all">Alle auswählen</string>
+    <string name="action_select_none">Keine auswählen</string>
+    <string name="markdown_import_select_tasks">Aufgaben zum Import auswählen</string>
+    <string name="markdown_import_selection_hint">Nur ausgewählte Hauptaufgaben und ihre Teilaufgaben werden hinzugefügt.</string>
+    <string name="markdown_import_unmatched">Nicht verknüpft: %1$s. Ursprüngliche Angaben bleiben in den Notizen.</string>
+
+    <!-- Markdown review and batch undo -->
+    <string name="markdown_resolve_references">Verweise zuordnen</string>
+    <string name="markdown_create_reference">%1$s erstellen</string>
+    <string name="markdown_import_separately">Separat importieren</string>
+    <string name="markdown_update_existing">Vorhandene Aufgabe aktualisieren</string>
+    <string name="markdown_update_keeps_context">Vorhandene Notizen und Unteraufgaben bleiben erhalten.</string>
+    <plurals name="markdown_tasks_imported">
+        <item quantity="one">Importierte Aufgaben: %1$d</item>
+        <item quantity="other">Importierte Aufgaben: %1$d</item>
+    </plurals>
+    <plurals name="markdown_tasks_to_import">
+        <item quantity="one">Zu importieren: %1$d</item>
+        <item quantity="other">Zu importieren: %1$d</item>
+    </plurals>
+
+    <!-- Import review tools and staged tag editing -->
+    <string name="markdown_duplicates">Übereinstimmende Aufgaben</string>
+    <string name="markdown_skip_matches">Alle Treffer überspringen</string>
+    <string name="markdown_copy_matches">Alle separat importieren</string>
+    <string name="markdown_summary">Importübersicht</string>
+    <string name="markdown_unresolved">Nicht zugeordnete Verweise</string>
+    <string name="markdown_changes">Änderungen an der vorhandenen Aufgabe</string>
+    <string name="markdown_no_changes">Es werden keine Felder geändert.</string>
+    <string name="markdown_remember_mappings">Verweiszuordnungen merken</string>
+    <string name="markdown_mapping_missing">Eine gespeicherte Zuordnung muss geprüft werden: Ihr Ziel wurde gelöscht oder archiviert.</string>
+    <string name="markdown_filter_hint">Filter ändern nur diese Vorschau. Alle ausgewählten Aufgaben werden beim Import berücksichtigt.</string>
+    <string name="markdown_change_value">%1$s: %2$s → %3$s</string>
+    <plurals name="markdown_summary_counts">
+        <item quantity="one">Neu: %1$d\nAktualisierungen: %2$d\nÜbersprungen: %3$d\nNicht zugeordnet: %4$d</item>
+        <item quantity="other">Neu: %1$d\nAktualisierungen: %2$d\nÜbersprungen: %3$d\nNicht zugeordnet: %4$d</item>
+    </plurals>
+    <plurals name="bulk_tag_pending">
+        <item quantity="one">Tag-Änderungen: %1$d</item>
+        <item quantity="other">Tag-Änderungen: %1$d</item>
+    </plurals>
 </resources>

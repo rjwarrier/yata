@@ -570,6 +570,8 @@
     <string name="settings_backup_passphrase">Nenosiri la usimbaji wa nakala rudufu</string>
     <string name="settings_backup_passphrase_set">Nenosiri tayari limewekwa. Acha hii wazi ili libaki, au andika jipya ili kulibadilisha.</string>
     <string name="settings_backup_passphrase_hint">Husimba faili ya nakala rudufu yenyewe kabla haijaondoka kwenye kifaa chako, hivyo inabaki faragha hata kwenye seva usiyoidhibiti kikamilifu. Hifadhi nakala mahali salama — bila nenosiri hili nakala rudufu haiwezi kurejeshwa, kwenye simu hii wala nyingine yoyote.</string>
+    <string name="cd_reveal_backup_passphrase">Onyesha nenosiri la usimbaji wa nakala rudufu</string>
+    <string name="cd_hide_backup_passphrase">Ficha nenosiri la usimbaji wa nakala rudufu</string>
     <string name="settings_sftp_host">Mwenyeji</string>
     <string name="settings_sftp_port">Bandari</string>
     <string name="settings_sftp_username">Jina la mtumiaji</string>
@@ -1503,6 +1505,10 @@
         <item quantity="one">Hunakili kazi %1$d wazi iliyochelewa, ikisogeza tarehe yake ya mwisho mbele kwa mwezi hadi ifike wakati ujao. Kazi zinazorudiarudia huruka.</item>
         <item quantity="other">Hunakili kazi %1$d wazi zilizochelewa, ikisogeza kila tarehe ya mwisho mbele kwa mwezi hadi ifike wakati ujao. Kazi zinazorudiarudia huruka.</item>
     </plurals>
+    <plurals name="projects_add_to_group_title">
+        <item quantity="one">Ongeza mradi %1$d kwenye kikundi</item>
+        <item quantity="other">Ongeza miradi %1$d kwenye kikundi</item>
+    </plurals>
     <plurals name="next_days_title">
         <item quantity="one">Siku %1$d Ijayo</item>
         <item quantity="other">Siku %1$d Zijazo</item>
@@ -1653,4 +1659,57 @@
     <string name="task_detail_tracked_hours">Saa</string>
     <string name="task_detail_tracked_minutes">Dakika</string>
     <string name="task_detail_tracked_none">Hakuna muda uliofuatiliwa bado</string>
+    <string name="markdown_import_title">Ingiza Markdown</string>
+    <string name="markdown_import_summary">Hakiki orodha ya ukaguzi na uongeze kazi kwenye mradi au orodha.</string>
+    <string name="markdown_import_help">Uongezaji mahiri hutambua taarifa katika orodha na majedwali ya kazi. Hakiki mwonekano kabla ya kuingiza.</string>
+    <string name="markdown_import_choose_file">Chagua faili la Markdown</string>
+    <string name="markdown_import_empty">Hakuna kazi zilizopatikana. Tumia orodha, jedwali la kazi au kazi moja kwa kila mstari.</string>
+    <string name="markdown_import_too_large">Tumia faili chini ya MB 1 lenye kazi zisizozidi 1,000 na kazi ndogo 200 kwa kila kazi.</string>
+    <string name="markdown_import_read_failed">Faili halikusomeka. Chagua faili la Markdown la UTF-8.</string>
+    <string name="markdown_import_success">Kazi zimeingizwa</string>
+    <string name="markdown_import_destination">Chagua angalau mradi au orodha moja.</string>
+    <string name="markdown_import_dates">Tumia ratiba iliyotambuliwa</string>
+    <string name="markdown_import_dates_hint">Tarehe linganishi hutumia %1$s kama msingi. Taarifa za kazi hutangulia zile za vichwa.</string>
+    <string name="new_task_organize">Panga</string>
+    <string name="action_select_all">Chagua zote</string>
+    <string name="action_select_none">Ondoa chaguo zote</string>
+    <string name="markdown_import_select_tasks">Chagua kazi za kuingiza</string>
+    <string name="markdown_import_selection_hint">Kazi kuu zilizochaguliwa na kazi zake ndogo pekee ndizo zitaongezwa.</string>
+    <string name="markdown_import_unmatched">Haijaunganishwa: %1$s. Marejeleo ya awali yanabaki kwenye madokezo.</string>
+
+    <!-- Markdown review and batch undo -->
+    <string name="markdown_resolve_references">Linganisha marejeleo</string>
+    <string name="markdown_create_reference">Unda %1$s</string>
+    <string name="markdown_import_separately">Ingiza kando</string>
+    <string name="markdown_update_existing">Sasisha iliyopo</string>
+    <string name="markdown_update_keeps_context">Maelezo na kazi ndogo zilizopo zitahifadhiwa.</string>
+    <plurals name="markdown_tasks_imported">
+        <item quantity="one">Kazi zilizoingizwa: %1$d</item>
+        <item quantity="other">Kazi zilizoingizwa: %1$d</item>
+    </plurals>
+    <plurals name="markdown_tasks_to_import">
+        <item quantity="one">Za kuingiza: %1$d</item>
+        <item quantity="other">Za kuingiza: %1$d</item>
+    </plurals>
+
+    <!-- Import review tools and staged tag editing -->
+    <string name="markdown_duplicates">Kazi zinazolingana</string>
+    <string name="markdown_skip_matches">Ruka zote zinazolingana</string>
+    <string name="markdown_copy_matches">Ingiza zote kando</string>
+    <string name="markdown_summary">Muhtasari wa uingizaji</string>
+    <string name="markdown_unresolved">Marejeleo yasiyolinganishwa</string>
+    <string name="markdown_changes">Mabadiliko ya kazi iliyopo</string>
+    <string name="markdown_no_changes">Hakuna sehemu itakayobadilika.</string>
+    <string name="markdown_remember_mappings">Kumbuka ulinganishaji wa marejeleo</string>
+    <string name="markdown_mapping_missing">Kagua ulinganishaji uliohifadhiwa: lengwa lake limeondolewa au kuhifadhiwa kwenye kumbukumbu.</string>
+    <string name="markdown_filter_hint">Vichujio hubadilisha hakikisho hili pekee. Kazi zote ulizochagua zinajumuishwa katika uingizaji.</string>
+    <string name="markdown_change_value">%1$s: %2$s → %3$s</string>
+    <plurals name="markdown_summary_counts">
+        <item quantity="one">Mpya: %1$d\nMasasisho: %2$d\nZilizorukwa: %3$d\nYasiyolinganishwa: %4$d</item>
+        <item quantity="other">Mpya: %1$d\nMasasisho: %2$d\nZilizorukwa: %3$d\nYasiyolinganishwa: %4$d</item>
+    </plurals>
+    <plurals name="bulk_tag_pending">
+        <item quantity="one">Mabadiliko ya lebo: %1$d</item>
+        <item quantity="other">Mabadiliko ya lebo: %1$d</item>
+    </plurals>
 </resources>

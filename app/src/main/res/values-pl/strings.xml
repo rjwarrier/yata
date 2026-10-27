@@ -486,6 +486,8 @@
     <string name="settings_backup_passphrase">Hasło szyfrowania kopii zapasowej</string>
     <string name="settings_backup_passphrase_set">Hasło jest już ustawione. Pozostaw to puste, aby je zachować, lub wpisz nowe, aby je zastąpić.</string>
     <string name="settings_backup_passphrase_hint">Szyfruje sam plik kopii zapasowej, zanim opuści urządzenie, dzięki czemu pozostaje prywatny nawet na serwerze, nad którym nie masz pełnej kontroli. Zachowaj kopię w bezpiecznym miejscu — bez tego hasła kopii zapasowej nie da się przywrócić, ani na tym telefonie, ani na żadnym innym.</string>
+    <string name="cd_reveal_backup_passphrase">Pokaż hasło szyfrowania kopii zapasowej</string>
+    <string name="cd_hide_backup_passphrase">Ukryj hasło szyfrowania kopii zapasowej</string>
     <string name="settings_sftp_host">Host</string>
     <string name="settings_sftp_port">Port</string>
     <string name="settings_sftp_username">Nazwa użytkownika</string>
@@ -1419,6 +1421,10 @@
         <item quantity="one">Duplikuje %1$d zaległe otwarte zadanie, przesuwając jego termin do przodu o miesiąc, aż wypadnie w przyszłości. Zadania cykliczne są pomijane.</item>
         <item quantity="other">Duplikuje %1$d zaległych otwartych zadań, przesuwając każdy termin do przodu o miesiąc, aż wypadnie w przyszłości. Zadania cykliczne są pomijane.</item>
     </plurals>
+    <plurals name="projects_add_to_group_title">
+        <item quantity="one">Dodaj %1$d projekt do grupy</item>
+        <item quantity="other">Dodaj %1$d projektów do grupy</item>
+    </plurals>
     <plurals name="next_days_title">
         <item quantity="one">Następny %1$d dzień</item>
         <item quantity="other">Następne %1$d dni</item>
@@ -1662,4 +1668,57 @@
     <string name="task_detail_tracked_hours">Godziny</string>
     <string name="task_detail_tracked_minutes">Minuty</string>
     <string name="task_detail_tracked_none">Brak zarejestrowanego czasu</string>
+    <string name="markdown_import_title">Importuj Markdown</string>
+    <string name="markdown_import_summary">Przejrzyj listę kontrolną i dodaj zadania do projektu lub listy.</string>
+    <string name="markdown_import_help">Inteligentne dodawanie rozpoznaje pola na listach i w tabelach zadań. Sprawdź podgląd przed importem.</string>
+    <string name="markdown_import_choose_file">Wybierz plik Markdown</string>
+    <string name="markdown_import_empty">Nie znaleziono zadań. Użyj listy, tabeli zadań lub jednego zadania na wiersz.</string>
+    <string name="markdown_import_too_large">Użyj pliku poniżej 1 MB z maksymalnie 1000 zadań i 200 podzadań na zadanie.</string>
+    <string name="markdown_import_read_failed">Nie można odczytać pliku. Wybierz plik Markdown UTF-8.</string>
+    <string name="markdown_import_success">Zadania zaimportowane</string>
+    <string name="markdown_import_destination">Wybierz co najmniej jeden projekt lub listę.</string>
+    <string name="markdown_import_dates">Użyj wykrytego harmonogramu</string>
+    <string name="markdown_import_dates_hint">Daty względne opierają się na %1$s. Dane zadań mają pierwszeństwo przed nagłówkami.</string>
+    <string name="new_task_organize">Organizuj</string>
+    <string name="action_select_all">Zaznacz wszystko</string>
+    <string name="action_select_none">Odznacz wszystko</string>
+    <string name="markdown_import_select_tasks">Wybierz zadania do importu</string>
+    <string name="markdown_import_selection_hint">Zostaną dodane tylko wybrane zadania główne i ich podzadania.</string>
+    <string name="markdown_import_unmatched">Niepowiązane: %1$s. Oryginalne odwołania pozostają w notatkach.</string>
+
+    <!-- Markdown review and batch undo -->
+    <string name="markdown_resolve_references">Dopasuj odwołania</string>
+    <string name="markdown_create_reference">Utwórz %1$s</string>
+    <string name="markdown_import_separately">Importuj osobno</string>
+    <string name="markdown_update_existing">Zaktualizuj istniejące</string>
+    <string name="markdown_update_keeps_context">Istniejące notatki i podzadania zostaną zachowane.</string>
+    <plurals name="markdown_tasks_imported">
+        <item quantity="one">Zaimportowane zadania: %1$d</item>
+        <item quantity="other">Zaimportowane zadania: %1$d</item>
+    </plurals>
+    <plurals name="markdown_tasks_to_import">
+        <item quantity="one">Do zaimportowania: %1$d</item>
+        <item quantity="other">Do zaimportowania: %1$d</item>
+    </plurals>
+
+    <!-- Import review tools and staged tag editing -->
+    <string name="markdown_duplicates">Pasujące zadania</string>
+    <string name="markdown_skip_matches">Pomiń wszystkie dopasowania</string>
+    <string name="markdown_copy_matches">Importuj wszystkie osobno</string>
+    <string name="markdown_summary">Podsumowanie importu</string>
+    <string name="markdown_unresolved">Nieprzypisane odwołania</string>
+    <string name="markdown_changes">Zmiany istniejącego zadania</string>
+    <string name="markdown_no_changes">Żadne pola nie zostaną zmienione.</string>
+    <string name="markdown_remember_mappings">Zapamiętaj przypisania odwołań</string>
+    <string name="markdown_mapping_missing">Sprawdź zapisane przypisanie: jego cel usunięto lub zarchiwizowano.</string>
+    <string name="markdown_filter_hint">Filtry zmieniają tylko ten podgląd. Import obejmuje wszystkie wybrane zadania.</string>
+    <string name="markdown_change_value">%1$s: %2$s → %3$s</string>
+    <plurals name="markdown_summary_counts">
+        <item quantity="one">Nowe: %1$d\nAktualizacje: %2$d\nPominięte: %3$d\nNieprzypisane: %4$d</item>
+        <item quantity="other">Nowe: %1$d\nAktualizacje: %2$d\nPominięte: %3$d\nNieprzypisane: %4$d</item>
+    </plurals>
+    <plurals name="bulk_tag_pending">
+        <item quantity="one">Zmiany etykiet: %1$d</item>
+        <item quantity="other">Zmiany etykiet: %1$d</item>
+    </plurals>
 </resources>

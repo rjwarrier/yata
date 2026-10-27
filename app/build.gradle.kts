@@ -30,8 +30,8 @@ android {
         applicationId = "com.mj.yata"
         minSdk = 26
         targetSdk = 35
-        versionCode = 28
-        versionName = "0.95.1"
+        versionCode = 29
+        versionName = "0.96.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -128,6 +128,8 @@ android {
     }
 
     sourceSets {
+        getByName("test").java.srcDir("src/sharedTest/java")
+        getByName("androidTest").java.srcDir("src/sharedTest/java")
         getByName("androidTest").assets.srcDir("$projectDir/schemas")
     }
 

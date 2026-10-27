@@ -5,6 +5,7 @@ import com.mj.yata.data.repository.YataRepositoryImpl
 import com.mj.yata.domain.model.Person
 import com.mj.yata.domain.model.PersonGroup
 import com.mj.yata.domain.model.Project
+import com.mj.yata.domain.model.ProjectGroup
 import com.mj.yata.domain.model.Tag
 import com.mj.yata.domain.model.TagGroup
 import com.mj.yata.domain.model.Task
@@ -61,9 +62,10 @@ class RoutingYataRepository @Inject constructor(
         notify: Boolean,
         resyncReminder: Boolean,
         preserveExistingCreatedAt: Boolean,
-        trackPostponements: Boolean
+        trackPostponements: Boolean,
+        pendingTags: List<Tag>
     ) = write {
-        real.upsertTasks(tasks, notify, resyncReminder, preserveExistingCreatedAt, trackPostponements)
+        real.upsertTasks(tasks, notify, resyncReminder, preserveExistingCreatedAt, trackPostponements, pendingTags)
     }
     override suspend fun toggleTaskDone(id: String, notify: Boolean) = write { real.toggleTaskDone(id, notify) }
     override suspend fun skipTaskOccurrence(id: String) = write { real.skipTaskOccurrence(id) }
@@ -95,6 +97,11 @@ class RoutingYataRepository @Inject constructor(
     override suspend fun deleteProject(project: Project) = write { real.deleteProject(project) }
     override suspend fun deleteProjectOnly(project: Project) = write { real.deleteProjectOnly(project) }
     override suspend fun setProjectsArchived(ids: List<String>, archived: Boolean) = write { real.setProjectsArchived(ids, archived) }
+    override suspend fun setProjectsGroup(projectIds: List<String>, groupId: String?, pendingGroup: ProjectGroup?) = write { real.setProjectsGroup(projectIds, groupId, pendingGroup) }
+
+    override fun getProjectGroups(): Flow<List<ProjectGroup>> = routed(real.getProjectGroups(), demo.getProjectGroups())
+    override suspend fun upsertProjectGroup(group: ProjectGroup) = write { real.upsertProjectGroup(group) }
+    override suspend fun deleteProjectGroup(group: ProjectGroup) = write { real.deleteProjectGroup(group) }
 
     override fun getLists(): Flow<List<YataList>> = routed(real.getLists(), demo.getLists())
     override fun getListById(id: String): Flow<YataList?> = routed(real.getListById(id), demo.getListById(id))

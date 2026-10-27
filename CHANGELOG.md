@@ -20,6 +20,31 @@ test-only changes belong in the commit message, not here, unless they change beh
   file, and YATA opens a new task with the event's title, start date and time, and description
   as notes, ready to edit before saving. A file with several events shows the import preview,
   where each event has a checkbox so you can untick the ones you don't want before importing.
+- Markdown import offers bulk duplicate decisions, filters for selected tasks, matches and
+  unresolved references, and an import summary before saving. Updates show field-level changes
+  using the same merge rules as the actual write.
+- Reference mappings can be remembered for later Markdown files. Deleted or archived targets
+  require review; mappings remain local to the device and can be cleared or switched off.
+- Markdown import previews can be edited before saving, including dates, people, tags and
+  destinations. Unknown references can be mapped or explicitly created once for the whole file.
+- Markdown imports flag existing task matches, with Skip, Import separately and Update existing
+  choices. Updates retain existing notes, nested subtasks, completion and task history.
+- Undo an entire Markdown import batch, including changes to existing tasks. New tasks move to
+  Trash, while undoing updates preserves fields edited after the import.
+- Choose individual Markdown subtasks before importing; retained children of an excluded subtask
+  move to their nearest retained ancestor.
+- Selecting tasks shows a trash floating action button on Today, Upcoming, Search, and
+  project/list/tag/person screens. It opens the existing bulk-delete confirmation.
+- Markdown import uses the same smart-add rules as individual tasks to detect dates, times,
+  recurrence, reminders, priority, flags, tags, people, projects and lists. It supports ordinary
+  bullet/numbered lists, task tables, indented properties and heading defaults, with detected
+  fields and unmatched references shown before import.
+- Import Markdown checklists into any project or list, with a task preview and selection,
+  nested subtasks, completion states, optional heading-based due dates, and preserved notes.
+- The first-sync review offers Restore from remote, with confirmation before replacing local data.
+- Projects can be organized into groups, the same way Tags and People already are: create a group
+  from a project's editor or bulk-assign several projects to one from the Projects tab's selection
+  toolbar. A project's group shows as a label on its card.
 - A "Support Dev" button in Settings → Help & About opens the developer's Buy Me a Coffee page.
 - Snoozing or rescheduling tasks can be undone: an Undo snackbar puts back the previous date,
   time and postponement count, while keeping any other edits made in the meantime.
@@ -47,6 +72,20 @@ test-only changes belong in the commit message, not here, unless they change beh
   colour in Upcoming's month grid and week strip, next to the filled task dots.
 
 ### Fixed
+- Existing installations from both database histories now upgrade to one unified database while
+  retaining projects, groups, tracked time, subtasks, comments, tags and assignees.
+- GitHub sync treats absent, null and zero tracked time consistently, preventing repeated
+  local-verification failures after import or restore.
+- Project groups and project membership now survive JSON backup, import and cloud sync.
+- Database downgrades fail safely instead of resetting local data.
+- The new-task editor's Organize label is now translated in all supported languages.
+- Returning from a project or other detail screen preserves the selected main tab instead of
+  resetting it to the configured startup tab.
+- Numeric tracked-time values from cloud snapshots now survive Android import, database storage,
+  and export, fixing the repeated `trackedMinutes` verification failure after a fresh sync.
+- GitHub sync accepts an absent tracked-time value and an explicit null as equivalent, fixing
+  repeated local-verification failures. Identical local and remote snapshots can establish their
+  sync baseline without repeatedly asking to review the first sync.
 - "Tonight" can no longer be picked once tonight's snooze time has passed, which used to leave
   the task already overdue.
 - Editing a task's repeat rule from its detail screen now starts from the task's due date rather
@@ -60,6 +99,28 @@ test-only changes belong in the commit message, not here, unless they change beh
   since the last one, and backup files are about a third smaller.
 
 ### Changed
+- Backups use format 5 for project groups. Older backups remain importable; devices must update
+  before syncing snapshots written by this version.
+- Bulk tagging uses compact Material 3 filter chips with soft tag-color tints, color dots and
+  check/dash indicators, plus a segmented Add/Remove control and a lighter sheet layout.
+- Bulk tagging stages multiple additions, removals and new tags until Apply. Tags and task
+  changes save in one transaction; cancelling discards the draft and failures allow retry.
+- Markdown import uses Material 3 section cards, dropdown fields, a collapsing app bar and a
+  persistent import action. Task cards have clearer selection outlines, inline edit actions,
+  metadata chips and accessible full-row duplicate choices.
+- Bulk tag pickers show individual chips in each tag's saved color, with contrasting text and
+  selection indicators. Colors remain visible for tags already applied to all selected tasks.
+- Bulk tag selection shows whether each tag is present on all, some or none of the selected
+  tasks, and offers Add and Remove modes. Project-wide tags remain inherited.
+- Large Markdown import previews reuse entity matches and heading metadata, and the bulk tag
+  picker avoids re-sorting tags on every search keystroke.
+- The bulk task tag picker now has search, a scrollable two-column tag grid, and inline tag
+  creation that applies the new tag to the selected tasks. Matching names reuse existing tags.
+- Markdown import shows explicit Select all and Select none buttons, with highlighted selections
+  and a clear reminder that only selected main tasks and their subtasks will be added.
+- The floating navigation bar uses icons only, with accessible tab names retained.
+- Project groups now appear as collapsible sections in the Projects tab, with a separate Ungrouped
+  section and drag reordering within each group.
 - Saving, completing or deleting a task no longer stalls the UI on disk writes, and large task
   lists stay smoother after each change: task data is now prepared off the main thread, the app
   no longer loads everything twice at launch, and changing one setting no longer makes every
@@ -78,6 +139,10 @@ test-only changes belong in the commit message, not here, unless they change beh
   count) has a full-size touch target and is easier to hit.
 - The app download is about 40% smaller (17.6 MB to 10.1 MB), and PDF exports finish sooner. Exported PDFs no
   longer fill in the title, author and keyword fields of the document's properties.
+- The "Floating bottom nav" appearance option now shows a centered floating capsule bar instead of
+  a bordered variant of the full-width one.
+- Scheduled background backups now skip entirely when nothing has changed since the last one, so
+  every enabled destination isn't re-written with a byte-identical copy on every periodic tick.
 
 ## [0.95.1] - 2026-09-14
 

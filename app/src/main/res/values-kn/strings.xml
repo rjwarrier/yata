@@ -570,6 +570,8 @@
     <string name="settings_backup_passphrase">ಬ್ಯಾಕಪ್ ಎನ್‌ಕ್ರಿಪ್ಶನ್ ಪಾಸ್‌ಫ್ರೇಸ್</string>
     <string name="settings_backup_passphrase_set">ಪಾಸ್‌ಫ್ರೇಸ್ ಈಗಾಗಲೇ ಸೆಟ್ ಆಗಿದೆ. ಅದನ್ನು ಉಳಿಸಿಕೊಳ್ಳಲು ಇದನ್ನು ಖಾಲಿ ಬಿಡಿ, ಅಥವಾ ಬದಲಾಯಿಸಲು ಹೊಸದನ್ನು ಟೈಪ್ ಮಾಡಿ.</string>
     <string name="settings_backup_passphrase_hint">ಬ್ಯಾಕಪ್ ಫೈಲ್ ನಿಮ್ಮ ಸಾಧನವನ್ನು ಬಿಡುವ ಮೊದಲೇ ಅದನ್ನು ಎನ್‌ಕ್ರಿಪ್ಟ್ ಮಾಡುತ್ತದೆ, ಆದ್ದರಿಂದ ನೀವು ಸಂಪೂರ್ಣವಾಗಿ ನಿಯಂತ್ರಿಸದ ಸರ್ವರ್‌ನಲ್ಲಿಯೂ ಇದು ಖಾಸಗಿಯಾಗಿ ಉಳಿಯುತ್ತದೆ. ಸುರಕ್ಷಿತ ಸ್ಥಳದಲ್ಲಿ ಒಂದು ಪ್ರತಿ ಇಟ್ಟುಕೊಳ್ಳಿ — ಈ ಪಾಸ್‌ಫ್ರೇಸ್ ಇಲ್ಲದೆ ಬ್ಯಾಕಪ್ ಅನ್ನು ಈ ಫೋನ್‌ನಲ್ಲಿ ಅಥವಾ ಬೇರೆ ಯಾವುದೇ ಫೋನ್‌ನಲ್ಲಿ ಪುನಃಸ್ಥಾಪಿಸಲು ಸಾಧ್ಯವಿಲ್ಲ.</string>
+    <string name="cd_reveal_backup_passphrase">ಬ್ಯಾಕಪ್ ಎನ್‌ಕ್ರಿಪ್ಶನ್ ಪಾಸ್‌ಫ್ರೇಸ್ ತೋರಿಸಿ</string>
+    <string name="cd_hide_backup_passphrase">ಬ್ಯಾಕಪ್ ಎನ್‌ಕ್ರಿಪ್ಶನ್ ಪಾಸ್‌ಫ್ರೇಸ್ ಮರೆಮಾಡಿ</string>
     <string name="settings_sftp_host">ಹೋಸ್ಟ್</string>
     <string name="settings_sftp_port">ಪೋರ್ಟ್</string>
     <string name="settings_sftp_username">ಬಳಕೆದಾರಹೆಸರು</string>
@@ -1503,6 +1505,10 @@
         <item quantity="one">%1$d ವಿಳಂಬಿತ ತೆರೆದ ಕಾರ್ಯವನ್ನು ನಕಲಿಸುತ್ತದೆ, ಅದರ ಗಡುವಿನ ದಿನಾಂಕವನ್ನು ಭವಿಷ್ಯದಲ್ಲಿ ಬರುವವರೆಗೆ ತಿಂಗಳಿಂದ ತಿಂಗಳಿಗೆ ಮುಂದಕ್ಕೆ ಸರಿಸುತ್ತದೆ. ಪುನರಾವರ್ತಿತ ಕಾರ್ಯಗಳನ್ನು ಬಿಟ್ಟುಬಿಡಲಾಗುತ್ತದೆ.</item>
         <item quantity="other">%1$d ವಿಳಂಬಿತ ತೆರೆದ ಕಾರ್ಯಗಳನ್ನು ನಕಲಿಸುತ್ತದೆ, ಪ್ರತಿ ಗಡುವಿನ ದಿನಾಂಕವನ್ನು ಭವಿಷ್ಯದಲ್ಲಿ ಬರುವವರೆಗೆ ತಿಂಗಳಿಂದ ತಿಂಗಳಿಗೆ ಮುಂದಕ್ಕೆ ಸರಿಸುತ್ತದೆ. ಪುನರಾವರ್ತಿತ ಕಾರ್ಯಗಳನ್ನು ಬಿಟ್ಟುಬಿಡಲಾಗುತ್ತದೆ.</item>
     </plurals>
+    <plurals name="projects_add_to_group_title">
+        <item quantity="one">%1$d ಪ್ರಾಜೆಕ್ಟ್ ಅನ್ನು ಗುಂಪಿಗೆ ಸೇರಿಸಿ</item>
+        <item quantity="other">%1$d ಪ್ರಾಜೆಕ್ಟ್‌ಗಳನ್ನು ಗುಂಪಿಗೆ ಸೇರಿಸಿ</item>
+    </plurals>
     <plurals name="next_days_title">
         <item quantity="one">ಮುಂದಿನ %1$d ದಿನ</item>
         <item quantity="other">ಮುಂದಿನ %1$d ದಿನಗಳು</item>
@@ -1653,4 +1659,57 @@
     <string name="task_detail_tracked_hours">ಗಂಟೆಗಳು</string>
     <string name="task_detail_tracked_minutes">ನಿಮಿಷಗಳು</string>
     <string name="task_detail_tracked_none">ಇನ್ನೂ ಸಮಯ ಟ್ರ್ಯಾಕ್ ಮಾಡಿಲ್ಲ</string>
+    <string name="markdown_import_title">Markdown ಆಮದು ಮಾಡಿ</string>
+    <string name="markdown_import_summary">ಪರಿಶೀಲನಾಪಟ್ಟಿ ನೋಡಿ ಯೋಜನೆ ಅಥವಾ ಪಟ್ಟಿಗೆ ಕಾರ್ಯಗಳನ್ನು ಸೇರಿಸಿ.</string>
+    <string name="markdown_import_help">ಸ್ಮಾರ್ಟ್ ಆಡ್ ಪರಿಶೀಲನಾಪಟ್ಟಿ, ಪಟ್ಟಿ ಮತ್ತು ಕಾರ್ಯಗಳ ಕೋಷ್ಟಕದಲ್ಲಿ ವಿವರಗಳನ್ನು ಗುರುತಿಸುತ್ತದೆ. ಆಮದು ಮಾಡುವ ಮೊದಲು ಪೂರ್ವವೀಕ್ಷಣೆ ಪರಿಶೀಲಿಸಿ.</string>
+    <string name="markdown_import_choose_file">Markdown ಕಡತ ಆಯ್ಕೆಮಾಡಿ</string>
+    <string name="markdown_import_empty">ಕಾರ್ಯಗಳು ಸಿಗಲಿಲ್ಲ. ಪರಿಶೀಲನಾಪಟ್ಟಿ, ಪಟ್ಟಿ, ಕಾರ್ಯಗಳ ಕೋಷ್ಟಕ ಅಥವಾ ಪ್ರತಿ ಸಾಲಿನಲ್ಲಿ ಒಂದು ಕಾರ್ಯ ಬಳಸಿ.</string>
+    <string name="markdown_import_too_large">೧ MB ಗಿಂತ ಚಿಕ್ಕ ಕಡತದಲ್ಲಿ ಗರಿಷ್ಠ ೧,೦೦೦ ಕಾರ್ಯಗಳು ಮತ್ತು ಪ್ರತಿ ಕಾರ್ಯಕ್ಕೆ ೨೦೦ ಉಪಕಾರ್ಯಗಳನ್ನು ಬಳಸಿ.</string>
+    <string name="markdown_import_read_failed">ಕಡತ ಓದಲಾಗಲಿಲ್ಲ. UTF-8 Markdown ಕಡತ ಆಯ್ಕೆಮಾಡಿ.</string>
+    <string name="markdown_import_success">ಕಾರ್ಯಗಳನ್ನು ಆಮದು ಮಾಡಲಾಗಿದೆ</string>
+    <string name="markdown_import_destination">ಕನಿಷ್ಠ ಒಂದು ಯೋಜನೆ ಅಥವಾ ಪಟ್ಟಿಯನ್ನು ಆಯ್ಕೆಮಾಡಿ.</string>
+    <string name="markdown_import_dates">ಗುರುತಿಸಿದ ವೇಳಾಪಟ್ಟಿ ಬಳಸಿ</string>
+    <string name="markdown_import_dates_hint">ಸಾಪೇಕ್ಷ ದಿನಾಂಕಗಳ ಆಧಾರ %1$s. ಕಾರ್ಯದ ವಿವರಗಳಿಗೆ ಶೀರ್ಷಿಕೆಗಳಿಗಿಂತ ಆದ್ಯತೆ ಇದೆ.</string>
+    <string name="new_task_organize">ಸಂಘಟಿಸಿ</string>
+    <string name="action_select_all">ಎಲ್ಲವನ್ನೂ ಆಯ್ಕೆಮಾಡಿ</string>
+    <string name="action_select_none">ಎಲ್ಲ ಆಯ್ಕೆಗಳನ್ನು ತೆಗೆದುಹಾಕಿ</string>
+    <string name="markdown_import_select_tasks">ಆಮದು ಮಾಡಲು ಕಾರ್ಯಗಳನ್ನು ಆಯ್ಕೆಮಾಡಿ</string>
+    <string name="markdown_import_selection_hint">ಆಯ್ಕೆಮಾಡಿದ ಮುಖ್ಯ ಕಾರ್ಯಗಳು ಮತ್ತು ಅವುಗಳ ಉಪಕಾರ್ಯಗಳನ್ನು ಮಾತ್ರ ಸೇರಿಸಲಾಗುತ್ತದೆ.</string>
+    <string name="markdown_import_unmatched">ಲಿಂಕ್ ಆಗಿಲ್ಲ: %1$s. ಮೂಲ ಉಲ್ಲೇಖಗಳು ಟಿಪ್ಪಣಿಗಳಲ್ಲಿ ಉಳಿಯುತ್ತವೆ.</string>
+
+    <!-- Markdown review and batch undo -->
+    <string name="markdown_resolve_references">ಉಲ್ಲೇಖಗಳನ್ನು ಹೊಂದಿಸಿ</string>
+    <string name="markdown_create_reference">%1$s ರಚಿಸಿ</string>
+    <string name="markdown_import_separately">ಪ್ರತ್ಯೇಕವಾಗಿ ಆಮದು ಮಾಡಿ</string>
+    <string name="markdown_update_existing">ಅಸ್ತಿತ್ವದಲ್ಲಿರುವುದನ್ನು ನವೀಕರಿಸಿ</string>
+    <string name="markdown_update_keeps_context">ಅಸ್ತಿತ್ವದಲ್ಲಿರುವ ಟಿಪ್ಪಣಿಗಳು ಮತ್ತು ಉಪಕಾರ್ಯಗಳನ್ನು ಉಳಿಸಲಾಗುತ್ತದೆ.</string>
+    <plurals name="markdown_tasks_imported">
+        <item quantity="one">ಆಮದು ಮಾಡಿದ ಕಾರ್ಯಗಳು: %1$d</item>
+        <item quantity="other">ಆಮದು ಮಾಡಿದ ಕಾರ್ಯಗಳು: %1$d</item>
+    </plurals>
+    <plurals name="markdown_tasks_to_import">
+        <item quantity="one">ಆಮದು ಮಾಡಲು: %1$d</item>
+        <item quantity="other">ಆಮದು ಮಾಡಲು: %1$d</item>
+    </plurals>
+
+    <!-- Import review tools and staged tag editing -->
+    <string name="markdown_duplicates">ಹೊಂದಾಣಿಕೆಯ ಕಾರ್ಯಗಳು</string>
+    <string name="markdown_skip_matches">ಎಲ್ಲ ಹೊಂದಾಣಿಕೆಗಳನ್ನು ಬಿಟ್ಟುಬಿಡಿ</string>
+    <string name="markdown_copy_matches">ಎಲ್ಲವನ್ನೂ ಪ್ರತ್ಯೇಕವಾಗಿ ಆಮದು ಮಾಡಿ</string>
+    <string name="markdown_summary">ಆಮದು ಸಾರಾಂಶ</string>
+    <string name="markdown_unresolved">ಹೊಂದಿಕೆಯಾಗದ ಉಲ್ಲೇಖಗಳು</string>
+    <string name="markdown_changes">ಅಸ್ತಿತ್ವದಲ್ಲಿರುವ ಕಾರ್ಯದ ಬದಲಾವಣೆಗಳು</string>
+    <string name="markdown_no_changes">ಯಾವುದೇ ಕ್ಷೇತ್ರ ಬದಲಾಗುವುದಿಲ್ಲ.</string>
+    <string name="markdown_remember_mappings">ಉಲ್ಲೇಖಗಳ ಹೊಂದಾಣಿಕೆಗಳನ್ನು ನೆನಪಿಡಿ</string>
+    <string name="markdown_mapping_missing">ಉಳಿಸಿದ ಹೊಂದಾಣಿಕೆಯನ್ನು ಪರಿಶೀಲಿಸಿ: ಗುರಿಯನ್ನು ತೆಗೆದುಹಾಕಲಾಗಿದೆ ಅಥವಾ ಸಂಗ್ರಹಿಸಲಾಗಿದೆ.</string>
+    <string name="markdown_filter_hint">ಫಿಲ್ಟರ್‌ಗಳು ಈ ಮುನ್ನೋಟವನ್ನು ಮಾತ್ರ ಬದಲಾಯಿಸುತ್ತವೆ. ಆಯ್ದ ಎಲ್ಲ ಕಾರ್ಯಗಳು ಆಮದಿನಲ್ಲಿ ಸೇರಿರುತ್ತವೆ.</string>
+    <string name="markdown_change_value">%1$s: %2$s → %3$s</string>
+    <plurals name="markdown_summary_counts">
+        <item quantity="one">ಹೊಸದು: %1$d\nನವೀಕರಣಗಳು: %2$d\nಬಿಟ್ಟವು: %3$d\nಹೊಂದಿಕೆಯಾಗದವು: %4$d</item>
+        <item quantity="other">ಹೊಸದು: %1$d\nನವೀಕರಣಗಳು: %2$d\nಬಿಟ್ಟವು: %3$d\nಹೊಂದಿಕೆಯಾಗದವು: %4$d</item>
+    </plurals>
+    <plurals name="bulk_tag_pending">
+        <item quantity="one">ಟ್ಯಾಗ್ ಬದಲಾವಣೆಗಳು: %1$d</item>
+        <item quantity="other">ಟ್ಯಾಗ್ ಬದಲಾವಣೆಗಳು: %1$d</item>
+    </plurals>
 </resources>

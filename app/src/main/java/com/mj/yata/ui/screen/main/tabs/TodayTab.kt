@@ -91,7 +91,8 @@ fun TodayTab(
     onSwipeToDelete: (String) -> Unit = {},
     onBulkComplete: (List<String>) -> Unit = {},
     onBulkDelete: (List<String>) -> Unit = {},
-    onBulkAddTag: (List<String>, String) -> Unit = { _, _ -> },
+    onSelectionDeleteActionChanged: ((() -> Unit)?) -> Unit = {},
+    onBulkApplyTagChanges: suspend (List<String>, com.mj.yata.domain.usecase.BulkTagEdit) -> Boolean = { _, _ -> false },
     onBulkSetProject: (List<String>, String?) -> Unit = { _, _ -> },
     onBulkSetList: (List<String>, String?) -> Unit = { _, _ -> },
     onBulkDuplicate: (List<String>) -> Unit = {},
@@ -142,11 +143,18 @@ fun TodayTab(
     val selectedIds = remember { mutableStateListOf<String>() }
     val selectionMode = selectedIds.isNotEmpty()
     var showBulkTagSheet by remember { mutableStateOf(false) }
+    var bulkTagsApplying by remember { mutableStateOf(false) }
     var showBulkMoveSheet by remember { mutableStateOf(false) }
     var showBulkAssignSheet by remember { mutableStateOf(false) }
     var showBulkRescheduleSheet by remember { mutableStateOf(false) }
     var showBulkPrioritySheet by remember { mutableStateOf(false) }
     var showBulkDeleteDialog by remember { mutableStateOf(false) }
+    val reportSelectionDeleteAction by rememberUpdatedState(onSelectionDeleteActionChanged)
+    DisposableEffect(selectionMode) {
+        val action: (() -> Unit)? = if (selectionMode) ({ showBulkDeleteDialog = true }) else null
+        reportSelectionDeleteAction(action)
+        onDispose { reportSelectionDeleteAction(null) }
+    }
     var pendingCommentTask by remember { mutableStateOf<Task?>(null) }
     var previewTaskId by remember { mutableStateOf<String?>(null) }
     val adaptiveSheetMaxWidth = rememberAdaptiveSheetMaxWidth()
@@ -871,19 +879,24 @@ fun TodayTab(
 
     if (showBulkTagSheet) {
         ModalBottomSheet(
-            onDismissRequest = { showBulkTagSheet = false },
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            onDismissRequest = { if (!bulkTagsApplying) showBulkTagSheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true, confirmValueChange = { !bulkTagsApplying }),
             shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
             sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             com.mj.yata.ui.sheets.TaskBulkTagPickerSheet(
                 tags = tags,
-                onSelectTag = { tagId ->
-                    onBulkAddTag(selectedIds.toList(), tagId)
-                    selectedIds.clear()
-                    showBulkTagSheet = false
+                projects = projects,
+                selectedTasks = tasks.filter { it.id in selectedIds },
+                onApply = { edit ->
+                    bulkTagsApplying = true
+                    try {
+                        val success = onBulkApplyTagChanges(selectedIds.toList(), edit)
+                        if (success) { selectedIds.clear(); showBulkTagSheet = false }
+                        success
+                    } finally { bulkTagsApplying = false }
                 },
-                onDismiss = { showBulkTagSheet = false }
+                onDismiss = { if (!bulkTagsApplying) showBulkTagSheet = false }
             )
         }
     }

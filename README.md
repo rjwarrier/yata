@@ -85,7 +85,7 @@ YATA is a single-user, offline-first task manager. Tasks can be organized under 
 
 - Full JSON backup/restore (including profile photos), CSV import/export
 - Multi-device sync over **GitHub**, **SFTP**, **FTPS**, or **FTP** — three-way merge, deletion propagation, optional end-to-end encryption, automatic recovery backups
-- `.ics` calendar export, Markdown export
+- `.ics` calendar export, Markdown export and checklist import into any project or list
 - Branded PDF / image export for any project, tag, or person
 
 </details>
@@ -105,6 +105,33 @@ YATA is a single-user, offline-first task manager. Tasks can be organized under 
 
 - Android 8.0 (API 26) or newer
 - To build: JDK 17 and the Android SDK (compileSdk 35), or a recent Android Studio
+
+## Importing Markdown checklists
+
+Open **Import Markdown** from a project/list's overflow menu or **Settings → Data Management**.
+Choose a UTF-8 `.md` file, select a project, a list, or both, then review and select tasks before
+tapping **Import**. Each main task has a selection checkbox; **Select all** and **Select none**
+change the whole selection. Only selected main tasks and their subtasks are added. Checked tasks
+are shown in the preview but are initially unselected.
+
+- Checkboxes become tasks and nested subtasks. Without checkboxes, bulleted and numbered lists
+  are supported too, with indented items becoming subtasks. Plain task-per-line text also works.
+  In checklist documents, ordinary descriptive bullets stay in notes.
+- A Markdown table with a `Task` or `Title` column can supply `Due`, `Start`, `Time`, `Tags`,
+  `Person`, `Project`, `List`, `Priority`, `Repeat`, `Reminder`, `Status`, and `Notes` columns.
+  Indented properties such as `Due: tomorrow` and `Project: Work` are supported as well.
+  Reference tables and fenced code examples do not become tasks.
+- Every task uses the individual-task smart-add parser: dates (including your numeric date order
+  and custom aliases), times, start dates, recurrence, reminders, priority, flags, `#tags`,
+  `@people`, `+projects`, and `=lists`. Names resolve against existing local items with the same
+  matching and feature settings. Unmatched references are flagged and retained in source notes.
+- Headings provide defaults; task-level values override them. An `Updated: 27 Oct 2026` line
+  anchors relative dates; otherwise the current date is used. Selecting a project or list in the
+  picker overrides detected destinations for all selected tasks. Leave both unset to use detected
+  destinations. Review the detected fields before importing, especially dates mentioned in prose.
+- Source text, descriptive bullets, links, and reference sections are retained in notes. URLs and
+  inline code stay literal. **Use detected schedules** can turn off all imported scheduling fields.
+  Import saves the selected preview values without parsing them a second time.
 
 ## Building
 

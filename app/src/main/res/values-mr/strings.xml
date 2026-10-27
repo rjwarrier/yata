@@ -570,6 +570,8 @@
     <string name="settings_backup_passphrase">बॅकअप एन्क्रिप्शन पासफ्रेज</string>
     <string name="settings_backup_passphrase_set">पासफ्रेज आधीच सेट आहे. तो ठेवण्यासाठी हे रिकामे सोडा, किंवा बदलण्यासाठी नवीन टाइप करा.</string>
     <string name="settings_backup_passphrase_hint">बॅकअप फाइल तुमच्या डिव्हाइसवरून बाहेर जाण्यापूर्वीच ती एन्क्रिप्ट करते, त्यामुळे तुमचे पूर्ण नियंत्रण नसलेल्या सर्व्हरवरही ती खासगी राहते. प्रत सुरक्षित ठिकाणी ठेवा — या पासफ्रेजशिवाय बॅकअप कोणत्याही फोनवर पुनर्संचयित करता येणार नाही.</string>
+    <string name="cd_reveal_backup_passphrase">बॅकअप एन्क्रिप्शन पासफ्रेज दाखवा</string>
+    <string name="cd_hide_backup_passphrase">बॅकअप एन्क्रिप्शन पासफ्रेज लपवा</string>
     <string name="settings_sftp_host">होस्ट</string>
     <string name="settings_sftp_port">पोर्ट</string>
     <string name="settings_sftp_username">वापरकर्तानाव</string>
@@ -1503,6 +1505,10 @@
         <item quantity="one">%1$d मुदत उलटलेले खुले कार्य डुप्लिकेट करते, त्याची देय तारीख भविष्यात येईपर्यंत महिना-महिना पुढे नेते. पुनरावृत्ती होणारी कार्ये वगळली जातात.</item>
         <item quantity="other">%1$d मुदत उलटलेली खुली कार्ये डुप्लिकेट करते, प्रत्येकाची देय तारीख भविष्यात येईपर्यंत महिना-महिना पुढे नेते. पुनरावृत्ती होणारी कार्ये वगळली जातात.</item>
     </plurals>
+    <plurals name="projects_add_to_group_title">
+        <item quantity="one">%1$d प्रकल्प गटात जोडा</item>
+        <item quantity="other">%1$d प्रकल्प गटात जोडा</item>
+    </plurals>
     <plurals name="next_days_title">
         <item quantity="one">पुढील %1$d दिवस</item>
         <item quantity="other">पुढील %1$d दिवस</item>
@@ -1653,4 +1659,57 @@
     <string name="task_detail_tracked_hours">तास</string>
     <string name="task_detail_tracked_minutes">मिनिटे</string>
     <string name="task_detail_tracked_none">अजून वेळ ट्रॅक केलेला नाही</string>
+    <string name="markdown_import_title">Markdown आयात करा</string>
+    <string name="markdown_import_summary">तपासणीसूची पाहून प्रकल्प किंवा यादीमध्ये कामे जोडा.</string>
+    <string name="markdown_import_help">स्मार्ट ॲड तपासणीसूची, याद्या आणि कामांच्या तक्त्यांतील तपशील ओळखतो. आयात करण्यापूर्वी पूर्वावलोकन तपासा.</string>
+    <string name="markdown_import_choose_file">Markdown फाइल निवडा</string>
+    <string name="markdown_import_empty">कामे आढळली नाहीत. तपासणीसूची, यादी, कामांचा तक्ता किंवा प्रत्येक ओळीत एक काम वापरा.</string>
+    <string name="markdown_import_too_large">१ MB पेक्षा लहान फाइलमध्ये जास्तीत जास्त १,००० कामे आणि प्रत्येक कामासाठी २०० उपकामे ठेवा.</string>
+    <string name="markdown_import_read_failed">फाइल वाचता आली नाही. UTF-8 Markdown फाइल निवडा.</string>
+    <string name="markdown_import_success">कामे आयात केली</string>
+    <string name="markdown_import_destination">किमान एक प्रकल्प किंवा यादी निवडा.</string>
+    <string name="markdown_import_dates">ओळखलेले वेळापत्रक वापरा</string>
+    <string name="markdown_import_dates_hint">सापेक्ष तारखांचा आधार %1$s आहे. कामाच्या तपशीलांना शीर्षकांपेक्षा प्राधान्य आहे.</string>
+    <string name="new_task_organize">व्यवस्थित करा</string>
+    <string name="action_select_all">सर्व निवडा</string>
+    <string name="action_select_none">सर्व निवडी रद्द करा</string>
+    <string name="markdown_import_select_tasks">आयात करण्यासाठी कामे निवडा</string>
+    <string name="markdown_import_selection_hint">फक्त निवडलेली मुख्य कामे आणि त्यांची उपकामे जोडली जातील.</string>
+    <string name="markdown_import_unmatched">जोडलेले नाही: %1$s. मूळ उल्लेख नोंदींमध्ये ठेवले जातात.</string>
+
+    <!-- Markdown review and batch undo -->
+    <string name="markdown_resolve_references">संदर्भ जुळवा</string>
+    <string name="markdown_create_reference">%1$s तयार करा</string>
+    <string name="markdown_import_separately">स्वतंत्रपणे आयात करा</string>
+    <string name="markdown_update_existing">विद्यमान कार्य अद्ययावत करा</string>
+    <string name="markdown_update_keeps_context">विद्यमान नोंदी आणि उपकार्ये ठेवली जातील.</string>
+    <plurals name="markdown_tasks_imported">
+        <item quantity="one">आयात केलेली कार्ये: %1$d</item>
+        <item quantity="other">आयात केलेली कार्ये: %1$d</item>
+    </plurals>
+    <plurals name="markdown_tasks_to_import">
+        <item quantity="one">आयात करण्यासाठी: %1$d</item>
+        <item quantity="other">आयात करण्यासाठी: %1$d</item>
+    </plurals>
+
+    <!-- Import review tools and staged tag editing -->
+    <string name="markdown_duplicates">जुळणारी कार्ये</string>
+    <string name="markdown_skip_matches">सर्व जुळणारी कार्ये वगळा</string>
+    <string name="markdown_copy_matches">सर्व स्वतंत्रपणे आयात करा</string>
+    <string name="markdown_summary">आयात सारांश</string>
+    <string name="markdown_unresolved">न जुळलेले संदर्भ</string>
+    <string name="markdown_changes">विद्यमान कार्यातील बदल</string>
+    <string name="markdown_no_changes">कोणतेही क्षेत्र बदलणार नाही.</string>
+    <string name="markdown_remember_mappings">संदर्भांचे जुळवण लक्षात ठेवा</string>
+    <string name="markdown_mapping_missing">जतन केलेले जुळवण तपासा: त्याचे गंतव्य काढले किंवा संग्रहित केले आहे.</string>
+    <string name="markdown_filter_hint">फिल्टर फक्त हे पूर्वावलोकन बदलतात. सर्व निवडलेली कार्ये आयातीत समाविष्ट असतात.</string>
+    <string name="markdown_change_value">%1$s: %2$s → %3$s</string>
+    <plurals name="markdown_summary_counts">
+        <item quantity="one">नवीन: %1$d\nअद्यतने: %2$d\nवगळलेली: %3$d\nन जुळलेले: %4$d</item>
+        <item quantity="other">नवीन: %1$d\nअद्यतने: %2$d\nवगळलेली: %3$d\nन जुळलेले: %4$d</item>
+    </plurals>
+    <plurals name="bulk_tag_pending">
+        <item quantity="one">टॅग बदल: %1$d</item>
+        <item quantity="other">टॅग बदल: %1$d</item>
+    </plurals>
 </resources>

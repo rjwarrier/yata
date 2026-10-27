@@ -570,6 +570,8 @@
     <string name="settings_backup_passphrase">Passphrase sa pag-encrypt ng backup</string>
     <string name="settings_backup_passphrase_set">May naka-set nang passphrase. Iwanang blangko ito para panatilihin, o mag-type ng bago para palitan ito.</string>
     <string name="settings_backup_passphrase_hint">Ini-encrypt nito ang backup file bago pa ito umalis sa device mo, kaya nananatili itong pribado kahit sa server na hindi mo ganap na kontrolado. Panatilihin ang kopya nito sa ligtas na lugar — kung wala ang passphrase na ito, hindi na maibabalik ang backup, sa telepono mong ito o sa iba pa.</string>
+    <string name="cd_reveal_backup_passphrase">Ipakita ang passphrase sa pag-encrypt ng backup</string>
+    <string name="cd_hide_backup_passphrase">Itago ang passphrase sa pag-encrypt ng backup</string>
     <string name="settings_sftp_host">Host</string>
     <string name="settings_sftp_port">Port</string>
     <string name="settings_sftp_username">Username</string>
@@ -1503,6 +1505,10 @@
         <item quantity="one">Dini-duplicate ang %1$d late na bukas na gawain, inililipat ang takdang petsa nito buwan-buwan hanggang sa umabot ito sa hinaharap. Nilalaktawan ang mga umuulit na gawain.</item>
         <item quantity="other">Dini-duplicate ang %1$d na late na bukas na gawain, inililipat ang bawat takdang petsa buwan-buwan hanggang sa umabot ito sa hinaharap. Nilalaktawan ang mga umuulit na gawain.</item>
     </plurals>
+    <plurals name="projects_add_to_group_title">
+        <item quantity="one">Idagdag ang %1$d proyekto sa grupo</item>
+        <item quantity="other">Idagdag ang %1$d proyekto sa grupo</item>
+    </plurals>
     <plurals name="next_days_title">
         <item quantity="one">Susunod na %1$d Araw</item>
         <item quantity="other">Susunod na %1$d Araw</item>
@@ -1653,4 +1659,57 @@
     <string name="task_detail_tracked_hours">Oras</string>
     <string name="task_detail_tracked_minutes">Minuto</string>
     <string name="task_detail_tracked_none">Wala pang naitalang oras</string>
+    <string name="markdown_import_title">Mag-import ng Markdown</string>
+    <string name="markdown_import_summary">Suriin ang checklist at magdagdag ng mga gawain sa proyekto o listahan.</string>
+    <string name="markdown_import_help">Nakikita ng smart add ang mga field sa checklist, listahan, at talahanayan ng gawain. Suriin ang preview bago mag-import.</string>
+    <string name="markdown_import_choose_file">Pumili ng Markdown file</string>
+    <string name="markdown_import_empty">Walang nakitang gawain. Gumamit ng listahan, talahanayan ng gawain, o isang gawain bawat linya.</string>
+    <string name="markdown_import_too_large">Gumamit ng file na wala pang 1 MB na may hanggang 1,000 gawain at 200 subtask bawat gawain.</string>
+    <string name="markdown_import_read_failed">Hindi mabasa ang file. Pumili ng UTF-8 Markdown file.</string>
+    <string name="markdown_import_success">Na-import ang mga gawain</string>
+    <string name="markdown_import_destination">Pumili ng kahit isang proyekto o listahan.</string>
+    <string name="markdown_import_dates">Gamitin ang natukoy na iskedyul</string>
+    <string name="markdown_import_dates_hint">Ang batayan ng mga relatibong petsa ay %1$s. Mas inuuna ang mga halaga sa gawain kaysa sa heading.</string>
+    <string name="new_task_organize">Ayusin</string>
+    <string name="action_select_all">Piliin lahat</string>
+    <string name="action_select_none">Alisin lahat ng pagpili</string>
+    <string name="markdown_import_select_tasks">Pumili ng mga gawaing i-import</string>
+    <string name="markdown_import_selection_hint">Ang napiling pangunahing gawain at mga subtask nito lang ang idadagdag.</string>
+    <string name="markdown_import_unmatched">Hindi naka-link: %1$s. Nasa mga tala ang orihinal na sanggunian.</string>
+
+    <!-- Markdown review and batch undo -->
+    <string name="markdown_resolve_references">Itugma ang mga sanggunian</string>
+    <string name="markdown_create_reference">Gumawa ng %1$s</string>
+    <string name="markdown_import_separately">I-import nang hiwalay</string>
+    <string name="markdown_update_existing">I-update ang dati</string>
+    <string name="markdown_update_keeps_context">Pananatilihin ang mga kasalukuyang tala at subtask.</string>
+    <plurals name="markdown_tasks_imported">
+        <item quantity="one">Mga na-import na gawain: %1$d</item>
+        <item quantity="other">Mga na-import na gawain: %1$d</item>
+    </plurals>
+    <plurals name="markdown_tasks_to_import">
+        <item quantity="one">I-i-import: %1$d</item>
+        <item quantity="other">I-i-import: %1$d</item>
+    </plurals>
+
+    <!-- Import review tools and staged tag editing -->
+    <string name="markdown_duplicates">Mga tumutugmang gawain</string>
+    <string name="markdown_skip_matches">Laktawan ang lahat ng tugma</string>
+    <string name="markdown_copy_matches">I-import lahat nang hiwalay</string>
+    <string name="markdown_summary">Buod ng pag-import</string>
+    <string name="markdown_unresolved">Mga sangguniang hindi naitugma</string>
+    <string name="markdown_changes">Mga pagbabago sa kasalukuyang gawain</string>
+    <string name="markdown_no_changes">Walang field na magbabago.</string>
+    <string name="markdown_remember_mappings">Tandaan ang mga pagtutugma ng sanggunian</string>
+    <string name="markdown_mapping_missing">Suriin ang naka-save na pagtutugma: inalis o in-archive ang patutunguhan nito.</string>
+    <string name="markdown_filter_hint">Binabago lang ng mga filter ang preview na ito. Kasama pa rin sa pag-import ang lahat ng napiling gawain.</string>
+    <string name="markdown_change_value">%1$s: %2$s → %3$s</string>
+    <plurals name="markdown_summary_counts">
+        <item quantity="one">Bago: %1$d\nMga update: %2$d\nNilaktawan: %3$d\nHindi naitugma: %4$d</item>
+        <item quantity="other">Bago: %1$d\nMga update: %2$d\nNilaktawan: %3$d\nHindi naitugma: %4$d</item>
+    </plurals>
+    <plurals name="bulk_tag_pending">
+        <item quantity="one">Mga pagbabago sa tag: %1$d</item>
+        <item quantity="other">Mga pagbabago sa tag: %1$d</item>
+    </plurals>
 </resources>

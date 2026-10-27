@@ -20,7 +20,7 @@ import kotlinx.coroutines.Dispatchers
 import javax.inject.Inject
 import javax.inject.Singleton
 
-internal const val CURRENT_BACKUP_VERSION = 4
+internal const val CURRENT_BACKUP_VERSION = 5
 
 private val SYNC_PRESERVED_SETTING_NAMES = setOf(
     "backup_interval_minutes",
@@ -109,6 +109,7 @@ class JsonExporter @Inject constructor(
     private data class BackupData(
         val people: List<Person>,
         val personGroups: List<PersonGroup>,
+        val projectGroups: List<ProjectGroup>,
         val projects: List<Project>,
         val lists: List<YataList>,
         val tags: List<Tag>,
@@ -141,6 +142,7 @@ class JsonExporter @Inject constructor(
             BackupData(
                 people = repository.getPeople().first(),
                 personGroups = repository.getPersonGroups().first(),
+                projectGroups = repository.getProjectGroups().first(),
                 projects = repository.getProjects().first(),
                 lists = repository.getLists().first(),
                 tags = repository.getTags().first(),
@@ -297,11 +299,22 @@ class JsonExporter @Inject constructor(
             }
             root.put("personGroups", personGroupsArr)
 
+            root.put("projectGroups", JSONArray().apply {
+                data.projectGroups.forEach { group ->
+                    put(JSONObject().apply {
+                        put("id", group.id)
+                        put("name", group.name)
+                        put("color", group.color)
+                    })
+                }
+            })
+
             // Projects
             val projectsArr = JSONArray()
             projects.forEach { pr ->
                 val o = JSONObject()
                 o.put("id", pr.id)
+                o.put("groupId", pr.groupId ?: JSONObject.NULL)
                 o.put("name", pr.name)
                 o.put("color", pr.color)
                 o.put("icon", pr.icon)
@@ -662,6 +675,10 @@ class JsonExporter @Inject constructor(
         repository.getTags().first().filterNot { it.id in tagIds }
             .forEach { repository.deleteTag(it) }
 
+        val projectGroupIds = syncRows(root, "projectGroups").keys
+        repository.getProjectGroups().first().filterNot { it.id in projectGroupIds }
+            .forEach { repository.deleteProjectGroup(it) }
+
         val personGroupIds = syncRows(root, "personGroups").keys
         repository.getPersonGroups().first().filterNot { it.id in personGroupIds }
             .forEach { repository.deletePersonGroup(it) }
@@ -731,6 +748,7 @@ class JsonExporter @Inject constructor(
 
         val people = syncRows(root, "people")
         val personGroups = syncRows(root, "personGroups")
+        val projectGroups = syncRows(root, "projectGroups")
         val projects = syncRows(root, "projects")
         val lists = syncRows(root, "lists")
         val tags = syncRows(root, "tags")
@@ -743,6 +761,10 @@ class JsonExporter @Inject constructor(
             "A canonical snapshot must contain exactly one current-user person"
         }
 
+        projectGroups.forEach { (id, row) ->
+            row.requiredString("name", "projectGroups[$id]")
+            row.requiredString("color", "projectGroups[$id]")
+        }
         personGroups.forEach { (id, row) ->
             row.requiredString("name", "personGroups[$id]")
             row.requiredString("color", "personGroups[$id]")
@@ -774,6 +796,9 @@ class JsonExporter @Inject constructor(
             row.requireOptionalBoolean("hideCompletedByDefault")
         }
         projects.forEach { (id, row) ->
+            row.nullableString("groupId")?.let {
+                require(it in projectGroups) { "Project references missing group $it" }
+            }
             row.requiredString("name", "projects[$id]")
             row.requiredString("color", "projects[$id]")
             row.requiredString("icon", "projects[$id]")
@@ -1043,6 +1068,7 @@ class JsonExporter @Inject constructor(
         root.requireOptionalBoolean("profilePhotoIsMaterialGlyph")
 
         val personGroups = rows("personGroups")
+        val projectGroups = rows("projectGroups")
         val people = rows("people")
         val projects = rows("projects")
         val lists = rows("lists")
@@ -1052,6 +1078,10 @@ class JsonExporter @Inject constructor(
         val comments = rows("comments")
         root.optionalArray("settings")?.let { portableSettings(it) }
 
+        projectGroups.forEach { (id, row) ->
+            row.requiredString("name", "projectGroups[$id]")
+            row.requiredString("color", "projectGroups[$id]")
+        }
         personGroups.forEach { (id, row) ->
             row.requiredString("name", "personGroups[$id]")
             row.requiredString("color", "personGroups[$id]")
@@ -1081,6 +1111,9 @@ class JsonExporter @Inject constructor(
             row.requireOptionalBoolean("hideCompletedByDefault")
         }
         projects.forEach { (id, row) ->
+            row.nullableString("groupId")?.let {
+                require(it in projectGroups) { "Project references missing group $it" }
+            }
             row.requiredString("name", "projects[$id]")
             row.requireOptionalString("color")
             row.requireOptionalString("icon")
@@ -1329,6 +1362,18 @@ class JsonExporter @Inject constructor(
                 }
             }
 
+            // Project groups must exist before project foreign keys are restored.
+            root.optJSONArray("projectGroups")?.let { groups ->
+                for (i in 0 until groups.length()) {
+                    importRow("projectGroup", i) {
+                        val row = groups.getJSONObject(i)
+                        repository.upsertProjectGroup(ProjectGroup(
+                            id = row.getString("id"), name = row.getString("name"), color = row.getString("color")
+                        ))
+                    }
+                }
+            }
+
             // 2. Import Projects
             val projectsArr = root.optJSONArray("projects")
             if (projectsArr != null) {
@@ -1365,7 +1410,8 @@ class JsonExporter @Inject constructor(
                                 excludeFromToday = o.optBoolean("excludeFromToday", false),
                                 sortOrder = o.optInt("sortOrder", 0),
                                 archived = o.optBoolean("archived", false),
-                                sectionNames = sectionNames
+                                sectionNames = sectionNames,
+                                groupId = if (o.isNull("groupId")) null else o.getString("groupId")
                             )
                         )
                     }

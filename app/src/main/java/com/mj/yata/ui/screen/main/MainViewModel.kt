@@ -44,6 +44,13 @@ import java.time.LocalDate
 import java.util.UUID
 import javax.inject.Inject
 
+data class MarkdownImportStatus(
+    val sessionId: String,
+    val running: Boolean = false,
+    val imported: Boolean = false,
+    val failed: Boolean = false
+)
+
 enum class WelcomeSetupPreset {
     SIMPLE_LIST,
     PERSONAL_PRODUCTIVITY,
@@ -262,6 +269,7 @@ data class MainScreenUiState(
     val tags: List<Tag> = emptyList(),
     val tagGroups: List<TagGroup> = emptyList(),
     val personGroups: List<PersonGroup> = emptyList(),
+    val projectGroups: List<ProjectGroup> = emptyList(),
     val userName: String = "",
     val userEmail: String = "",
     val userPhotoUri: String? = null,
@@ -459,7 +467,8 @@ private data class MainExtraDataState(
     val activePeople: List<Person>,
     val tags: List<Tag>,
     val tagGroups: List<TagGroup>,
-    val personGroups: List<PersonGroup>
+    val personGroups: List<PersonGroup>,
+    val projectGroups: List<ProjectGroup>
 )
 
 private data class MainProfileState(
@@ -534,6 +543,10 @@ data class WeekendRescheduleWarning(
     val tasks: StateFlow<List<Task>> = tasksSource
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    // Null means duplicate checking has not received its first database snapshot yet.
+    val markdownExistingTasks: StateFlow<List<Task>?> = tasksSource.map<List<Task>, List<Task>?> { it }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
     private val _postponementWarnings = MutableSharedFlow<PostponementWarning>()
     val postponementWarnings: SharedFlow<PostponementWarning> = _postponementWarnings.asSharedFlow()
 
@@ -570,6 +583,9 @@ data class WeekendRescheduleWarning(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val personGroups: StateFlow<List<PersonGroup>> = repository.getPersonGroups()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val projectGroups: StateFlow<List<ProjectGroup>> = repository.getProjectGroups()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val _initialDataLoaded = MutableStateFlow(false)
@@ -936,9 +952,10 @@ data class WeekendRescheduleWarning(
             activePeople,
             tags,
             tagGroups,
-            personGroups
-        ) { activePeople, tags, tagGroups, personGroups ->
-            MainExtraDataState(activePeople, tags, tagGroups, personGroups)
+            personGroups,
+            projectGroups
+        ) { activePeople, tags, tagGroups, personGroups, projectGroups ->
+            MainExtraDataState(activePeople, tags, tagGroups, personGroups, projectGroups)
         },
         combine(
             userPreferences.userNameFlow,
@@ -976,6 +993,7 @@ data class WeekendRescheduleWarning(
             tags = extraData.tags,
             tagGroups = extraData.tagGroups,
             personGroups = extraData.personGroups,
+            projectGroups = extraData.projectGroups,
             userName = profile.userName,
             userEmail = profile.userEmail,
             userPhotoUri = profile.userPhotoUri,
@@ -1719,6 +1737,20 @@ data class WeekendRescheduleWarning(
         safeLaunch { taskOperations.bulkAddTag(ids, tagId) }
     }
 
+    suspend fun applyBulkTagChanges(ids: List<String>, edit: com.mj.yata.domain.usecase.BulkTagEdit): Boolean = try {
+        withContext(Dispatchers.IO) { com.mj.yata.domain.usecase.applyBulkTagEdit(repository, ids, edit) }
+        true
+    } catch (e: CancellationException) { throw e }
+    catch (e: Exception) { Log.e("MainViewModel", "Bulk tag edit failed", e); errorBus.emit(R.string.error_action_failed); false }
+
+    fun bulkRemoveTag(ids: List<String>, tagId: String) {
+        safeLaunch { com.mj.yata.domain.usecase.removeBulkTag(repository, ids, tagId) }
+    }
+
+    fun bulkCreateAndAddTag(ids: List<String>, name: String, color: String) {
+        safeLaunch { taskOperations.bulkCreateAndAddTag(ids, name, color) }
+    }
+
     fun bulkSetProject(ids: List<String>, projectId: String?) {
         safeLaunch { taskOperations.bulkSetProject(ids, projectId) }
     }
@@ -1824,6 +1856,73 @@ data class WeekendRescheduleWarning(
                 else -> "none"
             }
             repository.setTaskPriority(id, nextPriority)
+        }
+    }
+
+    private val _markdownImportStatus = MutableStateFlow<MarkdownImportStatus?>(null)
+    val markdownImportStatus = _markdownImportStatus.asStateFlow()
+
+    val markdownReferenceMemory = userPreferences.markdownReferenceMemoryFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+    fun rememberMarkdownMappings(enabled: Boolean) { safeLaunch { userPreferences.setMarkdownRememberMappings(enabled) } }
+    fun saveMarkdownReference(token: String, id: String?) { safeLaunch { userPreferences.setMarkdownReference(token, id) } }
+
+    private val markdownReviews = linkedMapOf<String, MutableStateFlow<com.mj.yata.util.MarkdownImportReview>>()
+    fun markdownReview(sessionId: String): StateFlow<com.mj.yata.util.MarkdownImportReview> =
+        markdownReviews.getOrPut(sessionId) {
+            if (markdownReviews.size >= 3) markdownReviews.remove(markdownReviews.keys.first())
+            MutableStateFlow(com.mj.yata.util.MarkdownImportReview())
+        }.asStateFlow()
+
+    fun setMarkdownReview(sessionId: String, review: com.mj.yata.util.MarkdownImportReview) {
+        markdownReview(sessionId)
+        markdownReviews.getValue(sessionId).value = review
+    }
+
+    private val _markdownReferencePending = MutableStateFlow(0)
+    val markdownReferencePending = _markdownReferencePending.asStateFlow()
+    private val markdownReferenceMutex = kotlinx.coroutines.sync.Mutex()
+    fun createMarkdownReference(token: String, requestedId: String? = null, color: String = "accentA", onResult: (String?) -> Unit) {
+        _markdownReferencePending.value++
+        safeLaunch {
+            try {
+                markdownReferenceMutex.lock()
+                val id = try {
+                    withContext(Dispatchers.IO) {
+                        com.mj.yata.domain.usecase.createMarkdownReference(repository, token, requestedId, color)
+                    }
+                } finally { markdownReferenceMutex.unlock() }
+                onResult(id)
+            } catch (e: Exception) { onResult(null); throw e }
+            finally { _markdownReferencePending.value-- }
+        }
+    }
+
+    fun importMarkdownTasks(
+        sessionId: String,
+        preparedTasks: List<Task>,
+        selectedIndices: Set<Int>,
+        updateTargets: Map<Int, String> = emptyMap()
+    ) {
+        val previous = _markdownImportStatus.value
+        if (previous?.running == true || (previous?.sessionId == sessionId && previous.imported)) return
+        _markdownImportStatus.value = MarkdownImportStatus(sessionId, running = true)
+        safeLaunch {
+            try {
+                val batch = withContext(Dispatchers.IO) {
+                    com.mj.yata.domain.usecase.applyMarkdownImport(repository, preparedTasks, selectedIndices, updateTargets)
+                }
+                _markdownImportStatus.value = MarkdownImportStatus(sessionId, imported = true)
+                if (batch.count > 0) undoBus.offer(com.mj.yata.ui.undo.UndoRequest(R.plurals.markdown_tasks_imported, batch.count) {
+                    safeLaunch {
+                        withContext(Dispatchers.IO) { com.mj.yata.domain.usecase.undoMarkdownImport(repository, batch) }
+                    }
+                })
+                markdownReviews.remove(sessionId)
+            } catch (t: Throwable) {
+                _markdownImportStatus.value = MarkdownImportStatus(sessionId, failed = true)
+                throw t
+            }
         }
     }
 
@@ -2112,7 +2211,7 @@ data class WeekendRescheduleWarning(
         }
     }
 
-    fun addProject(name: String, color: String, icon: String = "layers", due: String? = null, commonTagIds: List<String> = emptyList(), defaultReminder: String? = null, description: String? = null, excludeFromToday: Boolean = false) {
+    fun addProject(name: String, color: String, icon: String = "layers", due: String? = null, commonTagIds: List<String> = emptyList(), defaultReminder: String? = null, description: String? = null, excludeFromToday: Boolean = false, groupId: String? = null) {
         safeLaunch {
             val pid = "pr_" + UUID.randomUUID().toString()
             val project = Project(
@@ -2124,7 +2223,8 @@ data class WeekendRescheduleWarning(
                 commonTagIds = commonTagIds,
                 defaultReminder = defaultReminder,
                 description = description,
-                excludeFromToday = excludeFromToday
+                excludeFromToday = excludeFromToday,
+                groupId = groupId
             )
             repository.upsertProject(project)
         }
@@ -2507,6 +2607,30 @@ data class WeekendRescheduleWarning(
     fun deleteTagGroup(group: TagGroup) {
         safeLaunch {
             repository.deleteTagGroup(group)
+        }
+    }
+
+    fun setProjectsGroup(projectIds: List<String>, groupId: String?) {
+        safeLaunch {
+            repository.setProjectsGroup(projectIds, groupId, pendingGroup = null)
+        }
+    }
+
+    fun createProjectGroupAndAssign(group: ProjectGroup, projectIds: List<String>) {
+        safeLaunch {
+            repository.setProjectsGroup(projectIds, group.id, pendingGroup = group)
+        }
+    }
+
+    fun upsertProjectGroup(group: ProjectGroup) {
+        safeLaunch {
+            repository.upsertProjectGroup(group)
+        }
+    }
+
+    fun deleteProjectGroup(group: ProjectGroup) {
+        safeLaunch {
+            repository.deleteProjectGroup(group)
         }
     }
 
@@ -3214,6 +3338,12 @@ data class WeekendRescheduleWarning(
 
     /** Only whether one is set — the value itself is never read back into the UI. */
     fun hasRemoteBackupPassphrase(): Boolean = remoteBackupCredentialsStore.backupPassphrase != null
+
+    /** The actual passphrase, for RemoteSyncScreen's explicit "reveal" action — losing this value
+     * (e.g. an uninstall, which wipes the Keystore key `EncryptedSharedPreferences` decrypts with)
+     * makes every encrypted remote backup already uploaded permanently unreadable, so the user
+     * needs a deliberate way to copy it out to their own password manager. */
+    fun getRemoteBackupPassphrase(): String? = remoteBackupCredentialsStore.backupPassphrase
 
     fun setSftpPrivateKey(pem: String, passphrase: String) {
         remoteBackupCredentialsStore.privateKeyPem = pem.ifBlank { null }

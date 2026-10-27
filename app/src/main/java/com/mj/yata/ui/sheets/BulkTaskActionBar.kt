@@ -42,7 +42,6 @@ import com.mj.yata.domain.model.effectiveDue
 import com.mj.yata.ui.widgets.quickSnoozeAvailable
 import com.mj.yata.ui.widgets.quickSnoozeLabel
 import com.mj.yata.ui.widgets.quickSnoozePreview
-import com.mj.yata.domain.model.Tag
 import com.mj.yata.domain.model.YataList
 import com.mj.yata.domain.model.activePeople
 import com.mj.yata.domain.model.activeProjects
@@ -288,52 +287,6 @@ fun TaskBulkMoveSheet(
                     Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(color))
                     Text(l.name, style = MaterialTheme.typography.bodyLarge)
                 }
-            }
-        }
-    }
-}
-
-/** Bottom sheet: pick a tag to apply to every currently-selected task. */
-@Composable
-fun TaskBulkTagPickerSheet(
-    tags: List<Tag>,
-    onSelectTag: (String) -> Unit,
-    onDismiss: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val accents = LocalYataAccents.current
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .navigationBarsPadding()
-            .padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        Text(
-            text = stringResource(R.string.bulk_add_tag_title),
-            style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp),
-            modifier = Modifier.padding(bottom = 12.dp)
-        )
-        if (tags.isEmpty()) {
-            Text(
-                text = stringResource(R.string.bulk_no_tags),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-        tags.forEach { tag ->
-            val color = if (tag.color == "error") MaterialTheme.colorScheme.error else accents.getAccent(tag.color)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .clickable { onSelectTag(tag.id) }
-                    .padding(vertical = 12.dp, horizontal = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(color))
-                Text(tag.name, style = MaterialTheme.typography.bodyLarge)
             }
         }
     }
