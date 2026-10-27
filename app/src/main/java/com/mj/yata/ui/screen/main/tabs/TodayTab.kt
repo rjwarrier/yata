@@ -92,6 +92,7 @@ fun TodayTab(
     onBulkComplete: (List<String>) -> Unit = {},
     onBulkDelete: (List<String>) -> Unit = {},
     onBulkAddTag: (List<String>, String) -> Unit = { _, _ -> },
+    onBulkCreateAndAddTag: (List<String>, String, String) -> Unit = { _, _, _ -> },
     onBulkSetProject: (List<String>, String?) -> Unit = { _, _ -> },
     onBulkSetList: (List<String>, String?) -> Unit = { _, _ -> },
     onBulkDuplicate: (List<String>) -> Unit = {},
@@ -859,6 +860,11 @@ fun TodayTab(
         ) {
             com.mj.yata.ui.sheets.TaskBulkTagPickerSheet(
                 tags = tags,
+                onCreateTag = { name, color ->
+                    onBulkCreateAndAddTag(selectedIds.toList(), name, color)
+                    selectedIds.clear()
+                    showBulkTagSheet = false
+                },
                 onSelectTag = { tagId ->
                     onBulkAddTag(selectedIds.toList(), tagId)
                     selectedIds.clear()

@@ -720,6 +720,11 @@ fun ListDetailScreen(
         ) {
             TaskBulkTagPickerSheet(
                 tags = tags,
+                onCreateTag = { name, color ->
+                    viewModel.bulkCreateAndAddTag(selectedIds.toList(), name, color)
+                    selectedIds.clear()
+                    showBulkTagSheet = false
+                },
                 onSelectTag = { tagId ->
                     viewModel.bulkAddTag(selectedIds.toList(), tagId)
                     selectedIds.clear()

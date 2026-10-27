@@ -1728,6 +1728,10 @@ data class WeekendRescheduleWarning(
         safeLaunch { taskOperations.bulkAddTag(ids, tagId) }
     }
 
+    fun bulkCreateAndAddTag(ids: List<String>, name: String, color: String) {
+        safeLaunch { taskOperations.bulkCreateAndAddTag(ids, name, color) }
+    }
+
     fun bulkSetProject(ids: List<String>, projectId: String?) {
         safeLaunch { taskOperations.bulkSetProject(ids, projectId) }
     }
