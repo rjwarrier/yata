@@ -15,6 +15,25 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ## [Unreleased]
 
+## [0.96.2] - 2026-10-27
+
+`versionCode 31`. Upgrades in place over 0.95.1.
+
+### Summary
+- Organize projects into collapsible groups and keep their assignments through backup, import and sync.
+- Import Markdown checklists with smart parsing, editable previews, duplicate handling and batch undo.
+- Track task effort with the focus timer and compare recorded time against estimates.
+- Bring calendar events into planning and import calendar files as tasks.
+- Upgrade both database histories safely to database 36, with consistent tracked-time handling.
+- Keep demo data isolated: sync, backups and restores pause while demo mode is active.
+- Get smoother task lists, improved navigation, bulk-tag editing and safer backup retention.
+
+### Upgrade notes
+- This release uses database 36 and backup format 5. Existing data upgrades automatically;
+  backups from formats 1–4 remain importable.
+- Update all syncing devices before continuing cloud sync. Older builds cannot read format 5.
+- Make a local backup before upgrading. Do not uninstall the app or clear its data to update.
+
 ### Added
 - Calendar events become tasks: share an event from a calendar app, or open an `.ics`/`.vcs`
   file, and YATA opens a new task with the event's title, start date and time, and description
@@ -44,7 +63,7 @@ test-only changes belong in the commit message, not here, unless they change beh
 - The first-sync review offers Restore from remote, with confirmation before replacing local data.
 - Projects can be organized into groups, the same way Tags and People already are: create a group
   from a project's editor or bulk-assign several projects to one from the Projects tab's selection
-  toolbar. A project's group shows as a label on its card.
+  toolbar. Groups appear as collapsible sections in the Projects tab.
 - A "Support Dev" button in Settings → Help & About opens the developer's Buy Me a Coffee page.
 - Snoozing or rescheduling tasks can be undone: an Undo snackbar puts back the previous date,
   time and postponement count, while keeping any other edits made in the meantime.
@@ -147,8 +166,8 @@ test-only changes belong in the commit message, not here, unless they change beh
   many tasks at once, and syncs that remove tasks, now apply in one step instead of task by task.
 - The Clear action on a filter banner (shown after tapping an Overdue, High priority or Due today
   count) has a full-size touch target and is easier to hit.
-- The app download is about 40% smaller (17.6 MB to 10.1 MB), and PDF exports finish sooner. Exported PDFs no
-  longer fill in the title, author and keyword fields of the document's properties.
+- Optimized dependencies and resources reduce the app download size, and PDF exports finish sooner.
+  Exported PDFs no longer fill in the title, author and keyword fields of the document's properties.
 - The "Floating bottom nav" appearance option now shows a centered floating capsule bar instead of
   a bordered variant of the full-width one.
 - Scheduled background backups now skip entirely when nothing has changed since the last one, so
@@ -1337,7 +1356,8 @@ First signed release build.
 - Redesigned priority indicator (dots plus a coloured edge stripe).
 - Equal-width hero stat cards.
 
-[Unreleased]: https://github.com/rjwarrier/yata/compare/v0.95.1...HEAD
+[Unreleased]: https://github.com/rjwarrier/yata/compare/v0.96.2...HEAD
+[0.96.2]: https://github.com/rjwarrier/yata/compare/v0.95.1...v0.96.2
 [0.95.1]: https://github.com/rjwarrier/yata/compare/v0.95...v0.95.1
 [0.95]: https://github.com/rjwarrier/yata/compare/v0.94.5...v0.95
 [0.94.5]: https://github.com/rjwarrier/yata/compare/v0.94.4...v0.94.5
