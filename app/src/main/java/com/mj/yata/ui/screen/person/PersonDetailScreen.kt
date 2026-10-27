@@ -403,20 +403,24 @@ fun PersonDetailScreen(
             }
         },
         floatingActionButton = {
-            Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                SmallFloatingActionButton(
-                    onClick = { isEditSheetOpen = true },
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                ) {
-                    Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.person_detail_edit_person))
-                }
-                FloatingActionButton(
-                    onClick = { isNewTaskSheetOpen = true },
-                    containerColor = personColor,
-                    contentColor = accents.onAccentFor(personColor)
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_add_task_for_person, person.name))
+            if (selectionMode) {
+                com.mj.yata.ui.widgets.TaskSelectionDeleteFab(onClick = { showBulkDeleteDialog = true })
+            } else {
+                Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    SmallFloatingActionButton(
+                        onClick = { isEditSheetOpen = true },
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                    ) {
+                        Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.person_detail_edit_person))
+                    }
+                    FloatingActionButton(
+                        onClick = { isNewTaskSheetOpen = true },
+                        containerColor = personColor,
+                        contentColor = accents.onAccentFor(personColor)
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_add_task_for_person, person.name))
+                    }
                 }
             }
         }

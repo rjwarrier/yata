@@ -91,6 +91,7 @@ fun TodayTab(
     onSwipeToDelete: (String) -> Unit = {},
     onBulkComplete: (List<String>) -> Unit = {},
     onBulkDelete: (List<String>) -> Unit = {},
+    onSelectionDeleteActionChanged: ((() -> Unit)?) -> Unit = {},
     onBulkAddTag: (List<String>, String) -> Unit = { _, _ -> },
     onBulkCreateAndAddTag: (List<String>, String, String) -> Unit = { _, _, _ -> },
     onBulkSetProject: (List<String>, String?) -> Unit = { _, _ -> },
@@ -144,6 +145,12 @@ fun TodayTab(
     var showBulkRescheduleSheet by remember { mutableStateOf(false) }
     var showBulkPrioritySheet by remember { mutableStateOf(false) }
     var showBulkDeleteDialog by remember { mutableStateOf(false) }
+    val reportSelectionDeleteAction by rememberUpdatedState(onSelectionDeleteActionChanged)
+    DisposableEffect(selectionMode) {
+        val action: (() -> Unit)? = if (selectionMode) ({ showBulkDeleteDialog = true }) else null
+        reportSelectionDeleteAction(action)
+        onDispose { reportSelectionDeleteAction(null) }
+    }
     var pendingCommentTask by remember { mutableStateOf<Task?>(null) }
     var previewTaskId by remember { mutableStateOf<String?>(null) }
     val adaptiveSheetMaxWidth = rememberAdaptiveSheetMaxWidth()

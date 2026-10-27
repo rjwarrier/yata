@@ -211,6 +211,13 @@ fun MainScreen(
 
     // Main tabs state: 0=Today, 1=Projects, 2=People, 3=Tags, 4=Upcoming (Week/Month toggle inside)
     var selectedTab by rememberSaveable { mutableIntStateOf(if (initialTab >= 0) initialTab.coerceIn(0, 4) else 0) }
+    var todaySelectionDeleteAction by remember { mutableStateOf<(() -> Unit)?>(null) }
+    var upcomingSelectionDeleteAction by remember { mutableStateOf<(() -> Unit)?>(null) }
+    val selectionDeleteAction = when (selectedTab) {
+        0 -> todaySelectionDeleteAction
+        4 -> upcomingSelectionDeleteAction
+        else -> null
+    }
     // Keep the initialization guard with selectedTab in the navigation entry's saved state.
     // Returning from a detail screen must not reapply the startup tab over the restored tab.
     var restoredHomeTab by rememberSaveable { mutableStateOf(initialTab >= 0) }
@@ -719,6 +726,10 @@ fun MainScreen(
                 }
             },
             floatingActionButton = {
+                if (selectionDeleteAction != null) {
+                    com.mj.yata.ui.widgets.TaskSelectionDeleteFab(onClick = selectionDeleteAction)
+                }
+
                 // Each tab offers its own primary creation action; others show no FAB.
                 val fabTarget = when (selectedTab) {
                     0 -> stringResource(R.string.new_task_title) to MainSheetType.NewTask
@@ -735,7 +746,7 @@ fun MainScreen(
                     Alignment.End
                 }
 
-                Column(
+                if (selectionDeleteAction == null) Column(
                     horizontalAlignment = fabAlign,
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     modifier = Modifier.width(IntrinsicSize.Max)
@@ -972,6 +983,7 @@ fun MainScreen(
                             onSwipeToDelete = { bulkDeleteWithUndo(listOf(it)) },
                             onBulkComplete = { bulkCompleteWithUndo(it) },
                             onBulkDelete = { bulkDeleteWithUndo(it) },
+                            onSelectionDeleteActionChanged = { todaySelectionDeleteAction = it },
                             onBulkAddTag = { ids, tagId -> viewModel.bulkAddTag(ids, tagId) },
                             onBulkCreateAndAddTag = { ids, name, color -> viewModel.bulkCreateAndAddTag(ids, name, color) },
                             onBulkSetProject = { ids, projectId -> viewModel.bulkSetProject(ids, projectId) },
@@ -1107,6 +1119,7 @@ fun MainScreen(
                             onSwipeToDelete = { bulkDeleteWithUndo(listOf(it)) },
                             onBulkComplete = { bulkCompleteWithUndo(it) },
                             onBulkDelete = { bulkDeleteWithUndo(it) },
+                            onSelectionDeleteActionChanged = { upcomingSelectionDeleteAction = it },
                             onBulkAddTag = { ids, tagId -> viewModel.bulkAddTag(ids, tagId) },
                             onBulkCreateAndAddTag = { ids, name, color -> viewModel.bulkCreateAndAddTag(ids, name, color) },
                             onBulkSetProject = { ids, projectId -> viewModel.bulkSetProject(ids, projectId) },

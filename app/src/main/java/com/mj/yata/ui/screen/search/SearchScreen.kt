@@ -582,6 +582,9 @@ fun SearchScreen(
                     onTabSelected = onNavigateToTab
                 )
             },
+            floatingActionButton = {
+                com.mj.yata.ui.widgets.TaskSelectionDeleteFab(onClick = { showBulkDeleteDialog = true })
+            },
             topBar = {
                 com.mj.yata.ui.sheets.TaskSelectionTopBar(
                     selectedCount = selectedIds.size,

@@ -16,6 +16,8 @@ test-only changes belong in the commit message, not here, unless they change beh
 ## [Unreleased]
 
 ### Added
+- Selecting tasks shows a trash floating action button on Today, Upcoming, Search, and
+  project/list/tag/person screens. It opens the existing bulk-delete confirmation.
 - Markdown import uses the same smart-add rules as individual tasks to detect dates, times,
   recurrence, reminders, priority, flags, tags, people, projects and lists. It supports ordinary
   bullet/numbered lists, task tables, indented properties and heading defaults, with detected

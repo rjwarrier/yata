@@ -487,22 +487,26 @@ fun ProjectDetailScreen(
             }
         },
         floatingActionButton = {
-            if (!project.archived) {
-                com.mj.yata.ui.widgets.PressableScaleBox(
-                    onClick = { isNewTaskSheetOpen = true }
-                ) {
-                    Surface(
-                        color = projectColor,
-                        contentColor = accents.onAccentFor(projectColor),
-                        shape = RoundedCornerShape(16.dp),
-                        tonalElevation = 6.dp,
-                        shadowElevation = 6.dp
+            if (selectionMode) {
+                com.mj.yata.ui.widgets.TaskSelectionDeleteFab(onClick = { showBulkDeleteDialog = true })
+            } else {
+                if (!project.archived) {
+                    com.mj.yata.ui.widgets.PressableScaleBox(
+                        onClick = { isNewTaskSheetOpen = true }
                     ) {
-                        Box(
-                            modifier = Modifier.size(56.dp),
-                            contentAlignment = Alignment.Center
+                        Surface(
+                            color = projectColor,
+                            contentColor = accents.onAccentFor(projectColor),
+                            shape = RoundedCornerShape(16.dp),
+                            tonalElevation = 6.dp,
+                            shadowElevation = 6.dp
                         ) {
-                            Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_add_task))
+                            Box(
+                                modifier = Modifier.size(56.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_add_task))
+                            }
                         }
                     }
                 }
