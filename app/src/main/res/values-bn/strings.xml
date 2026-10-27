@@ -1715,4 +1715,5 @@
         <item quantity="one">ট্যাগ পরিবর্তন: %1$d</item>
         <item quantity="other">ট্যাগ পরিবর্তন: %1$d</item>
     </plurals>
+    <string name="demo_mode_sync_disabled">ডেমো মোডে সিঙ্ক ও ব্যাকআপ বন্ধ থাকে।</string>
 </resources>

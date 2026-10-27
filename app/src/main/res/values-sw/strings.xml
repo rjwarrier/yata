@@ -1712,4 +1712,5 @@
         <item quantity="one">Mabadiliko ya lebo: %1$d</item>
         <item quantity="other">Mabadiliko ya lebo: %1$d</item>
     </plurals>
+    <string name="demo_mode_sync_disabled">Usawazishaji na nakala rudufu zimesitishwa katika hali ya maonyesho.</string>
 </resources>

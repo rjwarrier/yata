@@ -128,6 +128,7 @@ fun MainScreen(
     // Manual sync from the Today top bar. The in-progress state comes from BackupOperations so
     // automatic startup/debounced/settings syncs animate the same button.
     val backupDestinationEnabled by viewModel.anyBackupDestinationEnabled.collectAsStateWithLifecycle()
+    val demoModeEnabled by viewModel.demoModeEnabled.collectAsStateWithLifecycle()
     val syncInProgress by viewModel.syncInProgress.collectAsStateWithLifecycle()
     val syncAnimating by viewModel.syncPendingOrInProgress.collectAsStateWithLifecycle()
     val lastSyncSucceeded by viewModel.lastSyncSucceeded.collectAsStateWithLifecycle()
@@ -145,7 +146,7 @@ fun MainScreen(
     fun runManualSync(allowInitialJoinMerge: Boolean = false, allowEmptyLocalOverwrite: Boolean = false) {
         // Guarded rather than queued: repeated taps during a slow upload should do nothing, not
         // stack up duplicate backups of the same data.
-        if (syncInProgress) return
+        if (syncInProgress || demoModeEnabled) return
         // Every configured destination runs from this one button. The message
         // names whichever ones failed rather than a blanket "sync failed" that would be wrong for
         // the destinations that did succeed.
@@ -1018,7 +1019,7 @@ fun MainScreen(
                             syncing = syncAnimating,
                             lastSyncSucceeded = lastSyncSucceeded,
                             syncProgress = syncProgress,
-                            syncButtonEnabled = !syncInProgress,
+                            syncButtonEnabled = !syncInProgress && !demoModeEnabled,
                             onSyncClick = { runManualSync() },
                             showUpcomingWhenEmpty = todayShowUpcomingWhenEmpty,
                             weekendDays = weekendDays,

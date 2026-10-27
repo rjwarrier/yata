@@ -1718,4 +1718,5 @@
         <item quantity="one">Modificări ale etichetelor: %1$d</item>
         <item quantity="other">Modificări ale etichetelor: %1$d</item>
     </plurals>
+    <string name="demo_mode_sync_disabled">Sincronizarea și copiile de siguranță sunt suspendate în modul demonstrativ.</string>
 </resources>

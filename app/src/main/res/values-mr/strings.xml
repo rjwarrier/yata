@@ -1712,4 +1712,5 @@
         <item quantity="one">टॅग बदल: %1$d</item>
         <item quantity="other">टॅग बदल: %1$d</item>
     </plurals>
+    <string name="demo_mode_sync_disabled">डेमो मोडमध्ये सिंक आणि बॅकअप थांबवलेले आहेत.</string>
 </resources>

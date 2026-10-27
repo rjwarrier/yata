@@ -42,16 +42,93 @@ class UnifiedBackupRoundTripTest {
         override fun cancelReminder(taskId: String) = Unit
         override suspend fun syncReminders(tasks: List<TaskEntity>) = Unit
     }
-    private class Store(val db: AppDatabase, val repository: YataRepositoryImpl, val exporter: JsonExporter) : AutoCloseable {
+    private class Store(val db: AppDatabase, val repository: YataRepositoryImpl, val exporter: JsonExporter, val preferences: UserPreferences) : AutoCloseable {
         override fun close() = db.close()
     }
     private fun store(): Store {
         val db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java).build()
-        val preferences = UserPreferences(context)
+        // These JVM tests don't package Android resources. Supply the one backend error string
+        // while keeping the real application's DataStore and filesystem for the integration test.
+        val preferenceContext = object : android.content.ContextWrapper(context) {
+            override fun getResources(): android.content.res.Resources {
+                val base = baseContext.resources
+                return object : android.content.res.Resources(base.assets, base.displayMetrics, base.configuration) {
+                    override fun getString(id: Int): String = if (id == R.string.demo_mode_sync_disabled) {
+                        "Sync and backups are paused in demo mode."
+                    } else base.getString(id)
+                }
+            }
+        }
+        val preferences = UserPreferences(preferenceContext)
         val repository = YataRepositoryImpl(db, scheduler, object : WidgetUpdater {
             override fun notifyTasksChanged() = Unit
         }, preferences)
-        return Store(db, repository, JsonExporter(context, db, repository, preferences, scheduler))
+        return Store(db, repository, JsonExporter(context, db, repository, preferences, scheduler), preferences)
+    }
+
+    @Test fun demoRejectsExportsImportsAndAllBackupTransportsWithoutChangingRealData() = runBlocking {
+        store().use { target ->
+            target.repository.upsertPerson(Person("me", "Real user", "R", "accentA", isMe = true))
+            target.repository.upsertProject(Project("real-project", "Real project", "accentA", "work"))
+            target.preferences.setUserName("Real user")
+            val before = target.exporter.exportToBytes()
+            val recovery = RecoveryBackupManager(context, target.exporter)
+            val engine = SnapshotSyncEngine(context, target.exporter, recovery)
+            val credentials = com.mj.yata.data.sftp.RemoteBackupCredentialsStore(context)
+            val transports = listOf<com.mj.yata.domain.sync.SyncTransport>(
+                com.mj.yata.data.github.GitHubSyncManager(context, target.preferences, credentials, engine, recovery, target.exporter),
+                com.mj.yata.data.sftp.SftpBackupManager(context, target.exporter, target.preferences, credentials, engine, recovery),
+                com.mj.yata.data.ftp.FtpBackupManager(context, target.exporter, target.preferences, credentials, engine, recovery)
+            )
+            val local = com.mj.yata.data.local.backup.LocalBackupManager(context, target.exporter, target.preferences, recovery)
+            val operations = com.mj.yata.domain.usecase.BackupOperations(
+                target.repository, target.exporter, local,
+                transports[1] as com.mj.yata.data.sftp.SftpBackupManager,
+                transports[2] as com.mj.yata.data.ftp.FtpBackupManager,
+                transports[0] as com.mj.yata.data.github.GitHubSyncManager,
+                engine, target.preferences,
+                com.mj.yata.data.local.operationhistory.OperationHistoryStore(context), context
+            )
+            target.preferences.setLocalBackupEnabled(true)
+            target.preferences.setSftpBackupEnabled(true)
+            val fingerprintBefore = target.preferences.autoBackupLastFingerprintFlow.first()
+            target.preferences.setDemoModeEnabled(true)
+            try {
+                try {
+                    target.exporter.exportToBytes()
+                    org.junit.Assert.fail("Demo data could be exported")
+                } catch (_: com.mj.yata.data.demo.DemoModeDataAccessException) { }
+                assertFalse(target.exporter.importBytes(before))
+                assertFalse(target.exporter.replaceBytesForSync(before))
+                assertTrue(local.backupNow().exceptionOrNull() is com.mj.yata.data.demo.DemoModeDataAccessException)
+                assertTrue(local.restoreLatest().exceptionOrNull() is com.mj.yata.data.demo.DemoModeDataAccessException)
+                assertTrue(operations.backupAllConfigured().isEmpty())
+                assertTrue(operations.runScheduledBackupIfNeeded("demo test") == null)
+                assertTrue(operations.syncSelfHostedIfConfigured() == null)
+                operations.scheduleDebouncedBackup()
+                kotlinx.coroutines.withTimeout(5_000) { operations.syncPendingOrInProgress.first { !it } }
+                assertEquals(fingerprintBefore, target.preferences.autoBackupLastFingerprintFlow.first())
+                for (transport in transports) {
+                    assertTrue(transport.syncNow().exceptionOrNull() is com.mj.yata.data.demo.DemoModeDataAccessException)
+                    assertTrue(transport.restore("unused").exceptionOrNull() is com.mj.yata.data.demo.DemoModeDataAccessException)
+                }
+                target.preferences.importPortableSettings(listOf(
+                    com.mj.yata.data.local.datastore.PortableSetting("demo_mode_enabled", "bool", false)
+                ))
+                assertTrue(target.preferences.demoModeEnabledFlow.first())
+                assertTrue(target.preferences.exportPortableSettings().none { it.name == "demo_mode_enabled" })
+                assertEquals("Real project", target.repository.getProjects().first().single().name)
+                assertEquals("Real user", target.preferences.userNameFlow.first())
+            } finally {
+                operations.cancelDebouncedBackup()
+                target.preferences.setDemoModeEnabled(false)
+            }
+            val after = target.exporter.exportToBytes()
+            assertTrue(SnapshotMerger.equivalent(
+                SnapshotMerger.normalizeForSync(JSONObject(String(before))),
+                SnapshotMerger.normalizeForSync(JSONObject(String(after)))
+            ))
+        }
     }
 
     @Test fun backupImportAndRepeatedSyncPreserveGroupsAndTrackedTime() = runBlocking {

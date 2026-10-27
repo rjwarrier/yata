@@ -1717,4 +1717,5 @@
         <item quantity="one">Modifications des étiquettes : %1$d</item>
         <item quantity="other">Modifications des étiquettes : %1$d</item>
     </plurals>
+    <string name="demo_mode_sync_disabled">La synchronisation et les sauvegardes sont suspendues en mode démo.</string>
 </resources>

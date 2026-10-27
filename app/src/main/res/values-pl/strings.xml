@@ -1721,4 +1721,5 @@
         <item quantity="one">Zmiany etykiet: %1$d</item>
         <item quantity="other">Zmiany etykiet: %1$d</item>
     </plurals>
+    <string name="demo_mode_sync_disabled">Synchronizacja i kopie zapasowe są wstrzymane w trybie demonstracyjnym.</string>
 </resources>

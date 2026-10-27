@@ -2312,7 +2312,7 @@ fun SettingsScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { onImportRequested() }
+                        .clickable(enabled = !demoModeEnabled) { onImportRequested() }
                         .padding(vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -2612,6 +2612,16 @@ fun SettingsScreen(
         }
         }
         if (settingsDestination == SettingsDestination.BACKUP_SYNC) {
+        if (demoModeEnabled) {
+            item {
+                Text(
+                    text = stringResource(R.string.demo_mode_sync_disabled),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+            }
+        }
         item {
             // 4. Remote Backup Section: off-device destinations live together so the user can
             // reason about "where else is my data copied?" without jumping between cards.
@@ -2947,7 +2957,7 @@ fun SettingsScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable(enabled = !isBackingUp) {
+                            .clickable(enabled = !isBackingUp && !demoModeEnabled) {
                                 isBackingUp = true
                                 viewModel.backupAllNow { results ->
                                     isBackingUp = false
@@ -3029,7 +3039,7 @@ fun SettingsScreen(
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
-                            TextButton(onClick = {
+                            TextButton(enabled = !demoModeEnabled, onClick = {
                                 viewModel.backupLocalNow()
                                 scope.launch { snackbarHostState.showSuccess(context.getString(R.string.settings_local_backup_started)) }
                             }) {
@@ -3042,7 +3052,7 @@ fun SettingsScreen(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { showRestoreLocalDialog = true }
+                                .clickable(enabled = !demoModeEnabled) { showRestoreLocalDialog = true }
                                 .padding(vertical = 4.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -3063,7 +3073,7 @@ fun SettingsScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { onExportRequested() }
+                        .clickable(enabled = !demoModeEnabled) { onExportRequested() }
                         .padding(vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -3091,7 +3101,7 @@ fun SettingsScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { onImportRequested() }
+                        .clickable(enabled = !demoModeEnabled) { onImportRequested() }
                         .padding(vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {

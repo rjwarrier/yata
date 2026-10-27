@@ -1712,4 +1712,5 @@
         <item quantity="one">ટૅગ ફેરફારો: %1$d</item>
         <item quantity="other">ટૅગ ફેરફારો: %1$d</item>
     </plurals>
+    <string name="demo_mode_sync_disabled">ડેમો મોડમાં સિંક અને બૅકઅપ થોભાવેલ છે.</string>
 </resources>

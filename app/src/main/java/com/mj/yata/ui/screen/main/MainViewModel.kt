@@ -2802,6 +2802,7 @@ data class WeekendRescheduleWarning(
      * data source to an in-memory sample dataset (see RoutingYataRepository) for taking store
      * screenshots — the real database is never read from or written to while it's active. */
     fun toggleDemoMode() {
+        backupOperations.cancelDebouncedBackup()
         safeLaunch {
             userPreferences.setDemoModeEnabled(!demoModeEnabled.value)
         }

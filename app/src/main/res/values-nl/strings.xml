@@ -1716,4 +1716,5 @@
         <item quantity="one">Tagwijzigingen: %1$d</item>
         <item quantity="other">Tagwijzigingen: %1$d</item>
     </plurals>
+    <string name="demo_mode_sync_disabled">Synchronisatie en back-ups zijn gepauzeerd in de demomodus.</string>
 </resources>

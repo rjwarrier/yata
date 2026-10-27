@@ -305,6 +305,7 @@ internal object SnapshotMerger {
 
     internal fun isDeviceLocalSetting(name: String): Boolean =
         name == "backup_interval_minutes" ||
+            name == "demo_mode_enabled" ||
             name == "remote_backup_protocol" ||
             name == "ftp_use_tls" ||
             name == "markdown_reference_mappings" ||

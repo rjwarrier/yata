@@ -129,7 +129,10 @@ class FtpBackupManager @Inject constructor(
         }
     }
 
-    suspend fun backupNow(): Result<Unit> = sessionMutex.withLock {
+    suspend fun backupNow(): Result<Unit> =
+        userPreferences.realDataResult { backupNowInternal() }
+
+    private suspend fun backupNowInternal(): Result<Unit> = sessionMutex.withLock {
         withContext(Dispatchers.IO) {
             try {
                 val remoteDir = userPreferences.sftpRemoteDirFlow.first()
@@ -178,6 +181,11 @@ class FtpBackupManager @Inject constructor(
 
     /** Full two-way sync using only generic FTP/FTPS file operations. */
     override suspend fun syncNow(
+        progress: (Int, String) -> Unit,
+        options: SyncRunOptions
+    ): Result<SyncRunReport> = userPreferences.realDataResult { syncNowInternal(progress, options) }
+
+    private suspend fun syncNowInternal(
         progress: (Int, String) -> Unit,
         options: SyncRunOptions
     ): Result<SyncRunReport> = sessionMutex.withLock {
@@ -694,7 +702,10 @@ class FtpBackupManager @Inject constructor(
     override suspend fun listRestorePoints(limit: Int): Result<List<RestorePoint>> =
         listBackups().map { names -> names.take(limit).map(::restorePointFromHistoryName) }
 
-    suspend fun restoreBackup(filename: String): Result<Unit> = sessionMutex.withLock {
+    suspend fun restoreBackup(filename: String): Result<Unit> =
+        userPreferences.realDataResult { restoreBackupInternal(filename) }
+
+    private suspend fun restoreBackupInternal(filename: String): Result<Unit> = sessionMutex.withLock {
         withContext(Dispatchers.IO) {
             try {
                 val jsonBytes = fetchBackupJson(filename)

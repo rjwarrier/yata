@@ -1715,4 +1715,5 @@
         <item quantity="one">Modifiche alle etichette: %1$d</item>
         <item quantity="other">Modifiche alle etichette: %1$d</item>
     </plurals>
+    <string name="demo_mode_sync_disabled">Sincronizzazione e backup sono sospesi in modalità demo.</string>
 </resources>

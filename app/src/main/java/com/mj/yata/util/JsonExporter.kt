@@ -162,7 +162,13 @@ class JsonExporter @Inject constructor(
         }
     }
 
-    suspend fun exportData(uri: Uri): Boolean = withContext(Dispatchers.IO) {
+    suspend fun exportData(uri: Uri): Boolean = try {
+        userPreferences.withRealData { exportDataInternal(uri) }
+    } catch (_: com.mj.yata.data.demo.DemoModeDataAccessException) {
+        false
+    }
+
+    private suspend fun exportDataInternal(uri: Uri): Boolean = withContext(Dispatchers.IO) {
         try {
             val root = buildBackupJson(loadBackupData())
             val outputStream = context.contentResolver.openOutputStream(uri)
@@ -181,7 +187,9 @@ class JsonExporter @Inject constructor(
 
     /** Raw JSON bytes of a full backup — used for cloud upload, where there's no [Uri] to write
      * through a [android.content.ContentResolver]. */
-    suspend fun exportToBytes(): ByteArray = withContext(Dispatchers.IO) {
+    suspend fun exportToBytes(): ByteArray = userPreferences.withRealData { exportToBytesInternal() }
+
+    private suspend fun exportToBytesInternal(): ByteArray = withContext(Dispatchers.IO) {
         buildBackupJson(loadBackupData()).toString(2).toByteArray(Charsets.UTF_8)
     }
 
@@ -197,7 +205,9 @@ class JsonExporter @Inject constructor(
      * Manual export/[exportToDownloads] deliberately don't use this — those are one-off,
      * user-triggered actions where a single complete file is more useful than a split one.
      */
-    suspend fun buildSplitBackupJson(archiveMonths: Int): Pair<JSONObject, JSONObject?> {
+    suspend fun buildSplitBackupJson(archiveMonths: Int): Pair<JSONObject, JSONObject?> = userPreferences.withRealData { buildSplitBackupJsonInternal(archiveMonths) }
+
+    private suspend fun buildSplitBackupJsonInternal(archiveMonths: Int): Pair<JSONObject, JSONObject?> {
         val data = loadBackupData()
         if (archiveMonths <= 0) return buildBackupJson(data) to null
 
@@ -497,7 +507,13 @@ class JsonExporter @Inject constructor(
      * Auto-backs up to the public Downloads folder without a file picker (used before a
      * destructive "delete all data" action). Returns the saved filename, or null on failure.
      */
-    suspend fun exportToDownloads(): String? {
+    suspend fun exportToDownloads(): String? = try {
+        userPreferences.withRealData { exportToDownloadsInternal() }
+    } catch (_: com.mj.yata.data.demo.DemoModeDataAccessException) {
+        null
+    }
+
+    private suspend fun exportToDownloadsInternal(): String? {
         val filename = "yata_backup_" +
             java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.US).format(java.util.Date()) +
             ".json"
@@ -536,7 +552,13 @@ class JsonExporter @Inject constructor(
         return if (ok) filename else null
     }
 
-    suspend fun importData(uri: Uri): Boolean = withContext(Dispatchers.IO) {
+    suspend fun importData(uri: Uri): Boolean = try {
+        userPreferences.withRealData { importDataInternal(uri) }
+    } catch (_: com.mj.yata.data.demo.DemoModeDataAccessException) {
+        false
+    }
+
+    private suspend fun importDataInternal(uri: Uri): Boolean = withContext(Dispatchers.IO) {
         try {
             val sb = StringBuilder()
             context.contentResolver.openInputStream(uri)?.use { ins ->
@@ -557,7 +579,13 @@ class JsonExporter @Inject constructor(
 
     /** Restores from raw JSON bytes — used for cloud restore, where there's no [Uri] to read
      * through a [android.content.ContentResolver]. */
-    suspend fun importBytes(bytes: ByteArray): Boolean = withContext(Dispatchers.IO) {
+    suspend fun importBytes(bytes: ByteArray): Boolean = try {
+        userPreferences.withRealData { importBytesInternal(bytes) }
+    } catch (_: com.mj.yata.data.demo.DemoModeDataAccessException) {
+        false
+    }
+
+    private suspend fun importBytesInternal(bytes: ByteArray): Boolean = withContext(Dispatchers.IO) {
         try {
             val root = JSONObject(String(bytes, Charsets.UTF_8)).also(::validateBackupPayload)
             importJson(root)
@@ -588,7 +616,13 @@ class JsonExporter @Inject constructor(
      * rolls every entity mutation back. DataStore and profile-photo files are restored from the
      * pre-apply snapshot if that transaction fails.
      */
-    suspend fun replaceBytesForSync(bytes: ByteArray): Boolean = withContext(Dispatchers.IO) {
+    suspend fun replaceBytesForSync(bytes: ByteArray): Boolean = try {
+        userPreferences.withRealData { replaceBytesForSyncInternal(bytes) }
+    } catch (_: com.mj.yata.data.demo.DemoModeDataAccessException) {
+        false
+    }
+
+    private suspend fun replaceBytesForSyncInternal(bytes: ByteArray): Boolean = withContext(Dispatchers.IO) {
         val target = try {
             JSONObject(String(bytes, Charsets.UTF_8)).also(::validateSyncSnapshot)
         } catch (e: Exception) {

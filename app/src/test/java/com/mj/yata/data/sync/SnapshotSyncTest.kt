@@ -343,6 +343,7 @@ class SnapshotSyncTest {
                 setting("sftp_host", "string", "server"),
                 setting("github_owner", "string", "owner"),
                 setting("app_lock_enabled", "bool", true),
+                setting("demo_mode_enabled", "bool", true),
                 setting("saved", "stringSet", JSONArray().put("z").put("a")),
                 setting("weekend_days", "stringSet", JSONArray().put("SA").put("SU")),
                 setting("holidays", "stringSet", JSONArray().put("2026-01-26|Republic Day|true")),

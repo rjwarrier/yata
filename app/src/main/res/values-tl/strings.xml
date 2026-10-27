@@ -1712,4 +1712,5 @@
         <item quantity="one">Mga pagbabago sa tag: %1$d</item>
         <item quantity="other">Mga pagbabago sa tag: %1$d</item>
     </plurals>
+    <string name="demo_mode_sync_disabled">Naka-pause ang pag-sync at mga backup sa demo mode.</string>
 </resources>

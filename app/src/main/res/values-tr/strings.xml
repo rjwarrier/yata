@@ -1715,4 +1715,5 @@
         <item quantity="one">Etiket değişiklikleri: %1$d</item>
         <item quantity="other">Etiket değişiklikleri: %1$d</item>
     </plurals>
+    <string name="demo_mode_sync_disabled">Demo modunda eşitleme ve yedeklemeler duraklatılır.</string>
 </resources>

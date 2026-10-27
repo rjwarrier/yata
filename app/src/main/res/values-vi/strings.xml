@@ -1715,4 +1715,5 @@
         <item quantity="one">Thay đổi thẻ: %1$d</item>
         <item quantity="other">Thay đổi thẻ: %1$d</item>
     </plurals>
+    <string name="demo_mode_sync_disabled">Đồng bộ và sao lưu được tạm dừng trong chế độ minh họa.</string>
 </resources>

@@ -88,6 +88,7 @@ fun RemoteSyncScreen(
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.settingsUiState.collectAsStateWithLifecycle()
+    val demoModeEnabled by viewModel.demoModeEnabled.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
@@ -471,6 +472,9 @@ fun RemoteSyncScreen(
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             Spacer(modifier = Modifier.height(2.dp))
+            if (demoModeEnabled) {
+                Text(stringResource(R.string.demo_mode_sync_disabled), color = MaterialTheme.colorScheme.primary)
+            }
             RemoteConfigHeader(protocol = draftProtocol)
             RemoteProviderPicker(
                 selectedProtocol = draftProtocol,
@@ -586,7 +590,7 @@ fun RemoteSyncScreen(
                     )
                     GitHubRecoveryActions(
                         onDownloadLatest = { showGitHubForceDownloadDialog = true },
-                        enabled = !isDownloadingGitHubSnapshot && !isTestingConnection
+                        enabled = !demoModeEnabled && !isDownloadingGitHubSnapshot && !isTestingConnection
                     )
                 }
             } else {
@@ -920,7 +924,7 @@ fun RemoteSyncScreen(
                         }
                     }
                 },
-                enabled = !isTestingConnection,
+                enabled = !demoModeEnabled && !isTestingConnection,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 if (isTestingConnection) {
@@ -1121,7 +1125,7 @@ fun RemoteSyncScreen(
             },
             confirmButton = {
                 TextButton(
-                    enabled = !isDownloadingGitHubSnapshot,
+                    enabled = !demoModeEnabled && !isDownloadingGitHubSnapshot,
                     onClick = {
                         if (parseGitHubRepoDraft() == null) {
                             testResultOk = false

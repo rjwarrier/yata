@@ -121,6 +121,18 @@ class BackupOperations @Inject constructor(
         allowInitialJoinMerge: Boolean = false,
         allowEmptyLocalOverwrite: Boolean = false,
         remoteSyncRunReason: String = "Automatic sync before backup"
+    ): List<BackupRunResult> = try {
+        userPreferences.withRealData {
+            backupAllConfiguredInternal(allowInitialJoinMerge, allowEmptyLocalOverwrite, remoteSyncRunReason)
+        }
+    } catch (_: com.mj.yata.data.demo.DemoModeDataAccessException) {
+        emptyList()
+    }
+
+    private suspend fun backupAllConfiguredInternal(
+        allowInitialJoinMerge: Boolean,
+        allowEmptyLocalOverwrite: Boolean,
+        remoteSyncRunReason: String
     ): List<BackupRunResult> = buildList {
         // Host check as well as the toggle: the switch can be on with the server dialog never
         // filled in, and an attempt that can only fail would report a backup failure for something
@@ -162,7 +174,13 @@ class BackupOperations @Inject constructor(
      * settings-only hash GitHub sync already uses to detect "nothing to publish" - so this adds no
      * second notion of "has anything changed" to keep in sync with the first.
      */
-    suspend fun runScheduledBackupIfNeeded(remoteSyncRunReason: String): List<BackupRunResult>? {
+    suspend fun runScheduledBackupIfNeeded(remoteSyncRunReason: String): List<BackupRunResult>? = try {
+        userPreferences.withRealData { runScheduledBackupIfNeededInternal(remoteSyncRunReason) }
+    } catch (_: com.mj.yata.data.demo.DemoModeDataAccessException) {
+        null
+    }
+
+    private suspend fun runScheduledBackupIfNeededInternal(remoteSyncRunReason: String): List<BackupRunResult>? {
         val now = System.currentTimeMillis()
         val fingerprint = snapshotSyncEngine.localCanonicalHash()
         val skip = AutoBackupGate.shouldSkip(
@@ -192,6 +210,7 @@ class BackupOperations @Inject constructor(
         }
         val nextJob = debounceScope.launch {
             try {
+                if (userPreferences.demoModeEnabledFlow.first()) return@launch
                 delay(DEBOUNCE_MILLIS)
                 backupAllConfigured()
             } finally {
@@ -228,7 +247,13 @@ class BackupOperations @Inject constructor(
     }
 
     /** Pulls remote changes whenever the main app is opened, without touching other backups. */
-    suspend fun syncSelfHostedIfConfigured(): Result<Unit>? {
+    suspend fun syncSelfHostedIfConfigured(): Result<Unit>? = try {
+        userPreferences.withRealData { syncSelfHostedIfConfiguredInternal() }
+    } catch (_: com.mj.yata.data.demo.DemoModeDataAccessException) {
+        null
+    }
+
+    private suspend fun syncSelfHostedIfConfiguredInternal(): Result<Unit>? {
         if (!userPreferences.sftpBackupEnabledFlow.first() ||
             !currentTransport().isConfigured()
         ) return null
@@ -241,6 +266,11 @@ class BackupOperations @Inject constructor(
         runReason: String,
         block: suspend ((Int, String) -> Unit) -> Result<SyncRunReport>
     ): Result<SyncRunReport> {
+        if (userPreferences.demoModeEnabledFlow.first()) {
+            return Result.failure(com.mj.yata.data.demo.DemoModeDataAccessException(
+                context.getString(com.mj.yata.R.string.demo_mode_sync_disabled)
+            ))
+        }
         val protocol = userPreferences.remoteBackupProtocolFlow.first()
         val operationId = syncOperationId(protocol)
         val labels = syncLabels(protocol)
@@ -419,7 +449,13 @@ class BackupOperations @Inject constructor(
      * actually succeeded — never delete without a safety copy landing on disk. Returns the
      * backup filename, or null if the export failed (in which case nothing was deleted).
      */
-    suspend fun backupThenDeleteAllData(): String? {
+    suspend fun backupThenDeleteAllData(): String? = try {
+        userPreferences.withRealData { backupThenDeleteAllDataInternal() }
+    } catch (_: com.mj.yata.data.demo.DemoModeDataAccessException) {
+        null
+    }
+
+    private suspend fun backupThenDeleteAllDataInternal(): String? {
         val filename = jsonExporter.exportToDownloads()
         if (filename != null) {
             repository.deleteAllData()
@@ -445,6 +481,8 @@ class BackupOperations @Inject constructor(
             Result.failure(e)
         }
     }
+
+    suspend fun backupsPausedForDemo(): Boolean = userPreferences.demoModeEnabledFlow.first()
 
     /** Reschedules the single periodic backup job that covers every destination. */
     fun updateBackupInterval(minutes: Long) =

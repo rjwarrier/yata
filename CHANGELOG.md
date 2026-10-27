@@ -72,6 +72,9 @@ test-only changes belong in the commit message, not here, unless they change beh
   colour in Upcoming's month grid and week strip, next to the filled task dots.
 
 ### Fixed
+- Demo mode pauses manual, startup, scheduled and debounced sync, backups and restore operations.
+  Switching demo mode waits for active transfers to finish, preventing a transfer from mixing real
+  and sample data. The demo-mode switch is device-local and no longer travels in backups or sync.
 - Empty project groups remain visible as collapsible sections. Importing an older backup that
   lacks project-group fields preserves existing assignments instead of silently clearing them.
 - Syncing an older snapshot that lacks project-group fields retains known groups and membership
@@ -103,6 +106,9 @@ test-only changes belong in the commit message, not here, unless they change beh
   since the last one, and backup files are about a third smaller.
 
 ### Changed
+- Bundled demo data now includes project groups, project sections, effort estimates and tracked
+  time, follow-up and deferred tasks, nested checklists, recurring completion history, and archive
+  and Trash examples. Demo repository reads now expose the corresponding histories and groups.
 - Backups use format 5 for project groups. Older backups remain importable; devices must update
   before syncing snapshots written by this version.
 - Bulk tagging uses compact Material 3 filter chips with soft tag-color tints, color dots and

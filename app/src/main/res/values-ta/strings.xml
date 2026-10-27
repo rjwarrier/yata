@@ -1712,4 +1712,5 @@
         <item quantity="one">குறிச்சொல் மாற்றங்கள்: %1$d</item>
         <item quantity="other">குறிச்சொல் மாற்றங்கள்: %1$d</item>
     </plurals>
+    <string name="demo_mode_sync_disabled">டெமோ பயன்முறையில் ஒத்திசைவும் காப்புப்பிரதியும் இடைநிறுத்தப்பட்டுள்ளன.</string>
 </resources>

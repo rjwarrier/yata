@@ -41,6 +41,11 @@ class GitHubSyncManager @Inject constructor(
     override suspend fun syncNow(
         progress: (Int, String) -> Unit,
         options: SyncRunOptions
+    ): Result<SyncRunReport> = userPreferences.realDataResult { syncNowInternal(progress, options) }
+
+    private suspend fun syncNowInternal(
+        progress: (Int, String) -> Unit,
+        options: SyncRunOptions
     ): Result<SyncRunReport> = sessionMutex.withLock {
         withContext(Dispatchers.IO) {
             try {
@@ -96,7 +101,10 @@ class GitHubSyncManager @Inject constructor(
         }
     }
 
-    override suspend fun restore(id: String): Result<Unit> = sessionMutex.withLock {
+    override suspend fun restore(id: String): Result<Unit> =
+        userPreferences.realDataResult { restoreInternal(id) }
+
+    private suspend fun restoreInternal(id: String): Result<Unit> = sessionMutex.withLock {
         withContext(Dispatchers.IO) {
             try {
                 val bytes = readSnapshot(id).getOrThrow()

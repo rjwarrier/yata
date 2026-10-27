@@ -3,6 +3,7 @@ package com.mj.yata.data.demo
 import com.mj.yata.domain.model.Person
 import com.mj.yata.domain.model.PersonGroup
 import com.mj.yata.domain.model.Project
+import com.mj.yata.domain.model.ProjectGroup
 import com.mj.yata.domain.model.Tag
 import com.mj.yata.domain.model.TagGroup
 import com.mj.yata.domain.model.Task
@@ -27,11 +28,14 @@ import javax.inject.Singleton
 class DemoRepository @Inject constructor() : YataRepository {
 
     private val dataset = MutableStateFlow(DemoData.build())
+    private val liveTasks: Flow<List<Task>> = dataset.map { d -> d.tasks.filter(::isLive) }
 
-    override fun getTasks(): Flow<List<Task>> = dataset.map { it.tasks }
+    private fun isLive(task: Task): Boolean = task.deletedAt == null && !task.archived
+
+    override fun getTasks(): Flow<List<Task>> = liveTasks
     override fun getTaskById(id: String): Flow<Task?> = dataset.map { d -> d.tasks.find { it.id == id } }
-    override fun getInboxCandidateTasks(): Flow<List<Task>> = dataset.map { d ->
-        d.tasks.filter { task ->
+    override fun getInboxCandidateTasks(): Flow<List<Task>> = liveTasks.map { tasks ->
+        tasks.filter { task ->
             !task.done && (
                 task.due == null ||
                     task.estimateMinutes == null ||
@@ -40,21 +44,25 @@ class DemoRepository @Inject constructor() : YataRepository {
                 )
         }
     }
-    override fun getRecurringTasks(): Flow<List<Task>> = dataset.map { d ->
-        d.tasks.filter { !it.done && it.recurrence != null }
+    override fun getRecurringTasks(): Flow<List<Task>> = liveTasks.map { tasks ->
+        tasks.filter { !it.done && it.recurrence != null }
     }
-    override fun getTasksForList(listId: String): Flow<List<Task>> = dataset.map { d -> d.tasks.filter { it.listId == listId } }
-    override fun getTasksForProject(projectId: String): Flow<List<Task>> = dataset.map { d -> d.tasks.filter { it.projectId == projectId } }
-    override fun getTasksForPerson(personId: String): Flow<List<Task>> = dataset.map { d -> d.tasks.filter { personId in it.assigneeIds } }
-    override suspend fun getSeriesCompletions(taskId: String): List<Task> = emptyList()
+    override fun getTasksForList(listId: String): Flow<List<Task>> = liveTasks.map { tasks -> tasks.filter { it.listId == listId } }
+    override fun getTasksForProject(projectId: String): Flow<List<Task>> = liveTasks.map { tasks -> tasks.filter { it.projectId == projectId } }
+    override fun getTasksForPerson(personId: String): Flow<List<Task>> = liveTasks.map { tasks -> tasks.filter { personId in it.assigneeIds } }
+    override suspend fun getSeriesCompletions(taskId: String): List<Task> {
+        val seriesId = dataset.value.tasks.find { it.id == taskId }?.seriesId ?: return emptyList()
+        return dataset.value.tasks.filter { it.seriesId == seriesId && it.done }
+            .sortedByDescending { it.completedAt }
+    }
     override suspend fun getTasksByIds(ids: Collection<String>): List<Task> {
         val wanted = ids.toSet()
-        return dataset.value.tasks.filter { it.id in wanted }
+        return dataset.value.tasks.filter { isLive(it) && it.id in wanted }
     }
     override suspend fun getOpenTasks(alsoCompletedSince: LocalDate?): List<Task> {
         val since = alsoCompletedSince?.atStartOfDay(ZoneId.systemDefault())?.toInstant()?.toEpochMilli()
             ?: Long.MAX_VALUE
-        return dataset.value.tasks.filter { !it.done || (it.completedAt ?: Long.MIN_VALUE) >= since }
+        return dataset.value.tasks.filter { isLive(it) && (!it.done || (it.completedAt ?: Long.MIN_VALUE) >= since) }
     }
 
     override suspend fun upsertTask(task: Task, notify: Boolean, resyncReminder: Boolean) = Unit
@@ -75,9 +83,13 @@ class DemoRepository @Inject constructor() : YataRepository {
     override fun notifyTasksChanged() = Unit
 
     override suspend fun deleteTask(task: Task, notify: Boolean) = Unit
-    override fun getDeletedTasks(): Flow<List<Task>> = dataset.map { emptyList() }
+    override fun getDeletedTasks(): Flow<List<Task>> = dataset.map { d ->
+        d.tasks.filter { it.deletedAt != null }.sortedByDescending { it.deletedAt }
+    }
     override suspend fun restoreTasks(ids: Collection<String>) = Unit
-    override fun getArchivedTasks(): Flow<List<Task>> = dataset.map { emptyList() }
+    override fun getArchivedTasks(): Flow<List<Task>> = dataset.map { d ->
+        d.tasks.filter { it.deletedAt == null && it.archived }.sortedBy { it.sortOrder }
+    }
     override suspend fun setTasksArchived(ids: Collection<String>, archived: Boolean) = Unit
     override suspend fun permanentlyDeleteTasks(ids: Collection<String>) = Unit
     override suspend fun emptyTrash() = Unit
@@ -97,11 +109,11 @@ class DemoRepository @Inject constructor() : YataRepository {
     override suspend fun deleteProject(project: Project) = Unit
     override suspend fun deleteProjectOnly(project: Project) = Unit
     override suspend fun setProjectsArchived(ids: List<String>, archived: Boolean) = Unit
-    override suspend fun setProjectsGroup(projectIds: List<String>, groupId: String?, pendingGroup: com.mj.yata.domain.model.ProjectGroup?) = Unit
+    override suspend fun setProjectsGroup(projectIds: List<String>, groupId: String?, pendingGroup: ProjectGroup?) = Unit
 
-    override fun getProjectGroups(): Flow<List<com.mj.yata.domain.model.ProjectGroup>> = dataset.map { emptyList() }
-    override suspend fun upsertProjectGroup(group: com.mj.yata.domain.model.ProjectGroup) = Unit
-    override suspend fun deleteProjectGroup(group: com.mj.yata.domain.model.ProjectGroup) = Unit
+    override fun getProjectGroups(): Flow<List<ProjectGroup>> = dataset.map { it.projectGroups }
+    override suspend fun upsertProjectGroup(group: ProjectGroup) = Unit
+    override suspend fun deleteProjectGroup(group: ProjectGroup) = Unit
 
     override fun getLists(): Flow<List<YataList>> = dataset.map { it.lists }
     override fun getListById(id: String): Flow<YataList?> = dataset.map { d -> d.lists.find { it.id == id } }

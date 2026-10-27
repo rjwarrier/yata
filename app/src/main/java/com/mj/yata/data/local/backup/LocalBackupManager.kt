@@ -63,7 +63,9 @@ class LocalBackupManager @Inject constructor(
     private fun backupDir(): File =
         File(context.getExternalFilesDir(null), "local_backups").apply { mkdirs() }
 
-    suspend fun backupNow(): Result<Unit> = withContext(Dispatchers.IO) {
+    suspend fun backupNow(): Result<Unit> = userPreferences.realDataResult { backupNowInternal() }
+
+    private suspend fun backupNowInternal(): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             val (primaryJson, _) = jsonExporter.buildSplitBackupJson(archiveMonths = 0)
             // Fingerprinted the way sync compares snapshots, so the per-run timestamp and
@@ -113,7 +115,9 @@ class LocalBackupManager @Inject constructor(
         }
     }
 
-    suspend fun restoreLatest(): Result<Unit> = withContext(Dispatchers.IO) {
+    suspend fun restoreLatest(): Result<Unit> = userPreferences.realDataResult { restoreLatestInternal() }
+
+    private suspend fun restoreLatestInternal(): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             // Suffix too: a .tmp left by an interrupted backup also starts with the prefix and
             // sorts newest, and restoring it would load a half-written file.

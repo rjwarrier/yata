@@ -1872,4 +1872,5 @@
         <item quantity="one">Tag-Änderungen: %1$d</item>
         <item quantity="other">Tag-Änderungen: %1$d</item>
     </plurals>
+    <string name="demo_mode_sync_disabled">Synchronisierung und Sicherungen sind im Demomodus pausiert.</string>
 </resources>

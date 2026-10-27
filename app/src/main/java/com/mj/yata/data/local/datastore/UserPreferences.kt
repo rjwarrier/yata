@@ -67,7 +67,8 @@ data class PortableSetting(val name: String, val type: String, val value: Any)
 
 @Singleton
 class UserPreferences @Inject constructor(
-    @ApplicationContext context: Context
+    @ApplicationContext private val context: Context,
+    private val demoDataSafetyGate: com.mj.yata.data.demo.DemoDataSafetyGate = com.mj.yata.data.demo.DemoDataSafetyGate()
 ) : TaskListPreferences {
 
     private val dataStore = context.dataStore
@@ -143,6 +144,7 @@ class UserPreferences @Inject constructor(
          *   another. `JsonExporter` carries the photo bytes and rewrites the Uri itself.
          */
         val NON_PORTABLE_KEYS = setOf(
+            "demo_mode_enabled",
             "app_lock_enabled",
             "app_lock_pin_hash",
             "app_lock_pin_salt",
@@ -1233,7 +1235,21 @@ class UserPreferences @Inject constructor(
     }
 
     suspend fun setDemoModeEnabled(enabled: Boolean) {
-        dataStore.edit { it[DEMO_MODE_ENABLED] = enabled }
+        demoDataSafetyGate.changeMode {
+            dataStore.edit { it[DEMO_MODE_ENABLED] = enabled }
+        }
+    }
+
+    suspend fun <T> withRealData(block: suspend () -> T): T = demoDataSafetyGate.withRealData(
+        isDemoMode = { demoModeEnabledFlow.first() },
+        blockedMessage = { context.getString(com.mj.yata.R.string.demo_mode_sync_disabled) },
+        block = block
+    )
+
+    suspend fun <T> realDataResult(block: suspend () -> Result<T>): Result<T> = try {
+        withRealData(block)
+    } catch (e: com.mj.yata.data.demo.DemoModeDataAccessException) {
+        Result.failure(e)
     }
 
     suspend fun setCustomThemeSeedColor(argb: Int?) {

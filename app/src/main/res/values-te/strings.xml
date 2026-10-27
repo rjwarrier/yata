@@ -1712,4 +1712,5 @@
         <item quantity="one">ట్యాగ్ మార్పులు: %1$d</item>
         <item quantity="other">ట్యాగ్ మార్పులు: %1$d</item>
     </plurals>
+    <string name="demo_mode_sync_disabled">డెమో మోడ్‌లో సింక్ మరియు బ్యాకప్‌లు నిలిపివేయబడ్డాయి.</string>
 </resources>

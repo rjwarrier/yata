@@ -69,7 +69,11 @@ class UnifiedBackupWorker(
                 remoteSyncRunReason = "Automatic scheduled backup sync"
             )
             if (results == null) {
-                operationHistoryStore.recordSkipped(OperationHistoryStore.BACKUP_UNIFIED, "No local changes since the last backup")
+                operationHistoryStore.recordSkipped(
+                    OperationHistoryStore.BACKUP_UNIFIED,
+                    if (backupOperations.backupsPausedForDemo()) applicationContext.getString(com.mj.yata.R.string.demo_mode_sync_disabled)
+                    else "No local changes since the last backup"
+                )
                 return@runOperationSafely Result.success()
             }
             if (results.isEmpty()) {
