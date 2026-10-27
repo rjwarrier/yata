@@ -1430,7 +1430,7 @@
     <string name="new_task_assign">Assign</string>
     <string name="new_task_tags">Tags</string>
     <string name="new_task_tag">Tag</string>
-    <string name="new_task_organize" translatable="false">Organize</string>
+    <string name="new_task_organize">Organize</string>
     <string name="new_task_notes">Notes</string>
     <string name="new_task_subtasks">Subtasks</string>
     <string name="new_task_create_another">Create another</string>
@@ -1804,4 +1804,15 @@
     <string name="bulk_reschedule_keep_time">Keep each task\'s time</string>
     <string name="recurrence_preview_next">Next: %1$s</string>
     <string name="recurrence_preview_none">Doesn\'t repeat after this one</string>
+    <string name="markdown_import_title">Import Markdown</string>
+    <string name="markdown_import_summary">Preview a checklist and add tasks to a project or list.</string>
+    <string name="markdown_import_help">Top-level checkboxes become tasks; nested checkboxes become subtasks. Other details stay in notes. Review dates before importing.</string>
+    <string name="markdown_import_choose_file">Choose Markdown file</string>
+    <string name="markdown_import_empty">No checklist tasks found. Use lines such as - [ ] Task.</string>
+    <string name="markdown_import_too_large">Use a file under 1 MB with at most 1,000 tasks and 200 subtasks per task.</string>
+    <string name="markdown_import_read_failed">Could not read this file. Choose a UTF-8 Markdown file.</string>
+    <string name="markdown_import_success">Tasks imported</string>
+    <string name="markdown_import_destination">Choose at least one project or list.</string>
+    <string name="markdown_import_dates">Use dates from headings</string>
+    <string name="markdown_import_dates_hint">English or ISO dates; relative dates use %1$s.</string>
 </resources>

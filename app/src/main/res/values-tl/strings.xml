@@ -1631,4 +1631,16 @@
     <string name="bulk_reschedule_keep_time">Panatilihin ang oras ng bawat gawain</string>
     <string name="recurrence_preview_next">Susunod: %1$s</string>
     <string name="recurrence_preview_none">Hindi na mauulit pagkatapos nito</string>
+    <string name="markdown_import_title">Mag-import ng Markdown</string>
+    <string name="markdown_import_summary">Suriin ang checklist at magdagdag ng mga gawain sa proyekto o listahan.</string>
+    <string name="markdown_import_help">Ang pangunahing checkbox ay magiging gawain; ang nasa loob ay magiging subtask. Mananatili sa mga tala ang ibang detalye. Suriin ang mga petsa bago mag-import.</string>
+    <string name="markdown_import_choose_file">Pumili ng Markdown file</string>
+    <string name="markdown_import_empty">Walang nakitang gawain sa checklist. Gumamit ng mga linyang tulad ng - [ ] Gawain.</string>
+    <string name="markdown_import_too_large">Gumamit ng file na wala pang 1 MB na may hanggang 1,000 gawain at 200 subtask bawat gawain.</string>
+    <string name="markdown_import_read_failed">Hindi mabasa ang file. Pumili ng UTF-8 Markdown file.</string>
+    <string name="markdown_import_success">Na-import ang mga gawain</string>
+    <string name="markdown_import_destination">Pumili ng kahit isang proyekto o listahan.</string>
+    <string name="markdown_import_dates">Gamitin ang mga petsa sa heading</string>
+    <string name="markdown_import_dates_hint">Mga petsang Ingles o ISO; ang batayan ng mga relatibong petsa ay %1$s.</string>
+    <string name="new_task_organize">Ayusin</string>
 </resources>

@@ -1634,4 +1634,16 @@
     <string name="bulk_reschedule_keep_time">Her görevin saatini koru</string>
     <string name="recurrence_preview_next">Sonraki: %1$s</string>
     <string name="recurrence_preview_none">Bundan sonra tekrarlanmaz</string>
+    <string name="markdown_import_title">Markdown içe aktar</string>
+    <string name="markdown_import_summary">Kontrol listesini inceleyip bir proje veya listeye görev ekleyin.</string>
+    <string name="markdown_import_help">Ana onay kutuları görev, iç içe kutular alt görev olur. Diğer ayrıntılar notlarda kalır. İçe aktarmadan önce tarihleri kontrol edin.</string>
+    <string name="markdown_import_choose_file">Markdown dosyası seç</string>
+    <string name="markdown_import_empty">Kontrol listesinde görev bulunamadı. - [ ] Görev gibi satırlar kullanın.</string>
+    <string name="markdown_import_too_large">1 MB altında, en fazla 1.000 görev ve görev başına 200 alt görev içeren bir dosya kullanın.</string>
+    <string name="markdown_import_read_failed">Dosya okunamadı. UTF-8 Markdown dosyası seçin.</string>
+    <string name="markdown_import_success">Görevler içe aktarıldı</string>
+    <string name="markdown_import_destination">En az bir proje veya liste seçin.</string>
+    <string name="markdown_import_dates">Başlıklardaki tarihleri kullan</string>
+    <string name="markdown_import_dates_hint">İngilizce veya ISO tarihler; göreli tarihler %1$s temel alınarak hesaplanır.</string>
+    <string name="new_task_organize">Düzenle</string>
 </resources>

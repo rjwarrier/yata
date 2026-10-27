@@ -1638,4 +1638,16 @@
     <string name="bulk_reschedule_keep_time">Zachowaj godzinę każdego zadania</string>
     <string name="recurrence_preview_next">Następne: %1$s</string>
     <string name="recurrence_preview_none">Po tym już się nie powtarza</string>
+    <string name="markdown_import_title">Importuj Markdown</string>
+    <string name="markdown_import_summary">Przejrzyj listę kontrolną i dodaj zadania do projektu lub listy.</string>
+    <string name="markdown_import_help">Główne pola wyboru stają się zadaniami, a zagnieżdżone podzadaniami. Pozostałe szczegóły zostają w notatkach. Sprawdź daty przed importem.</string>
+    <string name="markdown_import_choose_file">Wybierz plik Markdown</string>
+    <string name="markdown_import_empty">Nie znaleziono zadań. Użyj wierszy takich jak - [ ] Zadanie.</string>
+    <string name="markdown_import_too_large">Użyj pliku poniżej 1 MB z maksymalnie 1000 zadań i 200 podzadań na zadanie.</string>
+    <string name="markdown_import_read_failed">Nie można odczytać pliku. Wybierz plik Markdown UTF-8.</string>
+    <string name="markdown_import_success">Zadania zaimportowane</string>
+    <string name="markdown_import_destination">Wybierz co najmniej jeden projekt lub listę.</string>
+    <string name="markdown_import_dates">Użyj dat z nagłówków</string>
+    <string name="markdown_import_dates_hint">Daty angielskie lub ISO; daty względne opierają się na %1$s.</string>
+    <string name="new_task_organize">Organizuj</string>
 </resources>

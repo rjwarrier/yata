@@ -1634,4 +1634,16 @@
     <string name="bulk_reschedule_keep_time">Giữ nguyên giờ của từng việc</string>
     <string name="recurrence_preview_next">Tiếp theo: %1$s</string>
     <string name="recurrence_preview_none">Không lặp lại sau lần này</string>
+    <string name="markdown_import_title">Nhập Markdown</string>
+    <string name="markdown_import_summary">Xem trước danh sách kiểm tra và thêm công việc vào dự án hoặc danh sách.</string>
+    <string name="markdown_import_help">Ô chọn cấp cao nhất trở thành công việc; ô lồng nhau trở thành việc phụ. Chi tiết khác được giữ trong ghi chú. Kiểm tra ngày trước khi nhập.</string>
+    <string name="markdown_import_choose_file">Chọn tệp Markdown</string>
+    <string name="markdown_import_empty">Không tìm thấy công việc. Dùng các dòng như - [ ] Công việc.</string>
+    <string name="markdown_import_too_large">Dùng tệp dưới 1 MB với tối đa 1.000 công việc và 200 việc phụ cho mỗi công việc.</string>
+    <string name="markdown_import_read_failed">Không đọc được tệp. Hãy chọn tệp Markdown UTF-8.</string>
+    <string name="markdown_import_success">Đã nhập công việc</string>
+    <string name="markdown_import_destination">Chọn ít nhất một dự án hoặc danh sách.</string>
+    <string name="markdown_import_dates">Dùng ngày trong tiêu đề</string>
+    <string name="markdown_import_dates_hint">Ngày tiếng Anh hoặc ISO; ngày tương đối lấy %1$s làm mốc.</string>
+    <string name="new_task_organize">Sắp xếp</string>
 </resources>

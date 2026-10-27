@@ -16,6 +16,8 @@ test-only changes belong in the commit message, not here, unless they change beh
 ## [Unreleased]
 
 ### Added
+- Import Markdown checklists into any project or list, with a task preview and selection,
+  nested subtasks, completion states, optional heading-based due dates, and preserved notes.
 - The first-sync review offers Restore from remote, with confirmation before replacing local data.
 - Projects can be organized into groups, the same way Tags and People already are: create a group
   from a project's editor or bulk-assign several projects to one from the Projects tab's selection
@@ -29,6 +31,7 @@ test-only changes belong in the commit message, not here, unless they change beh
 - The repeat editor previews the next three dates a rule produces, or says when the series ends.
 
 ### Fixed
+- The new-task editor's Organize label is now translated in all supported languages.
 - Returning from a project or other detail screen preserves the selected main tab instead of
   resetting it to the configured startup tab.
 - Numeric tracked-time values from cloud snapshots now survive Android import, database storage,

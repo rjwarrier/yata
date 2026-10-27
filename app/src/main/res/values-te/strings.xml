@@ -1631,4 +1631,16 @@
     <string name="bulk_reschedule_keep_time">ప్రతి టాస్క్ సమయాన్ని అలాగే ఉంచండి</string>
     <string name="recurrence_preview_next">తదుపరి: %1$s</string>
     <string name="recurrence_preview_none">దీని తర్వాత మళ్లీ పునరావృతం కాదు</string>
+    <string name="markdown_import_title">Markdown దిగుమతి</string>
+    <string name="markdown_import_summary">చెక్‌లిస్ట్‌ను చూసి ప్రాజెక్ట్ లేదా జాబితాకు పనులను జోడించండి.</string>
+    <string name="markdown_import_help">ప్రధాన చెక్‌బాక్స్‌లు పనులుగా, లోపలి చెక్‌బాక్స్‌లు ఉపపనులుగా మారతాయి. ఇతర వివరాలు గమనికల్లో ఉంటాయి. దిగుమతికి ముందు తేదీలను సరిచూడండి.</string>
+    <string name="markdown_import_choose_file">Markdown ఫైల్‌ను ఎంచుకోండి</string>
+    <string name="markdown_import_empty">చెక్‌లిస్ట్ పనులు కనిపించలేదు. - [ ] పని వంటి పంక్తులు వాడండి.</string>
+    <string name="markdown_import_too_large">1 MB కంటే చిన్న ఫైల్‌లో గరిష్ఠంగా 1,000 పనులు, ఒక్కో పనికి 200 ఉపపనులు ఉంచండి.</string>
+    <string name="markdown_import_read_failed">ఫైల్‌ను చదవలేకపోయాం. UTF-8 Markdown ఫైల్‌ను ఎంచుకోండి.</string>
+    <string name="markdown_import_success">పనులు దిగుమతయ్యాయి</string>
+    <string name="markdown_import_destination">కనీసం ఒక ప్రాజెక్ట్ లేదా జాబితాను ఎంచుకోండి.</string>
+    <string name="markdown_import_dates">శీర్షికల్లోని తేదీలను వాడండి</string>
+    <string name="markdown_import_dates_hint">ఆంగ్ల లేదా ISO తేదీలు; సాపేక్ష తేదీలకు ఆధారం %1$s.</string>
+    <string name="new_task_organize">నిర్వహించండి</string>
 </resources>

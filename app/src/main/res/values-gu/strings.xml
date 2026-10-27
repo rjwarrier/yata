@@ -1631,4 +1631,16 @@
     <string name="bulk_reschedule_keep_time">દરેક ટાસ્કનો સમય જાળવો</string>
     <string name="recurrence_preview_next">આગળ: %1$s</string>
     <string name="recurrence_preview_none">આ પછી ફરી પુનરાવર્તન થશે નહીં</string>
+    <string name="markdown_import_title">Markdown આયાત કરો</string>
+    <string name="markdown_import_summary">ચેકલિસ્ટ જોઈને પ્રોજેક્ટ અથવા યાદીમાં કાર્યો ઉમેરો.</string>
+    <string name="markdown_import_help">મુખ્ય ચેકબોક્સ કાર્યો બને છે; અંદરના ચેકબોક્સ પેટાકાર્યો બને છે. અન્ય વિગતો નોંધોમાં રહે છે. આયાત પહેલાં તારીખો તપાસો.</string>
+    <string name="markdown_import_choose_file">Markdown ફાઇલ પસંદ કરો</string>
+    <string name="markdown_import_empty">ચેકલિસ્ટમાં કાર્યો મળ્યાં નથી. - [ ] કાર્ય જેવી લાઇનો વાપરો.</string>
+    <string name="markdown_import_too_large">૧ MB કરતાં નાની ફાઇલમાં વધુમાં વધુ ૧,૦૦૦ કાર્યો અને દરેક કાર્યમાં ૨૦૦ પેટાકાર્યો રાખો.</string>
+    <string name="markdown_import_read_failed">ફાઇલ વાંચી શકાઈ નથી. UTF-8 Markdown ફાઇલ પસંદ કરો.</string>
+    <string name="markdown_import_success">કાર્યો આયાત થયાં</string>
+    <string name="markdown_import_destination">ઓછામાં ઓછો એક પ્રોજેક્ટ અથવા યાદી પસંદ કરો.</string>
+    <string name="markdown_import_dates">મથાળાની તારીખો વાપરો</string>
+    <string name="markdown_import_dates_hint">અંગ્રેજી અથવા ISO તારીખો; સાપેક્ષ તારીખોનો આધાર %1$s છે.</string>
+    <string name="new_task_organize">ગોઠવો</string>
 </resources>

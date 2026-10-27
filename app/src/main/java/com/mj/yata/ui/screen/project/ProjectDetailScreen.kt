@@ -75,6 +75,7 @@ fun ProjectDetailScreen(
     onNavigateBack: () -> Unit,
     onNavigateToTaskDetail: (String) -> Unit,
     onNavigateToTab: (Int) -> Unit,
+    onImportMarkdownRequested: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val projects by viewModel.projects.collectAsStateWithLifecycle()
@@ -384,6 +385,14 @@ fun ProjectDetailScreen(
                                     isManageSectionsSheetOpen = true
                                 },
                                 leadingIcon = { Icon(Icons.AutoMirrored.Filled.ViewList, contentDescription = null) }
+                            )
+                            YataDropdownMenuItem(
+                                text = { Text(stringResource(R.string.markdown_import_title)) },
+                                onClick = {
+                                    showMenu = false
+                                    onImportMarkdownRequested()
+                                },
+                                leadingIcon = { Icon(Icons.Default.Add, contentDescription = null) }
                             )
                             YataDropdownMenuItem(
                                 text = { Text(stringResource(R.string.action_export_as_markdown)) },

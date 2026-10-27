@@ -1634,4 +1634,16 @@
     <string name="bulk_reschedule_keep_time">Pertahankan waktu setiap tugas</string>
     <string name="recurrence_preview_next">Berikutnya: %1$s</string>
     <string name="recurrence_preview_none">Tidak berulang lagi setelah ini</string>
+    <string name="markdown_import_title">Impor Markdown</string>
+    <string name="markdown_import_summary">Pratinjau daftar periksa dan tambahkan tugas ke proyek atau daftar.</string>
+    <string name="markdown_import_help">Kotak centang utama menjadi tugas; yang bersarang menjadi subtugas. Detail lain disimpan dalam catatan. Periksa tanggal sebelum mengimpor.</string>
+    <string name="markdown_import_choose_file">Pilih berkas Markdown</string>
+    <string name="markdown_import_empty">Tidak ditemukan tugas daftar periksa. Gunakan baris seperti - [ ] Tugas.</string>
+    <string name="markdown_import_too_large">Gunakan berkas di bawah 1 MB dengan maksimal 1.000 tugas dan 200 subtugas per tugas.</string>
+    <string name="markdown_import_read_failed">Berkas tidak dapat dibaca. Pilih berkas Markdown UTF-8.</string>
+    <string name="markdown_import_success">Tugas diimpor</string>
+    <string name="markdown_import_destination">Pilih setidaknya satu proyek atau daftar.</string>
+    <string name="markdown_import_dates">Gunakan tanggal dari judul</string>
+    <string name="markdown_import_dates_hint">Tanggal bahasa Inggris atau ISO; tanggal relatif mengacu pada %1$s.</string>
+    <string name="new_task_organize">Atur</string>
 </resources>

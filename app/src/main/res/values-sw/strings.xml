@@ -1631,4 +1631,16 @@
     <string name="bulk_reschedule_keep_time">Hifadhi muda wa kila kazi</string>
     <string name="recurrence_preview_next">Zijazo: %1$s</string>
     <string name="recurrence_preview_none">Haitajirudia baada ya hii</string>
+    <string name="markdown_import_title">Ingiza Markdown</string>
+    <string name="markdown_import_summary">Hakiki orodha ya ukaguzi na uongeze kazi kwenye mradi au orodha.</string>
+    <string name="markdown_import_help">Visanduku vikuu huwa kazi; vilivyo ndani huwa kazi ndogo. Maelezo mengine hubaki kwenye madokezo. Hakiki tarehe kabla ya kuingiza.</string>
+    <string name="markdown_import_choose_file">Chagua faili la Markdown</string>
+    <string name="markdown_import_empty">Hakuna kazi zilizopatikana. Tumia mistari kama - [ ] Kazi.</string>
+    <string name="markdown_import_too_large">Tumia faili chini ya MB 1 lenye kazi zisizozidi 1,000 na kazi ndogo 200 kwa kila kazi.</string>
+    <string name="markdown_import_read_failed">Faili halikusomeka. Chagua faili la Markdown la UTF-8.</string>
+    <string name="markdown_import_success">Kazi zimeingizwa</string>
+    <string name="markdown_import_destination">Chagua angalau mradi au orodha moja.</string>
+    <string name="markdown_import_dates">Tumia tarehe za vichwa</string>
+    <string name="markdown_import_dates_hint">Tarehe za Kiingereza au ISO; tarehe linganishi hutumia %1$s kama msingi.</string>
+    <string name="new_task_organize">Panga</string>
 </resources>

@@ -72,6 +72,7 @@ fun ListDetailScreen(
     onNavigateBack: () -> Unit,
     onNavigateToTaskDetail: (String) -> Unit,
     onNavigateToTab: (Int) -> Unit,
+    onImportMarkdownRequested: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val lists by viewModel.lists.collectAsStateWithLifecycle()
@@ -352,6 +353,14 @@ fun ListDetailScreen(
                                     isEditSheetOpen = true
                                 },
                                 leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) }
+                            )
+                            YataDropdownMenuItem(
+                                text = { Text(stringResource(R.string.markdown_import_title)) },
+                                onClick = {
+                                    showMenu = false
+                                    onImportMarkdownRequested()
+                                },
+                                leadingIcon = { Icon(Icons.Default.Add, contentDescription = null) }
                             )
                             YataDropdownMenuItem(
                                 text = { Text(stringResource(R.string.action_export_as_image)) },

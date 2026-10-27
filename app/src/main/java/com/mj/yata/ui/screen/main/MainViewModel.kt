@@ -32,6 +32,7 @@ import com.mj.yata.util.capitalizeTaskSentence
 import com.mj.yata.ui.error.AppErrorBus
 import com.mj.yata.ui.sheets.NewTaskDraft
 import com.mj.yata.util.NaturalLanguageParser
+import com.mj.yata.util.MarkdownDocument
 import com.mj.yata.util.initialsFor
 import com.mj.yata.util.withParsedQuickAdd
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -43,6 +44,13 @@ import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.util.UUID
 import javax.inject.Inject
+
+data class MarkdownImportStatus(
+    val sessionId: String,
+    val running: Boolean = false,
+    val imported: Boolean = false,
+    val failed: Boolean = false
+)
 
 enum class WelcomeSetupPreset {
     SIMPLE_LIST,
@@ -1826,6 +1834,48 @@ data class WeekendRescheduleWarning(
                 else -> "none"
             }
             repository.setTaskPriority(id, nextPriority)
+        }
+    }
+
+    private val _markdownImportStatus = MutableStateFlow<MarkdownImportStatus?>(null)
+    val markdownImportStatus = _markdownImportStatus.asStateFlow()
+
+    fun importMarkdownTasks(
+        sessionId: String,
+        document: MarkdownDocument,
+        selectedIndices: Set<Int>,
+        projectId: String?,
+        listId: String?,
+        useDates: Boolean
+    ) {
+        val previous = _markdownImportStatus.value
+        if (previous?.running == true || (previous?.sessionId == sessionId && previous.imported)) return
+        _markdownImportStatus.value = MarkdownImportStatus(sessionId, running = true)
+        safeLaunch {
+            try {
+                // Recheck the destination at save time, rather than trusting a stale picker.
+                require(projectId != null || listId != null)
+                require(projectId == null || repository.getProjects().first().any { it.id == projectId && !it.archived })
+                require(listId == null || repository.getLists().first().any { it.id == listId && !it.archived })
+                val existing = if (projectId != null) repository.getTasksForProject(projectId).first()
+                    else repository.getTasksForList(requireNotNull(listId)).first()
+                val assignees = if (userPreferences.autoAssignToMeFlow.first()) {
+                    repository.getPeople().first().firstOrNull { it.isMe }?.let { listOf(it.id) }.orEmpty()
+                } else emptyList()
+                val priority = userPreferences.defaultPriorityFlow.first()
+                val tasks = withContext(Dispatchers.Default) {
+                    document.createTasks(
+                        selectedIndices, projectId, listId, useDates, assignees, priority,
+                        firstSortOrder = (existing.maxOfOrNull { it.sortOrder } ?: -1) + 1
+                    )
+                }
+                // One transaction for tasks and their subtasks, one widget/sync notification.
+                repository.upsertTasks(tasks, resyncReminder = false)
+                _markdownImportStatus.value = MarkdownImportStatus(sessionId, imported = true)
+            } catch (t: Throwable) {
+                _markdownImportStatus.value = MarkdownImportStatus(sessionId, failed = true)
+                throw t
+            }
         }
     }
 

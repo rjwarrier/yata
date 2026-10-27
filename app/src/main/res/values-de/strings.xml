@@ -1791,4 +1791,16 @@
     <string name="bulk_reschedule_keep_time">Uhrzeit jeder Aufgabe beibehalten</string>
     <string name="recurrence_preview_next">Nächste: %1$s</string>
     <string name="recurrence_preview_none">Wird danach nicht mehr wiederholt</string>
+    <string name="markdown_import_title">Markdown importieren</string>
+    <string name="markdown_import_summary">Checkliste prüfen und Aufgaben zu einem Projekt oder einer Liste hinzufügen.</string>
+    <string name="markdown_import_help">Oberste Kontrollkästchen werden Aufgaben, verschachtelte werden Teilaufgaben. Weitere Angaben bleiben in den Notizen. Daten vor dem Import prüfen.</string>
+    <string name="markdown_import_choose_file">Markdown-Datei auswählen</string>
+    <string name="markdown_import_empty">Keine Checklistenaufgaben gefunden. Verwende Zeilen wie - [ ] Aufgabe.</string>
+    <string name="markdown_import_too_large">Verwende eine Datei unter 1 MB mit höchstens 1.000 Aufgaben und 200 Teilaufgaben pro Aufgabe.</string>
+    <string name="markdown_import_read_failed">Datei konnte nicht gelesen werden. Wähle eine Markdown-Datei in UTF-8.</string>
+    <string name="markdown_import_success">Aufgaben importiert</string>
+    <string name="markdown_import_destination">Wähle mindestens ein Projekt oder eine Liste.</string>
+    <string name="markdown_import_dates">Daten aus Überschriften verwenden</string>
+    <string name="markdown_import_dates_hint">Englische oder ISO-Daten; relative Daten beziehen sich auf %1$s.</string>
+    <string name="new_task_organize">Organisieren</string>
 </resources>

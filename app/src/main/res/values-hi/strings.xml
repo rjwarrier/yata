@@ -1634,4 +1634,16 @@
     <string name="bulk_reschedule_keep_time">हर कार्य का समय बनाए रखें</string>
     <string name="recurrence_preview_next">अगली: %1$s</string>
     <string name="recurrence_preview_none">इसके बाद दोहराया नहीं जाएगा</string>
+    <string name="markdown_import_title">Markdown आयात करें</string>
+    <string name="markdown_import_summary">चेकलिस्ट देखकर किसी प्रोजेक्ट या सूची में कार्य जोड़ें।</string>
+    <string name="markdown_import_help">मुख्य चेकबॉक्स कार्य बनते हैं; अंदर के चेकबॉक्स उपकार्य बनते हैं। बाकी विवरण नोट्स में रहते हैं। आयात से पहले तारीखें जाँचें।</string>
+    <string name="markdown_import_choose_file">Markdown फ़ाइल चुनें</string>
+    <string name="markdown_import_empty">चेकलिस्ट में कार्य नहीं मिले। - [ ] कार्य जैसी पंक्तियाँ इस्तेमाल करें।</string>
+    <string name="markdown_import_too_large">१ MB से छोटी फ़ाइल में अधिकतम १,००० कार्य और प्रति कार्य २०० उपकार्य रखें।</string>
+    <string name="markdown_import_read_failed">फ़ाइल पढ़ी नहीं जा सकी। UTF-8 Markdown फ़ाइल चुनें।</string>
+    <string name="markdown_import_success">कार्य आयात हो गए</string>
+    <string name="markdown_import_destination">कम से कम एक प्रोजेक्ट या सूची चुनें।</string>
+    <string name="markdown_import_dates">शीर्षकों की तारीखें इस्तेमाल करें</string>
+    <string name="markdown_import_dates_hint">अंग्रेज़ी या ISO तारीखें; सापेक्ष तारीखों का आधार %1$s है।</string>
+    <string name="new_task_organize">व्यवस्थित करें</string>
 </resources>

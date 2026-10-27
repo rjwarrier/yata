@@ -1636,4 +1636,16 @@
     <string name="bulk_reschedule_keep_time">Păstrează ora fiecărei sarcini</string>
     <string name="recurrence_preview_next">Următoarele: %1$s</string>
     <string name="recurrence_preview_none">Nu se mai repetă după aceasta</string>
+    <string name="markdown_import_title">Importă Markdown</string>
+    <string name="markdown_import_summary">Verifică o listă și adaugă sarcini într-un proiect sau o listă.</string>
+    <string name="markdown_import_help">Casetele principale devin sarcini; cele imbricate devin subsarcini. Celelalte detalii rămân în note. Verifică datele înainte de import.</string>
+    <string name="markdown_import_choose_file">Alege fișierul Markdown</string>
+    <string name="markdown_import_empty">Nu s-au găsit sarcini. Folosește linii precum - [ ] Sarcină.</string>
+    <string name="markdown_import_too_large">Folosește un fișier sub 1 MB cu cel mult 1.000 de sarcini și 200 de subsarcini pe sarcină.</string>
+    <string name="markdown_import_read_failed">Fișierul nu a putut fi citit. Alege un fișier Markdown UTF-8.</string>
+    <string name="markdown_import_success">Sarcini importate</string>
+    <string name="markdown_import_destination">Alege cel puțin un proiect sau o listă.</string>
+    <string name="markdown_import_dates">Folosește datele din titluri</string>
+    <string name="markdown_import_dates_hint">Date în engleză sau ISO; datele relative se bazează pe %1$s.</string>
+    <string name="new_task_organize">Organizează</string>
 </resources>

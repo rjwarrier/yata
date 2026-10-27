@@ -1631,4 +1631,16 @@
     <string name="bulk_reschedule_keep_time">ஒவ்வொரு பணியின் நேரத்தையும் வைத்திருக்கவும்</string>
     <string name="recurrence_preview_next">அடுத்தவை: %1$s</string>
     <string name="recurrence_preview_none">இதற்குப் பிறகு மீண்டும் வராது</string>
+    <string name="markdown_import_title">Markdown இறக்குமதி</string>
+    <string name="markdown_import_summary">சரிபார்ப்புப் பட்டியலைப் பார்த்து திட்டம் அல்லது பட்டியலில் பணிகளைச் சேர்க்கவும்.</string>
+    <string name="markdown_import_help">முதன்மைத் தேர்வுப்பெட்டிகள் பணிகளாகவும் உள்ளமைந்தவை துணைப் பணிகளாகவும் மாறும். பிற விவரங்கள் குறிப்புகளில் இருக்கும். இறக்குமதிக்கு முன் தேதிகளைச் சரிபார்க்கவும்.</string>
+    <string name="markdown_import_choose_file">Markdown கோப்பைத் தேர்ந்தெடுக்கவும்</string>
+    <string name="markdown_import_empty">சரிபார்ப்புப் பட்டியல் பணிகள் இல்லை. - [ ] பணி போன்ற வரிகளைப் பயன்படுத்தவும்.</string>
+    <string name="markdown_import_too_large">1 MB-க்கும் குறைவான கோப்பில் அதிகபட்சம் 1,000 பணிகளும் ஒவ்வொரு பணிக்கும் 200 துணைப் பணிகளும் இருக்கலாம்.</string>
+    <string name="markdown_import_read_failed">கோப்பைப் படிக்க முடியவில்லை. UTF-8 Markdown கோப்பைத் தேர்ந்தெடுக்கவும்.</string>
+    <string name="markdown_import_success">பணிகள் இறக்குமதி செய்யப்பட்டன</string>
+    <string name="markdown_import_destination">குறைந்தது ஒரு திட்டம் அல்லது பட்டியலைத் தேர்ந்தெடுக்கவும்.</string>
+    <string name="markdown_import_dates">தலைப்புகளில் உள்ள தேதிகளைப் பயன்படுத்தவும்</string>
+    <string name="markdown_import_dates_hint">ஆங்கிலம் அல்லது ISO தேதிகள்; சார்புத் தேதிகளின் அடிப்படை %1$s.</string>
+    <string name="new_task_organize">ஒழுங்கமைக்கவும்</string>
 </resources>

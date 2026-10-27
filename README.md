@@ -85,7 +85,7 @@ YATA is a single-user, offline-first task manager. Tasks can be organized under 
 
 - Full JSON backup/restore (including profile photos), CSV import/export
 - Multi-device sync over **GitHub**, **SFTP**, **FTPS**, or **FTP** — three-way merge, deletion propagation, optional end-to-end encryption, automatic recovery backups
-- `.ics` calendar export, Markdown export
+- `.ics` calendar export, Markdown export and checklist import into any project or list
 - Branded PDF / image export for any project, tag, or person
 
 </details>
@@ -105,6 +105,21 @@ YATA is a single-user, offline-first task manager. Tasks can be organized under 
 
 - Android 8.0 (API 26) or newer
 - To build: JDK 17 and the Android SDK (compileSdk 35), or a recent Android Studio
+
+## Importing Markdown checklists
+
+Open **Import Markdown** from a project/list's overflow menu or **Settings → Data Management**.
+Choose a UTF-8 `.md` file, select a project, a list, or both, then review and select tasks before
+tapping **Import**. Checked tasks are shown in the preview but are initially unselected.
+
+- Top-level `- [ ]` / `- [x]` items become tasks; indented checkboxes become nested subtasks.
+- Headings, ordinary bullet details, links, and reference sections are retained in task notes.
+  Tables, prose, and fenced code examples do not become tasks.
+- Due dates come from English date headings such as `## By Sat 7 Nov` or ISO headings such as
+  `## 2026-11-07`. An `Updated: 27 Oct 2026` line anchors the year and relative headings like
+  `Today` and `Tomorrow`; otherwise the current date is used. Preparation deadlines stay separate
+  from event dates mentioned in task text. A trailing `(due 2026-11-07)` can override the heading.
+- Turn off **Use dates from headings** to import without due dates. No reminders are created.
 
 ## Building
 

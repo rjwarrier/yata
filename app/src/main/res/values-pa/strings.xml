@@ -1631,4 +1631,16 @@
     <string name="bulk_reschedule_keep_time">ਹਰ ਕਾਰਜ ਦਾ ਸਮਾਂ ਬਰਕਰਾਰ ਰੱਖੋ</string>
     <string name="recurrence_preview_next">ਅਗਲੀਆਂ: %1$s</string>
     <string name="recurrence_preview_none">ਇਸ ਤੋਂ ਬਾਅਦ ਦੁਹਰਾਇਆ ਨਹੀਂ ਜਾਵੇਗਾ</string>
+    <string name="markdown_import_title">Markdown ਆਯਾਤ ਕਰੋ</string>
+    <string name="markdown_import_summary">ਚੈੱਕਲਿਸਟ ਵੇਖ ਕੇ ਕਿਸੇ ਪ੍ਰੋਜੈਕਟ ਜਾਂ ਸੂਚੀ ਵਿੱਚ ਕੰਮ ਜੋੜੋ।</string>
+    <string name="markdown_import_help">ਮੁੱਖ ਚੈੱਕਬਾਕਸ ਕੰਮ ਬਣਦੇ ਹਨ; ਅੰਦਰਲੇ ਚੈੱਕਬਾਕਸ ਉਪਕੰਮ ਬਣਦੇ ਹਨ। ਹੋਰ ਵੇਰਵੇ ਨੋਟਾਂ ਵਿੱਚ ਰਹਿੰਦੇ ਹਨ। ਆਯਾਤ ਤੋਂ ਪਹਿਲਾਂ ਤਾਰੀਖਾਂ ਵੇਖੋ।</string>
+    <string name="markdown_import_choose_file">Markdown ਫਾਈਲ ਚੁਣੋ</string>
+    <string name="markdown_import_empty">ਚੈੱਕਲਿਸਟ ਵਿੱਚ ਕੰਮ ਨਹੀਂ ਮਿਲੇ। - [ ] ਕੰਮ ਵਰਗੀਆਂ ਲਾਈਨਾਂ ਵਰਤੋ।</string>
+    <string name="markdown_import_too_large">੧ MB ਤੋਂ ਛੋਟੀ ਫਾਈਲ ਵਿੱਚ ਵੱਧ ਤੋਂ ਵੱਧ ੧,੦੦੦ ਕੰਮ ਅਤੇ ਹਰ ਕੰਮ ਵਿੱਚ ੨੦੦ ਉਪਕੰਮ ਰੱਖੋ।</string>
+    <string name="markdown_import_read_failed">ਫਾਈਲ ਪੜ੍ਹੀ ਨਹੀਂ ਜਾ ਸਕੀ। UTF-8 Markdown ਫਾਈਲ ਚੁਣੋ।</string>
+    <string name="markdown_import_success">ਕੰਮ ਆਯਾਤ ਹੋ ਗਏ</string>
+    <string name="markdown_import_destination">ਘੱਟੋ-ਘੱਟ ਇੱਕ ਪ੍ਰੋਜੈਕਟ ਜਾਂ ਸੂਚੀ ਚੁਣੋ।</string>
+    <string name="markdown_import_dates">ਸਿਰਲੇਖਾਂ ਦੀਆਂ ਤਾਰੀਖਾਂ ਵਰਤੋ</string>
+    <string name="markdown_import_dates_hint">ਅੰਗਰੇਜ਼ੀ ਜਾਂ ISO ਤਾਰੀਖਾਂ; ਸਾਪੇਖ ਤਾਰੀਖਾਂ ਦਾ ਆਧਾਰ %1$s ਹੈ।</string>
+    <string name="new_task_organize">ਤਰਤੀਬ ਦਿਓ</string>
 </resources>

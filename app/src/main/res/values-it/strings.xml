@@ -1634,4 +1634,16 @@
     <string name="bulk_reschedule_keep_time">Mantieni l’orario di ogni attività</string>
     <string name="recurrence_preview_next">Prossime: %1$s</string>
     <string name="recurrence_preview_none">Non si ripete dopo questa</string>
+    <string name="markdown_import_title">Importa Markdown</string>
+    <string name="markdown_import_summary">Controlla una lista e aggiungi attività a un progetto o elenco.</string>
+    <string name="markdown_import_help">Le caselle principali diventano attività; quelle annidate diventano sottoattività. Gli altri dettagli restano nelle note. Controlla le date prima di importare.</string>
+    <string name="markdown_import_choose_file">Scegli file Markdown</string>
+    <string name="markdown_import_empty">Nessuna attività trovata. Usa righe come - [ ] Attività.</string>
+    <string name="markdown_import_too_large">Usa un file inferiore a 1 MB con al massimo 1.000 attività e 200 sottoattività per attività.</string>
+    <string name="markdown_import_read_failed">Impossibile leggere il file. Scegli un file Markdown UTF-8.</string>
+    <string name="markdown_import_success">Attività importate</string>
+    <string name="markdown_import_destination">Scegli almeno un progetto o elenco.</string>
+    <string name="markdown_import_dates">Usa le date dei titoli</string>
+    <string name="markdown_import_dates_hint">Date in inglese o ISO; le date relative si basano su %1$s.</string>
+    <string name="new_task_organize">Organizza</string>
 </resources>

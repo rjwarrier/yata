@@ -1634,4 +1634,16 @@
     <string name="bulk_reschedule_keep_time">Behåll varje uppgifts tid</string>
     <string name="recurrence_preview_next">Nästa: %1$s</string>
     <string name="recurrence_preview_none">Upprepas inte efter denna</string>
+    <string name="markdown_import_title">Importera Markdown</string>
+    <string name="markdown_import_summary">Granska en checklista och lägg till uppgifter i ett projekt eller en lista.</string>
+    <string name="markdown_import_help">Översta kryssrutor blir uppgifter; nästlade blir deluppgifter. Övriga detaljer finns kvar i anteckningarna. Granska datumen före import.</string>
+    <string name="markdown_import_choose_file">Välj Markdown-fil</string>
+    <string name="markdown_import_empty">Inga uppgifter hittades. Använd rader som - [ ] Uppgift.</string>
+    <string name="markdown_import_too_large">Använd en fil under 1 MB med högst 1 000 uppgifter och 200 deluppgifter per uppgift.</string>
+    <string name="markdown_import_read_failed">Filen kunde inte läsas. Välj en Markdown-fil i UTF-8.</string>
+    <string name="markdown_import_success">Uppgifter importerade</string>
+    <string name="markdown_import_destination">Välj minst ett projekt eller en lista.</string>
+    <string name="markdown_import_dates">Använd datum från rubriker</string>
+    <string name="markdown_import_dates_hint">Engelska datum eller ISO-datum; relativa datum utgår från %1$s.</string>
+    <string name="new_task_organize">Organisera</string>
 </resources>

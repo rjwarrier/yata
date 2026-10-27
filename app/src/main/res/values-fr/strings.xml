@@ -1636,4 +1636,16 @@
     <string name="bulk_reschedule_keep_time">Conserver l’heure de chaque tâche</string>
     <string name="recurrence_preview_next">Prochaines : %1$s</string>
     <string name="recurrence_preview_none">Ne se répète plus après celle-ci</string>
+    <string name="markdown_import_title">Importer du Markdown</string>
+    <string name="markdown_import_summary">Vérifiez une liste de tâches et ajoutez-les à un projet ou une liste.</string>
+    <string name="markdown_import_help">Les cases principales deviennent des tâches et les cases imbriquées des sous-tâches. Les autres détails restent dans les notes. Vérifiez les dates avant l’importation.</string>
+    <string name="markdown_import_choose_file">Choisir un fichier Markdown</string>
+    <string name="markdown_import_empty">Aucune tâche trouvée. Utilisez des lignes comme - [ ] Tâche.</string>
+    <string name="markdown_import_too_large">Utilisez un fichier de moins de 1 Mo avec au plus 1 000 tâches et 200 sous-tâches par tâche.</string>
+    <string name="markdown_import_read_failed">Impossible de lire ce fichier. Choisissez un fichier Markdown UTF-8.</string>
+    <string name="markdown_import_success">Tâches importées</string>
+    <string name="markdown_import_destination">Choisissez au moins un projet ou une liste.</string>
+    <string name="markdown_import_dates">Utiliser les dates des titres</string>
+    <string name="markdown_import_dates_hint">Dates en anglais ou ISO ; les dates relatives se basent sur %1$s.</string>
+    <string name="new_task_organize">Organiser</string>
 </resources>

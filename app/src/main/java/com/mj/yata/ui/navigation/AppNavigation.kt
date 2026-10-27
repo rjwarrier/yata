@@ -224,6 +224,9 @@ fun AppNavigation(
             ProjectDetailScreen(
                 viewModel = viewModel,
                 projectId = projectId,
+                onImportMarkdownRequested = {
+                    navController.navigate(Screen.MarkdownImport.createRoute(projectId = projectId))
+                },
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToTaskDetail = { taskId ->
                     navController.navigate(Screen.TaskDetail.createRoute(taskId))
@@ -313,6 +316,9 @@ fun AppNavigation(
             ListDetailScreen(
                 viewModel = viewModel,
                 listId = listId,
+                onImportMarkdownRequested = {
+                    navController.navigate(Screen.MarkdownImport.createRoute(listId = listId))
+                },
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToTaskDetail = { taskId ->
                     navController.navigate(Screen.TaskDetail.createRoute(taskId))
@@ -348,6 +354,40 @@ fun AppNavigation(
                     navController.navigate(Screen.TaskDetail.createRoute(taskId))
                 },
                 onNavigateToTab = onNavigateToTab
+            )
+        }
+
+        composable(
+            route = Screen.MarkdownImport.route,
+            arguments = listOf(
+                navArgument("projectId") { type = NavType.StringType; defaultValue = "" },
+                navArgument("listId") { type = NavType.StringType; defaultValue = "" }
+            )
+        ) { backStackEntry ->
+            val viewModel: MainViewModel = backStackEntry.sharedViewModel(navController)
+            com.mj.yata.ui.screen.markdownimport.MarkdownImportScreen(
+                viewModel = viewModel,
+                initialProjectId = backStackEntry.arguments?.getString("projectId")?.takeIf { it.isNotBlank() },
+                initialListId = backStackEntry.arguments?.getString("listId")?.takeIf { it.isNotBlank() },
+                onNavigateBack = { navController.popBackStack() },
+                onImported = { projectId, listId ->
+                    val destination = projectId?.let { Screen.ProjectDetail.createRoute(it) }
+                        ?: Screen.ListDetail.createRoute(requireNotNull(listId))
+                    val previous = navController.previousBackStackEntry
+                    val returningToDestination =
+                        (projectId != null && previous?.destination?.route == Screen.ProjectDetail.route &&
+                            previous.arguments?.getString("projectId") == projectId) ||
+                        (projectId == null && previous?.destination?.route == Screen.ListDetail.route &&
+                            previous.arguments?.getString("listId") == listId)
+                    if (returningToDestination) {
+                        navController.popBackStack()
+                    } else {
+                        navController.navigate(destination) {
+                            popUpTo(Screen.MarkdownImport.route) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    }
+                }
             )
         }
 
@@ -389,6 +429,7 @@ fun AppNavigation(
                 onExportRequested = onExportRequested,
                 onImportRequested = onImportRequested,
                 onImportPlainTextRequested = onImportPlainTextRequested,
+                onImportMarkdownRequested = { navController.navigate(Screen.MarkdownImport.createRoute()) },
                 onExportCsvRequested = onExportCsvRequested,
                 onExportIcsRequested = onExportIcsRequested,
                 onNavigateToTab = onNavigateToTab,
@@ -419,6 +460,7 @@ fun AppNavigation(
                 onExportRequested = onExportRequested,
                 onImportRequested = onImportRequested,
                 onImportPlainTextRequested = onImportPlainTextRequested,
+                onImportMarkdownRequested = { navController.navigate(Screen.MarkdownImport.createRoute()) },
                 onExportCsvRequested = onExportCsvRequested,
                 onExportIcsRequested = onExportIcsRequested,
                 onNavigateToTab = onNavigateToTab,
