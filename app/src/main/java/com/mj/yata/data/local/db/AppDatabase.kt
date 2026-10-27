@@ -25,7 +25,7 @@ import org.json.JSONArray
         SubtaskEntity::class,
         TaskCommentEntity::class
     ],
-    version = 34,
+    version = 35,
     // Exported to app/schemas — gives migration tests real historical schemas to open, and lets
     // purely-additive future changes use Room auto-migrations instead of hand-written ones.
     exportSchema = true
@@ -381,10 +381,29 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_34_35 = object : Migration(34, 35) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE tasks ADD COLUMN trackedMinutes INTEGER DEFAULT NULL")
+            }
+        }
+
         val MIGRATION_33_34 = object : Migration(33, 34) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("CREATE TABLE IF NOT EXISTS `project_groups` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `color` TEXT NOT NULL, PRIMARY KEY(`id`))")
-                db.execSQL("ALTER TABLE projects ADD COLUMN groupId TEXT DEFAULT NULL")
+                // Unlike tags.groupId/people.groupId (a plain ALTER was enough there), ProjectEntity
+                // declares a foreign key on groupId - SQLite's ALTER TABLE ADD COLUMN cannot attach a
+                // FK constraint to an existing table, so a column-only ALTER here leaves `projects`
+                // structurally short of what Room's compiled schema expects and fails Room's identity
+                // hash check on next open. Rebuild the table instead, same pattern as MIGRATION_6_7.
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `projects_new` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `color` TEXT NOT NULL, `icon` TEXT NOT NULL, `dueDate` TEXT, `starred` INTEGER NOT NULL, `commonTagIds` TEXT NOT NULL, `defaultReminder` TEXT, `description` TEXT, `excludeFromToday` INTEGER NOT NULL, `sortOrder` INTEGER NOT NULL, `archived` INTEGER NOT NULL, `sectionNames` TEXT NOT NULL, `groupId` TEXT, PRIMARY KEY(`id`), FOREIGN KEY(`groupId`) REFERENCES `project_groups`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )"
+                )
+                db.execSQL(
+                    "INSERT INTO `projects_new` (`id`,`name`,`color`,`icon`,`dueDate`,`starred`,`commonTagIds`,`defaultReminder`,`description`,`excludeFromToday`,`sortOrder`,`archived`,`sectionNames`) " +
+                        "SELECT `id`,`name`,`color`,`icon`,`dueDate`,`starred`,`commonTagIds`,`defaultReminder`,`description`,`excludeFromToday`,`sortOrder`,`archived`,`sectionNames` FROM `projects`"
+                )
+                db.execSQL("DROP TABLE `projects`")
+                db.execSQL("ALTER TABLE `projects_new` RENAME TO `projects`")
                 db.execSQL("CREATE INDEX IF NOT EXISTS `index_projects_groupId` ON `projects` (`groupId`)")
             }
         }

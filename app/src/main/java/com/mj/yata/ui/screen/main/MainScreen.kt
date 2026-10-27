@@ -138,6 +138,7 @@ fun MainScreen(
     var showClearSyncLockDialog by remember { mutableStateOf(false) }
     var clearSyncLockDialogMessage by remember { mutableStateOf<String?>(null) }
     var initialSyncMergeMessage by remember { mutableStateOf<String?>(null) }
+    var confirmFirstSyncRestore by remember { mutableStateOf(false) }
     var emptyLocalSyncMessage by remember { mutableStateOf<String?>(null) }
     var isClearingSyncLock by remember { mutableStateOf(false) }
 
@@ -210,7 +211,9 @@ fun MainScreen(
 
     // Main tabs state: 0=Today, 1=Projects, 2=People, 3=Tags, 4=Upcoming (Week/Month toggle inside)
     var selectedTab by rememberSaveable { mutableIntStateOf(if (initialTab >= 0) initialTab.coerceIn(0, 4) else 0) }
-    var restoredHomeTab by remember { mutableStateOf(initialTab >= 0) }
+    // Keep the initialization guard with selectedTab in the navigation entry's saved state.
+    // Returning from a detail screen must not reapply the startup tab over the restored tab.
+    var restoredHomeTab by rememberSaveable { mutableStateOf(initialTab >= 0) }
     var calendarSelectedDay by remember { mutableStateOf(java.time.LocalDate.now()) }
 
     // Confetti trigger
@@ -1392,7 +1395,17 @@ fun MainScreen(
         AlertDialog(
             onDismissRequest = { initialSyncMergeMessage = null },
             title = { Text(stringResource(R.string.settings_initial_sync_merge_title)) },
-            text = { Text(initialSyncMergeMessage ?: stringResource(R.string.settings_initial_sync_merge_body)) },
+            text = {
+                Column {
+                    Text(initialSyncMergeMessage ?: stringResource(R.string.settings_initial_sync_merge_body))
+                    TextButton(onClick = {
+                        initialSyncMergeMessage = null
+                        confirmFirstSyncRestore = true
+                    }) {
+                        Text(stringResource(R.string.settings_empty_local_sync_restore_action))
+                    }
+                }
+            },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -1406,6 +1419,23 @@ fun MainScreen(
             dismissButton = {
                 TextButton(onClick = { initialSyncMergeMessage = null }) {
                     Text(stringResource(R.string.action_cancel))
+                }
+            }
+        )
+    }
+
+    if (confirmFirstSyncRestore) {
+        com.mj.yata.ui.widgets.FirstSyncRestoreDialog(
+            onDismiss = { confirmFirstSyncRestore = false },
+            onRestore = {
+                confirmFirstSyncRestore = false
+                viewModel.restoreLatestRemoteSnapshot { result ->
+                    scope.launch {
+                        snackbarHostState.showSnackbar(
+                            if (result.isSuccess) context.getString(R.string.settings_remote_restore_success)
+                            else context.getString(R.string.settings_remote_restore_failed, result.exceptionOrNull()?.message.orEmpty())
+                        )
+                    }
                 }
             }
         )

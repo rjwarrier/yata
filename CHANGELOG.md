@@ -16,6 +16,7 @@ test-only changes belong in the commit message, not here, unless they change beh
 ## [Unreleased]
 
 ### Added
+- The first-sync review offers Restore from remote, with confirmation before replacing local data.
 - Projects can be organized into groups, the same way Tags and People already are: create a group
   from a project's editor or bulk-assign several projects to one from the Projects tab's selection
   toolbar. A project's group shows as a label on its card.
@@ -28,6 +29,13 @@ test-only changes belong in the commit message, not here, unless they change beh
 - The repeat editor previews the next three dates a rule produces, or says when the series ends.
 
 ### Fixed
+- Returning from a project or other detail screen preserves the selected main tab instead of
+  resetting it to the configured startup tab.
+- Numeric tracked-time values from cloud snapshots now survive Android import, database storage,
+  and export, fixing the repeated `trackedMinutes` verification failure after a fresh sync.
+- GitHub sync accepts an absent tracked-time value and an explicit null as equivalent, fixing
+  repeated local-verification failures. Identical local and remote snapshots can establish their
+  sync baseline without repeatedly asking to review the first sync.
 - "Tonight" can no longer be picked once tonight's snooze time has passed, which used to leave
   the task already overdue.
 - Editing a task's repeat rule from its detail screen now starts from the task's due date rather
@@ -36,6 +44,9 @@ test-only changes belong in the commit message, not here, unless they change beh
   and older, which cap how many items a single database lookup can name.
 
 ### Changed
+- The floating navigation bar uses icons only, with accessible tab names retained.
+- Project groups now appear as collapsible sections in the Projects tab, with a separate Ungrouped
+  section and drag reordering within each group.
 - Saving, completing or deleting a task no longer stalls the UI on disk writes, and large task
   lists stay smoother after each change: task data is now prepared off the main thread, the app
   no longer loads everything twice at launch, and changing one setting no longer makes every

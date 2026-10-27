@@ -570,6 +570,8 @@
     <string name="settings_backup_passphrase">காப்புப்பிரதி மறைகுறியாக்க கடவுச்சொற்றொடர்</string>
     <string name="settings_backup_passphrase_set">ஒரு கடவுச்சொற்றொடர் ஏற்கனவே அமைக்கப்பட்டுள்ளது. அதைத் தக்க வைக்க இதைக் காலியாக விடவும், அல்லது மாற்ற புதியதைத் தட்டச்சு செய்யவும்.</string>
     <string name="settings_backup_passphrase_hint">காப்புப்பிரதி கோப்பு உங்கள் சாதனத்தை விட்டு வெளியேறும் முன் அதை மறைகுறியாக்குகிறது, எனவே நீங்கள் முழுவதுமாகக் கட்டுப்படுத்தாத சர்வரிலும் அது தனிப்பட்டதாகவே இருக்கும். ஒரு நகலைப் பாதுகாப்பான இடத்தில் வைத்திருங்கள் — இந்தக் கடவுச்சொற்றொடர் இல்லாமல் காப்புப்பிரதியை இந்த போனிலோ வேறு எந்த போனிலோ மீட்க முடியாது.</string>
+    <string name="cd_reveal_backup_passphrase">காப்புப்பிரதி மறைகுறியாக்க கடவுச்சொற்றொடரைக் காட்டு</string>
+    <string name="cd_hide_backup_passphrase">காப்புப்பிரதி மறைகுறியாக்க கடவுச்சொற்றொடரை மறை</string>
     <string name="settings_sftp_host">ஹோஸ்ட்</string>
     <string name="settings_sftp_port">போர்ட்</string>
     <string name="settings_sftp_username">பயனர்பெயர்</string>

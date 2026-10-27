@@ -486,6 +486,8 @@
     <string name="settings_backup_passphrase">Cụm mật khẩu mã hóa sao lưu</string>
     <string name="settings_backup_passphrase_set">Đã đặt cụm mật khẩu. Để trống để giữ nguyên, hoặc nhập cụm mới để thay thế.</string>
     <string name="settings_backup_passphrase_hint">Mã hóa chính tệp sao lưu trước khi rời khỏi thiết bị, giữ riêng tư ngay cả trên máy chủ bạn không kiểm soát hoàn toàn. Hãy giữ một bản sao ở nơi an toàn — không có cụm mật khẩu này, bản sao lưu không thể khôi phục trên bất kỳ điện thoại nào.</string>
+    <string name="cd_reveal_backup_passphrase">Hiện cụm mật khẩu mã hóa sao lưu</string>
+    <string name="cd_hide_backup_passphrase">Ẩn cụm mật khẩu mã hóa sao lưu</string>
     <string name="settings_sftp_host">Máy chủ</string>
     <string name="settings_sftp_port">Cổng</string>
     <string name="settings_sftp_username">Tên đăng nhập</string>

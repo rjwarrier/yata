@@ -440,6 +440,8 @@
     <string name="settings_backup_passphrase">Phrase secrète de chiffrement de sauvegarde</string>
     <string name="settings_backup_passphrase_set">Une phrase secrète est déjà définie. Laissez ce champ vide pour le conserver ou saisissez-en un nouveau pour le remplacer.</string>
     <string name="settings_backup_passphrase_hint">Chiffre le fichier de sauvegarde lui-même avant qu\'il ne quitte votre appareil, afin qu\'il reste privé même sur un serveur que vous ne contrôlez pas entièrement. Conservez une copie dans un endroit sûr : sans cette phrase secrète, la sauvegarde ne peut pas être restaurée, sur ce téléphone ou sur tout autre.</string>
+    <string name="cd_reveal_backup_passphrase">Afficher la phrase secrète de chiffrement de sauvegarde</string>
+    <string name="cd_hide_backup_passphrase">Masquer la phrase secrète de chiffrement de sauvegarde</string>
     <string name="settings_sftp_host">Hôte</string>
     <string name="settings_sftp_port">Port</string>
     <string name="settings_sftp_username">Nom d\'utilisateur</string>

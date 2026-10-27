@@ -590,6 +590,8 @@
     <string name="settings_backup_passphrase">Wachtwoordzin voor back-upversleuteling</string>
     <string name="settings_backup_passphrase_set">Er is al een wachtwoordzin ingesteld. Laat dit leeg om te behouden, of typ een nieuwe om deze te vervangen.</string>
     <string name="settings_backup_passphrase_hint">Versleutelt het back-upbestand zelf voordat het je apparaat verlaat, zodat het privé blijft zelfs op een server die je niet volledig beheert. Bewaar een kopie op een veilige plek — zonder deze wachtwoordzin kan de back-up niet worden hersteld, op deze telefoon of een andere.</string>
+    <string name="cd_reveal_backup_passphrase">Wachtwoordzin voor back-upversleuteling weergeven</string>
+    <string name="cd_hide_backup_passphrase">Wachtwoordzin voor back-upversleuteling verbergen</string>
     <string name="settings_sftp_host">Host</string>
     <string name="settings_sftp_port">Poort</string>
     <string name="settings_sftp_username">Gebruikersnaam</string>

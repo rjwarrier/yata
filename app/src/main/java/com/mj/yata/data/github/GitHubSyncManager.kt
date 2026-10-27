@@ -108,6 +108,12 @@ class GitHubSyncManager @Inject constructor(
                     )
                 }
                 if (jsonExporter.importBytes(bytes)) {
+                    val canonicalBytes = jsonExporter.exportToBytes()
+                    // Without this, the next sync still sees no baseline for this device/repo and
+                    // throws InitialSyncConfirmationRequiredException ("review first sync") again —
+                    // even though local now matches the remote exactly, because it was just forced
+                    // to. See SnapshotSyncEngine.commitRestoredBaseline's doc for why.
+                    snapshotSyncEngine.commitRestoredBaseline(GitHubSnapshotPublisher.scopeKeyFor(config()), canonicalBytes)
                     userPreferences.setGitHubSyncedState(id, snapshotSyncEngine.localCanonicalHash())
                     Result.success(Unit)
                 } else {

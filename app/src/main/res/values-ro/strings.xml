@@ -486,6 +486,8 @@
     <string name="settings_backup_passphrase">Frază de acces pentru criptarea backupului</string>
     <string name="settings_backup_passphrase_set">Există deja o frază de acces setată. Lasă acest câmp gol pentru a o păstra sau scrie una nouă pentru a o înlocui.</string>
     <string name="settings_backup_passphrase_hint">Criptează fișierul de backup chiar înainte să părăsească dispozitivul, astfel încât să rămână privat chiar și pe un server pe care nu îl controlezi complet. Păstrează o copie într-un loc sigur — fără această frază de acces, backupul nu poate fi restaurat, nici pe acest telefon, nici pe altul.</string>
+    <string name="cd_reveal_backup_passphrase">Afișează fraza de acces pentru criptarea backupului</string>
+    <string name="cd_hide_backup_passphrase">Ascunde fraza de acces pentru criptarea backupului</string>
     <string name="settings_sftp_host">Gazdă</string>
     <string name="settings_sftp_port">Port</string>
     <string name="settings_sftp_username">Nume utilizator</string>

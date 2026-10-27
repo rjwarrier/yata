@@ -195,7 +195,8 @@ data class Task(
     val estimateMinutes: Int? = null,
     // Number of times this task's due date has been moved later. First assigning a due date,
     // clearing it, or moving it earlier does not count as a postponement.
-    val postponementCount: Int = 0
+    val postponementCount: Int = 0,
+    val trackedMinutes: Int? = null
 )
 
 /**

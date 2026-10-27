@@ -220,7 +220,10 @@ internal object SnapshotMerger {
                     "seriesId",
                     "recurrence",
                     "followUpAt",
-                    "estimateMinutes"
+                    "estimateMinutes",
+                    // Other clients include this optional field even when no time was tracked.
+                    // Keep populated values intact so verification still detects unsupported data.
+                    "trackedMinutes"
                 )
                 if (!task.has("postponementCount")) task.put("postponementCount", 0)
                 task.optJSONArray("tagIds")?.let { ids ->
@@ -922,6 +925,19 @@ class SnapshotSyncEngine @Inject constructor(
         SnapshotMerger.canonicalHash(normalized(jsonExporter.exportToBytes()))
     }
 
+    /**
+     * Establishes the sync baseline directly from a snapshot that was just force-imported outside
+     * the normal [prepare]/[commit] flow (e.g. [GitHubSyncManager.restore] via "Use latest GitHub
+     * snapshot"). Without this, [checkInitialJoinIsExplicit] keeps seeing no baseline for this
+     * [scopeKey] and throws [InitialSyncConfirmationRequiredException] on every sync afterward,
+     * even though local now matches the remote exactly — the device looks like it has never joined
+     * when it just did, deliberately and explicitly.
+     */
+    internal suspend fun commitRestoredBaseline(scopeKey: String, canonicalBytes: ByteArray) =
+        withContext(Dispatchers.IO) {
+            writeBaseline(scopeKey, normalized(canonicalBytes))
+        }
+
     private fun normalized(bytes: ByteArray): JSONObject =
         SnapshotMerger.normalizeForSync(JSONObject(String(bytes, Charsets.UTF_8)))
 
@@ -932,6 +948,9 @@ class SnapshotSyncEngine @Inject constructor(
         allowInitialJoinMerge: Boolean
     ) {
         if (base != null || remote == null || allowInitialJoinMerge) return
+        // An identical snapshot needs no merge decision. This also lets a retry establish the
+        // baseline after an earlier apply succeeded but verification/baseline persistence failed.
+        if (SnapshotMerger.equivalent(local, remote)) return
         if (hasUserData(local) && hasUserData(remote)) {
             throw InitialSyncConfirmationRequiredException(
                 localSummary = initialSyncSummary(local),

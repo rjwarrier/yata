@@ -570,6 +570,8 @@
     <string name="settings_backup_passphrase">બેકઅપ એન્ક્રિપ્શન પાસફ્રેઝ</string>
     <string name="settings_backup_passphrase_set">પાસફ્રેઝ પહેલેથી સેટ છે. તેને રાખવા ખાલી છોડો, અથવા બદલવા નવો ટાઇપ કરો.</string>
     <string name="settings_backup_passphrase_hint">બેકઅપ ફાઇલ તમારા ડિવાઇસ છોડે તે પહેલાં જ તેને એન્ક્રિપ્ટ કરે છે, જેથી તમારા સંપૂર્ણ નિયંત્રણમાં ન હોય તેવા સર્વર પર પણ તે ખાનગી રહે. ક્યાંક સુરક્ષિત જગ્યાએ કૉપિ રાખો — આ પાસફ્રેઝ વિના બેકઅપ પુનઃસ્થાપિત કરી શકાતો નથી, આ ફોન પર કે બીજા કોઈપણ પર.</string>
+    <string name="cd_reveal_backup_passphrase">બેકઅપ એન્ક્રિપ્શન પાસફ્રેઝ બતાવો</string>
+    <string name="cd_hide_backup_passphrase">બેકઅપ એન્ક્રિપ્શન પાસફ્રેઝ છુપાવો</string>
     <string name="settings_sftp_host">હોસ્ટ</string>
     <string name="settings_sftp_port">પોર્ટ</string>
     <string name="settings_sftp_username">યુઝરનેમ</string>

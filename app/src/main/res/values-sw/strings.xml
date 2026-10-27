@@ -570,6 +570,8 @@
     <string name="settings_backup_passphrase">Nenosiri la usimbaji wa nakala rudufu</string>
     <string name="settings_backup_passphrase_set">Nenosiri tayari limewekwa. Acha hii wazi ili libaki, au andika jipya ili kulibadilisha.</string>
     <string name="settings_backup_passphrase_hint">Husimba faili ya nakala rudufu yenyewe kabla haijaondoka kwenye kifaa chako, hivyo inabaki faragha hata kwenye seva usiyoidhibiti kikamilifu. Hifadhi nakala mahali salama — bila nenosiri hili nakala rudufu haiwezi kurejeshwa, kwenye simu hii wala nyingine yoyote.</string>
+    <string name="cd_reveal_backup_passphrase">Onyesha nenosiri la usimbaji wa nakala rudufu</string>
+    <string name="cd_hide_backup_passphrase">Ficha nenosiri la usimbaji wa nakala rudufu</string>
     <string name="settings_sftp_host">Mwenyeji</string>
     <string name="settings_sftp_port">Bandari</string>
     <string name="settings_sftp_username">Jina la mtumiaji</string>

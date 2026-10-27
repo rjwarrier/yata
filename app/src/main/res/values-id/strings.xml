@@ -486,6 +486,8 @@
     <string name="settings_backup_passphrase">Frasa sandi enkripsi cadangan</string>
     <string name="settings_backup_passphrase_set">Frasa sandi sudah diatur. Biarkan kosong untuk mempertahankannya, atau ketik yang baru untuk menggantinya.</string>
     <string name="settings_backup_passphrase_hint">Mengenkripsi file cadangan itu sendiri sebelum meninggalkan perangkat Anda, sehingga tetap privat meskipun di server yang tidak sepenuhnya Anda kendalikan. Simpan salinannya di tempat aman — tanpa frasa sandi ini cadangan tidak dapat dipulihkan, baik di ponsel ini maupun yang lain.</string>
+    <string name="cd_reveal_backup_passphrase">Tampilkan frasa sandi enkripsi cadangan</string>
+    <string name="cd_hide_backup_passphrase">Sembunyikan frasa sandi enkripsi cadangan</string>
     <string name="settings_sftp_host">Host</string>
     <string name="settings_sftp_port">Port</string>
     <string name="settings_sftp_username">Nama pengguna</string>

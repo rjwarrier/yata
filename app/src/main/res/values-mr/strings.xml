@@ -570,6 +570,8 @@
     <string name="settings_backup_passphrase">बॅकअप एन्क्रिप्शन पासफ्रेज</string>
     <string name="settings_backup_passphrase_set">पासफ्रेज आधीच सेट आहे. तो ठेवण्यासाठी हे रिकामे सोडा, किंवा बदलण्यासाठी नवीन टाइप करा.</string>
     <string name="settings_backup_passphrase_hint">बॅकअप फाइल तुमच्या डिव्हाइसवरून बाहेर जाण्यापूर्वीच ती एन्क्रिप्ट करते, त्यामुळे तुमचे पूर्ण नियंत्रण नसलेल्या सर्व्हरवरही ती खासगी राहते. प्रत सुरक्षित ठिकाणी ठेवा — या पासफ्रेजशिवाय बॅकअप कोणत्याही फोनवर पुनर्संचयित करता येणार नाही.</string>
+    <string name="cd_reveal_backup_passphrase">बॅकअप एन्क्रिप्शन पासफ्रेज दाखवा</string>
+    <string name="cd_hide_backup_passphrase">बॅकअप एन्क्रिप्शन पासफ्रेज लपवा</string>
     <string name="settings_sftp_host">होस्ट</string>
     <string name="settings_sftp_port">पोर्ट</string>
     <string name="settings_sftp_username">वापरकर्तानाव</string>

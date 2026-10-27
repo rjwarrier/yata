@@ -486,6 +486,8 @@
     <string name="settings_backup_passphrase">Passphrase di crittografia del backup</string>
     <string name="settings_backup_passphrase_set">È già impostata una passphrase. Lascia vuoto per mantenerla, oppure digitane una nuova per sostituirla.</string>
     <string name="settings_backup_passphrase_hint">Crittografa il file di backup stesso prima che lasci il tuo dispositivo, così rimane privato anche su un server che non controlli del tutto. Conservane una copia in un posto sicuro — senza questa passphrase il backup non può essere ripristinato, né su questo telefono né su un altro.</string>
+    <string name="cd_reveal_backup_passphrase">Mostra passphrase di crittografia del backup</string>
+    <string name="cd_hide_backup_passphrase">Nascondi passphrase di crittografia del backup</string>
     <string name="settings_sftp_host">Host</string>
     <string name="settings_sftp_port">Porta</string>
     <string name="settings_sftp_username">Nome utente</string>

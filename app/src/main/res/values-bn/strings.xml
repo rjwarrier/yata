@@ -486,6 +486,8 @@
     <string name="settings_backup_passphrase">ব্যাকআপ এনক্রিপশন পাসফ্রেজ</string>
     <string name="settings_backup_passphrase_set">একটি পাসফ্রেজ ইতিমধ্যে সেট করা আছে। এটি রাখতে খালি রাখুন, অথবা প্রতিস্থাপন করতে নতুন একটি টাইপ করুন।</string>
     <string name="settings_backup_passphrase_hint">ডিভাইস ছাড়ার আগেই ব্যাকআপ ফাইল এনক্রিপ্ট করে, তাই আপনি পুরোপুরি নিয়ন্ত্রণ না করা সার্ভারেও এটি ব্যক্তিগত থাকে। এর একটি কপি নিরাপদ জায়গায় রাখুন — এই পাসফ্রেজ ছাড়া ব্যাকআপ পুনরুদ্ধার করা যাবে না, এই ফোনে বা অন্য কোথাও।</string>
+    <string name="cd_reveal_backup_passphrase">ব্যাকআপ এনক্রিপশন পাসফ্রেজ দেখান</string>
+    <string name="cd_hide_backup_passphrase">ব্যাকআপ এনক্রিপশন পাসফ্রেজ লুকান</string>
     <string name="settings_sftp_host">হোস্ট</string>
     <string name="settings_sftp_port">পোর্ট</string>
     <string name="settings_sftp_username">ব্যবহারকারীর নাম</string>

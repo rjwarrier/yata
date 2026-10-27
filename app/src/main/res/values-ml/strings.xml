@@ -570,6 +570,8 @@
     <string name="settings_backup_passphrase">ബാക്കപ്പ് എൻക്രിപ്ഷൻ പാസ്‌ഫ്രെയ്സ്</string>
     <string name="settings_backup_passphrase_set">ഒരു പാസ്‌ഫ്രെയ്സ് ഇതിനകം സെറ്റ് ചെയ്തിട്ടുണ്ട്. അത് നിലനിർത്താൻ ഇത് ശൂന്യമായി വിടുക, അല്ലെങ്കിൽ പകരം വയ്ക്കാൻ പുതിയത് ടൈപ്പ് ചെയ്യുക.</string>
     <string name="settings_backup_passphrase_hint">ബാക്കപ്പ് ഫയൽ നിങ്ങളുടെ ഉപകരണം വിടുന്നതിന് മുൻപ് തന്നെ എൻക്രിപ്റ്റ് ചെയ്യുന്നു, അതിനാൽ നിങ്ങൾ പൂർണ്ണമായി നിയന്ത്രിക്കാത്ത സെർവറിലും ഇത് സ്വകാര്യമായി തുടരും. ഒരു പകർപ്പ് സുരക്ഷിതമായി സൂക്ഷിക്കുക — ഈ പാസ്‌ഫ്രെയ്സ് ഇല്ലാതെ ബാക്കപ്പ് ഈ ഫോണിലോ മറ്റേതെങ്കിലുമോ വീണ്ടെടുക്കാൻ കഴിയില്ല.</string>
+    <string name="cd_reveal_backup_passphrase">ബാക്കപ്പ് എൻക്രിപ്ഷൻ പാസ്‌ഫ്രെയ്സ് കാണിക്കുക</string>
+    <string name="cd_hide_backup_passphrase">ബാക്കപ്പ് എൻക്രിപ്ഷൻ പാസ്‌ഫ്രെയ്സ് മറയ്ക്കുക</string>
     <string name="settings_sftp_host">ഹോസ്റ്റ്</string>
     <string name="settings_sftp_port">പോർട്ട്</string>
     <string name="settings_sftp_username">ഉപയോക്തൃനാമം</string>

@@ -1,5 +1,8 @@
 package com.mj.yata.data.sync
 
+import com.mj.yata.data.local.db.entity.TaskEntity
+import com.mj.yata.data.mapper.toDomain
+import com.mj.yata.data.mapper.toEntity
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -8,6 +11,20 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class SnapshotSyncTest {
+
+    @Test
+    fun trackedMinutes_survivesDatabaseMappingAndTaskEdits() {
+        for (minutes in listOf(null, 0, 25)) {
+            val stored = TaskEntity(
+                id = "t1", title = "Tracked task", listId = null, projectId = null,
+                section = "", dueDate = null, dueTime = null, reminder = null,
+                priority = "none", flag = false, done = false, notes = null,
+                recurrenceJson = null, trackedMinutes = minutes
+            )
+            val edited = stored.toDomain(emptyList(), emptyList()).copy(title = "Edited task")
+            assertEquals(minutes, edited.toEntity().trackedMinutes)
+        }
+    }
 
     @Test
     fun threeWayMerge_combinesIndependentChangesAndDeletion() {
@@ -379,6 +396,7 @@ class SnapshotSyncTest {
                     .put("deletedAt", JSONObject.NULL)
                     .put("followUpAt", JSONObject.NULL)
                     .put("estimateMinutes", JSONObject.NULL)
+                    .put("trackedMinutes", JSONObject.NULL)
             )
         )
 
@@ -388,6 +406,17 @@ class SnapshotSyncTest {
                 SnapshotMerger.normalizeForSync(explicitNulls)
             )
         )
+    }
+
+    @Test
+    fun normalization_preservesPopulatedTrackedTime() {
+        val empty = SnapshotMerger.normalizeForSync(snapshot(tasks = listOf(task("t1", "task"))))
+        val populated = SnapshotMerger.normalizeForSync(
+            snapshot(tasks = listOf(task("t1", "task").put("trackedMinutes", 25)))
+        )
+
+        assertFalse(SnapshotMerger.equivalent(empty, populated))
+        assertEquals(25, populated.getJSONArray("tasks").getJSONObject(0).getInt("trackedMinutes"))
     }
 
     @Test

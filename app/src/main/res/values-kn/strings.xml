@@ -570,6 +570,8 @@
     <string name="settings_backup_passphrase">ಬ್ಯಾಕಪ್ ಎನ್‌ಕ್ರಿಪ್ಶನ್ ಪಾಸ್‌ಫ್ರೇಸ್</string>
     <string name="settings_backup_passphrase_set">ಪಾಸ್‌ಫ್ರೇಸ್ ಈಗಾಗಲೇ ಸೆಟ್ ಆಗಿದೆ. ಅದನ್ನು ಉಳಿಸಿಕೊಳ್ಳಲು ಇದನ್ನು ಖಾಲಿ ಬಿಡಿ, ಅಥವಾ ಬದಲಾಯಿಸಲು ಹೊಸದನ್ನು ಟೈಪ್ ಮಾಡಿ.</string>
     <string name="settings_backup_passphrase_hint">ಬ್ಯಾಕಪ್ ಫೈಲ್ ನಿಮ್ಮ ಸಾಧನವನ್ನು ಬಿಡುವ ಮೊದಲೇ ಅದನ್ನು ಎನ್‌ಕ್ರಿಪ್ಟ್ ಮಾಡುತ್ತದೆ, ಆದ್ದರಿಂದ ನೀವು ಸಂಪೂರ್ಣವಾಗಿ ನಿಯಂತ್ರಿಸದ ಸರ್ವರ್‌ನಲ್ಲಿಯೂ ಇದು ಖಾಸಗಿಯಾಗಿ ಉಳಿಯುತ್ತದೆ. ಸುರಕ್ಷಿತ ಸ್ಥಳದಲ್ಲಿ ಒಂದು ಪ್ರತಿ ಇಟ್ಟುಕೊಳ್ಳಿ — ಈ ಪಾಸ್‌ಫ್ರೇಸ್ ಇಲ್ಲದೆ ಬ್ಯಾಕಪ್ ಅನ್ನು ಈ ಫೋನ್‌ನಲ್ಲಿ ಅಥವಾ ಬೇರೆ ಯಾವುದೇ ಫೋನ್‌ನಲ್ಲಿ ಪುನಃಸ್ಥಾಪಿಸಲು ಸಾಧ್ಯವಿಲ್ಲ.</string>
+    <string name="cd_reveal_backup_passphrase">ಬ್ಯಾಕಪ್ ಎನ್‌ಕ್ರಿಪ್ಶನ್ ಪಾಸ್‌ಫ್ರೇಸ್ ತೋರಿಸಿ</string>
+    <string name="cd_hide_backup_passphrase">ಬ್ಯಾಕಪ್ ಎನ್‌ಕ್ರಿಪ್ಶನ್ ಪಾಸ್‌ಫ್ರೇಸ್ ಮರೆಮಾಡಿ</string>
     <string name="settings_sftp_host">ಹೋಸ್ಟ್</string>
     <string name="settings_sftp_port">ಪೋರ್ಟ್</string>
     <string name="settings_sftp_username">ಬಳಕೆದಾರಹೆಸರು</string>

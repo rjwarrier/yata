@@ -486,6 +486,8 @@
     <string name="settings_backup_passphrase">Heslová fráze pro šifrování zálohy</string>
     <string name="settings_backup_passphrase_set">Heslová fráze je již nastavena. Ponechte prázdné, chcete-li ji zachovat, nebo zadejte novou pro její nahrazení.</string>
     <string name="settings_backup_passphrase_hint">Zašifruje samotný soubor zálohy dřív, než opustí vaše zařízení, takže zůstane soukromý i na serveru, který zcela nekontrolujete. Uchovejte si kopii na bezpečném místě — bez této heslové fráze nelze zálohu obnovit, ani na tomto telefonu, ani na jiném.</string>
+    <string name="cd_reveal_backup_passphrase">Zobrazit heslovou frázi pro šifrování zálohy</string>
+    <string name="cd_hide_backup_passphrase">Skrýt heslovou frázi pro šifrování zálohy</string>
     <string name="settings_sftp_host">Hostitel</string>
     <string name="settings_sftp_port">Port</string>
     <string name="settings_sftp_username">Uživatelské jméno</string>

@@ -411,6 +411,7 @@ fun SettingsScreen(
     var showClearSyncLockDialog by remember { mutableStateOf(false) }
     var clearSyncLockDialogMessage by remember { mutableStateOf<String?>(null) }
     var initialSyncMergeMessage by remember { mutableStateOf<String?>(null) }
+    var confirmFirstSyncRestore by remember { mutableStateOf(false) }
     var emptyLocalSyncMessage by remember { mutableStateOf<String?>(null) }
     var demoModeFeedback by remember { mutableStateOf<Int?>(null) }
     var isLoadingSftpBackups by remember { mutableStateOf(false) }
@@ -3405,7 +3406,17 @@ fun SettingsScreen(
         AlertDialog(
             onDismissRequest = { initialSyncMergeMessage = null },
             title = { Text(stringResource(R.string.settings_initial_sync_merge_title)) },
-            text = { Text(initialSyncMergeMessage ?: stringResource(R.string.settings_initial_sync_merge_body)) },
+            text = {
+                Column {
+                    Text(initialSyncMergeMessage ?: stringResource(R.string.settings_initial_sync_merge_body))
+                    TextButton(onClick = {
+                        initialSyncMergeMessage = null
+                        confirmFirstSyncRestore = true
+                    }) {
+                        Text(stringResource(R.string.settings_empty_local_sync_restore_action))
+                    }
+                }
+            },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -3425,6 +3436,23 @@ fun SettingsScreen(
             dismissButton = {
                 TextButton(onClick = { initialSyncMergeMessage = null }) {
                     Text(stringResource(R.string.action_cancel))
+                }
+            }
+        )
+    }
+
+    if (confirmFirstSyncRestore) {
+        com.mj.yata.ui.widgets.FirstSyncRestoreDialog(
+            onDismiss = { confirmFirstSyncRestore = false },
+            onRestore = {
+                confirmFirstSyncRestore = false
+                viewModel.restoreLatestRemoteSnapshot { result ->
+                    scope.launch {
+                        snackbarHostState.showSnackbar(
+                            if (result.isSuccess) context.getString(R.string.settings_remote_restore_success)
+                            else context.getString(R.string.settings_remote_restore_failed, result.exceptionOrNull()?.message.orEmpty())
+                        )
+                    }
                 }
             }
         )

@@ -570,6 +570,8 @@
     <string name="settings_backup_passphrase">Passphrase sa pag-encrypt ng backup</string>
     <string name="settings_backup_passphrase_set">May naka-set nang passphrase. Iwanang blangko ito para panatilihin, o mag-type ng bago para palitan ito.</string>
     <string name="settings_backup_passphrase_hint">Ini-encrypt nito ang backup file bago pa ito umalis sa device mo, kaya nananatili itong pribado kahit sa server na hindi mo ganap na kontrolado. Panatilihin ang kopya nito sa ligtas na lugar — kung wala ang passphrase na ito, hindi na maibabalik ang backup, sa telepono mong ito o sa iba pa.</string>
+    <string name="cd_reveal_backup_passphrase">Ipakita ang passphrase sa pag-encrypt ng backup</string>
+    <string name="cd_hide_backup_passphrase">Itago ang passphrase sa pag-encrypt ng backup</string>
     <string name="settings_sftp_host">Host</string>
     <string name="settings_sftp_port">Port</string>
     <string name="settings_sftp_username">Username</string>

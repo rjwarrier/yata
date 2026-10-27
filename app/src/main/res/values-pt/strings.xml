@@ -440,6 +440,8 @@
     <string name="settings_backup_passphrase">Senha de criptografia de backup</string>
     <string name="settings_backup_passphrase_set">Uma senha já está definida. Deixe em branco para mantê-lo ou digite um novo para substituí-lo.</string>
     <string name="settings_backup_passphrase_hint">Criptografa o próprio arquivo de backup antes de sair do dispositivo, para que ele permaneça privado mesmo em um servidor que você não controla totalmente. Mantenha uma cópia em algum lugar seguro – sem esta senha o backup não pode ser restaurado, neste telefone ou em qualquer outro.</string>
+    <string name="cd_reveal_backup_passphrase">Mostrar senha de criptografia de backup</string>
+    <string name="cd_hide_backup_passphrase">Ocultar senha de criptografia de backup</string>
     <string name="settings_sftp_host">Hospedar</string>
     <string name="settings_sftp_port">Porta</string>
     <string name="settings_sftp_username">Nome de usuário</string>

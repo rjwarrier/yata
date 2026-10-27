@@ -1,6 +1,5 @@
 package com.mj.yata.ui.widgets
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
@@ -8,8 +7,6 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -74,7 +71,6 @@ private data class FloatingNavItem(
 
 private val FloatingNavTabHeight = 64.dp
 private val FloatingNavCollapsedTabWidth = 64.dp
-private val FloatingNavExpandedTabWidth = 132.dp
 private val FloatingNavCapsuleHeight = 72.dp
 private val FloatingNavCapsuleInternalPadding = 4.dp
 private val FloatingNavOuterMargin = 16.dp
@@ -122,12 +118,6 @@ fun FloatingCapsuleBottomNav(
     ) {
         val density = LocalDensity.current
 
-        // Mirrors FLOATING_NAV_IMPLEMENTATION.md section 2: only switch to the wider
-        // icon+label tab when the fully expanded capsule still fits the available width.
-        val expandedContentWidth = FloatingNavExpandedTabWidth + FloatingNavCollapsedTabWidth * (items.size - 1)
-        val expandedBarWidth = expandedContentWidth + FloatingNavCapsuleInternalPadding * 2
-        val showLabels = expandedBarWidth <= maxWidth
-
         // Small squash on every selection change (section 6) — capsule briefly shortens and
         // widens, then springs back, giving the whole bar a touch of life beyond the sliding pill.
         val squashScaleY = remember { Animatable(1f) }
@@ -162,8 +152,7 @@ fun FloatingCapsuleBottomNav(
                 contentAlignment = Alignment.CenterStart
             ) {
                 // Single sliding pill tracking the real measured position/size of the selected
-                // tab — same technique as CustomBottomNav's own pill, so it works unchanged
-                // whether the selected tab is collapsed (icon only) or expanded (icon+label).
+                // tab — same technique as CustomBottomNav's own pill.
                 val indicatorOffset = tabPositions[selectedTab]
                 val indicatorSize = tabSizes[selectedTab]
                 if (indicatorOffset != null && indicatorSize != null) {
@@ -190,12 +179,6 @@ fun FloatingCapsuleBottomNav(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     items.forEach { item ->
                         val isSelected = item.id == selectedTab
-                        val targetWidth = if (isSelected && showLabels) FloatingNavExpandedTabWidth else FloatingNavCollapsedTabWidth
-                        val animatedTabWidth by animateDpAsState(
-                            targetValue = targetWidth,
-                            animationSpec = spring(dampingRatio = 0.9f, stiffness = Spring.StiffnessMediumLow),
-                            label = "floatingNavTabWidth"
-                        )
                         val interactionSource = remember { MutableInteractionSource() }
                         val isPressed by interactionSource.collectIsPressedAsState()
                         val pressScale by animateFloatAsState(
@@ -216,7 +199,7 @@ fun FloatingCapsuleBottomNav(
                         Box(
                             modifier = Modifier
                                 .height(FloatingNavTabHeight)
-                                .width(animatedTabWidth)
+                                .width(FloatingNavCollapsedTabWidth)
                                 .graphicsLayer {
                                     scaleX = pressScale
                                     scaleY = pressScale
@@ -238,14 +221,10 @@ fun FloatingCapsuleBottomNav(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                val labelVisible = isSelected && showLabels
                                 val icon: @Composable () -> Unit = {
                                     Icon(
                                         imageVector = if (isSelected) item.filled else item.outlined,
-                                        // The label Text below already describes the tab when visible —
-                                        // a duplicate contentDescription here would make a screen reader
-                                        // announce the same name twice.
-                                        contentDescription = if (labelVisible) null else item.label,
+                                        contentDescription = item.label,
                                         tint = contentTint,
                                         modifier = Modifier.size(FloatingNavIconSize)
                                     )
@@ -256,18 +235,6 @@ fun FloatingCapsuleBottomNav(
                                     }
                                 } else {
                                     icon()
-                                }
-                                AnimatedVisibility(
-                                    visible = labelVisible,
-                                    enter = fadeIn(tween(150)),
-                                    exit = fadeOut(tween(100))
-                                ) {
-                                    Text(
-                                        text = item.label,
-                                        color = contentTint,
-                                        style = MaterialTheme.typography.labelLarge,
-                                        maxLines = 1
-                                    )
                                 }
                             }
                         }

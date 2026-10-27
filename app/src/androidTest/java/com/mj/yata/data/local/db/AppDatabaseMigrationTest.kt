@@ -796,12 +796,43 @@ class AppDatabaseMigrationTest {
     }
 
     @Test
+    fun migrate34To35_preservesTasksAndStoresTrackedMinutes() {
+        val db = FrameworkSQLiteOpenHelperFactory().create(
+            SupportSQLiteOpenHelper.Configuration.builder(context)
+                .name(null)
+                .callback(object : SupportSQLiteOpenHelper.Callback(34) {
+                    override fun onCreate(db: SupportSQLiteDatabase) {
+                        db.execSQL("CREATE TABLE tasks (id TEXT NOT NULL PRIMARY KEY, title TEXT NOT NULL)")
+                        db.execSQL("INSERT INTO tasks VALUES ('t1', 'Existing task')")
+                    }
+                    override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) = Unit
+                }).build()
+        )
+        try {
+            val connection = db.writableDatabase
+            AppDatabase.MIGRATION_34_35.migrate(connection)
+            connection.query("SELECT title, trackedMinutes FROM tasks WHERE id = 't1'").use {
+                assertTrue(it.moveToFirst())
+                assertEquals("Existing task", it.getString(0))
+                assertTrue(it.isNull(1))
+            }
+            connection.execSQL("UPDATE tasks SET trackedMinutes = 25 WHERE id = 't1'")
+            connection.query("SELECT trackedMinutes FROM tasks WHERE id = 't1'").use {
+                assertTrue(it.moveToFirst())
+                assertEquals(25, it.getInt(0))
+            }
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test
     fun migrate33To34_addsProjectGroupsAndProjectGroupId() {
         context.deleteDatabase(TEST_DB)
         createVersion33ProjectsTableDatabase().apply {
             execSQL(
-                "INSERT INTO `projects` (`id`,`name`,`color`,`icon`,`starred`,`archived`) " +
-                    "VALUES ('proj-yata','Yata','accentA','layers',0,0)"
+                "INSERT INTO `projects` (`id`,`name`,`color`,`icon`,`starred`,`commonTagIds`,`excludeFromToday`,`sortOrder`,`archived`,`sectionNames`) " +
+                    "VALUES ('proj-yata','Yata','accentA','layers',0,'',0,0,0,'')"
             )
             close()
         }
@@ -908,15 +939,18 @@ class AppDatabaseMigrationTest {
             .writableDatabase
     }
 
-    /** Minimal — only the `projects` table, since MIGRATION_33_34 only touches that one (plus
-     * creating `project_groups`, which doesn't need any pre-existing rows to migrate). */
+    /** The full `projects` table as it existed at version 33 — MIGRATION_33_34 rebuilds this table
+     * (to attach the new `groupId` foreign key, which a plain ALTER TABLE can't add to an existing
+     * table) and its INSERT...SELECT names every one of these columns, so unlike most of this
+     * file's "minimal" helpers, this one can't drop any of them without the migration itself
+     * failing against this test database with "no such column". */
     private fun createVersion33ProjectsTableDatabase(): SupportSQLiteDatabase {
         val configuration = SupportSQLiteOpenHelper.Configuration.builder(context)
             .name(TEST_DB)
             .callback(object : SupportSQLiteOpenHelper.Callback(33) {
                 override fun onCreate(db: SupportSQLiteDatabase) {
                     db.execSQL(
-                        "CREATE TABLE IF NOT EXISTS `projects` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `color` TEXT NOT NULL, `icon` TEXT NOT NULL, `starred` INTEGER NOT NULL, `archived` INTEGER NOT NULL, PRIMARY KEY(`id`))"
+                        "CREATE TABLE IF NOT EXISTS `projects` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `color` TEXT NOT NULL, `icon` TEXT NOT NULL, `dueDate` TEXT, `starred` INTEGER NOT NULL, `commonTagIds` TEXT NOT NULL, `defaultReminder` TEXT, `description` TEXT, `excludeFromToday` INTEGER NOT NULL, `sortOrder` INTEGER NOT NULL, `archived` INTEGER NOT NULL, `sectionNames` TEXT NOT NULL, PRIMARY KEY(`id`))"
                     )
                 }
                 override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) = Unit

@@ -648,6 +648,8 @@
     <string name="settings_backup_passphrase">Frase de cifrado de copias</string>
     <string name="settings_backup_passphrase_set">Ya hay una frase configurada. Déjalo vacío para mantenerla o escribe una nueva para reemplazarla.</string>
     <string name="settings_backup_passphrase_hint">Cifra el archivo de copia antes de salir del dispositivo, para que permanezca privado incluso en un servidor que no controlas por completo. Guarda esta frase en un lugar seguro; sin ella no se puede restaurar la copia.</string>
+    <string name="cd_reveal_backup_passphrase">Mostrar frase de cifrado de copias</string>
+    <string name="cd_hide_backup_passphrase">Ocultar frase de cifrado de copias</string>
 
     <string name="sync_toast_started">Sincronizando…</string>
     <string name="sync_toast_finished">Sincronización completada</string>

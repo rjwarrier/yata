@@ -486,6 +486,8 @@
     <string name="settings_backup_passphrase">Yedekleme şifreleme parola cümlesi</string>
     <string name="settings_backup_passphrase_set">Zaten bir parola cümlesi ayarlanmış. Korumak için boş bırakın, değiştirmek için yenisini yazın.</string>
     <string name="settings_backup_passphrase_hint">Yedek dosyasını cihazınızdan çıkmadan önce şifreler; böylece tam denetiminizde olmayan bir sunucuda bile gizli kalır. Bir kopyasını güvenli bir yerde saklayın — bu parola cümlesi olmadan yedek, bu telefonda veya başka herhangi birinde geri yüklenemez.</string>
+    <string name="cd_reveal_backup_passphrase">Yedekleme şifreleme parola cümlesini göster</string>
+    <string name="cd_hide_backup_passphrase">Yedekleme şifreleme parola cümlesini gizle</string>
     <string name="settings_sftp_host">Sunucu</string>
     <string name="settings_sftp_port">Bağlantı noktası</string>
     <string name="settings_sftp_username">Kullanıcı adı</string>

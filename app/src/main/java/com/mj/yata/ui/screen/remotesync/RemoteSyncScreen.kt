@@ -34,6 +34,8 @@ import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Storage
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -45,6 +47,7 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mj.yata.R
@@ -136,6 +139,12 @@ fun RemoteSyncScreen(
     var draftBackupPassphrase by remember {
         mutableStateOf(if (backupPassphraseAlreadySet) savedSecretPlaceholder else "")
     }
+    // True once the real passphrase has been fetched into draftBackupPassphrase for display --
+    // distinct from "masked vs. plaintext" below, since revealing has to replace the placeholder
+    // with the actual decrypted value exactly once, not just un-mask whatever string is already
+    // sitting in the field (the placeholder is never the real passphrase).
+    var backupPassphraseRevealed by remember { mutableStateOf(false) }
+    var backupPassphraseMasked by remember { mutableStateOf(true) }
     var showGitHubPatHelpDialog by remember { mutableStateOf(false) }
     var gitHubConfigTransferMode by remember { mutableStateOf<GitHubConfigTransferMode?>(null) }
     var showGitHubForceDownloadDialog by remember { mutableStateOf(false) }
@@ -796,13 +805,39 @@ fun RemoteSyncScreen(
             ) {
                 TextField(
                     value = draftBackupPassphrase,
-                    onValueChange = { draftBackupPassphrase = it },
+                    onValueChange = {
+                        draftBackupPassphrase = it
+                        // Typing a replacement invalidates whatever was revealed/masked before.
+                        backupPassphraseRevealed = false
+                        backupPassphraseMasked = true
+                    },
                     label = { Text(stringResource(R.string.settings_backup_passphrase)) },
                     placeholder = {
                         if (backupPassphraseAlreadySet) Text(savedSecretPlaceholder)
                     },
                     singleLine = true,
-                    visualTransformation = PasswordVisualTransformation(),
+                    visualTransformation = if (backupPassphraseMasked) PasswordVisualTransformation() else VisualTransformation.None,
+                    trailingIcon = {
+                        // Only offer to reveal an actually-saved secret, never the empty/draft state.
+                        if (backupPassphraseAlreadySet && (draftBackupPassphrase == savedSecretPlaceholder || backupPassphraseRevealed)) {
+                            IconButton(onClick = {
+                                if (!backupPassphraseRevealed) {
+                                    draftBackupPassphrase = viewModel.getRemoteBackupPassphrase().orEmpty()
+                                    backupPassphraseRevealed = true
+                                    backupPassphraseMasked = false
+                                } else {
+                                    backupPassphraseMasked = !backupPassphraseMasked
+                                }
+                            }) {
+                                Icon(
+                                    imageVector = if (backupPassphraseMasked) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                    contentDescription = stringResource(
+                                        if (backupPassphraseMasked) R.string.cd_reveal_backup_passphrase else R.string.cd_hide_backup_passphrase
+                                    )
+                                )
+                            }
+                        }
+                    },
                     shape = YataCompactFieldShape,
                     colors = yataFieldColors(),
                     modifier = Modifier.fillMaxWidth()

@@ -1543,6 +1543,10 @@ private class FakeYataRepository : YataRepository {
     override suspend fun deleteProject(project: Project): Unit = TODO()
     override suspend fun deleteProjectOnly(project: Project): Unit = TODO()
     override suspend fun setProjectsArchived(ids: List<String>, archived: Boolean): Unit = TODO()
+    override suspend fun setProjectsGroup(projectIds: List<String>, groupId: String?, pendingGroup: com.mj.yata.domain.model.ProjectGroup?): Unit = TODO()
+    override fun getProjectGroups(): Flow<List<com.mj.yata.domain.model.ProjectGroup>> = TODO()
+    override suspend fun upsertProjectGroup(group: com.mj.yata.domain.model.ProjectGroup): Unit = TODO()
+    override suspend fun deleteProjectGroup(group: com.mj.yata.domain.model.ProjectGroup): Unit = TODO()
 
     override fun getLists(): Flow<List<YataList>> = listsFlow
     override fun getActiveLists(): Flow<List<YataList>> = TODO()

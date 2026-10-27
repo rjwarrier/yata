@@ -3201,6 +3201,12 @@ data class WeekendRescheduleWarning(
     /** Only whether one is set — the value itself is never read back into the UI. */
     fun hasRemoteBackupPassphrase(): Boolean = remoteBackupCredentialsStore.backupPassphrase != null
 
+    /** The actual passphrase, for RemoteSyncScreen's explicit "reveal" action — losing this value
+     * (e.g. an uninstall, which wipes the Keystore key `EncryptedSharedPreferences` decrypts with)
+     * makes every encrypted remote backup already uploaded permanently unreadable, so the user
+     * needs a deliberate way to copy it out to their own password manager. */
+    fun getRemoteBackupPassphrase(): String? = remoteBackupCredentialsStore.backupPassphrase
+
     fun setSftpPrivateKey(pem: String, passphrase: String) {
         remoteBackupCredentialsStore.privateKeyPem = pem.ifBlank { null }
         remoteBackupCredentialsStore.passphrase = passphrase.ifBlank { null }

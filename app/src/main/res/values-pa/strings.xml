@@ -570,6 +570,8 @@
     <string name="settings_backup_passphrase">ਬੈਕਅੱਪ ਇਨਕ੍ਰਿਪਸ਼ਨ ਪਾਸਫ੍ਰੇਜ਼</string>
     <string name="settings_backup_passphrase_set">ਪਾਸਫ੍ਰੇਜ਼ ਪਹਿਲਾਂ ਹੀ ਸੈੱਟ ਹੈ। ਇਸਨੂੰ ਰੱਖਣ ਲਈ ਖਾਲੀ ਛੱਡੋ, ਜਾਂ ਬਦਲਣ ਲਈ ਨਵਾਂ ਟਾਈਪ ਕਰੋ।</string>
     <string name="settings_backup_passphrase_hint">ਬੈਕਅੱਪ ਫਾਈਲ ਨੂੰ ਤੁਹਾਡੀ ਡਿਵਾਈਸ ਛੱਡਣ ਤੋਂ ਪਹਿਲਾਂ ਇਨਕ੍ਰਿਪਟ ਕਰਦਾ ਹੈ, ਤਾਂ ਜੋ ਇਹ ਉਸ ਸਰਵਰ \'ਤੇ ਵੀ ਨਿੱਜੀ ਰਹੇ ਜਿਸਨੂੰ ਤੁਸੀਂ ਪੂਰੀ ਤਰ੍ਹਾਂ ਕੰਟਰੋਲ ਨਹੀਂ ਕਰਦੇ। ਕਿਤੇ ਸੁਰੱਖਿਅਤ ਕਾਪੀ ਰੱਖੋ — ਇਸ ਪਾਸਫ੍ਰੇਜ਼ ਬਿਨਾਂ ਬੈਕਅੱਪ ਬਹਾਲ ਨਹੀਂ ਹੋ ਸਕਦਾ, ਇਸ ਫੋਨ \'ਤੇ ਜਾਂ ਕਿਸੇ ਹੋਰ \'ਤੇ।</string>
+    <string name="cd_reveal_backup_passphrase">ਬੈਕਅੱਪ ਇਨਕ੍ਰਿਪਸ਼ਨ ਪਾਸਫ੍ਰੇਜ਼ ਦਿਖਾਓ</string>
+    <string name="cd_hide_backup_passphrase">ਬੈਕਅੱਪ ਇਨਕ੍ਰਿਪਸ਼ਨ ਪਾਸਫ੍ਰੇਜ਼ ਲੁਕਾਓ</string>
     <string name="settings_sftp_host">ਹੋਸਟ</string>
     <string name="settings_sftp_port">ਪੋਰਟ</string>
     <string name="settings_sftp_username">ਯੂਜ਼ਰਨੇਮ</string>

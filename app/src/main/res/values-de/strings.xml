@@ -671,6 +671,8 @@
     <string name="settings_backup_passphrase">Backup-Verschlüsselungspassphrase</string>
     <string name="settings_backup_passphrase_set">Es ist bereits eine Passphrase festgelegt. Leer lassen, um sie zu behalten, oder eine neue eingeben, um sie zu ersetzen.</string>
     <string name="settings_backup_passphrase_hint">Verschlüsselt die Backup-Datei selbst, bevor sie dein Gerät verlässt, sodass sie auch auf einem Server, den du nicht vollständig kontrollierst, privat bleibt. Bewahre eine Kopie sicher auf — ohne diese Passphrase kann das Backup weder auf diesem noch auf einem anderen Gerät wiederhergestellt werden.</string>
+    <string name="cd_reveal_backup_passphrase">Backup-Verschlüsselungspassphrase anzeigen</string>
+    <string name="cd_hide_backup_passphrase">Backup-Verschlüsselungspassphrase verbergen</string>
     <string name="settings_sftp_host">Host</string>
     <string name="settings_sftp_port">Port</string>
     <string name="settings_sftp_username">Benutzername</string>

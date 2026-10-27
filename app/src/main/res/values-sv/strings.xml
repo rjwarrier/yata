@@ -486,6 +486,8 @@
     <string name="settings_backup_passphrase">Lösenfras för kryptering av säkerhetskopior</string>
     <string name="settings_backup_passphrase_set">En lösenfras är redan inställd. Lämna tomt för att behålla den, eller skriv en ny för att ersätta den.</string>
     <string name="settings_backup_passphrase_hint">Krypterar själva säkerhetskopian innan den lämnar din enhet, så den förblir privat även på en server du inte har full kontroll över. Spara en kopia på ett säkert ställe — utan denna lösenfras kan säkerhetskopian inte återställas, varken på den här telefonen eller någon annan.</string>
+    <string name="cd_reveal_backup_passphrase">Visa lösenfras för kryptering av säkerhetskopior</string>
+    <string name="cd_hide_backup_passphrase">Dölj lösenfras för kryptering av säkerhetskopior</string>
     <string name="settings_sftp_host">Värd</string>
     <string name="settings_sftp_port">Port</string>
     <string name="settings_sftp_username">Användarnamn</string>
