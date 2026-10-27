@@ -542,6 +542,10 @@ data class WeekendRescheduleWarning(
     val tasks: StateFlow<List<Task>> = tasksSource
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    // Null means duplicate checking has not received its first database snapshot yet.
+    val markdownExistingTasks: StateFlow<List<Task>?> = tasksSource.map<List<Task>, List<Task>?> { it }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
     private val _postponementWarnings = MutableSharedFlow<PostponementWarning>()
     val postponementWarnings: SharedFlow<PostponementWarning> = _postponementWarnings.asSharedFlow()
 
@@ -1728,6 +1732,10 @@ data class WeekendRescheduleWarning(
         safeLaunch { taskOperations.bulkAddTag(ids, tagId) }
     }
 
+    fun bulkRemoveTag(ids: List<String>, tagId: String) {
+        safeLaunch { com.mj.yata.domain.usecase.removeBulkTag(repository, ids, tagId) }
+    }
+
     fun bulkCreateAndAddTag(ids: List<String>, name: String, color: String) {
         safeLaunch { taskOperations.bulkCreateAndAddTag(ids, name, color) }
     }
@@ -1843,41 +1851,58 @@ data class WeekendRescheduleWarning(
     private val _markdownImportStatus = MutableStateFlow<MarkdownImportStatus?>(null)
     val markdownImportStatus = _markdownImportStatus.asStateFlow()
 
+    private val markdownReviews = linkedMapOf<String, MutableStateFlow<com.mj.yata.util.MarkdownImportReview>>()
+    fun markdownReview(sessionId: String): StateFlow<com.mj.yata.util.MarkdownImportReview> =
+        markdownReviews.getOrPut(sessionId) {
+            if (markdownReviews.size >= 3) markdownReviews.remove(markdownReviews.keys.first())
+            MutableStateFlow(com.mj.yata.util.MarkdownImportReview())
+        }.asStateFlow()
+
+    fun setMarkdownReview(sessionId: String, review: com.mj.yata.util.MarkdownImportReview) {
+        markdownReview(sessionId)
+        markdownReviews.getValue(sessionId).value = review
+    }
+
+    private val _markdownReferencePending = MutableStateFlow(0)
+    val markdownReferencePending = _markdownReferencePending.asStateFlow()
+    private val markdownReferenceMutex = kotlinx.coroutines.sync.Mutex()
+    fun createMarkdownReference(token: String, requestedId: String? = null, color: String = "accentA", onResult: (String?) -> Unit) {
+        _markdownReferencePending.value++
+        safeLaunch {
+            try {
+                markdownReferenceMutex.lock()
+                val id = try {
+                    withContext(Dispatchers.IO) {
+                        com.mj.yata.domain.usecase.createMarkdownReference(repository, token, requestedId, color)
+                    }
+                } finally { markdownReferenceMutex.unlock() }
+                onResult(id)
+            } catch (e: Exception) { onResult(null); throw e }
+            finally { _markdownReferencePending.value-- }
+        }
+    }
+
     fun importMarkdownTasks(
         sessionId: String,
         preparedTasks: List<Task>,
-        selectedIndices: Set<Int>
+        selectedIndices: Set<Int>,
+        updateTargets: Map<Int, String> = emptyMap()
     ) {
         val previous = _markdownImportStatus.value
         if (previous?.running == true || (previous?.sessionId == sessionId && previous.imported)) return
         _markdownImportStatus.value = MarkdownImportStatus(sessionId, running = true)
         safeLaunch {
             try {
-                require(selectedIndices.isNotEmpty() && selectedIndices.all { it in preparedTasks.indices })
-                val selected = preparedTasks.filterIndexed { index, _ -> index in selectedIndices }
-                val projectIds = repository.getProjects().first().filter { !it.archived }.map { it.id }.toSet()
-                val listIds = repository.getLists().first().filter { !it.archived }.map { it.id }.toSet()
-                require(selected.all { task ->
-                    (task.projectId != null || task.listId != null) &&
-                        (task.projectId == null || task.projectId in projectIds) &&
-                        (task.listId == null || task.listId in listIds)
-                })
-                val nextOrder = mutableMapOf<Pair<String?, String?>, Int>()
-                for (destination in selected.map { it.projectId to it.listId }.distinct()) {
-                    val existing = destination.first?.let { repository.getTasksForProject(it).first() }
-                        ?: repository.getTasksForList(requireNotNull(destination.second)).first()
-                    nextOrder[destination] = (existing.maxOfOrNull { it.sortOrder } ?: -1) + 1
+                val batch = withContext(Dispatchers.IO) {
+                    com.mj.yata.domain.usecase.applyMarkdownImport(repository, preparedTasks, selectedIndices, updateTargets)
                 }
-                val tasks = selected.map { task ->
-                    val key = task.projectId to task.listId
-                    val order = nextOrder.getValue(key)
-                    nextOrder[key] = order + 1
-                    task.copy(sortOrder = order)
-                }
-                // One transaction for tasks and their subtasks, one widget/sync notification.
-                // All field values are the approved preview, not a second smart-add parse.
-                repository.upsertTasks(tasks, resyncReminder = tasks.any { it.reminder != null })
                 _markdownImportStatus.value = MarkdownImportStatus(sessionId, imported = true)
+                if (batch.count > 0) undoBus.offer(com.mj.yata.ui.undo.UndoRequest(R.plurals.markdown_tasks_imported, batch.count) {
+                    safeLaunch {
+                        withContext(Dispatchers.IO) { com.mj.yata.domain.usecase.undoMarkdownImport(repository, batch) }
+                    }
+                })
+                markdownReviews.remove(sessionId)
             } catch (t: Throwable) {
                 _markdownImportStatus.value = MarkdownImportStatus(sessionId, failed = true)
                 throw t

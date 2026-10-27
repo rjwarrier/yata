@@ -1648,4 +1648,19 @@
     <string name="markdown_import_select_tasks">ਆਯਾਤ ਕਰਨ ਲਈ ਕੰਮ ਚੁਣੋ</string>
     <string name="markdown_import_selection_hint">ਸਿਰਫ਼ ਚੁਣੇ ਗਏ ਮੁੱਖ ਕੰਮ ਅਤੇ ਉਨ੍ਹਾਂ ਦੇ ਉਪਕੰਮ ਜੋੜੇ ਜਾਣਗੇ।</string>
     <string name="markdown_import_unmatched">ਜੁੜਿਆ ਨਹੀਂ: %1$s। ਅਸਲ ਹਵਾਲੇ ਨੋਟਾਂ ਵਿੱਚ ਰੱਖੇ ਜਾਂਦੇ ਹਨ।</string>
+
+    <!-- Markdown review and batch undo -->
+    <string name="markdown_resolve_references">ਹਵਾਲੇ ਮਿਲਾਓ</string>
+    <string name="markdown_create_reference">%1$s ਬਣਾਓ</string>
+    <string name="markdown_import_separately">ਵੱਖਰੇ ਤੌਰ ਤੇ ਆਯਾਤ ਕਰੋ</string>
+    <string name="markdown_update_existing">ਮੌਜੂਦਾ ਕੰਮ ਅੱਪਡੇਟ ਕਰੋ</string>
+    <string name="markdown_update_keeps_context">ਮੌਜੂਦਾ ਨੋਟ ਅਤੇ ਉਪਕੰਮ ਰੱਖੇ ਜਾਣਗੇ।</string>
+    <plurals name="markdown_tasks_imported">
+        <item quantity="one">ਆਯਾਤ ਕੀਤੇ ਕੰਮ: %1$d</item>
+        <item quantity="other">ਆਯਾਤ ਕੀਤੇ ਕੰਮ: %1$d</item>
+    </plurals>
+    <plurals name="markdown_tasks_to_import">
+        <item quantity="one">ਆਯਾਤ ਕਰਨ ਲਈ: %1$d</item>
+        <item quantity="other">ਆਯਾਤ ਕਰਨ ਲਈ: %1$d</item>
+    </plurals>
 </resources>

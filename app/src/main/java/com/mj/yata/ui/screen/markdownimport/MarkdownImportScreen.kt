@@ -2,7 +2,6 @@ package com.mj.yata.ui.screen.markdownimport
 
 import android.content.Intent
 import android.net.Uri
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -26,6 +25,15 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.mj.yata.domain.model.Task
+import com.mj.yata.util.MarkdownImportReview
+import com.mj.yata.util.MarkdownDuplicateAction
+import com.mj.yata.util.MarkdownDuplicateDecision
+import com.mj.yata.util.duplicateAction
+import com.mj.yata.util.markdownDuplicateMatches
+import com.mj.yata.util.reviewMarkdownTasks
+import com.mj.yata.util.withTaskEdit
+import com.mj.yata.ui.util.AdaptiveContentBox
 import com.mj.yata.R
 import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.widgets.YataDropdownMenu
@@ -51,6 +59,10 @@ private data class MarkdownPreviewRequest(
     val useDates: Boolean
 )
 private data class PreparedMarkdownPreview(val request: MarkdownPreviewRequest, val tasks: List<MarkdownTaskPreview>)
+private data class ReviewedMarkdownPreview(
+    val base: List<MarkdownTaskPreview>, val review: MarkdownImportReview, val existing: List<Task>,
+    val tasks: List<MarkdownTaskPreview>, val duplicates: Map<Int, Task>
+)
 private data class MarkdownEntityLabels(
     val projects: Map<String, String>,
     val lists: Map<String, String>,
@@ -80,6 +92,13 @@ fun MarkdownImportScreen(
     val dateAliases by viewModel.dateAliasDefinitions.collectAsStateWithLifecycle()
     val status by viewModel.markdownImportStatus.collectAsStateWithLifecycle()
     val sessionId = rememberSaveable { UUID.randomUUID().toString() }
+    val review by remember(sessionId) { viewModel.markdownReview(sessionId) }.collectAsStateWithLifecycle()
+    val existingTasks by viewModel.markdownExistingTasks.collectAsStateWithLifecycle()
+    var editingIndex by rememberSaveable { mutableStateOf<Int?>(null) }
+    val pendingReferences by viewModel.markdownReferencePending.collectAsStateWithLifecycle()
+    val creatingReference = pendingReferences > 0
+    var importedDestination by remember { mutableStateOf<Pair<String?, String?>?>(null) }
+    fun updateReview(value: MarkdownImportReview) { viewModel.setMarkdownReview(sessionId, value) }
     val importing = status?.sessionId == sessionId && status?.running == true
     var projectId by rememberSaveable { mutableStateOf(initialProjectId) }
     var listId by rememberSaveable { mutableStateOf(initialListId) }
@@ -115,7 +134,24 @@ fun MarkdownImportScreen(
             PreparedMarkdownPreview(current, current.document.prepareSmartImport(current.context, current.projectId, current.listId, current.useDates))
         }
     }
-    val previews = prepared?.takeIf { it.request === request }?.tasks
+    val basePreviews = prepared?.takeIf { it.request === request }?.tasks
+    val reviewed by produceState<ReviewedMarkdownPreview?>(null, basePreviews, review, existingTasks) {
+        val base = basePreviews ?: return@produceState
+        val existing = existingTasks ?: return@produceState
+        value = withContext(Dispatchers.Default) {
+            val tasks = reviewMarkdownTasks(base, review, importContext, projectId != null || listId != null, useDates)
+            ReviewedMarkdownPreview(base, review, existing, tasks, markdownDuplicateMatches(tasks.map { it.task }, existing))
+        }
+    }
+    val currentReview = reviewed?.takeIf { it.base === basePreviews && it.review === review && it.existing === existingTasks }
+    val previews = currentReview?.tasks
+    val duplicates = currentReview?.duplicates.orEmpty()
+    val importIndices = selectedSet.filterTo(hashSetOf()) { index ->
+        index !in duplicates || review.duplicateAction(index, duplicates[index]) != MarkdownDuplicateAction.SKIP
+    }
+    val updateTargets = importIndices.mapNotNull { index ->
+        duplicates[index]?.takeIf { review.duplicateAction(index, duplicates[index]) == MarkdownDuplicateAction.UPDATE }?.let { index to it.id }
+    }.toMap()
     val invalidDestinations = remember(previews, activeProjectIds, activeListIds) {
         previews?.mapIndexedNotNull { index, preview ->
             val task = preview.task
@@ -126,13 +162,15 @@ fun MarkdownImportScreen(
             }
         }?.toSet().orEmpty()
     }
-    val destinationValid = previews != null && selectedSet.all { it in previews.indices && it !in invalidDestinations }
+    val destinationValid = previews != null && importIndices.all { it in previews.indices && it !in invalidDestinations }
 
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
             // Persist read access so the preview can be rebuilt after process recreation.
             runCatching { context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION) }
             selected = null
+            editingIndex = null
+            updateReview(MarkdownImportReview())
             document = null
             fileName = null
             readError = 0
@@ -161,25 +199,27 @@ fun MarkdownImportScreen(
     }
     LaunchedEffect(status) {
         if (status?.sessionId == sessionId && status?.imported == true) {
-            Toast.makeText(context, R.string.markdown_import_success, Toast.LENGTH_LONG).show()
-            val destinations = previews.orEmpty().filterIndexed { index, _ -> index in selectedSet }
-                .map { it.task.projectId to it.task.listId }.distinct()
-            val destination = destinations.singleOrNull()
-            onImported(destination?.first, destination?.second)
+            onImported(importedDestination?.first, importedDestination?.second)
         }
     }
     // Keep the single batch write attached to its preview until its result is known.
-    BackHandler(enabled = importing) { }
+    BackHandler(enabled = importing || creatingReference) { }
     val tasks = document?.tasks.orEmpty()
-    val canImport = !importing && !loading && readError == 0 && previews != null &&
-        selectedSet.isNotEmpty() && destinationValid
+    val referencesValid = review.references.all { (token, id) -> when (token.first()) {
+        '+' -> projectId != null || listId != null || activeProjects.any { it.id == id }
+        '=' -> projectId != null || listId != null || activeLists.any { it.id == id }
+        '@' -> people.any { it.id == id && !it.archived }
+        else -> tags.any { it.id == id }
+    } }
+    val canImport = !importing && !creatingReference && referencesValid && !loading && readError == 0 && previews != null &&
+        importIndices.isNotEmpty() && destinationValid
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.markdown_import_title)) },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack, enabled = !importing) {
+                    IconButton(onClick = onNavigateBack, enabled = !importing && !creatingReference) {
                         Icon(Icons.AutoMirrored.Default.ArrowBack, stringResource(R.string.cd_back))
                     }
                 }
@@ -192,14 +232,20 @@ fun MarkdownImportScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Text(
-                        pluralStringResource(R.plurals.selection_count, selectedSet.size, selectedSet.size),
-                        modifier = Modifier.weight(1f)
-                    )
+                    Column(Modifier.weight(1f)) {
+                        Text(pluralStringResource(R.plurals.selection_count, selectedSet.size, selectedSet.size))
+                        if (selectedSet.size != importIndices.size) Text(
+                            pluralStringResource(R.plurals.markdown_tasks_to_import, importIndices.size, importIndices.size),
+                            style = MaterialTheme.typography.bodySmall)
+                    }
                     Button(
                         enabled = canImport,
                         onClick = {
-                            previews?.let { viewModel.importMarkdownTasks(sessionId, it.map { preview -> preview.task }, selectedSet) }
+                            previews?.let { approved ->
+                                importedDestination = approved.filterIndexed { index, _ -> index in importIndices }
+                                    .map { it.task.projectId to it.task.listId }.distinct().singleOrNull()
+                                viewModel.importMarkdownTasks(sessionId, approved.map { it.task }, importIndices, updateTargets)
+                            }
                         }
                     ) {
                         if (importing) {
@@ -212,106 +258,146 @@ fun MarkdownImportScreen(
             }
         }
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            item {
-                if (document == null) {
-                    Text(stringResource(R.string.markdown_import_help), style = MaterialTheme.typography.bodyMedium)
-                    Spacer(Modifier.height(12.dp))
-                }
-                OutlinedButton(
-                    onClick = {
-                        // Providers label .md as text/markdown, text/plain, octet-stream or no MIME.
-                        picker.launch(arrayOf("*/*"))
-                    },
-                    enabled = !importing && !loading
-                ) { Text(stringResource(R.string.markdown_import_choose_file)) }
-                fileName?.let { Text(it, style = MaterialTheme.typography.labelLarge) }
-                document?.title?.let { Text(it, style = MaterialTheme.typography.titleMedium) }
-                if (loading || (document != null && previews == null)) LinearProgressIndicator(Modifier.fillMaxWidth().padding(top = 12.dp))
-                if (readError != 0) Text(stringResource(readError), color = MaterialTheme.colorScheme.error)
-                if (status?.sessionId == sessionId && status?.failed == true) {
-                    Text(stringResource(R.string.error_action_failed), color = MaterialTheme.colorScheme.error)
-                }
-            }
-            item {
-                MarkdownDestinationPicker(
-                    label = stringResource(R.string.settings_default_project),
-                    selectedName = entityLabels.projects[projectId].takeIf { projectId in activeProjectIds },
-                    options = projectOptions,
-                    enabled = !importing,
-                    onSelected = { projectId = it }
-                )
-                Spacer(Modifier.height(8.dp))
-                MarkdownDestinationPicker(
-                    label = stringResource(R.string.settings_default_list),
-                    selectedName = entityLabels.lists[listId].takeIf { listId in activeListIds },
-                    options = listOptions,
-                    enabled = !importing,
-                    onSelected = { listId = it }
-                )
-                if (!destinationValid) {
-                    Text(stringResource(R.string.markdown_import_destination), style = MaterialTheme.typography.bodySmall)
-                }
-            }
-            if (tasks.isNotEmpty()) {
+        AdaptiveContentBox(modifier = Modifier.fillMaxSize().padding(padding)) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(20.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
                 item {
-                    Row(
-                        Modifier.fillMaxWidth().toggleable(
-                            value = useDates,
-                            enabled = !importing,
-                            role = Role.Switch,
-                            onValueChange = { useDates = it }
-                        ),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(Modifier.weight(1f)) {
-                            Text(stringResource(R.string.markdown_import_dates), fontWeight = FontWeight.Bold)
-                            Text(
-                                stringResource(R.string.markdown_import_dates_hint, document!!.referenceDate.toString()),
-                                style = MaterialTheme.typography.bodySmall
-                            )
+                    if (document != null && previews == null) LinearProgressIndicator(Modifier.fillMaxWidth())
+                    if (document == null) {
+                        Text(stringResource(R.string.markdown_import_help), style = MaterialTheme.typography.bodyMedium)
+                        Spacer(Modifier.height(12.dp))
+                    }
+                    OutlinedButton(
+                        onClick = {
+                            // Providers label .md as text/markdown, text/plain, octet-stream or no MIME.
+                            picker.launch(arrayOf("*/*"))
+                        },
+                        enabled = !importing && !loading && !creatingReference
+                    ) { Text(stringResource(R.string.markdown_import_choose_file)) }
+                    fileName?.let { Text(it, style = MaterialTheme.typography.labelLarge) }
+                    document?.title?.let { Text(it, style = MaterialTheme.typography.titleMedium) }
+                    if (loading || (document != null && previews == null)) LinearProgressIndicator(Modifier.fillMaxWidth().padding(top = 12.dp))
+                    if (readError != 0) Text(stringResource(readError), color = MaterialTheme.colorScheme.error)
+                    if (status?.sessionId == sessionId && status?.failed == true) {
+                        Text(stringResource(R.string.error_action_failed), color = MaterialTheme.colorScheme.error)
+                    }
+                }
+                item {
+                    MarkdownDestinationPicker(
+                        label = stringResource(R.string.settings_default_project),
+                        selectedName = entityLabels.projects[projectId].takeIf { projectId in activeProjectIds },
+                        options = projectOptions,
+                        enabled = !importing,
+                        onSelected = { projectId = it }
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    MarkdownDestinationPicker(
+                        label = stringResource(R.string.settings_default_list),
+                        selectedName = entityLabels.lists[listId].takeIf { listId in activeListIds },
+                        options = listOptions,
+                        enabled = !importing,
+                        onSelected = { listId = it }
+                    )
+                    if (!destinationValid) {
+                        Text(stringResource(R.string.markdown_import_destination), style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+                if (tasks.isNotEmpty()) {
+                    item {
+                        Row(
+                            Modifier.fillMaxWidth().toggleable(
+                                value = useDates,
+                                enabled = !importing,
+                                role = Role.Switch,
+                                onValueChange = { useDates = it }
+                            ),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(Modifier.weight(1f)) {
+                                Text(stringResource(R.string.markdown_import_dates), fontWeight = FontWeight.Bold)
+                                Text(
+                                    stringResource(R.string.markdown_import_dates_hint, document!!.referenceDate.toString()),
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                            Switch(checked = useDates, onCheckedChange = null, enabled = !importing)
                         }
-                        Switch(checked = useDates, onCheckedChange = null, enabled = !importing)
+                        Spacer(Modifier.height(12.dp))
+                        Text(
+                            stringResource(R.string.markdown_import_select_tasks),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            stringResource(R.string.markdown_import_selection_hint),
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            TextButton(
+                                onClick = { selected = tasks.indices.toList() },
+                                enabled = !importing && selectedSet.size < tasks.size,
+                                modifier = Modifier.weight(1f)
+                            ) { Text(stringResource(R.string.action_select_all)) }
+                            TextButton(
+                                onClick = { selected = emptyList() },
+                                enabled = !importing && selectedSet.isNotEmpty(),
+                                modifier = Modifier.weight(1f)
+                            ) { Text(stringResource(R.string.action_select_none)) }
+                        }
                     }
-                    Spacer(Modifier.height(12.dp))
-                    Text(
-                        stringResource(R.string.markdown_import_select_tasks),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        stringResource(R.string.markdown_import_selection_hint),
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        TextButton(
-                            onClick = { selected = tasks.indices.toList() },
-                            enabled = !importing && selectedSet.size < tasks.size,
-                            modifier = Modifier.weight(1f)
-                        ) { Text(stringResource(R.string.action_select_all)) }
-                        TextButton(
-                            onClick = { selected = emptyList() },
-                            enabled = !importing && selectedSet.isNotEmpty(),
-                            modifier = Modifier.weight(1f)
-                        ) { Text(stringResource(R.string.action_select_none)) }
+                    val referenceTokens = (basePreviews.orEmpty().flatMap { it.unmatched } + review.references.keys).distinctBy { it.lowercase() }.sorted()
+                    if (referenceTokens.isNotEmpty()) item {
+                        MarkdownReferenceControls(referenceTokens, importContext, review.references, !importing && !creatingReference,
+                            onMap = { token, id ->
+                                val latest = viewModel.markdownReview(sessionId).value
+                                updateReview(latest.copy(references = if (id == null) latest.references.filterKeys { !it.equals(token, true) } else latest.references.filterKeys { !it.equals(token, true) } + (token to id)))
+                            },
+                            onCreate = { token, result ->
+                                viewModel.createMarkdownReference(token, onResult = result)
+                            })
+                    }
+                    itemsIndexed(tasks, key = { index, _ -> "$fileUri:$fileRevision:$index" }) { index, task ->
+                        MarkdownTaskCard(
+                            task, previews?.getOrNull(index), entityLabels, index in selectedSet, !importing && !creatingReference,
+                            excludedSubtasks = review.excludedSubtasks[index].orEmpty(),
+                            rawSubtasks = review.edits[index]?.takeIf { "subtasks" in it.fields }?.task?.subtasks ?: basePreviews?.getOrNull(index)?.task?.subtasks.orEmpty(),
+                            duplicate = duplicates[index], duplicateAction = review.duplicateAction(index, duplicates[index]),
+                            onDuplicateAction = { updateReview(review.copy(duplicateActions = review.duplicateActions + (index to MarkdownDuplicateDecision(it, requireNotNull(duplicates[index]).id)))) },
+                            onEdit = { editingIndex = index },
+                            onSubtaskSelected = { subtaskIndex, checked ->
+                                val excluded = review.excludedSubtasks[index].orEmpty()
+                                updateReview(review.copy(excludedSubtasks = review.excludedSubtasks +
+                                    (index to if (checked) excluded - subtaskIndex else excluded + subtaskIndex)))
+                            },
+                            onSelected = { checked -> selected = if (checked) (selected.orEmpty() + index).distinct() else selected.orEmpty() - index }
+                        )
                     }
                 }
-                itemsIndexed(tasks, key = { index, _ -> "$fileUri:$fileRevision:$index" }) { index, task ->
-                    MarkdownTaskCard(task, previews?.getOrNull(index), entityLabels, index in selectedSet, !importing) { checked ->
-                        selected = if (checked) (selected.orEmpty() + index).distinct() else selected.orEmpty() - index
-                    }
-                }
+            }
+        }
+    }
+    var editorTask by remember(editingIndex) { mutableStateOf<Task?>(null) }
+    LaunchedEffect(editingIndex, previews) {
+        if (editorTask == null) editorTask = editingIndex?.let { previews?.getOrNull(it)?.task }
+    }
+    editingIndex?.let { index ->
+        editorTask?.let { task ->
+            key(index) {
+                MarkdownPreviewEditor(task, importContext, viewModel,
+                    onSave = { edited ->
+                        updateReview(review.withTaskEdit(index, task, edited))
+                        editingIndex = null
+                    }, onDismiss = { editingIndex = null })
             }
         }
     }
 }
 
 @Composable
-private fun MarkdownDestinationPicker(
+internal fun MarkdownDestinationPicker(
     label: String,
     selectedName: String?,
     options: List<Pair<String, String>>,
@@ -346,9 +432,18 @@ private fun MarkdownTaskCard(
     labels: MarkdownEntityLabels,
     selected: Boolean,
     enabled: Boolean,
+    excludedSubtasks: Set<Int>,
+    rawSubtasks: List<com.mj.yata.domain.model.Subtask>,
+    duplicate: Task?,
+    duplicateAction: MarkdownDuplicateAction,
+    onDuplicateAction: (MarkdownDuplicateAction) -> Unit,
+    onEdit: () -> Unit,
+    onSubtaskSelected: (Int, Boolean) -> Unit,
     onSelected: (Boolean) -> Unit
 ) {
     var details by rememberSaveable { mutableStateOf(false) }
+    val notes = preview?.task?.notes ?: task.notes
+    val includedSubtasks = preview?.task?.subtasks ?: rawSubtasks
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -364,6 +459,12 @@ private fun MarkdownTaskCard(
                 Checkbox(checked = selected, onCheckedChange = null, enabled = enabled)
                 Text(preview?.task?.title ?: task.title, Modifier.weight(1f).padding(start = 8.dp), fontWeight = FontWeight.Bold)
             }
+            TextButton(onClick = onEdit, enabled = enabled && preview != null) { Text(stringResource(R.string.task_row_edit_title)) }
+            if (duplicate != null && selected) {
+                val targetContext = listOfNotNull(labels.projects[duplicate.projectId]?.let { "+$it" },
+                    labels.lists[duplicate.listId]?.let { "=$it" }, duplicate.due).joinToString(" · ")
+                MarkdownDuplicateControls(duplicate, targetContext, duplicateAction, enabled, onDuplicateAction)
+            }
             task.heading?.let { Text(it, style = MaterialTheme.typography.labelMedium) }
             Text(
                 if (preview?.task?.due != null) stringResource(R.string.quick_add_preview_due, preview.task.due!!)
@@ -372,36 +473,37 @@ private fun MarkdownTaskCard(
             )
             preview?.let { MarkdownDetectedFields(it, labels) }
             if (task.done) Text(stringResource(R.string.export_done_label), style = MaterialTheme.typography.labelMedium)
-            if (task.subtasks.isNotEmpty()) {
+            if (rawSubtasks.isNotEmpty()) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(stringResource(R.string.new_task_subtasks), style = MaterialTheme.typography.labelMedium)
                     Text(
-                        stringResource(R.string.task_detail_subtasks_progress, task.subtasks.count { it.done }, task.subtasks.size),
+                        stringResource(R.string.task_detail_subtasks_progress, includedSubtasks.count { it.done }, includedSubtasks.size),
                         style = MaterialTheme.typography.labelMedium
                     )
                 }
             }
-            if (task.notes != null || task.subtasks.isNotEmpty()) {
+            if (notes != null || rawSubtasks.isNotEmpty()) {
                 TextButton(onClick = { details = !details }) {
                     Text(stringResource(R.string.people_details))
                     Icon(if (details) Icons.Default.ExpandLess else Icons.Default.ExpandMore, contentDescription = null)
                 }
             }
             if (details) {
-                task.subtasks.forEachIndexed { index, subtask ->
+                val byId = remember(rawSubtasks) { rawSubtasks.associateBy { it.id } }
+                rawSubtasks.forEachIndexed { index, subtask ->
                     var depth = 0
-                    var parent = subtask.parentIndex
-                    while (parent != null && parent < index && depth < 6) {
-                        depth++
-                        parent = task.subtasks[parent].parentIndex
+                    var parent = subtask.parentSubtaskId
+                    while (parent != null && depth < 6) { depth++; parent = byId[parent]?.parentSubtaskId }
+                    Row(Modifier.fillMaxWidth().padding(start = (depth * 12).dp).toggleable(
+                        value = index !in excludedSubtasks, enabled = enabled && selected,
+                        role = Role.Checkbox, onValueChange = { onSubtaskSelected(index, it) }),
+                        verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = index !in excludedSubtasks, onCheckedChange = null, enabled = enabled && selected)
+                        Text(subtask.title, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
+                        if (subtask.done) Text(stringResource(R.string.export_done_label), style = MaterialTheme.typography.labelSmall)
                     }
-                    Text(
-                        "${if (subtask.done) "☑" else "☐"} ${subtask.title}",
-                        Modifier.padding(start = (depth * 12).dp),
-                        style = MaterialTheme.typography.bodySmall
-                    )
                 }
-                task.notes?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+                notes?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
             }
         }
     }

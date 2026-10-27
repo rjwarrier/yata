@@ -1655,4 +1655,19 @@
     <string name="markdown_import_select_tasks">Wybierz zadania do importu</string>
     <string name="markdown_import_selection_hint">Zostaną dodane tylko wybrane zadania główne i ich podzadania.</string>
     <string name="markdown_import_unmatched">Niepowiązane: %1$s. Oryginalne odwołania pozostają w notatkach.</string>
+
+    <!-- Markdown review and batch undo -->
+    <string name="markdown_resolve_references">Dopasuj odwołania</string>
+    <string name="markdown_create_reference">Utwórz %1$s</string>
+    <string name="markdown_import_separately">Importuj osobno</string>
+    <string name="markdown_update_existing">Zaktualizuj istniejące</string>
+    <string name="markdown_update_keeps_context">Istniejące notatki i podzadania zostaną zachowane.</string>
+    <plurals name="markdown_tasks_imported">
+        <item quantity="one">Zaimportowane zadania: %1$d</item>
+        <item quantity="other">Zaimportowane zadania: %1$d</item>
+    </plurals>
+    <plurals name="markdown_tasks_to_import">
+        <item quantity="one">Do zaimportowania: %1$d</item>
+        <item quantity="other">Do zaimportowania: %1$d</item>
+    </plurals>
 </resources>

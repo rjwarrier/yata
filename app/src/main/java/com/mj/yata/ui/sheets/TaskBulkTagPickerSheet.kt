@@ -1,15 +1,12 @@
 package com.mj.yata.ui.sheets
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
@@ -18,7 +15,6 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalConfiguration
@@ -26,8 +22,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.state.ToggleableState
 import com.mj.yata.R
 import com.mj.yata.domain.model.Tag
+import com.mj.yata.domain.model.Task
 import com.mj.yata.ui.theme.LocalYataAccents
 import com.mj.yata.ui.widgets.YataFieldShape
 import com.mj.yata.ui.widgets.yataFieldColors
@@ -39,12 +37,18 @@ fun TaskBulkTagPickerSheet(
     onSelectTag: (String) -> Unit,
     onCreateTag: (name: String, color: String) -> Unit,
     onDismiss: () -> Unit,
+    selectedTasks: List<Task>,
+    onRemoveTag: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val accents = LocalYataAccents.current
     var query by rememberSaveable { mutableStateOf("") }
     var showCreateDialog by rememberSaveable { mutableStateOf(false) }
     var newTagName by rememberSaveable { mutableStateOf("") }
+    var removing by rememberSaveable { mutableStateOf(false) }
+    val counts = remember(selectedTasks) {
+        buildMap<String, Int> { selectedTasks.forEach { task -> task.tagIds.distinct().forEach { put(it, getOrDefault(it, 0) + 1) } } }
+    }
     val search = query.trim().removePrefix("#").trim()
     val sortedTags = remember(tags) { tags.sortedBy { it.name.lowercase() } }
     val filtered = remember(sortedTags, search) {
@@ -65,7 +69,7 @@ fun TaskBulkTagPickerSheet(
     ) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(
-                stringResource(R.string.bulk_add_tag_title),
+                stringResource(R.string.new_task_tags),
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.weight(1f)
             )
@@ -73,6 +77,11 @@ fun TaskBulkTagPickerSheet(
                 Icon(Icons.Default.Close, contentDescription = stringResource(R.string.action_cancel))
             }
         }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FilterChip(selected = !removing, onClick = { removing = false }, label = { Text(stringResource(R.string.action_add)) })
+            FilterChip(selected = removing, onClick = { removing = true }, label = { Text(stringResource(R.string.settings_remove)) })
+        }
+        if (removing) Text(stringResource(R.string.task_detail_tags_sync_hint), style = MaterialTheme.typography.bodySmall)
         OutlinedTextField(
             value = query,
             onValueChange = { query = it },
@@ -89,7 +98,7 @@ fun TaskBulkTagPickerSheet(
             colors = yataFieldColors(),
             modifier = Modifier.fillMaxWidth()
         )
-        if (canCreateSearch) {
+        if (!removing && canCreateSearch) {
             FilledTonalButton(
                 onClick = { onCreateTag(search, pickAccentFor(search)) },
                 modifier = Modifier.fillMaxWidth(),
@@ -99,7 +108,7 @@ fun TaskBulkTagPickerSheet(
                 Spacer(Modifier.width(8.dp))
                 Text(stringResource(R.string.mention_create_tag, search), maxLines = 2, overflow = TextOverflow.Ellipsis)
             }
-        } else {
+        } else if (!removing) {
             FilledTonalButton(
                 onClick = { newTagName = ""; showCreateDialog = true },
                 modifier = Modifier.fillMaxWidth()
@@ -125,9 +134,12 @@ fun TaskBulkTagPickerSheet(
                 contentPadding = PaddingValues(bottom = 8.dp)
             ) {
                 items(filtered, key = { it.id }) { tag ->
+                    val count = counts[tag.id] ?: 0
+                    val state = when { count == 0 -> ToggleableState.Off; count == selectedTasks.size -> ToggleableState.On; else -> ToggleableState.Indeterminate }
                     val color = if (tag.color == "error") MaterialTheme.colorScheme.error else accents.getAccent(tag.color)
                     OutlinedCard(
-                        onClick = { onSelectTag(tag.id) },
+                        onClick = { if (removing) onRemoveTag(tag.id) else onSelectTag(tag.id) },
+                        enabled = selectedTasks.isNotEmpty() && if (removing) count > 0 else count < selectedTasks.size,
                         modifier = Modifier.fillMaxWidth(),
                         shape = MaterialTheme.shapes.medium,
                         colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)
@@ -137,9 +149,7 @@ fun TaskBulkTagPickerSheet(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            Box(Modifier.size(32.dp).clip(CircleShape).background(color.copy(alpha = 0.14f)), contentAlignment = Alignment.Center) {
-                                Icon(Icons.AutoMirrored.Filled.Label, contentDescription = null, tint = color, modifier = Modifier.size(18.dp))
-                            }
+                            TriStateCheckbox(state = state, onClick = null, colors = CheckboxDefaults.colors(checkedColor = color))
                             Text(
                                 tag.name,
                                 style = MaterialTheme.typography.labelLarge,
@@ -148,6 +158,8 @@ fun TaskBulkTagPickerSheet(
                                 modifier = Modifier.weight(1f)
                             )
                         }
+                        Text(stringResource(R.string.editor_char_counter, count, selectedTasks.size),
+                            style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(start = 12.dp, bottom = 8.dp))
                     }
                 }
             }

@@ -1820,4 +1820,19 @@
     <string name="markdown_import_select_tasks">Choose tasks to import</string>
     <string name="markdown_import_selection_hint">Only selected main tasks and their subtasks will be added.</string>
     <string name="markdown_import_unmatched">Not linked: %1$s. Original references are kept in notes.</string>
+
+    <!-- Markdown review and batch undo -->
+    <string name="markdown_resolve_references">Resolve references</string>
+    <string name="markdown_create_reference">Create %1$s</string>
+    <string name="markdown_import_separately">Import separately</string>
+    <string name="markdown_update_existing">Update existing</string>
+    <string name="markdown_update_keeps_context">Existing notes and subtasks are kept.</string>
+    <plurals name="markdown_tasks_imported">
+        <item quantity="one">Imported tasks: %1$d</item>
+        <item quantity="other">Imported tasks: %1$d</item>
+    </plurals>
+    <plurals name="markdown_tasks_to_import">
+        <item quantity="one">To import: %1$d</item>
+        <item quantity="other">To import: %1$d</item>
+    </plurals>
 </resources>

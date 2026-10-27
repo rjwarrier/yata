@@ -1651,4 +1651,19 @@
     <string name="markdown_import_select_tasks">Välj uppgifter att importera</string>
     <string name="markdown_import_selection_hint">Bara valda huvuduppgifter och deras deluppgifter läggs till.</string>
     <string name="markdown_import_unmatched">Inte kopplat: %1$s. Ursprungliga hänvisningar sparas i anteckningarna.</string>
+
+    <!-- Markdown review and batch undo -->
+    <string name="markdown_resolve_references">Koppla referenser</string>
+    <string name="markdown_create_reference">Skapa %1$s</string>
+    <string name="markdown_import_separately">Importera separat</string>
+    <string name="markdown_update_existing">Uppdatera befintlig</string>
+    <string name="markdown_update_keeps_context">Befintliga anteckningar och deluppgifter behålls.</string>
+    <plurals name="markdown_tasks_imported">
+        <item quantity="one">Importerade uppgifter: %1$d</item>
+        <item quantity="other">Importerade uppgifter: %1$d</item>
+    </plurals>
+    <plurals name="markdown_tasks_to_import">
+        <item quantity="one">Att importera: %1$d</item>
+        <item quantity="other">Att importera: %1$d</item>
+    </plurals>
 </resources>

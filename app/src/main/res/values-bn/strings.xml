@@ -1651,4 +1651,19 @@
     <string name="markdown_import_select_tasks">আমদানির জন্য কাজ বাছুন</string>
     <string name="markdown_import_selection_hint">শুধু নির্বাচিত মূল কাজ এবং সেগুলির উপকাজ যোগ করা হবে।</string>
     <string name="markdown_import_unmatched">যুক্ত হয়নি: %1$s। মূল উল্লেখগুলি নোটে রাখা হয়েছে।</string>
+
+    <!-- Markdown review and batch undo -->
+    <string name="markdown_resolve_references">উল্লেখগুলি মিলিয়ে নিন</string>
+    <string name="markdown_create_reference">%1$s তৈরি করুন</string>
+    <string name="markdown_import_separately">আলাদাভাবে আমদানি করুন</string>
+    <string name="markdown_update_existing">বিদ্যমানটি হালনাগাদ করুন</string>
+    <string name="markdown_update_keeps_context">বিদ্যমান নোট ও উপকাজগুলি রাখা হবে।</string>
+    <plurals name="markdown_tasks_imported">
+        <item quantity="one">আমদানি করা কাজ: %1$d</item>
+        <item quantity="other">আমদানি করা কাজ: %1$d</item>
+    </plurals>
+    <plurals name="markdown_tasks_to_import">
+        <item quantity="one">আমদানি হবে: %1$d</item>
+        <item quantity="other">আমদানি হবে: %1$d</item>
+    </plurals>
 </resources>

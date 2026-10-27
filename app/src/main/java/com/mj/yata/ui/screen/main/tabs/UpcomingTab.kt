@@ -95,6 +95,7 @@ fun UpcomingTab(
     onBulkDelete: (List<String>) -> Unit = {},
     onSelectionDeleteActionChanged: ((() -> Unit)?) -> Unit = {},
     onBulkAddTag: (List<String>, String) -> Unit = { _, _ -> },
+    onBulkRemoveTag: (List<String>, String) -> Unit = { _, _ -> },
     onBulkCreateAndAddTag: (List<String>, String, String) -> Unit = { _, _, _ -> },
     onBulkSetProject: (List<String>, String?) -> Unit = { _, _ -> },
     onBulkSetList: (List<String>, String?) -> Unit = { _, _ -> },
@@ -701,6 +702,12 @@ fun UpcomingTab(
         ) {
             com.mj.yata.ui.sheets.TaskBulkTagPickerSheet(
                 tags = tags,
+                selectedTasks = tasks.filter { it.id in selectedIds },
+                onRemoveTag = { tagId ->
+                    onBulkRemoveTag(selectedIds.toList(), tagId)
+                    selectedIds.clear()
+                    showBulkTagSheet = false
+                },
                 onCreateTag = { name, color ->
                     onBulkCreateAndAddTag(selectedIds.toList(), name, color)
                     selectedIds.clear()

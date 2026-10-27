@@ -1651,4 +1651,19 @@
     <string name="markdown_import_select_tasks">आयात करने के लिए कार्य चुनें</string>
     <string name="markdown_import_selection_hint">केवल चुने गए मुख्य कार्य और उनके उपकार्य जोड़े जाएँगे।</string>
     <string name="markdown_import_unmatched">लिंक नहीं हुआ: %1$s। मूल उल्लेख नोट्स में रखे गए हैं।</string>
+
+    <!-- Markdown review and batch undo -->
+    <string name="markdown_resolve_references">संदर्भों का मिलान करें</string>
+    <string name="markdown_create_reference">%1$s बनाएँ</string>
+    <string name="markdown_import_separately">अलग से आयात करें</string>
+    <string name="markdown_update_existing">मौजूदा कार्य अपडेट करें</string>
+    <string name="markdown_update_keeps_context">मौजूदा नोट्स और उपकार्य रखे जाएँगे।</string>
+    <plurals name="markdown_tasks_imported">
+        <item quantity="one">आयात किए गए कार्य: %1$d</item>
+        <item quantity="other">आयात किए गए कार्य: %1$d</item>
+    </plurals>
+    <plurals name="markdown_tasks_to_import">
+        <item quantity="one">आयात करने के लिए: %1$d</item>
+        <item quantity="other">आयात करने के लिए: %1$d</item>
+    </plurals>
 </resources>

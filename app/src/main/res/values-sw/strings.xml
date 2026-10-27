@@ -1648,4 +1648,19 @@
     <string name="markdown_import_select_tasks">Chagua kazi za kuingiza</string>
     <string name="markdown_import_selection_hint">Kazi kuu zilizochaguliwa na kazi zake ndogo pekee ndizo zitaongezwa.</string>
     <string name="markdown_import_unmatched">Haijaunganishwa: %1$s. Marejeleo ya awali yanabaki kwenye madokezo.</string>
+
+    <!-- Markdown review and batch undo -->
+    <string name="markdown_resolve_references">Linganisha marejeleo</string>
+    <string name="markdown_create_reference">Unda %1$s</string>
+    <string name="markdown_import_separately">Ingiza kando</string>
+    <string name="markdown_update_existing">Sasisha iliyopo</string>
+    <string name="markdown_update_keeps_context">Maelezo na kazi ndogo zilizopo zitahifadhiwa.</string>
+    <plurals name="markdown_tasks_imported">
+        <item quantity="one">Kazi zilizoingizwa: %1$d</item>
+        <item quantity="other">Kazi zilizoingizwa: %1$d</item>
+    </plurals>
+    <plurals name="markdown_tasks_to_import">
+        <item quantity="one">Za kuingiza: %1$d</item>
+        <item quantity="other">Za kuingiza: %1$d</item>
+    </plurals>
 </resources>

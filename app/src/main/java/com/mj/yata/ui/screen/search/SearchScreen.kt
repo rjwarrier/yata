@@ -827,6 +827,12 @@ fun SearchScreen(
         ) {
             com.mj.yata.ui.sheets.TaskBulkTagPickerSheet(
                 tags = tags,
+                selectedTasks = tasks.filter { it.id in selectedIds },
+                onRemoveTag = { tagId ->
+                    viewModel.bulkRemoveTag(selectedIds.toList(), tagId)
+                    selectedIds.clear()
+                    showBulkTagSheet = false
+                },
                 onCreateTag = { name, color ->
                     viewModel.bulkCreateAndAddTag(selectedIds.toList(), name, color)
                     selectedIds.clear()

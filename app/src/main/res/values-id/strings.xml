@@ -1651,4 +1651,19 @@
     <string name="markdown_import_select_tasks">Pilih tugas untuk diimpor</string>
     <string name="markdown_import_selection_hint">Hanya tugas utama yang dipilih beserta subtugasnya yang akan ditambahkan.</string>
     <string name="markdown_import_unmatched">Belum ditautkan: %1$s. Referensi asli disimpan dalam catatan.</string>
+
+    <!-- Markdown review and batch undo -->
+    <string name="markdown_resolve_references">Cocokkan referensi</string>
+    <string name="markdown_create_reference">Buat %1$s</string>
+    <string name="markdown_import_separately">Impor secara terpisah</string>
+    <string name="markdown_update_existing">Perbarui yang ada</string>
+    <string name="markdown_update_keeps_context">Catatan dan subtugas yang ada tetap disimpan.</string>
+    <plurals name="markdown_tasks_imported">
+        <item quantity="one">Tugas yang diimpor: %1$d</item>
+        <item quantity="other">Tugas yang diimpor: %1$d</item>
+    </plurals>
+    <plurals name="markdown_tasks_to_import">
+        <item quantity="one">Untuk diimpor: %1$d</item>
+        <item quantity="other">Untuk diimpor: %1$d</item>
+    </plurals>
 </resources>

@@ -1653,4 +1653,19 @@
     <string name="markdown_import_select_tasks">Choisir les tâches à importer</string>
     <string name="markdown_import_selection_hint">Seules les tâches principales sélectionnées et leurs sous-tâches seront ajoutées.</string>
     <string name="markdown_import_unmatched">Non associé : %1$s. Les références d’origine restent dans les notes.</string>
+
+    <!-- Markdown review and batch undo -->
+    <string name="markdown_resolve_references">Associer les références</string>
+    <string name="markdown_create_reference">Créer %1$s</string>
+    <string name="markdown_import_separately">Importer séparément</string>
+    <string name="markdown_update_existing">Mettre à jour la tâche existante</string>
+    <string name="markdown_update_keeps_context">Les notes et sous-tâches existantes sont conservées.</string>
+    <plurals name="markdown_tasks_imported">
+        <item quantity="one">Tâches importées : %1$d</item>
+        <item quantity="other">Tâches importées : %1$d</item>
+    </plurals>
+    <plurals name="markdown_tasks_to_import">
+        <item quantity="one">À importer : %1$d</item>
+        <item quantity="other">À importer : %1$d</item>
+    </plurals>
 </resources>

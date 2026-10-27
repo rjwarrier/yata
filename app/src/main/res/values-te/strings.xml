@@ -1648,4 +1648,19 @@
     <string name="markdown_import_select_tasks">దిగుమతి చేయాల్సిన పనులను ఎంచుకోండి</string>
     <string name="markdown_import_selection_hint">ఎంచుకున్న ప్రధాన పనులు, వాటి ఉపపనులు మాత్రమే జోడించబడతాయి.</string>
     <string name="markdown_import_unmatched">లింక్ కాలేదు: %1$s. అసలు ప్రస్తావనలు గమనికల్లో ఉంటాయి.</string>
+
+    <!-- Markdown review and batch undo -->
+    <string name="markdown_resolve_references">ప్రస్తావనలను సరిపోల్చండి</string>
+    <string name="markdown_create_reference">%1$s సృష్టించండి</string>
+    <string name="markdown_import_separately">విడిగా దిగుమతి చేయండి</string>
+    <string name="markdown_update_existing">ఇప్పటికే ఉన్నదాన్ని నవీకరించండి</string>
+    <string name="markdown_update_keeps_context">ఇప్పటికే ఉన్న గమనికలు మరియు ఉపపనులు ఉంచబడతాయి.</string>
+    <plurals name="markdown_tasks_imported">
+        <item quantity="one">దిగుమతి చేసిన పనులు: %1$d</item>
+        <item quantity="other">దిగుమతి చేసిన పనులు: %1$d</item>
+    </plurals>
+    <plurals name="markdown_tasks_to_import">
+        <item quantity="one">దిగుమతి చేయడానికి: %1$d</item>
+        <item quantity="other">దిగుమతి చేయడానికి: %1$d</item>
+    </plurals>
 </resources>

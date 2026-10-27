@@ -16,6 +16,14 @@ test-only changes belong in the commit message, not here, unless they change beh
 ## [Unreleased]
 
 ### Added
+- Markdown import previews can be edited before saving, including dates, people, tags and
+  destinations. Unknown references can be mapped or explicitly created once for the whole file.
+- Markdown imports flag existing task matches, with Skip, Import separately and Update existing
+  choices. Updates retain existing notes, nested subtasks, completion and task history.
+- Undo an entire Markdown import batch, including changes to existing tasks. New tasks move to
+  Trash, while undoing updates preserves fields edited after the import.
+- Choose individual Markdown subtasks before importing; retained children of an excluded subtask
+  move to their nearest retained ancestor.
 - Selecting tasks shows a trash floating action button on Today, Upcoming, Search, and
   project/list/tag/person screens. It opens the existing bulk-delete confirmation.
 - Markdown import uses the same smart-add rules as individual tasks to detect dates, times,
@@ -53,6 +61,8 @@ test-only changes belong in the commit message, not here, unless they change beh
   and older, which cap how many items a single database lookup can name.
 
 ### Changed
+- Bulk tag selection shows whether each tag is present on all, some or none of the selected
+  tasks, and offers Add and Remove modes. Project-wide tags remain inherited.
 - Large Markdown import previews reuse entity matches and heading metadata, and the bulk tag
   picker avoids re-sorting tags on every search keystroke.
 - The bulk task tag picker now has search, a scrollable two-column tag grid, and inline tag

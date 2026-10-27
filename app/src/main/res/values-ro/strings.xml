@@ -1653,4 +1653,19 @@
     <string name="markdown_import_select_tasks">Alege sarcinile de importat</string>
     <string name="markdown_import_selection_hint">Vor fi adăugate doar sarcinile principale selectate și subsarcinile lor.</string>
     <string name="markdown_import_unmatched">Neasociat: %1$s. Referințele originale rămân în note.</string>
+
+    <!-- Markdown review and batch undo -->
+    <string name="markdown_resolve_references">Asociază referințele</string>
+    <string name="markdown_create_reference">Creează %1$s</string>
+    <string name="markdown_import_separately">Importă separat</string>
+    <string name="markdown_update_existing">Actualizează sarcina existentă</string>
+    <string name="markdown_update_keeps_context">Notele și subsarcinile existente sunt păstrate.</string>
+    <plurals name="markdown_tasks_imported">
+        <item quantity="one">Sarcini importate: %1$d</item>
+        <item quantity="other">Sarcini importate: %1$d</item>
+    </plurals>
+    <plurals name="markdown_tasks_to_import">
+        <item quantity="one">De importat: %1$d</item>
+        <item quantity="other">De importat: %1$d</item>
+    </plurals>
 </resources>

@@ -1648,4 +1648,19 @@
     <string name="markdown_import_select_tasks">இறக்குமதி செய்ய பணிகளைத் தேர்ந்தெடுக்கவும்</string>
     <string name="markdown_import_selection_hint">தேர்ந்தெடுத்த முதன்மைப் பணிகளும் அவற்றின் துணைப் பணிகளும் மட்டுமே சேர்க்கப்படும்.</string>
     <string name="markdown_import_unmatched">இணைக்கப்படவில்லை: %1$s. அசல் குறிப்புகள் குறிப்புகளில் சேமிக்கப்படும்.</string>
+
+    <!-- Markdown review and batch undo -->
+    <string name="markdown_resolve_references">குறிப்புகளைப் பொருத்துக</string>
+    <string name="markdown_create_reference">%1$s உருவாக்குக</string>
+    <string name="markdown_import_separately">தனியாக இறக்குமதி செய்க</string>
+    <string name="markdown_update_existing">ஏற்கனவே உள்ளதைப் புதுப்பிக்கவும்</string>
+    <string name="markdown_update_keeps_context">ஏற்கனவே உள்ள குறிப்புகளும் துணைப் பணிகளும் தக்கவைக்கப்படும்.</string>
+    <plurals name="markdown_tasks_imported">
+        <item quantity="one">இறக்குமதி செய்யப்பட்ட பணிகள்: %1$d</item>
+        <item quantity="other">இறக்குமதி செய்யப்பட்ட பணிகள்: %1$d</item>
+    </plurals>
+    <plurals name="markdown_tasks_to_import">
+        <item quantity="one">இறக்குமதி செய்ய வேண்டியவை: %1$d</item>
+        <item quantity="other">இறக்குமதி செய்ய வேண்டியவை: %1$d</item>
+    </plurals>
 </resources>

@@ -905,6 +905,12 @@ fun PersonDetailScreen(
         ) {
             TaskBulkTagPickerSheet(
                 tags = tags,
+                selectedTasks = allTasks.filter { it.id in selectedIds },
+                onRemoveTag = { tagId ->
+                    viewModel.bulkRemoveTag(selectedIds.toList(), tagId)
+                    selectedIds.clear()
+                    showBulkTagSheet = false
+                },
                 onCreateTag = { name, color ->
                     viewModel.bulkCreateAndAddTag(selectedIds.toList(), name, color)
                     selectedIds.clear()

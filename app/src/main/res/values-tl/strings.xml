@@ -1648,4 +1648,19 @@
     <string name="markdown_import_select_tasks">Pumili ng mga gawaing i-import</string>
     <string name="markdown_import_selection_hint">Ang napiling pangunahing gawain at mga subtask nito lang ang idadagdag.</string>
     <string name="markdown_import_unmatched">Hindi naka-link: %1$s. Nasa mga tala ang orihinal na sanggunian.</string>
+
+    <!-- Markdown review and batch undo -->
+    <string name="markdown_resolve_references">Itugma ang mga sanggunian</string>
+    <string name="markdown_create_reference">Gumawa ng %1$s</string>
+    <string name="markdown_import_separately">I-import nang hiwalay</string>
+    <string name="markdown_update_existing">I-update ang dati</string>
+    <string name="markdown_update_keeps_context">Pananatilihin ang mga kasalukuyang tala at subtask.</string>
+    <plurals name="markdown_tasks_imported">
+        <item quantity="one">Mga na-import na gawain: %1$d</item>
+        <item quantity="other">Mga na-import na gawain: %1$d</item>
+    </plurals>
+    <plurals name="markdown_tasks_to_import">
+        <item quantity="one">I-i-import: %1$d</item>
+        <item quantity="other">I-i-import: %1$d</item>
+    </plurals>
 </resources>

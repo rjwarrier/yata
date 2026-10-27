@@ -5,6 +5,16 @@ import com.mj.yata.domain.repository.YataRepository
 import kotlinx.coroutines.flow.first
 import java.util.UUID
 
+/** Project-wide tags are inherited, so removing one only changes tasks where it is optional. */
+internal suspend fun removeBulkTag(repository: YataRepository, ids: List<String>, tagId: String) {
+    if (ids.isEmpty()) return
+    val projects = repository.getProjects().first().associateBy { it.id }
+    val updated = repository.getTasksByIds(ids.distinct()).filter {
+        tagId in it.tagIds && tagId !in projects[it.projectId]?.commonTagIds.orEmpty()
+    }.map { it.copy(tagIds = it.tagIds - tagId) }
+    if (updated.isNotEmpty()) repository.upsertTasks(updated, resyncReminder = false)
+}
+
 /** Persist the tag before linking tasks to it; separate async writes can race the foreign key. */
 internal suspend fun createAndApplyBulkTag(
     repository: YataRepository,
