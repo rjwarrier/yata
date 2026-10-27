@@ -6,11 +6,19 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.FolderOpen
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.*
@@ -19,6 +27,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -36,7 +49,7 @@ import com.mj.yata.util.withTaskEdit
 import com.mj.yata.ui.util.AdaptiveContentBox
 import com.mj.yata.R
 import com.mj.yata.ui.screen.main.MainViewModel
-import com.mj.yata.ui.widgets.YataDropdownMenu
+import com.mj.yata.ui.widgets.TagChip
 import com.mj.yata.ui.widgets.YataDropdownMenuItem
 import com.mj.yata.util.MarkdownDocument
 import com.mj.yata.util.MarkdownImportTooLargeException
@@ -67,7 +80,7 @@ private data class MarkdownEntityLabels(
     val projects: Map<String, String>,
     val lists: Map<String, String>,
     val people: Map<String, String>,
-    val tags: Map<String, String>
+    val tags: Map<String, com.mj.yata.domain.model.Tag>
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -119,7 +132,7 @@ fun MarkdownImportScreen(
     val listOptions = remember(activeLists) { activeLists.map { it.id to it.name } }
     val entityLabels = remember(projects, lists, people, tags) {
         MarkdownEntityLabels(projects.associate { it.id to it.name }, lists.associate { it.id to it.name },
-            people.associate { it.id to it.name }, tags.associate { it.id to it.name })
+            people.associate { it.id to it.name }, tags.associateBy { it.id })
     }
     val importContext = remember(projects, lists, people, tags, projectsEnabled, tagsEnabled, peopleEnabled, defaultPriority, autoAssignToMe) {
         MarkdownImportContext(projects, lists, people, tags, projectsEnabled, peopleEnabled, tagsEnabled,
@@ -214,10 +227,15 @@ fun MarkdownImportScreen(
     val canImport = !importing && !creatingReference && referencesValid && !loading && readError == 0 && previews != null &&
         importIndices.isNotEmpty() && destinationValid
 
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val controlsEnabled = !importing && !creatingReference
     Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        containerColor = MaterialTheme.colorScheme.surface,
         topBar = {
-            TopAppBar(
+            MediumTopAppBar(
                 title = { Text(stringResource(R.string.markdown_import_title)) },
+                scrollBehavior = scrollBehavior,
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack, enabled = !importing && !creatingReference) {
                         Icon(Icons.AutoMirrored.Default.ArrowBack, stringResource(R.string.cd_back))
@@ -226,33 +244,41 @@ fun MarkdownImportScreen(
             )
         },
         bottomBar = {
-            Surface(tonalElevation = 3.dp) {
-                Row(
-                    Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 20.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    Column(Modifier.weight(1f)) {
-                        Text(pluralStringResource(R.plurals.selection_count, selectedSet.size, selectedSet.size))
-                        if (selectedSet.size != importIndices.size) Text(
-                            pluralStringResource(R.plurals.markdown_tasks_to_import, importIndices.size, importIndices.size),
-                            style = MaterialTheme.typography.bodySmall)
-                    }
-                    Button(
-                        enabled = canImport,
-                        onClick = {
-                            previews?.let { approved ->
-                                importedDestination = approved.filterIndexed { index, _ -> index in importIndices }
-                                    .map { it.task.projectId to it.task.listId }.distinct().singleOrNull()
-                                viewModel.importMarkdownTasks(sessionId, approved.map { it.task }, importIndices, updateTargets)
-                            }
-                        }
+            Surface(color = MaterialTheme.colorScheme.surfaceContainer, tonalElevation = 3.dp) {
+                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    Row(
+                        Modifier.widthIn(max = 760.dp).fillMaxWidth().navigationBarsPadding().heightIn(min = 80.dp).padding(horizontal = 20.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        if (importing) {
-                            CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
-                            Spacer(Modifier.width(8.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(pluralStringResource(R.plurals.selection_count, selectedSet.size, selectedSet.size),
+                                style = MaterialTheme.typography.titleSmall)
+                            if (selectedSet.size != importIndices.size) Text(
+                                pluralStringResource(R.plurals.markdown_tasks_to_import, importIndices.size, importIndices.size),
+                                style = MaterialTheme.typography.bodySmall)
                         }
-                        Text(stringResource(R.string.action_import))
+                        Button(
+                            enabled = canImport,
+                            modifier = Modifier.heightIn(min = 48.dp),
+                            onClick = {
+                                previews?.let { approved ->
+                                    importedDestination = approved.filterIndexed { index, _ -> index in importIndices }
+                                        .map { it.task.projectId to it.task.listId }.distinct().singleOrNull()
+                                    viewModel.importMarkdownTasks(sessionId, approved.map { it.task }, importIndices, updateTargets)
+                                }
+                            }
+                        ) {
+                            if (importing) {
+                                CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+                                Spacer(Modifier.width(8.dp))
+                            }
+                            if (!importing) {
+                                Icon(Icons.Default.FileDownload, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(8.dp))
+                            }
+                            Text(stringResource(R.string.action_import))
+                        }
                     }
                 }
             }
@@ -264,88 +290,93 @@ fun MarkdownImportScreen(
                 contentPadding = PaddingValues(20.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                item {
-                    if (document != null && previews == null) LinearProgressIndicator(Modifier.fillMaxWidth())
-                    if (document == null) {
-                        Text(stringResource(R.string.markdown_import_help), style = MaterialTheme.typography.bodyMedium)
-                        Spacer(Modifier.height(12.dp))
-                    }
-                    OutlinedButton(
-                        onClick = {
-                            // Providers label .md as text/markdown, text/plain, octet-stream or no MIME.
-                            picker.launch(arrayOf("*/*"))
-                        },
-                        enabled = !importing && !loading && !creatingReference
-                    ) { Text(stringResource(R.string.markdown_import_choose_file)) }
-                    fileName?.let { Text(it, style = MaterialTheme.typography.labelLarge) }
-                    document?.title?.let { Text(it, style = MaterialTheme.typography.titleMedium) }
-                    if (loading || (document != null && previews == null)) LinearProgressIndicator(Modifier.fillMaxWidth().padding(top = 12.dp))
-                    if (readError != 0) Text(stringResource(readError), color = MaterialTheme.colorScheme.error)
-                    if (status?.sessionId == sessionId && status?.failed == true) {
-                        Text(stringResource(R.string.error_action_failed), color = MaterialTheme.colorScheme.error)
+                item(key = "source") {
+                    Card(
+                        shape = MaterialTheme.shapes.extraLarge,
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)
+                    ) {
+                        Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                                Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.primaryContainer) {
+                                    Icon(Icons.Default.Description, contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.padding(12.dp).size(24.dp))
+                                }
+                                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Text(document?.title ?: stringResource(R.string.markdown_import_title),
+                                        style = MaterialTheme.typography.titleMedium)
+                                    fileName?.let { Text(it, style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis) }
+                                }
+                            }
+                            if (document == null) Text(stringResource(R.string.markdown_import_help),
+                                style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            FilledTonalButton(
+                                onClick = { picker.launch(arrayOf("*/*")) },
+                                enabled = controlsEnabled && !loading,
+                                modifier = Modifier.heightIn(min = 48.dp)
+                            ) {
+                                Icon(Icons.Default.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text(stringResource(R.string.markdown_import_choose_file))
+                            }
+                            if (loading || (document != null && previews == null)) LinearProgressIndicator(Modifier.fillMaxWidth())
+                        }
                     }
                 }
-                item {
-                    MarkdownDestinationPicker(
-                        label = stringResource(R.string.settings_default_project),
-                        selectedName = entityLabels.projects[projectId].takeIf { projectId in activeProjectIds },
-                        options = projectOptions,
-                        enabled = !importing,
-                        onSelected = { projectId = it }
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    MarkdownDestinationPicker(
-                        label = stringResource(R.string.settings_default_list),
-                        selectedName = entityLabels.lists[listId].takeIf { listId in activeListIds },
-                        options = listOptions,
-                        enabled = !importing,
-                        onSelected = { listId = it }
-                    )
-                    if (!destinationValid) {
-                        Text(stringResource(R.string.markdown_import_destination), style = MaterialTheme.typography.bodySmall)
+                if (readError != 0) item(key = "read-error") { MarkdownMessage(stringResource(readError), isError = true) }
+                if (status?.sessionId == sessionId && status?.failed == true) item(key = "save-error") {
+                    MarkdownMessage(stringResource(R.string.error_action_failed), isError = true)
+                }
+                item(key = "destination") {
+                    Card(shape = MaterialTheme.shapes.large,
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)) {
+                        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                            Text(stringResource(R.string.new_task_organize), style = MaterialTheme.typography.titleMedium)
+                            MarkdownDestinationPicker(
+                                label = stringResource(R.string.entity_project),
+                                selectedName = entityLabels.projects[projectId].takeIf { projectId in activeProjectIds },
+                                options = projectOptions, enabled = controlsEnabled, onSelected = { projectId = it }
+                            )
+                            MarkdownDestinationPicker(
+                                label = stringResource(R.string.entity_list),
+                                selectedName = entityLabels.lists[listId].takeIf { listId in activeListIds },
+                                options = listOptions, enabled = controlsEnabled, onSelected = { listId = it }
+                            )
+                            if (!destinationValid && document != null && previews != null && importIndices.isNotEmpty()) {
+                                Text(stringResource(R.string.markdown_import_destination), style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.error)
+                            }
+                        }
+                        if (tasks.isNotEmpty()) {
+                            HorizontalDivider(Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outlineVariant)
+                            ListItem(
+                                modifier = Modifier.toggleable(useDates, enabled = controlsEnabled, role = Role.Switch, onValueChange = { useDates = it }),
+                                headlineContent = { Text(stringResource(R.string.markdown_import_dates)) },
+                                supportingContent = { Text(stringResource(R.string.markdown_import_dates_hint, document!!.referenceDate.toString())) },
+                                leadingContent = { Icon(Icons.Default.Schedule, contentDescription = null) },
+                                trailingContent = { Switch(checked = useDates, onCheckedChange = null, enabled = controlsEnabled) },
+                                colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)
+                            )
+                        }
                     }
                 }
                 if (tasks.isNotEmpty()) {
-                    item {
-                        Row(
-                            Modifier.fillMaxWidth().toggleable(
-                                value = useDates,
-                                enabled = !importing,
-                                role = Role.Switch,
-                                onValueChange = { useDates = it }
-                            ),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(Modifier.weight(1f)) {
-                                Text(stringResource(R.string.markdown_import_dates), fontWeight = FontWeight.Bold)
-                                Text(
-                                    stringResource(R.string.markdown_import_dates_hint, document!!.referenceDate.toString()),
-                                    style = MaterialTheme.typography.bodySmall
-                                )
+                    item(key = "selection") {
+                        Column(Modifier.padding(top = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(stringResource(R.string.markdown_import_select_tasks), style = MaterialTheme.typography.titleMedium)
+                            Text(stringResource(R.string.markdown_import_selection_hint), style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                FilledTonalButton(onClick = { selected = tasks.indices.toList() },
+                                    modifier = Modifier.weight(1f).heightIn(min = 48.dp),
+                                    enabled = controlsEnabled && selectedSet.size < tasks.size) {
+                                    Text(stringResource(R.string.action_select_all))
+                                }
+                                TextButton(onClick = { selected = emptyList() }, modifier = Modifier.weight(1f).heightIn(min = 48.dp),
+                                    enabled = controlsEnabled && selectedSet.isNotEmpty()) {
+                                    Text(stringResource(R.string.action_select_none))
+                                }
                             }
-                            Switch(checked = useDates, onCheckedChange = null, enabled = !importing)
-                        }
-                        Spacer(Modifier.height(12.dp))
-                        Text(
-                            stringResource(R.string.markdown_import_select_tasks),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            stringResource(R.string.markdown_import_selection_hint),
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            TextButton(
-                                onClick = { selected = tasks.indices.toList() },
-                                enabled = !importing && selectedSet.size < tasks.size,
-                                modifier = Modifier.weight(1f)
-                            ) { Text(stringResource(R.string.action_select_all)) }
-                            TextButton(
-                                onClick = { selected = emptyList() },
-                                enabled = !importing && selectedSet.isNotEmpty(),
-                                modifier = Modifier.weight(1f)
-                            ) { Text(stringResource(R.string.action_select_none)) }
                         }
                     }
                     val referenceTokens = (basePreviews.orEmpty().flatMap { it.unmatched } + review.references.keys).distinctBy { it.lowercase() }.sorted()
@@ -396,6 +427,7 @@ fun MarkdownImportScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun MarkdownDestinationPicker(
     label: String,
@@ -405,22 +437,36 @@ internal fun MarkdownDestinationPicker(
     onSelected: (String?) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
-    Column {
-        Text(label, style = MaterialTheme.typography.labelLarge)
-        Box {
-            OutlinedButton(onClick = { expanded = true }, enabled = enabled, modifier = Modifier.fillMaxWidth()) {
-                Text(selectedName ?: stringResource(R.string.task_detail_none), Modifier.weight(1f))
-                Icon(Icons.Default.ExpandMore, contentDescription = null)
+    LaunchedEffect(enabled) { if (!enabled) expanded = false }
+    ExposedDropdownMenuBox(expanded = expanded && enabled, onExpandedChange = { if (enabled) expanded = it }) {
+        OutlinedTextField(
+            value = selectedName ?: stringResource(R.string.task_detail_none),
+            onValueChange = {}, readOnly = true, enabled = enabled,
+            label = { Text(label) },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded && enabled) },
+            shape = MaterialTheme.shapes.medium,
+            modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled)
+        )
+        ExposedDropdownMenu(expanded = expanded && enabled, onDismissRequest = { expanded = false },
+            shape = MaterialTheme.shapes.medium, containerColor = MaterialTheme.colorScheme.surfaceContainer) {
+            YataDropdownMenuItem(text = { Text(stringResource(R.string.task_detail_none)) }, enabled = enabled,
+                onClick = { expanded = false; onSelected(null) })
+            options.forEach { (id, name) ->
+                YataDropdownMenuItem(text = { Text(name) }, enabled = enabled,
+                    onClick = { expanded = false; onSelected(id) })
             }
-            YataDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                YataDropdownMenuItem(
-                    text = { Text(stringResource(R.string.task_detail_none)) },
-                    onClick = { expanded = false; onSelected(null) }
-                )
-                options.forEach { (id, name) ->
-                    YataDropdownMenuItem(text = { Text(name) }, onClick = { expanded = false; onSelected(id) })
-                }
-            }
+        }
+    }
+}
+
+@Composable
+internal fun MarkdownMessage(message: String, isError: Boolean = false, modifier: Modifier = Modifier) {
+    Surface(modifier = modifier.fillMaxWidth().semantics { if (isError) liveRegion = LiveRegionMode.Polite }, shape = MaterialTheme.shapes.medium,
+        color = if (isError) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.secondaryContainer,
+        contentColor = if (isError) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSecondaryContainer) {
+        Row(Modifier.padding(12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Icon(if (isError) Icons.Default.ErrorOutline else Icons.Default.Info, contentDescription = null, modifier = Modifier.size(20.dp))
+            Text(message, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
         }
     }
 }
@@ -444,80 +490,91 @@ private fun MarkdownTaskCard(
     var details by rememberSaveable { mutableStateOf(false) }
     val notes = preview?.task?.notes ?: task.notes
     val includedSubtasks = preview?.task?.subtasks ?: rawSubtasks
-    Card(
+    OutlinedCard(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = if (selected) MaterialTheme.colorScheme.secondaryContainer
-                else MaterialTheme.colorScheme.surfaceContainerLow
-        )
+        shape = MaterialTheme.shapes.large,
+        border = BorderStroke(if (selected) 2.dp else 1.dp,
+            if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant),
+        colors = CardDefaults.outlinedCardColors(containerColor = if (selected) MaterialTheme.colorScheme.secondaryContainer
+            else MaterialTheme.colorScheme.surfaceContainerLow)
     ) {
-        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             Row(
-                Modifier.fillMaxWidth().toggleable(selected, enabled = enabled, role = Role.Checkbox, onValueChange = onSelected),
+                Modifier.weight(1f).heightIn(min = 56.dp).toggleable(selected, enabled = enabled,
+                    role = Role.Checkbox, onValueChange = onSelected),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Checkbox(checked = selected, onCheckedChange = null, enabled = enabled)
-                Text(preview?.task?.title ?: task.title, Modifier.weight(1f).padding(start = 8.dp), fontWeight = FontWeight.Bold)
+                Text(preview?.task?.title ?: task.title, Modifier.weight(1f).padding(start = 4.dp, end = 8.dp),
+                    style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
             }
-            TextButton(onClick = onEdit, enabled = enabled && preview != null) { Text(stringResource(R.string.task_row_edit_title)) }
+            IconButton(onClick = onEdit, enabled = enabled && preview != null) {
+                Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.task_row_edit_title))
+            }
+        }
+        Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            task.heading?.let { Text(it, style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            preview?.let { MarkdownDetectedFields(it, labels) }
+            if (task.done) MarkdownInfoChip(stringResource(R.string.export_done_label))
             if (duplicate != null && selected) {
                 val targetContext = listOfNotNull(labels.projects[duplicate.projectId]?.let { "+$it" },
                     labels.lists[duplicate.listId]?.let { "=$it" }, duplicate.due).joinToString(" · ")
                 MarkdownDuplicateControls(duplicate, targetContext, duplicateAction, enabled, onDuplicateAction)
             }
-            task.heading?.let { Text(it, style = MaterialTheme.typography.labelMedium) }
-            Text(
-                if (preview?.task?.due != null) stringResource(R.string.quick_add_preview_due, preview.task.due!!)
-                else stringResource(R.string.search_filter_no_due_date),
-                style = MaterialTheme.typography.bodySmall
-            )
-            preview?.let { MarkdownDetectedFields(it, labels) }
-            if (task.done) Text(stringResource(R.string.export_done_label), style = MaterialTheme.typography.labelMedium)
-            if (rawSubtasks.isNotEmpty()) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(stringResource(R.string.new_task_subtasks), style = MaterialTheme.typography.labelMedium)
-                    Text(
-                        stringResource(R.string.task_detail_subtasks_progress, includedSubtasks.count { it.done }, includedSubtasks.size),
-                        style = MaterialTheme.typography.labelMedium
-                    )
-                }
-            }
             if (notes != null || rawSubtasks.isNotEmpty()) {
-                TextButton(onClick = { details = !details }) {
-                    Text(stringResource(R.string.people_details))
-                    Icon(if (details) Icons.Default.ExpandLess else Icons.Default.ExpandMore, contentDescription = null)
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween) {
+                    TextButton(onClick = { details = !details }) {
+                        Text(stringResource(R.string.people_details))
+                        Spacer(Modifier.width(8.dp))
+                        Icon(if (details) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                            contentDescription = null, modifier = Modifier.size(18.dp))
+                    }
+                    if (rawSubtasks.isNotEmpty()) Column(horizontalAlignment = Alignment.End) {
+                        Text(stringResource(R.string.new_task_subtasks), style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.task_detail_subtasks_progress, includedSubtasks.count { it.done }, includedSubtasks.size),
+                            style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                 }
             }
             if (details) {
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 val byId = remember(rawSubtasks) { rawSubtasks.associateBy { it.id } }
                 rawSubtasks.forEachIndexed { index, subtask ->
                     var depth = 0
                     var parent = subtask.parentSubtaskId
                     while (parent != null && depth < 6) { depth++; parent = byId[parent]?.parentSubtaskId }
-                    Row(Modifier.fillMaxWidth().padding(start = (depth * 12).dp).toggleable(
+                    Row(Modifier.fillMaxWidth().padding(start = (depth * 12).dp).heightIn(min = 48.dp).toggleable(
                         value = index !in excludedSubtasks, enabled = enabled && selected,
                         role = Role.Checkbox, onValueChange = { onSubtaskSelected(index, it) }),
                         verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(checked = index !in excludedSubtasks, onCheckedChange = null, enabled = enabled && selected)
-                        Text(subtask.title, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
+                        Text(subtask.title, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
                         if (subtask.done) Text(stringResource(R.string.export_done_label), style = MaterialTheme.typography.labelSmall)
                     }
                 }
-                notes?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+                notes?.let {
+                    Text(stringResource(R.string.new_task_notes), style = MaterialTheme.typography.labelLarge)
+                    Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
         }
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun MarkdownDetectedFields(preview: MarkdownTaskPreview, entities: MarkdownEntityLabels) {
     val task = preview.task
     val project = entities.projects[task.projectId]
     val list = entities.lists[task.listId]
     val labels = buildList {
+        task.due?.let { add(stringResource(R.string.quick_add_preview_due, it)) }
         project?.let { add("+$it") }
         list?.let { add("=$it") }
-        task.tagIds.mapNotNull { entities.tags[it] }.forEach { add("#$it") }
         task.assigneeIds.mapNotNull { entities.people[it] }.forEach { add("@$it") }
         task.startDate?.let { add(stringResource(R.string.smart_add_starts, it)) }
         task.time?.let { add(stringResource(R.string.quick_add_preview_time, it)) }
@@ -528,10 +585,22 @@ private fun MarkdownDetectedFields(preview: MarkdownTaskPreview, entities: Markd
         )))
         if (task.flag) add(stringResource(R.string.quick_add_preview_flagged))
     }
-    if (labels.isNotEmpty()) Text(labels.joinToString(" · "), style = MaterialTheme.typography.bodySmall)
-    if (preview.unmatched.isNotEmpty()) Text(
-        stringResource(R.string.markdown_import_unmatched, preview.unmatched.joinToString(", ")),
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.error
-    )
+    if (task.due == null) Text(stringResource(R.string.search_filter_no_due_date), style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant)
+    if (labels.isNotEmpty() || task.tagIds.isNotEmpty()) FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        labels.forEach { MarkdownInfoChip(it) }
+        task.tagIds.mapNotNull { entities.tags[it] }.forEach { TagChip(name = it.name, accentKey = it.color) }
+    }
+    if (preview.unmatched.isNotEmpty()) MarkdownMessage(
+        stringResource(R.string.markdown_import_unmatched, preview.unmatched.joinToString(", ")))
+}
+
+@Composable
+private fun MarkdownInfoChip(label: String) {
+    Surface(shape = MaterialTheme.shapes.small, color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        contentColor = MaterialTheme.colorScheme.onSurfaceVariant) {
+        Text(label, Modifier.padding(horizontal = 10.dp, vertical = 6.dp), style = MaterialTheme.typography.labelMedium)
+    }
 }

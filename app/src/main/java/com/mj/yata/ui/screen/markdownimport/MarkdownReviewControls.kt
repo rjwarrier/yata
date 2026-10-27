@@ -1,9 +1,19 @@
 package com.mj.yata.ui.screen.markdownimport
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.semantics.Role
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
@@ -38,9 +48,16 @@ internal fun MarkdownReferenceControls(
             '#' to context.tags.map { it.id to it.name }
         ).mapValues { (_, options) -> options.sortedBy { it.second.lowercase() } }
     }
-    OutlinedCard(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            TextButton(onClick = { expanded = !expanded }) { Text(stringResource(R.string.markdown_resolve_references)) }
+    Card(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)) {
+        ListItem(
+            modifier = Modifier.clickable(role = Role.Button) { expanded = !expanded },
+            headlineContent = { Text(stringResource(R.string.markdown_resolve_references), style = MaterialTheme.typography.titleSmall) },
+            leadingContent = { Icon(Icons.Default.Link, contentDescription = null) },
+            trailingContent = { Icon(if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore, contentDescription = null) },
+            colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)
+        )
+        Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             if (expanded) LazyColumn(
                 modifier = Modifier.fillMaxWidth().heightIn(max = 360.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -58,12 +75,17 @@ internal fun MarkdownReferenceControls(
                                 if (id != null) onMap(token, id) else failed = true
                                 creating = null
                             }
-                        }) { Text(stringResource(R.string.markdown_create_reference, token)) }
+                        }) {
+                            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text(stringResource(R.string.markdown_create_reference, token))
+                        }
                     }
                 }
             }
             if (creating != null) LinearProgressIndicator(Modifier.fillMaxWidth())
-            if (failed) Text(stringResource(R.string.error_action_failed), color = MaterialTheme.colorScheme.error)
+            if (failed) MarkdownMessage(stringResource(R.string.error_action_failed), isError = true)
+            if (expanded || creating != null || failed) Spacer(Modifier.height(4.dp))
         }
     }
 }
@@ -72,24 +94,33 @@ internal fun MarkdownReferenceControls(
 internal fun MarkdownDuplicateControls(
     existing: Task, targetContext: String, action: MarkdownDuplicateAction, enabled: Boolean, onAction: (MarkdownDuplicateAction) -> Unit
 ) {
-    Text(stringResource(R.string.duplicate_task_match_body, existing.title), style = MaterialTheme.typography.bodySmall)
-    if (targetContext.isNotBlank()) Text(targetContext, style = MaterialTheme.typography.bodySmall)
-    Column {
-        MarkdownDuplicateAction.entries.forEach { value ->
-            Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                RadioButton(selected = action == value, onClick = { onAction(value) }, enabled = enabled)
-                TextButton(onClick = { onAction(value) }, enabled = enabled) {
-                    Text(stringResource(when (value) {
-                        MarkdownDuplicateAction.SKIP -> R.string.welcome_skip
-                        MarkdownDuplicateAction.COPY -> R.string.markdown_import_separately
-                        MarkdownDuplicateAction.UPDATE -> R.string.markdown_update_existing
-                    }))
+    Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.surfaceContainerHigh) {
+        Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(stringResource(R.string.action_similar_task_already_exists), style = MaterialTheme.typography.titleSmall)
+            Text(stringResource(R.string.duplicate_task_match_body, existing.title), style = MaterialTheme.typography.bodyMedium)
+            if (targetContext.isNotBlank()) Text(targetContext, style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Column(Modifier.selectableGroup()) {
+                MarkdownDuplicateAction.entries.forEach { value ->
+                    Row(
+                        Modifier.fillMaxWidth().heightIn(min = 48.dp).selectable(selected = action == value,
+                            enabled = enabled, role = Role.RadioButton, onClick = { onAction(value) }),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        RadioButton(selected = action == value, onClick = null, enabled = enabled)
+                        Text(stringResource(when (value) {
+                            MarkdownDuplicateAction.SKIP -> R.string.welcome_skip
+                            MarkdownDuplicateAction.COPY -> R.string.markdown_import_separately
+                            MarkdownDuplicateAction.UPDATE -> R.string.markdown_update_existing
+                        }), style = MaterialTheme.typography.bodyMedium)
+                    }
                 }
             }
+            if (action == MarkdownDuplicateAction.UPDATE) Text(stringResource(R.string.markdown_update_keeps_context),
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
-    if (action == MarkdownDuplicateAction.UPDATE) Text(stringResource(R.string.markdown_update_keeps_context),
-        style = MaterialTheme.typography.bodySmall)
 }
 
 @Composable
@@ -110,29 +141,29 @@ internal fun MarkdownPreviewEditor(
     Dialog(onDismissRequest = { if (pending == 0) onDismiss() },
         properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
         Surface(Modifier.fillMaxSize()) {
-        AdaptiveContentBox {
-        Column(Modifier.fillMaxSize().statusBarsPadding()) {
-            if (pending > 0) LinearProgressIndicator(Modifier.fillMaxWidth())
-            if (failed) Text(stringResource(R.string.error_action_failed), color = MaterialTheme.colorScheme.error)
-            NewTaskSheet(
-                lists = context.lists, projects = context.projects, people = context.people, tags = context.tags,
-                initialDraft = draft, autoAssignToMe = false,
-                headerTitleRes = R.string.task_row_edit_title, editorOptions = TaskDraftEditorOptions(pending == 0),
-                projectsEnabled = context.projectsEnabled, peopleEnabled = context.peopleEnabled, tagsEnabled = context.tagsEnabled,
-                onCreateTag = { id, name, color -> create(id, "#$name", color) },
-                onCreatePerson = { id, name, color -> create(id, "@$name", color) },
-                onDismiss = { if (pending == 0) onDismiss() },
-                onAddTask = { edited ->
-                    onSave(task.copy(title = edited.title, listId = edited.listId, projectId = edited.projectId,
-                        priority = edited.priority, assigneeIds = edited.assigneeIds.mapNotNull { (aliases[it] ?: it).takeIf(String::isNotBlank) }.distinct(),
-                        tagIds = edited.tagIds.mapNotNull { (aliases[it] ?: it).takeIf(String::isNotBlank) }.distinct(), recurrence = edited.recurrence,
-                        due = edited.due, startDate = edited.startDate, time = edited.time, reminder = edited.reminder,
-                        section = edited.section, notes = edited.notes, subtasks = edited.subtasks, flag = edited.flag,
-                        estimateMinutes = edited.estimateMinutes))
+            AdaptiveContentBox {
+                Column(Modifier.fillMaxSize().statusBarsPadding()) {
+                    if (pending > 0) LinearProgressIndicator(Modifier.fillMaxWidth())
+                    if (failed) Text(stringResource(R.string.error_action_failed), color = MaterialTheme.colorScheme.error)
+                    NewTaskSheet(
+                        lists = context.lists, projects = context.projects, people = context.people, tags = context.tags,
+                        initialDraft = draft, autoAssignToMe = false,
+                        headerTitleRes = R.string.task_row_edit_title, editorOptions = TaskDraftEditorOptions(pending == 0),
+                        projectsEnabled = context.projectsEnabled, peopleEnabled = context.peopleEnabled, tagsEnabled = context.tagsEnabled,
+                        onCreateTag = { id, name, color -> create(id, "#$name", color) },
+                        onCreatePerson = { id, name, color -> create(id, "@$name", color) },
+                        onDismiss = { if (pending == 0) onDismiss() },
+                        onAddTask = { edited ->
+                            onSave(task.copy(title = edited.title, listId = edited.listId, projectId = edited.projectId,
+                                priority = edited.priority, assigneeIds = edited.assigneeIds.mapNotNull { (aliases[it] ?: it).takeIf(String::isNotBlank) }.distinct(),
+                                tagIds = edited.tagIds.mapNotNull { (aliases[it] ?: it).takeIf(String::isNotBlank) }.distinct(), recurrence = edited.recurrence,
+                                due = edited.due, startDate = edited.startDate, time = edited.time, reminder = edited.reminder,
+                                section = edited.section, notes = edited.notes, subtasks = edited.subtasks, flag = edited.flag,
+                                estimateMinutes = edited.estimateMinutes))
+                        }
+                    )
                 }
-            )
-        }
-        }
-        }
+                }
+            }
     }
 }

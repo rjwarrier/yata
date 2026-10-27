@@ -61,6 +61,9 @@ test-only changes belong in the commit message, not here, unless they change beh
   and older, which cap how many items a single database lookup can name.
 
 ### Changed
+- Markdown import uses Material 3 section cards, dropdown fields, a collapsing app bar and a
+  persistent import action. Task cards have clearer selection outlines, inline edit actions,
+  metadata chips and accessible full-row duplicate choices.
 - Bulk tag pickers show individual chips in each tag's saved color, with contrasting text and
   selection indicators. Colors remain visible for tags already applied to all selected tasks.
 - Bulk tag selection shows whether each tag is present on all, some or none of the selected
