@@ -1633,18 +1633,19 @@
     <string name="recurrence_preview_none">ਇਸ ਤੋਂ ਬਾਅਦ ਦੁਹਰਾਇਆ ਨਹੀਂ ਜਾਵੇਗਾ</string>
     <string name="markdown_import_title">Markdown ਆਯਾਤ ਕਰੋ</string>
     <string name="markdown_import_summary">ਚੈੱਕਲਿਸਟ ਵੇਖ ਕੇ ਕਿਸੇ ਪ੍ਰੋਜੈਕਟ ਜਾਂ ਸੂਚੀ ਵਿੱਚ ਕੰਮ ਜੋੜੋ।</string>
-    <string name="markdown_import_help">ਮੁੱਖ ਚੈੱਕਬਾਕਸ ਕੰਮ ਬਣਦੇ ਹਨ; ਅੰਦਰਲੇ ਚੈੱਕਬਾਕਸ ਉਪਕੰਮ ਬਣਦੇ ਹਨ। ਹੋਰ ਵੇਰਵੇ ਨੋਟਾਂ ਵਿੱਚ ਰਹਿੰਦੇ ਹਨ। ਆਯਾਤ ਤੋਂ ਪਹਿਲਾਂ ਤਾਰੀਖਾਂ ਵੇਖੋ।</string>
+    <string name="markdown_import_help">ਸਮਾਰਟ ਐਡ ਚੈੱਕਲਿਸਟਾਂ, ਸੂਚੀਆਂ ਅਤੇ ਕੰਮਾਂ ਦੀਆਂ ਸਾਰਣੀਆਂ ਵਿੱਚ ਜਾਣਕਾਰੀ ਪਛਾਣਦਾ ਹੈ। ਆਯਾਤ ਤੋਂ ਪਹਿਲਾਂ ਝਲਕ ਵੇਖੋ।</string>
     <string name="markdown_import_choose_file">Markdown ਫਾਈਲ ਚੁਣੋ</string>
-    <string name="markdown_import_empty">ਚੈੱਕਲਿਸਟ ਵਿੱਚ ਕੰਮ ਨਹੀਂ ਮਿਲੇ। - [ ] ਕੰਮ ਵਰਗੀਆਂ ਲਾਈਨਾਂ ਵਰਤੋ।</string>
+    <string name="markdown_import_empty">ਕੰਮ ਨਹੀਂ ਮਿਲੇ। ਚੈੱਕਲਿਸਟ, ਸੂਚੀ, ਕੰਮਾਂ ਦੀ ਸਾਰਣੀ ਜਾਂ ਹਰ ਲਾਈਨ ਵਿੱਚ ਇੱਕ ਕੰਮ ਵਰਤੋ।</string>
     <string name="markdown_import_too_large">੧ MB ਤੋਂ ਛੋਟੀ ਫਾਈਲ ਵਿੱਚ ਵੱਧ ਤੋਂ ਵੱਧ ੧,੦੦੦ ਕੰਮ ਅਤੇ ਹਰ ਕੰਮ ਵਿੱਚ ੨੦੦ ਉਪਕੰਮ ਰੱਖੋ।</string>
     <string name="markdown_import_read_failed">ਫਾਈਲ ਪੜ੍ਹੀ ਨਹੀਂ ਜਾ ਸਕੀ। UTF-8 Markdown ਫਾਈਲ ਚੁਣੋ।</string>
     <string name="markdown_import_success">ਕੰਮ ਆਯਾਤ ਹੋ ਗਏ</string>
     <string name="markdown_import_destination">ਘੱਟੋ-ਘੱਟ ਇੱਕ ਪ੍ਰੋਜੈਕਟ ਜਾਂ ਸੂਚੀ ਚੁਣੋ।</string>
-    <string name="markdown_import_dates">ਸਿਰਲੇਖਾਂ ਦੀਆਂ ਤਾਰੀਖਾਂ ਵਰਤੋ</string>
-    <string name="markdown_import_dates_hint">ਅੰਗਰੇਜ਼ੀ ਜਾਂ ISO ਤਾਰੀਖਾਂ; ਸਾਪੇਖ ਤਾਰੀਖਾਂ ਦਾ ਆਧਾਰ %1$s ਹੈ।</string>
+    <string name="markdown_import_dates">ਪਛਾਣਿਆ ਸਮਾਂ-ਸਾਰਣੀ ਵਰਤੋ</string>
+    <string name="markdown_import_dates_hint">ਸਾਪੇਖ ਤਾਰੀਖਾਂ ਦਾ ਆਧਾਰ %1$s ਹੈ। ਕੰਮ ਦੀ ਜਾਣਕਾਰੀ ਨੂੰ ਸਿਰਲੇਖਾਂ ਤੋਂ ਵੱਧ ਤਰਜੀਹ ਮਿਲੇਗੀ।</string>
     <string name="new_task_organize">ਤਰਤੀਬ ਦਿਓ</string>
     <string name="action_select_all">ਸਭ ਚੁਣੋ</string>
     <string name="action_select_none">ਸਭ ਦੀ ਚੋਣ ਹਟਾਓ</string>
     <string name="markdown_import_select_tasks">ਆਯਾਤ ਕਰਨ ਲਈ ਕੰਮ ਚੁਣੋ</string>
     <string name="markdown_import_selection_hint">ਸਿਰਫ਼ ਚੁਣੇ ਗਏ ਮੁੱਖ ਕੰਮ ਅਤੇ ਉਨ੍ਹਾਂ ਦੇ ਉਪਕੰਮ ਜੋੜੇ ਜਾਣਗੇ।</string>
+    <string name="markdown_import_unmatched">ਜੁੜਿਆ ਨਹੀਂ: %1$s। ਅਸਲ ਹਵਾਲੇ ਨੋਟਾਂ ਵਿੱਚ ਰੱਖੇ ਜਾਂਦੇ ਹਨ।</string>
 </resources>

@@ -1636,18 +1636,19 @@
     <string name="recurrence_preview_none">এরপর আর পুনরাবৃত্তি হবে না</string>
     <string name="markdown_import_title">Markdown আমদানি</string>
     <string name="markdown_import_summary">চেকলিস্ট দেখে কোনো প্রকল্প বা তালিকায় কাজ যোগ করুন।</string>
-    <string name="markdown_import_help">প্রথম স্তরের চেকবক্স কাজ হয়; ভেতরের চেকবক্স উপকাজ হয়। অন্য তথ্য নোটে থাকে। আমদানির আগে তারিখ দেখুন।</string>
+    <string name="markdown_import_help">স্মার্ট অ্যাড চেকলিস্ট, তালিকা ও কাজের টেবিল থেকে তথ্য শনাক্ত করে। আমদানির আগে প্রিভিউ দেখুন।</string>
     <string name="markdown_import_choose_file">Markdown ফাইল বাছুন</string>
-    <string name="markdown_import_empty">চেকলিস্টে কাজ পাওয়া যায়নি। - [ ] কাজ-এর মতো লাইন ব্যবহার করুন।</string>
+    <string name="markdown_import_empty">কাজ পাওয়া যায়নি। চেকলিস্ট, তালিকা, কাজের টেবিল বা প্রতি লাইনে একটি কাজ ব্যবহার করুন।</string>
     <string name="markdown_import_too_large">১ MB-এর ছোট ফাইলে সর্বোচ্চ ১,০০০ কাজ এবং প্রতি কাজে ২০০ উপকাজ রাখুন।</string>
     <string name="markdown_import_read_failed">ফাইলটি পড়া যায়নি। UTF-8 Markdown ফাইল বাছুন।</string>
     <string name="markdown_import_success">কাজ আমদানি হয়েছে</string>
     <string name="markdown_import_destination">অন্তত একটি প্রকল্প বা তালিকা বাছুন।</string>
-    <string name="markdown_import_dates">শিরোনামের তারিখ ব্যবহার করুন</string>
-    <string name="markdown_import_dates_hint">ইংরেজি বা ISO তারিখ; আপেক্ষিক তারিখের ভিত্তি %1$s।</string>
+    <string name="markdown_import_dates">শনাক্ত করা সময়সূচি ব্যবহার করুন</string>
+    <string name="markdown_import_dates_hint">আপেক্ষিক তারিখের ভিত্তি %1$s। কাজের তথ্য শিরোনামের তথ্যের চেয়ে অগ্রাধিকার পায়।</string>
     <string name="new_task_organize">সাজান</string>
     <string name="action_select_all">সব নির্বাচন করুন</string>
     <string name="action_select_none">সব নির্বাচন সরান</string>
     <string name="markdown_import_select_tasks">আমদানির জন্য কাজ বাছুন</string>
     <string name="markdown_import_selection_hint">শুধু নির্বাচিত মূল কাজ এবং সেগুলির উপকাজ যোগ করা হবে।</string>
+    <string name="markdown_import_unmatched">যুক্ত হয়নি: %1$s। মূল উল্লেখগুলি নোটে রাখা হয়েছে।</string>
 </resources>

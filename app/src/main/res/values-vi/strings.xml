@@ -1636,18 +1636,19 @@
     <string name="recurrence_preview_none">Không lặp lại sau lần này</string>
     <string name="markdown_import_title">Nhập Markdown</string>
     <string name="markdown_import_summary">Xem trước danh sách kiểm tra và thêm công việc vào dự án hoặc danh sách.</string>
-    <string name="markdown_import_help">Ô chọn cấp cao nhất trở thành công việc; ô lồng nhau trở thành việc phụ. Chi tiết khác được giữ trong ghi chú. Kiểm tra ngày trước khi nhập.</string>
+    <string name="markdown_import_help">Thêm thông minh phát hiện các trường trong danh sách và bảng công việc. Kiểm tra bản xem trước khi nhập.</string>
     <string name="markdown_import_choose_file">Chọn tệp Markdown</string>
-    <string name="markdown_import_empty">Không tìm thấy công việc. Dùng các dòng như - [ ] Công việc.</string>
+    <string name="markdown_import_empty">Không tìm thấy công việc. Dùng danh sách, bảng công việc hoặc mỗi dòng một công việc.</string>
     <string name="markdown_import_too_large">Dùng tệp dưới 1 MB với tối đa 1.000 công việc và 200 việc phụ cho mỗi công việc.</string>
     <string name="markdown_import_read_failed">Không đọc được tệp. Hãy chọn tệp Markdown UTF-8.</string>
     <string name="markdown_import_success">Đã nhập công việc</string>
     <string name="markdown_import_destination">Chọn ít nhất một dự án hoặc danh sách.</string>
-    <string name="markdown_import_dates">Dùng ngày trong tiêu đề</string>
-    <string name="markdown_import_dates_hint">Ngày tiếng Anh hoặc ISO; ngày tương đối lấy %1$s làm mốc.</string>
+    <string name="markdown_import_dates">Dùng lịch đã phát hiện</string>
+    <string name="markdown_import_dates_hint">Ngày tương đối lấy %1$s làm mốc. Giá trị trong công việc được ưu tiên hơn tiêu đề.</string>
     <string name="new_task_organize">Sắp xếp</string>
     <string name="action_select_all">Chọn tất cả</string>
     <string name="action_select_none">Bỏ chọn tất cả</string>
     <string name="markdown_import_select_tasks">Chọn công việc để nhập</string>
     <string name="markdown_import_selection_hint">Chỉ các công việc chính được chọn và việc phụ của chúng mới được thêm.</string>
+    <string name="markdown_import_unmatched">Chưa liên kết: %1$s. Tham chiếu gốc được giữ trong ghi chú.</string>
 </resources>

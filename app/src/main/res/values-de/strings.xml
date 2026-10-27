@@ -1793,18 +1793,19 @@
     <string name="recurrence_preview_none">Wird danach nicht mehr wiederholt</string>
     <string name="markdown_import_title">Markdown importieren</string>
     <string name="markdown_import_summary">Checkliste prüfen und Aufgaben zu einem Projekt oder einer Liste hinzufügen.</string>
-    <string name="markdown_import_help">Oberste Kontrollkästchen werden Aufgaben, verschachtelte werden Teilaufgaben. Weitere Angaben bleiben in den Notizen. Daten vor dem Import prüfen.</string>
+    <string name="markdown_import_help">Smart Add erkennt Angaben in Checklisten, Listen und Aufgabentabellen. Prüfe die Vorschau vor dem Import.</string>
     <string name="markdown_import_choose_file">Markdown-Datei auswählen</string>
-    <string name="markdown_import_empty">Keine Checklistenaufgaben gefunden. Verwende Zeilen wie - [ ] Aufgabe.</string>
+    <string name="markdown_import_empty">Keine Aufgaben gefunden. Verwende eine Liste, Aufgabentabelle oder eine Aufgabe pro Zeile.</string>
     <string name="markdown_import_too_large">Verwende eine Datei unter 1 MB mit höchstens 1.000 Aufgaben und 200 Teilaufgaben pro Aufgabe.</string>
     <string name="markdown_import_read_failed">Datei konnte nicht gelesen werden. Wähle eine Markdown-Datei in UTF-8.</string>
     <string name="markdown_import_success">Aufgaben importiert</string>
     <string name="markdown_import_destination">Wähle mindestens ein Projekt oder eine Liste.</string>
-    <string name="markdown_import_dates">Daten aus Überschriften verwenden</string>
-    <string name="markdown_import_dates_hint">Englische oder ISO-Daten; relative Daten beziehen sich auf %1$s.</string>
+    <string name="markdown_import_dates">Erkannte Zeitplanung verwenden</string>
+    <string name="markdown_import_dates_hint">Relative Daten beziehen sich auf %1$s. Aufgabenangaben haben Vorrang vor Überschriften.</string>
     <string name="new_task_organize">Organisieren</string>
     <string name="action_select_all">Alle auswählen</string>
     <string name="action_select_none">Keine auswählen</string>
     <string name="markdown_import_select_tasks">Aufgaben zum Import auswählen</string>
     <string name="markdown_import_selection_hint">Nur ausgewählte Hauptaufgaben und ihre Teilaufgaben werden hinzugefügt.</string>
+    <string name="markdown_import_unmatched">Nicht verknüpft: %1$s. Ursprüngliche Angaben bleiben in den Notizen.</string>
 </resources>

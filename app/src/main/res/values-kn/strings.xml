@@ -1633,18 +1633,19 @@
     <string name="recurrence_preview_none">ಇದರ ನಂತರ ಪುನರಾವರ್ತನೆ ಆಗುವುದಿಲ್ಲ</string>
     <string name="markdown_import_title">Markdown ಆಮದು ಮಾಡಿ</string>
     <string name="markdown_import_summary">ಪರಿಶೀಲನಾಪಟ್ಟಿ ನೋಡಿ ಯೋಜನೆ ಅಥವಾ ಪಟ್ಟಿಗೆ ಕಾರ್ಯಗಳನ್ನು ಸೇರಿಸಿ.</string>
-    <string name="markdown_import_help">ಮುಖ್ಯ ಚೆಕ್‌ಬಾಕ್ಸ್‌ಗಳು ಕಾರ್ಯಗಳಾಗುತ್ತವೆ; ಒಳಗಿನವು ಉಪಕಾರ್ಯಗಳಾಗುತ್ತವೆ. ಇತರ ವಿವರಗಳು ಟಿಪ್ಪಣಿಗಳಲ್ಲಿ ಉಳಿಯುತ್ತವೆ. ಆಮದು ಮಾಡುವ ಮೊದಲು ದಿನಾಂಕಗಳನ್ನು ಪರಿಶೀಲಿಸಿ.</string>
+    <string name="markdown_import_help">ಸ್ಮಾರ್ಟ್ ಆಡ್ ಪರಿಶೀಲನಾಪಟ್ಟಿ, ಪಟ್ಟಿ ಮತ್ತು ಕಾರ್ಯಗಳ ಕೋಷ್ಟಕದಲ್ಲಿ ವಿವರಗಳನ್ನು ಗುರುತಿಸುತ್ತದೆ. ಆಮದು ಮಾಡುವ ಮೊದಲು ಪೂರ್ವವೀಕ್ಷಣೆ ಪರಿಶೀಲಿಸಿ.</string>
     <string name="markdown_import_choose_file">Markdown ಕಡತ ಆಯ್ಕೆಮಾಡಿ</string>
-    <string name="markdown_import_empty">ಪರಿಶೀಲನಾಪಟ್ಟಿಯಲ್ಲಿ ಕಾರ್ಯಗಳು ಸಿಗಲಿಲ್ಲ. - [ ] ಕಾರ್ಯ ರೀತಿಯ ಸಾಲುಗಳನ್ನು ಬಳಸಿ.</string>
+    <string name="markdown_import_empty">ಕಾರ್ಯಗಳು ಸಿಗಲಿಲ್ಲ. ಪರಿಶೀಲನಾಪಟ್ಟಿ, ಪಟ್ಟಿ, ಕಾರ್ಯಗಳ ಕೋಷ್ಟಕ ಅಥವಾ ಪ್ರತಿ ಸಾಲಿನಲ್ಲಿ ಒಂದು ಕಾರ್ಯ ಬಳಸಿ.</string>
     <string name="markdown_import_too_large">೧ MB ಗಿಂತ ಚಿಕ್ಕ ಕಡತದಲ್ಲಿ ಗರಿಷ್ಠ ೧,೦೦೦ ಕಾರ್ಯಗಳು ಮತ್ತು ಪ್ರತಿ ಕಾರ್ಯಕ್ಕೆ ೨೦೦ ಉಪಕಾರ್ಯಗಳನ್ನು ಬಳಸಿ.</string>
     <string name="markdown_import_read_failed">ಕಡತ ಓದಲಾಗಲಿಲ್ಲ. UTF-8 Markdown ಕಡತ ಆಯ್ಕೆಮಾಡಿ.</string>
     <string name="markdown_import_success">ಕಾರ್ಯಗಳನ್ನು ಆಮದು ಮಾಡಲಾಗಿದೆ</string>
     <string name="markdown_import_destination">ಕನಿಷ್ಠ ಒಂದು ಯೋಜನೆ ಅಥವಾ ಪಟ್ಟಿಯನ್ನು ಆಯ್ಕೆಮಾಡಿ.</string>
-    <string name="markdown_import_dates">ಶೀರ್ಷಿಕೆಗಳ ದಿನಾಂಕಗಳನ್ನು ಬಳಸಿ</string>
-    <string name="markdown_import_dates_hint">ಇಂಗ್ಲಿಷ್ ಅಥವಾ ISO ದಿನಾಂಕಗಳು; ಸಾಪೇಕ್ಷ ದಿನಾಂಕಗಳ ಆಧಾರ %1$s.</string>
+    <string name="markdown_import_dates">ಗುರುತಿಸಿದ ವೇಳಾಪಟ್ಟಿ ಬಳಸಿ</string>
+    <string name="markdown_import_dates_hint">ಸಾಪೇಕ್ಷ ದಿನಾಂಕಗಳ ಆಧಾರ %1$s. ಕಾರ್ಯದ ವಿವರಗಳಿಗೆ ಶೀರ್ಷಿಕೆಗಳಿಗಿಂತ ಆದ್ಯತೆ ಇದೆ.</string>
     <string name="new_task_organize">ಸಂಘಟಿಸಿ</string>
     <string name="action_select_all">ಎಲ್ಲವನ್ನೂ ಆಯ್ಕೆಮಾಡಿ</string>
     <string name="action_select_none">ಎಲ್ಲ ಆಯ್ಕೆಗಳನ್ನು ತೆಗೆದುಹಾಕಿ</string>
     <string name="markdown_import_select_tasks">ಆಮದು ಮಾಡಲು ಕಾರ್ಯಗಳನ್ನು ಆಯ್ಕೆಮಾಡಿ</string>
     <string name="markdown_import_selection_hint">ಆಯ್ಕೆಮಾಡಿದ ಮುಖ್ಯ ಕಾರ್ಯಗಳು ಮತ್ತು ಅವುಗಳ ಉಪಕಾರ್ಯಗಳನ್ನು ಮಾತ್ರ ಸೇರಿಸಲಾಗುತ್ತದೆ.</string>
+    <string name="markdown_import_unmatched">ಲಿಂಕ್ ಆಗಿಲ್ಲ: %1$s. ಮೂಲ ಉಲ್ಲೇಖಗಳು ಟಿಪ್ಪಣಿಗಳಲ್ಲಿ ಉಳಿಯುತ್ತವೆ.</string>
 </resources>

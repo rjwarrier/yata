@@ -33,11 +33,24 @@ import com.mj.yata.ui.widgets.YataDropdownMenuItem
 import com.mj.yata.util.MarkdownDocument
 import com.mj.yata.util.MarkdownImportTooLargeException
 import com.mj.yata.util.MarkdownTask
+import com.mj.yata.util.MarkdownImportContext
+import com.mj.yata.util.MarkdownTaskPreview
+import com.mj.yata.util.prepareSmartImport
+import com.mj.yata.util.RecurrenceEvaluator
 import com.mj.yata.util.readMarkdownFile
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.UUID
+
+private data class MarkdownPreviewRequest(
+    val document: MarkdownDocument,
+    val context: MarkdownImportContext,
+    val projectId: String?,
+    val listId: String?,
+    val useDates: Boolean
+)
+private data class PreparedMarkdownPreview(val request: MarkdownPreviewRequest, val tasks: List<MarkdownTaskPreview>)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,6 +64,14 @@ fun MarkdownImportScreen(
     val context = LocalContext.current
     val projects by viewModel.projects.collectAsStateWithLifecycle()
     val lists by viewModel.lists.collectAsStateWithLifecycle()
+    val people by viewModel.people.collectAsStateWithLifecycle()
+    val tags by viewModel.tags.collectAsStateWithLifecycle()
+    val projectsEnabled by viewModel.projectsFeatureEnabled.collectAsStateWithLifecycle()
+    val tagsEnabled by viewModel.tagsFeatureEnabled.collectAsStateWithLifecycle()
+    val peopleEnabled by viewModel.peopleFeatureEnabled.collectAsStateWithLifecycle()
+    val defaultPriority by viewModel.defaultPriority.collectAsStateWithLifecycle()
+    val autoAssignToMe by viewModel.autoAssignToMe.collectAsStateWithLifecycle()
+    val dateAliases by viewModel.dateAliasDefinitions.collectAsStateWithLifecycle()
     val status by viewModel.markdownImportStatus.collectAsStateWithLifecycle()
     val sessionId = rememberSaveable { UUID.randomUUID().toString() }
     val importing = status?.sessionId == sessionId && status?.running == true
@@ -59,6 +80,7 @@ fun MarkdownImportScreen(
     var fileUri by rememberSaveable { mutableStateOf<String?>(null) }
     var fileRevision by rememberSaveable { mutableIntStateOf(0) }
     var selected by rememberSaveable { mutableStateOf<List<Int>?>(null) }
+    val selectedSet = remember(selected) { selected.orEmpty().toSet() }
     var useDates by rememberSaveable { mutableStateOf(true) }
     var document by remember { mutableStateOf<MarkdownDocument?>(null) }
     var fileName by remember { mutableStateOf<String?>(null) }
@@ -66,9 +88,26 @@ fun MarkdownImportScreen(
     var readError by remember { mutableIntStateOf(0) }
     val activeProjects = remember(projects) { projects.filter { !it.archived }.sortedBy { it.name.lowercase() } }
     val activeLists = remember(lists) { lists.filter { !it.archived }.sortedBy { it.name.lowercase() } }
-    val destinationValid = (projectId != null || listId != null) &&
-        (projectId == null || activeProjects.any { it.id == projectId }) &&
-        (listId == null || activeLists.any { it.id == listId })
+    val importContext = remember(projects, lists, people, tags, projectsEnabled, tagsEnabled, peopleEnabled, defaultPriority, autoAssignToMe) {
+        MarkdownImportContext(projects, lists, people, tags, projectsEnabled, peopleEnabled, tagsEnabled,
+            defaultPriority, if (autoAssignToMe) people.firstOrNull { it.isMe }?.let { listOf(it.id) }.orEmpty() else emptyList())
+    }
+    val request = remember(document, importContext, projectId, listId, useDates) {
+        document?.let { MarkdownPreviewRequest(it, importContext, projectId, listId, useDates) }
+    }
+    val prepared by produceState<PreparedMarkdownPreview?>(null, request) {
+        val current = request ?: return@produceState
+        value = withContext(Dispatchers.Default) {
+            PreparedMarkdownPreview(current, current.document.prepareSmartImport(current.context, current.projectId, current.listId, current.useDates))
+        }
+    }
+    val previews = prepared?.takeIf { it.request === request }?.tasks
+    val destinationValid = previews?.filterIndexed { index, _ -> index in selectedSet }?.all { preview ->
+        val task = preview.task
+        (task.projectId != null || task.listId != null) &&
+            (task.projectId == null || activeProjects.any { it.id == task.projectId }) &&
+            (task.listId == null || activeLists.any { it.id == task.listId })
+    } == true
 
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
@@ -82,7 +121,7 @@ fun MarkdownImportScreen(
             fileRevision++
         }
     }
-    LaunchedEffect(fileUri, fileRevision) {
+    LaunchedEffect(fileUri, fileRevision, dateAliases) {
         val uri = fileUri ?: return@LaunchedEffect
         loading = true
         readError = 0
@@ -104,14 +143,16 @@ fun MarkdownImportScreen(
     LaunchedEffect(status) {
         if (status?.sessionId == sessionId && status?.imported == true) {
             Toast.makeText(context, R.string.markdown_import_success, Toast.LENGTH_LONG).show()
-            onImported(projectId, listId)
+            val destinations = previews.orEmpty().filterIndexed { index, _ -> index in selectedSet }
+                .map { it.task.projectId to it.task.listId }.distinct()
+            val destination = destinations.singleOrNull()
+            onImported(destination?.first, destination?.second)
         }
     }
     // Keep the single batch write attached to its preview until its result is known.
     BackHandler(enabled = importing) { }
     val tasks = document?.tasks.orEmpty()
-    val selectedSet = remember(selected) { selected.orEmpty().toSet() }
-    val canImport = !importing && !loading && readError == 0 && document != null &&
+    val canImport = !importing && !loading && readError == 0 && previews != null &&
         selectedSet.isNotEmpty() && destinationValid
 
     Scaffold(
@@ -139,7 +180,7 @@ fun MarkdownImportScreen(
                     Button(
                         enabled = canImport,
                         onClick = {
-                            document?.let { viewModel.importMarkdownTasks(sessionId, it, selectedSet, projectId, listId, useDates) }
+                            previews?.let { viewModel.importMarkdownTasks(sessionId, it.map { preview -> preview.task }, selectedSet) }
                         }
                     ) {
                         if (importing) {
@@ -171,7 +212,7 @@ fun MarkdownImportScreen(
                 ) { Text(stringResource(R.string.markdown_import_choose_file)) }
                 fileName?.let { Text(it, style = MaterialTheme.typography.labelLarge) }
                 document?.title?.let { Text(it, style = MaterialTheme.typography.titleMedium) }
-                if (loading) LinearProgressIndicator(Modifier.fillMaxWidth().padding(top = 12.dp))
+                if (loading || (document != null && previews == null)) LinearProgressIndicator(Modifier.fillMaxWidth().padding(top = 12.dp))
                 if (readError != 0) Text(stringResource(readError), color = MaterialTheme.colorScheme.error)
                 if (status?.sessionId == sessionId && status?.failed == true) {
                     Text(stringResource(R.string.error_action_failed), color = MaterialTheme.colorScheme.error)
@@ -241,7 +282,7 @@ fun MarkdownImportScreen(
                     }
                 }
                 itemsIndexed(tasks, key = { index, _ -> "$fileUri:$fileRevision:$index" }) { index, task ->
-                    MarkdownTaskPreview(task, index in selectedSet, useDates, !importing) { checked ->
+                    MarkdownTaskCard(task, previews?.getOrNull(index), importContext, index in selectedSet, !importing) { checked ->
                         selected = if (checked) (selected.orEmpty() + index).distinct() else selected.orEmpty() - index
                     }
                 }
@@ -280,10 +321,11 @@ private fun MarkdownDestinationPicker(
 }
 
 @Composable
-private fun MarkdownTaskPreview(
+private fun MarkdownTaskCard(
     task: MarkdownTask,
+    preview: MarkdownTaskPreview?,
+    context: MarkdownImportContext,
     selected: Boolean,
-    useDates: Boolean,
     enabled: Boolean,
     onSelected: (Boolean) -> Unit
 ) {
@@ -301,14 +343,15 @@ private fun MarkdownTaskPreview(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Checkbox(checked = selected, onCheckedChange = null, enabled = enabled)
-                Text(task.title, Modifier.weight(1f).padding(start = 8.dp), fontWeight = FontWeight.Bold)
+                Text(preview?.task?.title ?: task.title, Modifier.weight(1f).padding(start = 8.dp), fontWeight = FontWeight.Bold)
             }
             task.heading?.let { Text(it, style = MaterialTheme.typography.labelMedium) }
             Text(
-                if (useDates && task.due != null) stringResource(R.string.quick_add_preview_due, task.due)
+                if (preview?.task?.due != null) stringResource(R.string.quick_add_preview_due, preview.task.due!!)
                 else stringResource(R.string.search_filter_no_due_date),
                 style = MaterialTheme.typography.bodySmall
             )
+            preview?.let { MarkdownDetectedFields(it, context) }
             if (task.done) Text(stringResource(R.string.export_done_label), style = MaterialTheme.typography.labelMedium)
             if (task.subtasks.isNotEmpty()) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -343,4 +386,31 @@ private fun MarkdownTaskPreview(
             }
         }
     }
+}
+
+@Composable
+private fun MarkdownDetectedFields(preview: MarkdownTaskPreview, context: MarkdownImportContext) {
+    val task = preview.task
+    val project = context.projects.firstOrNull { it.id == task.projectId }
+    val list = context.lists.firstOrNull { it.id == task.listId }
+    val labels = buildList {
+        project?.let { add("+${it.name}") }
+        list?.let { add("=${it.name}") }
+        task.tagIds.mapNotNull { id -> context.tags.firstOrNull { it.id == id } }.forEach { add("#${it.name}") }
+        task.assigneeIds.mapNotNull { id -> context.people.firstOrNull { it.id == id } }.forEach { add("@${it.name}") }
+        task.startDate?.let { add(stringResource(R.string.smart_add_starts, it)) }
+        task.time?.let { add(stringResource(R.string.quick_add_preview_time, it)) }
+        task.recurrence?.let { add(stringResource(R.string.quick_add_preview_repeat, RecurrenceEvaluator.recurrenceSummary(it))) }
+        task.reminder?.let { add(stringResource(R.string.export_reminder_pill, it)) }
+        if (task.priority != "none") add(stringResource(R.string.quick_add_preview_priority, stringResource(
+            when (task.priority) { "high" -> R.string.analytics_priority_high; "med" -> R.string.analytics_priority_medium; else -> R.string.analytics_priority_low }
+        )))
+        if (task.flag) add(stringResource(R.string.quick_add_preview_flagged))
+    }
+    if (labels.isNotEmpty()) Text(labels.joinToString(" · "), style = MaterialTheme.typography.bodySmall)
+    if (preview.unmatched.isNotEmpty()) Text(
+        stringResource(R.string.markdown_import_unmatched, preview.unmatched.joinToString(", ")),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.error
+    )
 }

@@ -1636,18 +1636,19 @@
     <string name="recurrence_preview_none">Bundan sonra tekrarlanmaz</string>
     <string name="markdown_import_title">Markdown içe aktar</string>
     <string name="markdown_import_summary">Kontrol listesini inceleyip bir proje veya listeye görev ekleyin.</string>
-    <string name="markdown_import_help">Ana onay kutuları görev, iç içe kutular alt görev olur. Diğer ayrıntılar notlarda kalır. İçe aktarmadan önce tarihleri kontrol edin.</string>
+    <string name="markdown_import_help">Akıllı ekleme, listelerde ve görev tablolarında alanları algılar. İçe aktarmadan önce önizlemeyi inceleyin.</string>
     <string name="markdown_import_choose_file">Markdown dosyası seç</string>
-    <string name="markdown_import_empty">Kontrol listesinde görev bulunamadı. - [ ] Görev gibi satırlar kullanın.</string>
+    <string name="markdown_import_empty">Görev bulunamadı. Liste, görev tablosu veya her satırda bir görev kullanın.</string>
     <string name="markdown_import_too_large">1 MB altında, en fazla 1.000 görev ve görev başına 200 alt görev içeren bir dosya kullanın.</string>
     <string name="markdown_import_read_failed">Dosya okunamadı. UTF-8 Markdown dosyası seçin.</string>
     <string name="markdown_import_success">Görevler içe aktarıldı</string>
     <string name="markdown_import_destination">En az bir proje veya liste seçin.</string>
-    <string name="markdown_import_dates">Başlıklardaki tarihleri kullan</string>
-    <string name="markdown_import_dates_hint">İngilizce veya ISO tarihler; göreli tarihler %1$s temel alınarak hesaplanır.</string>
+    <string name="markdown_import_dates">Algılanan zamanlamayı kullan</string>
+    <string name="markdown_import_dates_hint">Göreli tarihler %1$s temel alınarak hesaplanır. Görev değerleri başlıklara göre önceliklidir.</string>
     <string name="new_task_organize">Düzenle</string>
     <string name="action_select_all">Tümünü seç</string>
     <string name="action_select_none">Tüm seçimleri kaldır</string>
     <string name="markdown_import_select_tasks">İçe aktarılacak görevleri seçin</string>
     <string name="markdown_import_selection_hint">Yalnızca seçilen ana görevler ve alt görevleri eklenecek.</string>
+    <string name="markdown_import_unmatched">Bağlanmadı: %1$s. Özgün başvurular notlarda saklanır.</string>
 </resources>

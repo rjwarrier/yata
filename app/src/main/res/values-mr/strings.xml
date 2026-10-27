@@ -1633,18 +1633,19 @@
     <string name="recurrence_preview_none">यानंतर पुनरावृत्ती होणार नाही</string>
     <string name="markdown_import_title">Markdown आयात करा</string>
     <string name="markdown_import_summary">तपासणीसूची पाहून प्रकल्प किंवा यादीमध्ये कामे जोडा.</string>
-    <string name="markdown_import_help">मुख्य चेकबॉक्स कामे बनतात; आतील चेकबॉक्स उपकामे बनतात. इतर तपशील नोंदींमध्ये राहतात. आयात करण्यापूर्वी तारखा तपासा.</string>
+    <string name="markdown_import_help">स्मार्ट ॲड तपासणीसूची, याद्या आणि कामांच्या तक्त्यांतील तपशील ओळखतो. आयात करण्यापूर्वी पूर्वावलोकन तपासा.</string>
     <string name="markdown_import_choose_file">Markdown फाइल निवडा</string>
-    <string name="markdown_import_empty">तपासणीसूचीमध्ये कामे आढळली नाहीत. - [ ] काम यासारख्या ओळी वापरा.</string>
+    <string name="markdown_import_empty">कामे आढळली नाहीत. तपासणीसूची, यादी, कामांचा तक्ता किंवा प्रत्येक ओळीत एक काम वापरा.</string>
     <string name="markdown_import_too_large">१ MB पेक्षा लहान फाइलमध्ये जास्तीत जास्त १,००० कामे आणि प्रत्येक कामासाठी २०० उपकामे ठेवा.</string>
     <string name="markdown_import_read_failed">फाइल वाचता आली नाही. UTF-8 Markdown फाइल निवडा.</string>
     <string name="markdown_import_success">कामे आयात केली</string>
     <string name="markdown_import_destination">किमान एक प्रकल्प किंवा यादी निवडा.</string>
-    <string name="markdown_import_dates">शीर्षकांमधील तारखा वापरा</string>
-    <string name="markdown_import_dates_hint">इंग्रजी किंवा ISO तारखा; सापेक्ष तारखांचा आधार %1$s आहे.</string>
+    <string name="markdown_import_dates">ओळखलेले वेळापत्रक वापरा</string>
+    <string name="markdown_import_dates_hint">सापेक्ष तारखांचा आधार %1$s आहे. कामाच्या तपशीलांना शीर्षकांपेक्षा प्राधान्य आहे.</string>
     <string name="new_task_organize">व्यवस्थित करा</string>
     <string name="action_select_all">सर्व निवडा</string>
     <string name="action_select_none">सर्व निवडी रद्द करा</string>
     <string name="markdown_import_select_tasks">आयात करण्यासाठी कामे निवडा</string>
     <string name="markdown_import_selection_hint">फक्त निवडलेली मुख्य कामे आणि त्यांची उपकामे जोडली जातील.</string>
+    <string name="markdown_import_unmatched">जोडलेले नाही: %1$s. मूळ उल्लेख नोंदींमध्ये ठेवले जातात.</string>
 </resources>

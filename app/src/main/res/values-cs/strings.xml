@@ -1640,18 +1640,19 @@
     <string name="recurrence_preview_none">Po tomto se už neopakuje</string>
     <string name="markdown_import_title">Importovat Markdown</string>
     <string name="markdown_import_summary">Prohlédněte si seznam a přidejte úkoly do projektu nebo seznamu.</string>
-    <string name="markdown_import_help">Hlavní zaškrtávací políčka se změní na úkoly, vnořená na podúkoly. Ostatní údaje zůstanou v poznámkách. Před importem zkontrolujte data.</string>
+    <string name="markdown_import_help">Chytré přidávání rozpozná údaje v seznamech i tabulkách úkolů. Před importem zkontrolujte náhled.</string>
     <string name="markdown_import_choose_file">Vybrat soubor Markdown</string>
-    <string name="markdown_import_empty">Nebyly nalezeny žádné úkoly. Použijte řádky jako - [ ] Úkol.</string>
+    <string name="markdown_import_empty">Nebyly nalezeny úkoly. Použijte seznam, tabulku úkolů nebo jeden úkol na řádek.</string>
     <string name="markdown_import_too_large">Použijte soubor menší než 1 MB s nejvýše 1 000 úkoly a 200 podúkoly na úkol.</string>
     <string name="markdown_import_read_failed">Soubor nelze přečíst. Vyberte soubor Markdown v UTF-8.</string>
     <string name="markdown_import_success">Úkoly importovány</string>
     <string name="markdown_import_destination">Vyberte alespoň jeden projekt nebo seznam.</string>
-    <string name="markdown_import_dates">Použít data z nadpisů</string>
-    <string name="markdown_import_dates_hint">Anglická data nebo ISO; relativní data vycházejí z %1$s.</string>
+    <string name="markdown_import_dates">Použít rozpoznaný rozvrh</string>
+    <string name="markdown_import_dates_hint">Relativní data vycházejí z %1$s. Údaje úkolu mají přednost před nadpisy.</string>
     <string name="new_task_organize">Uspořádat</string>
     <string name="action_select_all">Vybrat vše</string>
     <string name="action_select_none">Zrušit výběr</string>
     <string name="markdown_import_select_tasks">Vyberte úkoly k importu</string>
     <string name="markdown_import_selection_hint">Přidají se pouze vybrané hlavní úkoly a jejich podúkoly.</string>
+    <string name="markdown_import_unmatched">Nepřiřazeno: %1$s. Původní odkazy zůstávají v poznámkách.</string>
 </resources>

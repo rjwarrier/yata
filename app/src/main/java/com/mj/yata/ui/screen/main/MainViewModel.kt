@@ -32,7 +32,6 @@ import com.mj.yata.util.capitalizeTaskSentence
 import com.mj.yata.ui.error.AppErrorBus
 import com.mj.yata.ui.sheets.NewTaskDraft
 import com.mj.yata.util.NaturalLanguageParser
-import com.mj.yata.util.MarkdownDocument
 import com.mj.yata.util.initialsFor
 import com.mj.yata.util.withParsedQuickAdd
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -1842,35 +1841,38 @@ data class WeekendRescheduleWarning(
 
     fun importMarkdownTasks(
         sessionId: String,
-        document: MarkdownDocument,
-        selectedIndices: Set<Int>,
-        projectId: String?,
-        listId: String?,
-        useDates: Boolean
+        preparedTasks: List<Task>,
+        selectedIndices: Set<Int>
     ) {
         val previous = _markdownImportStatus.value
         if (previous?.running == true || (previous?.sessionId == sessionId && previous.imported)) return
         _markdownImportStatus.value = MarkdownImportStatus(sessionId, running = true)
         safeLaunch {
             try {
-                // Recheck the destination at save time, rather than trusting a stale picker.
-                require(projectId != null || listId != null)
-                require(projectId == null || repository.getProjects().first().any { it.id == projectId && !it.archived })
-                require(listId == null || repository.getLists().first().any { it.id == listId && !it.archived })
-                val existing = if (projectId != null) repository.getTasksForProject(projectId).first()
-                    else repository.getTasksForList(requireNotNull(listId)).first()
-                val assignees = if (userPreferences.autoAssignToMeFlow.first()) {
-                    repository.getPeople().first().firstOrNull { it.isMe }?.let { listOf(it.id) }.orEmpty()
-                } else emptyList()
-                val priority = userPreferences.defaultPriorityFlow.first()
-                val tasks = withContext(Dispatchers.Default) {
-                    document.createTasks(
-                        selectedIndices, projectId, listId, useDates, assignees, priority,
-                        firstSortOrder = (existing.maxOfOrNull { it.sortOrder } ?: -1) + 1
-                    )
+                require(selectedIndices.isNotEmpty() && selectedIndices.all { it in preparedTasks.indices })
+                val selected = preparedTasks.filterIndexed { index, _ -> index in selectedIndices }
+                val projectIds = repository.getProjects().first().filter { !it.archived }.map { it.id }.toSet()
+                val listIds = repository.getLists().first().filter { !it.archived }.map { it.id }.toSet()
+                require(selected.all { task ->
+                    (task.projectId != null || task.listId != null) &&
+                        (task.projectId == null || task.projectId in projectIds) &&
+                        (task.listId == null || task.listId in listIds)
+                })
+                val nextOrder = mutableMapOf<Pair<String?, String?>, Int>()
+                for (destination in selected.map { it.projectId to it.listId }.distinct()) {
+                    val existing = destination.first?.let { repository.getTasksForProject(it).first() }
+                        ?: repository.getTasksForList(requireNotNull(destination.second)).first()
+                    nextOrder[destination] = (existing.maxOfOrNull { it.sortOrder } ?: -1) + 1
+                }
+                val tasks = selected.map { task ->
+                    val key = task.projectId to task.listId
+                    val order = nextOrder.getValue(key)
+                    nextOrder[key] = order + 1
+                    task.copy(sortOrder = order)
                 }
                 // One transaction for tasks and their subtasks, one widget/sync notification.
-                repository.upsertTasks(tasks, resyncReminder = false)
+                // All field values are the approved preview, not a second smart-add parse.
+                repository.upsertTasks(tasks, resyncReminder = tasks.any { it.reminder != null })
                 _markdownImportStatus.value = MarkdownImportStatus(sessionId, imported = true)
             } catch (t: Throwable) {
                 _markdownImportStatus.value = MarkdownImportStatus(sessionId, failed = true)

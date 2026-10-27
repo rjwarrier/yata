@@ -16,6 +16,10 @@ test-only changes belong in the commit message, not here, unless they change beh
 ## [Unreleased]
 
 ### Added
+- Markdown import uses the same smart-add rules as individual tasks to detect dates, times,
+  recurrence, reminders, priority, flags, tags, people, projects and lists. It supports ordinary
+  bullet/numbered lists, task tables, indented properties and heading defaults, with detected
+  fields and unmatched references shown before import.
 - Import Markdown checklists into any project or list, with a task preview and selection,
   nested subtasks, completion states, optional heading-based due dates, and preserved notes.
 - The first-sync review offers Restore from remote, with confirmation before replacing local data.

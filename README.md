@@ -114,14 +114,24 @@ tapping **Import**. Each main task has a selection checkbox; **Select all** and 
 change the whole selection. Only selected main tasks and their subtasks are added. Checked tasks
 are shown in the preview but are initially unselected.
 
-- Top-level `- [ ]` / `- [x]` items become tasks; indented checkboxes become nested subtasks.
-- Headings, ordinary bullet details, links, and reference sections are retained in task notes.
-  Tables, prose, and fenced code examples do not become tasks.
-- Due dates come from English date headings such as `## By Sat 7 Nov` or ISO headings such as
-  `## 2026-11-07`. An `Updated: 27 Oct 2026` line anchors the year and relative headings like
-  `Today` and `Tomorrow`; otherwise the current date is used. Preparation deadlines stay separate
-  from event dates mentioned in task text. A trailing `(due 2026-11-07)` can override the heading.
-- Turn off **Use dates from headings** to import without due dates. No reminders are created.
+- Checkboxes become tasks and nested subtasks. Without checkboxes, bulleted and numbered lists
+  are supported too, with indented items becoming subtasks. Plain task-per-line text also works.
+  In checklist documents, ordinary descriptive bullets stay in notes.
+- A Markdown table with a `Task` or `Title` column can supply `Due`, `Start`, `Time`, `Tags`,
+  `Person`, `Project`, `List`, `Priority`, `Repeat`, `Reminder`, `Status`, and `Notes` columns.
+  Indented properties such as `Due: tomorrow` and `Project: Work` are supported as well.
+  Reference tables and fenced code examples do not become tasks.
+- Every task uses the individual-task smart-add parser: dates (including your numeric date order
+  and custom aliases), times, start dates, recurrence, reminders, priority, flags, `#tags`,
+  `@people`, `+projects`, and `=lists`. Names resolve against existing local items with the same
+  matching and feature settings. Unmatched references are flagged and retained in source notes.
+- Headings provide defaults; task-level values override them. An `Updated: 27 Oct 2026` line
+  anchors relative dates; otherwise the current date is used. Selecting a project or list in the
+  picker overrides detected destinations for all selected tasks. Leave both unset to use detected
+  destinations. Review the detected fields before importing, especially dates mentioned in prose.
+- Source text, descriptive bullets, links, and reference sections are retained in notes. URLs and
+  inline code stay literal. **Use detected schedules** can turn off all imported scheduling fields.
+  Import saves the selected preview values without parsing them a second time.
 
 ## Building
 

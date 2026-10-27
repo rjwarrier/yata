@@ -1636,18 +1636,19 @@
     <string name="recurrence_preview_none">इसके बाद दोहराया नहीं जाएगा</string>
     <string name="markdown_import_title">Markdown आयात करें</string>
     <string name="markdown_import_summary">चेकलिस्ट देखकर किसी प्रोजेक्ट या सूची में कार्य जोड़ें।</string>
-    <string name="markdown_import_help">मुख्य चेकबॉक्स कार्य बनते हैं; अंदर के चेकबॉक्स उपकार्य बनते हैं। बाकी विवरण नोट्स में रहते हैं। आयात से पहले तारीखें जाँचें।</string>
+    <string name="markdown_import_help">स्मार्ट ऐड चेकलिस्ट, सूचियों और कार्य तालिकाओं से जानकारी पहचानता है। आयात से पहले पूर्वावलोकन जाँचें।</string>
     <string name="markdown_import_choose_file">Markdown फ़ाइल चुनें</string>
-    <string name="markdown_import_empty">चेकलिस्ट में कार्य नहीं मिले। - [ ] कार्य जैसी पंक्तियाँ इस्तेमाल करें।</string>
+    <string name="markdown_import_empty">कार्य नहीं मिले। चेकलिस्ट, सूची, कार्य तालिका या हर पंक्ति में एक कार्य इस्तेमाल करें।</string>
     <string name="markdown_import_too_large">१ MB से छोटी फ़ाइल में अधिकतम १,००० कार्य और प्रति कार्य २०० उपकार्य रखें।</string>
     <string name="markdown_import_read_failed">फ़ाइल पढ़ी नहीं जा सकी। UTF-8 Markdown फ़ाइल चुनें।</string>
     <string name="markdown_import_success">कार्य आयात हो गए</string>
     <string name="markdown_import_destination">कम से कम एक प्रोजेक्ट या सूची चुनें।</string>
-    <string name="markdown_import_dates">शीर्षकों की तारीखें इस्तेमाल करें</string>
-    <string name="markdown_import_dates_hint">अंग्रेज़ी या ISO तारीखें; सापेक्ष तारीखों का आधार %1$s है।</string>
+    <string name="markdown_import_dates">पहचानी गई समय-सारणी इस्तेमाल करें</string>
+    <string name="markdown_import_dates_hint">सापेक्ष तारीखों का आधार %1$s है। कार्य की जानकारी को शीर्षकों से अधिक प्राथमिकता मिलेगी।</string>
     <string name="new_task_organize">व्यवस्थित करें</string>
     <string name="action_select_all">सभी चुनें</string>
     <string name="action_select_none">सभी का चयन हटाएँ</string>
     <string name="markdown_import_select_tasks">आयात करने के लिए कार्य चुनें</string>
     <string name="markdown_import_selection_hint">केवल चुने गए मुख्य कार्य और उनके उपकार्य जोड़े जाएँगे।</string>
+    <string name="markdown_import_unmatched">लिंक नहीं हुआ: %1$s। मूल उल्लेख नोट्स में रखे गए हैं।</string>
 </resources>

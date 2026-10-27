@@ -372,7 +372,8 @@ fun AppNavigation(
                 onNavigateBack = { navController.popBackStack() },
                 onImported = { projectId, listId ->
                     val destination = projectId?.let { Screen.ProjectDetail.createRoute(it) }
-                        ?: Screen.ListDetail.createRoute(requireNotNull(listId))
+                        ?: listId?.let { Screen.ListDetail.createRoute(it) }
+                        ?: Screen.Main.createRoute(1)
                     val previous = navController.previousBackStackEntry
                     val returningToDestination =
                         (projectId != null && previous?.destination?.route == Screen.ProjectDetail.route &&

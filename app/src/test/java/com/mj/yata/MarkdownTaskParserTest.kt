@@ -214,8 +214,10 @@ class MarkdownTaskParserTest {
         MarkdownTaskParser.parse("- [ ] Task", today).createTasks(setOf(1), "project", null, true)
     }
 
-    @Test fun `prose-only input has no tasks`() {
-        assertTrue(MarkdownTaskParser.parse("# Notes\nJust some notes\n- A bullet", today).tasks.isEmpty())
+    @Test fun `bullet documents import bullets and retain prose as notes`() {
+        val document = MarkdownTaskParser.parse("# Notes\nJust some notes\n- A bullet", today)
+        assertEquals(listOf("A bullet"), document.tasks.map { it.title })
+        assertTrue(document.tasks.single().notes!!.contains("Just some notes"))
     }
 
     @Test(expected = MarkdownImportTooLargeException::class)

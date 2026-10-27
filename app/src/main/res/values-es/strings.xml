@@ -1682,18 +1682,19 @@
     <string name="recurrence_preview_none">No se repite después de esta</string>
     <string name="markdown_import_title">Importar Markdown</string>
     <string name="markdown_import_summary">Revisa una lista de tareas y añádelas a un proyecto o lista.</string>
-    <string name="markdown_import_help">Las casillas principales se convierten en tareas y las anidadas en subtareas. Los demás detalles quedan en las notas. Revisa las fechas antes de importar.</string>
+    <string name="markdown_import_help">La entrada inteligente detecta campos en listas y tablas de tareas. Revisa la vista previa antes de importar.</string>
     <string name="markdown_import_choose_file">Elegir archivo Markdown</string>
-    <string name="markdown_import_empty">No se encontraron tareas. Usa líneas como - [ ] Tarea.</string>
+    <string name="markdown_import_empty">No se encontraron tareas. Usa una lista, una tabla de tareas o una tarea por línea.</string>
     <string name="markdown_import_too_large">Usa un archivo de menos de 1 MB con un máximo de 1.000 tareas y 200 subtareas por tarea.</string>
     <string name="markdown_import_read_failed">No se pudo leer el archivo. Elige un archivo Markdown UTF-8.</string>
     <string name="markdown_import_success">Tareas importadas</string>
     <string name="markdown_import_destination">Elige al menos un proyecto o una lista.</string>
-    <string name="markdown_import_dates">Usar fechas de los encabezados</string>
-    <string name="markdown_import_dates_hint">Fechas en inglés o ISO; las fechas relativas toman %1$s como referencia.</string>
+    <string name="markdown_import_dates">Usar programación detectada</string>
+    <string name="markdown_import_dates_hint">Las fechas relativas usan %1$s. Los valores de la tarea tienen prioridad sobre los encabezados.</string>
     <string name="new_task_organize">Organizar</string>
     <string name="action_select_all">Seleccionar todo</string>
     <string name="action_select_none">No seleccionar nada</string>
     <string name="markdown_import_select_tasks">Elegir tareas para importar</string>
     <string name="markdown_import_selection_hint">Solo se añadirán las tareas principales seleccionadas y sus subtareas.</string>
+    <string name="markdown_import_unmatched">Sin vincular: %1$s. Las referencias originales se conservan en las notas.</string>
 </resources>

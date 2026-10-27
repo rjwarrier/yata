@@ -1638,18 +1638,19 @@
     <string name="recurrence_preview_none">Nu se mai repetă după aceasta</string>
     <string name="markdown_import_title">Importă Markdown</string>
     <string name="markdown_import_summary">Verifică o listă și adaugă sarcini într-un proiect sau o listă.</string>
-    <string name="markdown_import_help">Casetele principale devin sarcini; cele imbricate devin subsarcini. Celelalte detalii rămân în note. Verifică datele înainte de import.</string>
+    <string name="markdown_import_help">Adăugarea inteligentă detectează câmpuri în liste și tabele de sarcini. Verifică previzualizarea înainte de import.</string>
     <string name="markdown_import_choose_file">Alege fișierul Markdown</string>
-    <string name="markdown_import_empty">Nu s-au găsit sarcini. Folosește linii precum - [ ] Sarcină.</string>
+    <string name="markdown_import_empty">Nu s-au găsit sarcini. Folosește o listă, un tabel de sarcini sau o sarcină pe rând.</string>
     <string name="markdown_import_too_large">Folosește un fișier sub 1 MB cu cel mult 1.000 de sarcini și 200 de subsarcini pe sarcină.</string>
     <string name="markdown_import_read_failed">Fișierul nu a putut fi citit. Alege un fișier Markdown UTF-8.</string>
     <string name="markdown_import_success">Sarcini importate</string>
     <string name="markdown_import_destination">Alege cel puțin un proiect sau o listă.</string>
-    <string name="markdown_import_dates">Folosește datele din titluri</string>
-    <string name="markdown_import_dates_hint">Date în engleză sau ISO; datele relative se bazează pe %1$s.</string>
+    <string name="markdown_import_dates">Folosește programarea detectată</string>
+    <string name="markdown_import_dates_hint">Datele relative se bazează pe %1$s. Valorile sarcinilor au prioritate față de titluri.</string>
     <string name="new_task_organize">Organizează</string>
     <string name="action_select_all">Selectează tot</string>
     <string name="action_select_none">Deselectează tot</string>
     <string name="markdown_import_select_tasks">Alege sarcinile de importat</string>
     <string name="markdown_import_selection_hint">Vor fi adăugate doar sarcinile principale selectate și subsarcinile lor.</string>
+    <string name="markdown_import_unmatched">Neasociat: %1$s. Referințele originale rămân în note.</string>
 </resources>

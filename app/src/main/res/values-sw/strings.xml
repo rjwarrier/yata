@@ -1633,18 +1633,19 @@
     <string name="recurrence_preview_none">Haitajirudia baada ya hii</string>
     <string name="markdown_import_title">Ingiza Markdown</string>
     <string name="markdown_import_summary">Hakiki orodha ya ukaguzi na uongeze kazi kwenye mradi au orodha.</string>
-    <string name="markdown_import_help">Visanduku vikuu huwa kazi; vilivyo ndani huwa kazi ndogo. Maelezo mengine hubaki kwenye madokezo. Hakiki tarehe kabla ya kuingiza.</string>
+    <string name="markdown_import_help">Uongezaji mahiri hutambua taarifa katika orodha na majedwali ya kazi. Hakiki mwonekano kabla ya kuingiza.</string>
     <string name="markdown_import_choose_file">Chagua faili la Markdown</string>
-    <string name="markdown_import_empty">Hakuna kazi zilizopatikana. Tumia mistari kama - [ ] Kazi.</string>
+    <string name="markdown_import_empty">Hakuna kazi zilizopatikana. Tumia orodha, jedwali la kazi au kazi moja kwa kila mstari.</string>
     <string name="markdown_import_too_large">Tumia faili chini ya MB 1 lenye kazi zisizozidi 1,000 na kazi ndogo 200 kwa kila kazi.</string>
     <string name="markdown_import_read_failed">Faili halikusomeka. Chagua faili la Markdown la UTF-8.</string>
     <string name="markdown_import_success">Kazi zimeingizwa</string>
     <string name="markdown_import_destination">Chagua angalau mradi au orodha moja.</string>
-    <string name="markdown_import_dates">Tumia tarehe za vichwa</string>
-    <string name="markdown_import_dates_hint">Tarehe za Kiingereza au ISO; tarehe linganishi hutumia %1$s kama msingi.</string>
+    <string name="markdown_import_dates">Tumia ratiba iliyotambuliwa</string>
+    <string name="markdown_import_dates_hint">Tarehe linganishi hutumia %1$s kama msingi. Taarifa za kazi hutangulia zile za vichwa.</string>
     <string name="new_task_organize">Panga</string>
     <string name="action_select_all">Chagua zote</string>
     <string name="action_select_none">Ondoa chaguo zote</string>
     <string name="markdown_import_select_tasks">Chagua kazi za kuingiza</string>
     <string name="markdown_import_selection_hint">Kazi kuu zilizochaguliwa na kazi zake ndogo pekee ndizo zitaongezwa.</string>
+    <string name="markdown_import_unmatched">Haijaunganishwa: %1$s. Marejeleo ya awali yanabaki kwenye madokezo.</string>
 </resources>
