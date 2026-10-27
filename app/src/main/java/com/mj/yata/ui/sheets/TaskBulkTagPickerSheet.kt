@@ -1,6 +1,7 @@
 package com.mj.yata.ui.sheets
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -137,29 +138,48 @@ fun TaskBulkTagPickerSheet(
                     val count = counts[tag.id] ?: 0
                     val state = when { count == 0 -> ToggleableState.Off; count == selectedTasks.size -> ToggleableState.On; else -> ToggleableState.Indeterminate }
                     val color = if (tag.color == "error") MaterialTheme.colorScheme.error else accents.getAccent(tag.color)
-                    OutlinedCard(
+                    val ink = accents.onAccentFor(color)
+                    val canApply = selectedTasks.isNotEmpty() && (if (removing) count > 0 else count < selectedTasks.size)
+                    Surface(
                         onClick = { if (removing) onRemoveTag(tag.id) else onSelectTag(tag.id) },
-                        enabled = selectedTasks.isNotEmpty() && if (removing) count > 0 else count < selectedTasks.size,
+                        enabled = canApply,
                         modifier = Modifier.fillMaxWidth(),
-                        shape = MaterialTheme.shapes.medium,
-                        colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)
+                        shape = CircleShape,
+                        color = color,
+                        contentColor = ink
                     ) {
                         Row(
-                            Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(12.dp),
+                            Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(horizontal = 12.dp, vertical = 10.dp),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            TriStateCheckbox(state = state, onClick = null, colors = CheckboxDefaults.colors(checkedColor = color))
-                            Text(
-                                tag.name,
-                                style = MaterialTheme.typography.labelLarge,
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.weight(1f)
+                            TriStateCheckbox(
+                                state = state,
+                                onClick = null,
+                                enabled = canApply,
+                                colors = CheckboxDefaults.colors(
+                                    checkedColor = ink,
+                                    uncheckedColor = ink.copy(alpha = 0.8f),
+                                    checkmarkColor = color,
+                                    disabledCheckedColor = ink.copy(alpha = 0.7f),
+                                    disabledUncheckedColor = ink.copy(alpha = 0.6f),
+                                    disabledIndeterminateColor = ink.copy(alpha = 0.7f)
+                                )
                             )
+                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Text(
+                                    tag.name,
+                                    style = MaterialTheme.typography.labelLarge,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Text(
+                                    stringResource(R.string.editor_char_counter, count, selectedTasks.size),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = ink
+                                )
+                            }
                         }
-                        Text(stringResource(R.string.editor_char_counter, count, selectedTasks.size),
-                            style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(start = 12.dp, bottom = 8.dp))
                     }
                 }
             }
