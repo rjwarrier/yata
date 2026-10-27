@@ -18,6 +18,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Remove
+import androidx.compose.foundation.background
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -30,9 +34,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.state.ToggleableState
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.toggleableState
 import com.mj.yata.R
@@ -43,6 +46,7 @@ import com.mj.yata.ui.widgets.YataFieldShape
 import com.mj.yata.ui.widgets.yataFieldColors
 
 /** Draft all tag operations locally; only Apply writes tags and tasks. */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TaskBulkTagPickerSheet(
     tags: List<Tag>,
@@ -124,22 +128,31 @@ fun TaskBulkTagPickerSheet(
             .heightIn(max = LocalConfiguration.current.screenHeightDp.dp * 0.8f)
             .navigationBarsPadding()
             .imePadding()
-            .padding(horizontal = 20.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+            .padding(horizontal = 24.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(
                 stringResource(R.string.new_task_tags),
-                style = MaterialTheme.typography.titleLarge,
+                style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp),
                 modifier = Modifier.weight(1f)
             )
+            if (!removing) IconButton(onClick = { newTagName = search; showCreateDialog = true }, enabled = !applying) {
+                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.tags_new_tag))
+            }
             IconButton(onClick = onDismiss, enabled = !applying) {
                 Icon(Icons.Default.Close, contentDescription = stringResource(R.string.action_cancel))
             }
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FilterChip(enabled = !applying, selected = !removing, onClick = { removing = false }, label = { Text(stringResource(R.string.action_add)) })
-            FilterChip(enabled = !applying, selected = removing, onClick = { removing = true }, label = { Text(stringResource(R.string.settings_remove)) })
+        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+            SegmentedButton(selected = !removing, onClick = { removing = false }, enabled = !applying,
+                shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)) {
+                Text(stringResource(R.string.action_add))
+            }
+            SegmentedButton(selected = removing, onClick = { removing = true }, enabled = !applying,
+                shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)) {
+                Text(stringResource(R.string.settings_remove))
+            }
         }
         if (removing) Text(stringResource(R.string.task_detail_tags_sync_hint), style = MaterialTheme.typography.bodySmall)
         OutlinedTextField(
@@ -160,23 +173,10 @@ fun TaskBulkTagPickerSheet(
             modifier = Modifier.fillMaxWidth()
         )
         if (!removing && canCreateSearch) {
-            FilledTonalButton(
-                onClick = { createTag(search, pickAccentFor(search)) }, enabled = !applying,
-                modifier = Modifier.fillMaxWidth(),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
-            ) {
-                Icon(Icons.Default.Add, contentDescription = null)
+            TextButton(onClick = { createTag(search, pickAccentFor(search)) }, enabled = !applying) {
+                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
                 Text(stringResource(R.string.mention_create_tag, search), maxLines = 2, overflow = TextOverflow.Ellipsis)
-            }
-        } else if (!removing) {
-            FilledTonalButton(
-                onClick = { newTagName = ""; showCreateDialog = true }, enabled = !applying,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Icon(Icons.Default.Add, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.tags_new_tag))
             }
         }
         if (filtered.isEmpty()) {
@@ -190,68 +190,73 @@ fun TaskBulkTagPickerSheet(
             LazyVerticalGrid(
                 columns = GridCells.Fixed(2),
                 modifier = Modifier.fillMaxWidth().weight(1f, fill = false),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
                 contentPadding = PaddingValues(bottom = 8.dp)
             ) {
                 items(filtered, key = { it.id }) { tag ->
                     val count = counts[tag.id] ?: 0
                     val state = when { count == 0 -> ToggleableState.Off; count == selectedTasks.size -> ToggleableState.On; else -> ToggleableState.Indeterminate }
                     val color = if (tag.color == "error") MaterialTheme.colorScheme.error else accents.getAccent(tag.color)
-                    val ink = accents.onAccentFor(color)
                     val originalCount = baselineCounts[tag.id] ?: 0
                     val canApply = !applying && selectedTasks.isNotEmpty() &&
                         (tag.id in changes || if (removing) (removableCounts[tag.id] ?: 0) > 0 else originalCount < selectedTasks.size)
-                    Surface(
+                    val staged = changes[tag.id]
+                    val selected = count > 0
+                    val base = MaterialTheme.colorScheme.surfaceContainerLow
+                    val neutral = color.copy(alpha = 0.05f).compositeOver(base)
+                    val tinted = color.copy(alpha = 0.14f).compositeOver(base)
+                    val indicator = when {
+                        staged == true -> Icons.Default.Add
+                        staged == false -> Icons.Default.Remove
+                        state == ToggleableState.On -> Icons.Default.Check
+                        state == ToggleableState.Indeterminate -> Icons.Default.Remove
+                        else -> null
+                    }
+                    FilterChip(
+                        selected = selected,
                         onClick = { stage(tag.id) },
                         enabled = canApply,
-                        modifier = Modifier.fillMaxWidth().semantics { toggleableState = state; role = Role.Checkbox },
-                        shape = CircleShape,
-                        color = color,
-                        contentColor = ink
-                    ) {
-                        Row(
-                            Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(horizontal = 12.dp, vertical = 10.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            TriStateCheckbox(
-                                state = state,
-                                onClick = null,
-                                enabled = canApply,
-                                colors = CheckboxDefaults.colors(
-                                    checkedColor = ink,
-                                    uncheckedColor = ink.copy(alpha = 0.8f),
-                                    checkmarkColor = color,
-                                    disabledCheckedColor = ink.copy(alpha = 0.7f),
-                                    disabledUncheckedColor = ink.copy(alpha = 0.6f),
-                                    disabledIndeterminateColor = ink.copy(alpha = 0.7f)
-                                )
-                            )
-                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                                Text(
-                                    (if (changes[tag.id] == true) "+ " else if (changes[tag.id] == false) "− " else "") + tag.name,
-                                    style = MaterialTheme.typography.labelLarge,
-                                    maxLines = 2,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                                Text(
-                                    stringResource(R.string.editor_char_counter, count, selectedTasks.size),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = ink
-                                )
+                        modifier = Modifier.fillMaxWidth().semantics { toggleableState = state },
+                        shape = MaterialTheme.shapes.small,
+                        colors = FilterChipDefaults.filterChipColors(
+                            containerColor = neutral,
+                            selectedContainerColor = tinted,
+                            disabledContainerColor = neutral,
+                            disabledSelectedContainerColor = tinted,
+                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            selectedLabelColor = MaterialTheme.colorScheme.onSurface,
+                            disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            enabled = canApply, selected = selected,
+                            borderColor = if (staged != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                            selectedBorderColor = if (staged != null) MaterialTheme.colorScheme.primary else color.copy(alpha = 0.28f)
+                        ),
+                        leadingIcon = { Box(Modifier.size(8.dp).background(color, CircleShape)) },
+                        trailingIcon = indicator?.let { icon ->
+                            { Icon(icon, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                        },
+                        label = {
+                            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text(tag.name, style = MaterialTheme.typography.labelMedium, maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                                Text(stringResource(R.string.editor_char_counter, count, selectedTasks.size),
+                                    style = MaterialTheme.typography.labelSmall)
                             }
                         }
-                    }
+                    )
                 }
             }
         }
-        HorizontalDivider()
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         if (failed) Text(stringResource(R.string.error_action_failed), color = MaterialTheme.colorScheme.error)
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(pluralStringResource(R.plurals.bulk_tag_pending, changes.size, changes.size),
-                style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-            Button(enabled = !applying && selectedTasks.isNotEmpty() && changes.isNotEmpty(), onClick = {
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f))
+            Button(modifier = Modifier.heightIn(min = 48.dp), enabled = !applying && selectedTasks.isNotEmpty() && changes.isNotEmpty(), onClick = {
                 applying = true
                 failed = false
                 scope.launch {

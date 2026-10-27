@@ -66,6 +66,8 @@ test-only changes belong in the commit message, not here, unless they change beh
   and older, which cap how many items a single database lookup can name.
 
 ### Changed
+- Bulk tagging uses compact Material 3 filter chips with soft tag-color tints, color dots and
+  check/dash indicators, plus a segmented Add/Remove control and a lighter sheet layout.
 - Bulk tagging stages multiple additions, removals and new tags until Apply. Tags and task
   changes save in one transaction; cancelling discards the draft and failures allow retry.
 - Markdown import uses Material 3 section cards, dropdown fields, a collapsing app bar and a
