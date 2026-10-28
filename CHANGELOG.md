@@ -15,6 +15,10 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ## [Unreleased]
 
+### Added
+- Illustrated user guide, feature reference, sync and backup setup, developer guide and
+  documentation index, with locally stored demo screenshots and expanded README walkthroughs.
+
 ## [0.96.2] - 2026-10-27
 
 `versionCode 31`. Upgrades in place over 0.95.1.
