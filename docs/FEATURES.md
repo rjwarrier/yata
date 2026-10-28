@@ -194,6 +194,7 @@ Entry points: [backup operations](../app/src/main/java/com/mj/yata/domain/usecas
 [encryption](../app/src/main/java/com/mj/yata/util/BackupCrypto.kt),
 [scheduled worker](../app/src/main/java/com/mj/yata/data/backup/UnifiedBackupWorker.kt).
 See [sync setup](SYNC_SETUP.md) for the user-facing procedures.
+For common errors and simple fixes, see the [sync FAQ](SYNC_FAQ.md).
 
 ## Appearance, language and privacy
 

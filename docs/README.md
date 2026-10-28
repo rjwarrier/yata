@@ -7,6 +7,7 @@
 | [User guide](USER_GUIDE.md) | First-run walkthrough and detailed everyday workflows, with demo screenshots |
 | [Feature reference](FEATURES.md) | Supported behavior, limits and implementation entry points |
 | [Sync and backup setup](SYNC_SETUP.md) | GitHub/SFTP/FTPS/FTP setup, additional devices, encryption and recovery |
+| [Sync FAQ](SYNC_FAQ.md) | Simple fixes for first-sync errors, access problems, missing tasks and other sync issues |
 | [Changelog](../CHANGELOG.md) | Changes by released version and unreleased work |
 | [Project README](../README.md) | Overview, downloads and quick start |
 

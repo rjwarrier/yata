@@ -5,6 +5,8 @@ remote snapshot. Core task management works without any sync provider.
 
 [User guide](USER_GUIDE.md) · [Feature reference](FEATURES.md) · [Documentation index](README.md)
 
+Having trouble? Start with the [sync FAQ](SYNC_FAQ.md) for simple, step-by-step fixes.
+
 ## Contents
 
 - [Choose a storage method](#choose-a-storage-method)
@@ -55,6 +57,9 @@ remote copy as authoritative; normal sync attempts to merge supported changes.
 Create a private repository in your GitHub account, for example `yata-sync`. Initialize it with
 a README so its branch exists, and note the owner, repository name and branch. A dedicated
 repository keeps task snapshot history separate from source code and other applications.
+
+If first sync says “GitHub repository changed during sync”, check that the README was saved.
+See [how to fix an empty repository](SYNC_FAQ.md#first-sync-fails-github-repository-changed-during-sync).
 
 YATA uses `yata/snapshot.json` on the configured branch. Despite the `.json` path, current remote
 payloads are passphrase-encrypted. Git history provides older snapshot restore points. Avoid
@@ -241,6 +246,8 @@ Treat access to the repository and old passphrases accordingly.
 
 ## Troubleshooting
 
+For plain-language explanations and steps, use the [common sync FAQ](SYNC_FAQ.md).
+
 | Symptom | Check or next step |
 | --- | --- |
 | Sync/backup controls disabled | Leave demo mode; check that no transfer is still active |
@@ -250,6 +257,7 @@ Treat access to the repository and old passphrases accordingly.
 | Permission denied / 403 | Contents read/write, repository access, organization policy, branch rules or API rate-limit message |
 | Wrong passphrase or corrupt backup | Use the passphrase that encrypted that snapshot; try a known-good retained copy |
 | Branch conflict | Let the checked update retry, then retry manually if another device was writing |
+| First sync: repository changed during sync | [Add and save a README if the repository is empty](SYNC_FAQ.md#first-sync-fails-github-repository-changed-during-sync); check YATA uses that branch |
 | History rewritten | Review branch changes and choose reconnect/recovery deliberately |
 | Local unexpectedly empty | Restore from remote if you want those tasks back; avoid Sync anyway unless deletions are intended |
 | SFTP host fingerprint changed | Verify the server's new fingerprint through a trusted channel |

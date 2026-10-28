@@ -501,6 +501,7 @@ that the first task snapshot has synced; check the completed sync status and ano
 
 Follow the [complete sync setup guide](SYNC_SETUP.md) for repository/token setup, self-hosted
 servers, device transfer, restore points, conflict behavior and troubleshooting.
+For simple fixes to common errors, see the [sync FAQ](SYNC_FAQ.md).
 
 ## Settings and languages
 
@@ -602,6 +603,7 @@ remote snapshot is the copy you intend to keep.
 Check demo mode, network access, provider settings and the encryption passphrase. Inspect the
 exact error and sync history. For authentication, branch history, empty-device warnings or
 restore failures, follow [sync troubleshooting](SYNC_SETUP.md#troubleshooting).
+The [sync FAQ](SYNC_FAQ.md) explains common messages and what to do next in simple language.
 
 ### A widget looks stale
 

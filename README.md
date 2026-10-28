@@ -36,6 +36,7 @@ let someone import a copy; they do not create a shared live workspace.
 | [User guide](docs/USER_GUIDE.md) | First task, daily planning, recurrence, organization, time tracking, imports, widgets, settings and troubleshooting |
 | [Feature reference](docs/FEATURES.md) | Supported behavior, boundaries and links to the implementation |
 | [Sync setup](docs/SYNC_SETUP.md) | GitHub and SFTP/FTPS/FTP setup, adding a device, encryption, recovery and common errors |
+| [Sync FAQ](docs/SYNC_FAQ.md) | Simple, step-by-step fixes for common sync problems, including first-sync errors |
 | [Developer guide](docs/DEVELOPMENT.md) | Toolchain, project structure, builds, checks, data migrations and contribution workflow |
 | [Documentation index](docs/README.md) | Maintained guides and engineering notes, with design plans identified separately |
 
