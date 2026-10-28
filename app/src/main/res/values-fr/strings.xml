@@ -1719,4 +1719,14 @@
         <item quantity="other">Modifications des étiquettes : %1$d</item>
     </plurals>
     <string name="demo_mode_sync_disabled">La synchronisation et les sauvegardes sont suspendues en mode démo.</string>
+    <string name="sync_how_to_fix">Comment corriger</string>
+    <string name="sync_faq">Aide à la synchronisation en ligne</string>
+    <string name="sync_fix_empty">Le dépôt GitHub est vide.\n\n1. Ouvrez votre dépôt de synchronisation sur GitHub.\n2. Ajoutez README.md et enregistrez avec Commit changes.\n3. Vérifiez la branche dans YATA, puis reconnectez-vous et synchronisez.</string>
+    <string name="sync_fix_access">YATA ne peut pas accéder à ce dépôt GitHub.\n\n1. Vérifiez le nom du dépôt et la branche. Le dépôt doit rester privé.\n2. Vérifiez le jeton (clé d’accès) : accès à ce dépôt et Contents: Read and write. Remplacez-le s’il a expiré.\n3. Reconnectez-vous et réessayez.</string>
+    <string name="sync_fix_rate">GitHub demande à YATA de patienter.\n\nAttendez l’heure indiquée ou réessayez plus tard. Évitez de lancer la synchronisation plusieurs fois. Un nouveau jeton est rarement nécessaire.</string>
+    <string name="sync_fix_conflict">La copie GitHub a changé pendant la synchronisation.\n\nLaissez les autres appareils terminer, puis synchronisez-les un par un. Pour une première synchronisation, vérifiez que README.md est enregistré.</string>
+    <string name="sync_fix_history">L’historique GitHub a changé.\n\nSauvegardez d’abord vos tâches locales utiles dans un fichier. Vérifiez qui a changé la branche avant de reconnecter ou restaurer. Une restauration remplace les tâches locales. N’effacez pas les données de l’application.</string>
+    <string name="sync_fix_passphrase">La copie ne peut pas être déchiffrée ou la phrase secrète manque.\n\nUtilisez la même phrase secrète de sauvegarde partout, pas votre mot de passe GitHub ni votre jeton. Si elle est correcte, la copie peut être endommagée. Sauvegardez vos tâches avant d’essayer une ancienne copie.</string>
+    <string name="sync_fix_network">YATA ne peut pas joindre le serveur.\n\nVérifiez Internet et l’adresse du serveur. Réessayez une fois connecté. Si le problème continue, vérifiez que le serveur est disponible.</string>
+    <string name="sync_fix_other">YATA n’a pas pu terminer cette opération.\n\nConsultez l’erreur affichée et l’aide en ligne ci-dessous. Sauvegardez vos tâches avant de modifier les réglages. N’effacez pas les données de l’application.</string>
 </resources>

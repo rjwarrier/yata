@@ -1714,4 +1714,14 @@
         <item quantity="other">Mga pagbabago sa tag: %1$d</item>
     </plurals>
     <string name="demo_mode_sync_disabled">Naka-pause ang pag-sync at mga backup sa demo mode.</string>
+    <string name="sync_how_to_fix">Paano ayusin</string>
+    <string name="sync_faq">Tulong sa sync online</string>
+    <string name="sync_fix_empty">Walang laman ang GitHub repository.\n\n1. Buksan ang iyong sync repository sa GitHub.\n2. Magdagdag ng README.md at i-save gamit ang Commit changes.\n3. Tingnan ang branch sa YATA, kumonekta at mag-sync muli.</string>
+    <string name="sync_fix_access">Hindi ma-access ng YATA ang GitHub repository na ito.\n\n1. Tingnan ang pangalan at branch. Dapat pribado ang repository.\n2. Tingnan ang token (access key): access sa repository at Contents: Read and write. Palitan kung expired na.\n3. Kumonekta at subukang muli.</string>
+    <string name="sync_fix_rate">Pinaghihintay ng GitHub ang YATA.\n\nHintayin ang oras na nakasaad o subukan mamaya. Huwag paulit-ulit pindutin ang Sync. Karaniwang hindi kailangan ng bagong token.</string>
+    <string name="sync_fix_conflict">Nagbago ang kopya sa GitHub habang nagsi-sync.\n\nHintaying matapos ang ibang device, saka mag-sync nang paisa-isa. Sa unang sync, tingnan kung naka-save na ang README.md.</string>
+    <string name="sync_fix_history">Nagbago ang naka-save na history sa GitHub.\n\nI-backup muna sa file ang mahahalagang lokal na task. Alamin kung sino ang nagbago ng branch bago kumonekta muli o mag-restore. Pinapalitan ng restore ang lokal na task. Huwag burahin ang app data.</string>
+    <string name="sync_fix_passphrase">Hindi mabuksan ang kopya o wala ang backup passphrase.\n\nGamitin ang parehong backup passphrase sa lahat ng device, hindi ang GitHub password o token. Kung tama ito, maaaring sira ang kopya. I-backup ang mga task bago subukan ang mas lumang kopya.</string>
+    <string name="sync_fix_network">Hindi maabot ng YATA ang server.\n\nTingnan ang internet at address ng server. Subukang muli kapag nakakonekta. Kung ayaw pa rin, tingnan kung gumagana ang server.</string>
+    <string name="sync_fix_other">Hindi natapos ng YATA ang operasyong ito.\n\nTingnan ang error sa screen at buksan ang online na tulong sa ibaba. I-backup ang mahahalagang task bago baguhin ang settings. Huwag burahin ang app data.</string>
 </resources>

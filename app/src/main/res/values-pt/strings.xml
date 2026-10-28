@@ -1719,4 +1719,14 @@
         <item quantity="other">Alterações de etiquetas: %1$d</item>
     </plurals>
     <string name="demo_mode_sync_disabled">A sincronização e os backups estão pausados no modo de demonstração.</string>
+    <string name="sync_how_to_fix">Como corrigir</string>
+    <string name="sync_faq">Ajuda de sincronização online</string>
+    <string name="sync_fix_empty">O repositório GitHub está vazio.\n\n1. Abra seu repositório de sincronização no GitHub.\n2. Adicione README.md e salve com Commit changes.\n3. Confira a branch no YATA, conecte e sincronize novamente.</string>
+    <string name="sync_fix_access">O YATA não pode acessar este repositório GitHub.\n\n1. Confira o nome e a branch. Mantenha o repositório privado.\n2. Confira o token (chave de acesso): acesso a este repositório e Contents: Read and write. Substitua se expirado.\n3. Conecte e tente novamente.</string>
+    <string name="sync_fix_rate">O GitHub pede para aguardar.\n\nEspere até o horário indicado ou tente mais tarde. Evite tocar repetidamente em Sincronizar. Normalmente não precisa de um novo token.</string>
+    <string name="sync_fix_conflict">A cópia no GitHub mudou durante a sincronização.\n\nEspere os outros dispositivos terminarem e sincronize um por vez. Na primeira sincronização, confira se README.md foi salvo.</string>
+    <string name="sync_fix_history">O histórico salvo no GitHub mudou.\n\nPrimeiro salve as tarefas locais importantes em um arquivo. Confira quem alterou a branch antes de reconectar ou restaurar. Restaurar substitui as tarefas locais. Não limpe os dados do aplicativo.</string>
+    <string name="sync_fix_passphrase">Não foi possível desbloquear a cópia, ou falta a senha de backup.\n\nUse a mesma senha de backup em todos os dispositivos, não a senha do GitHub nem o token. Se estiver correta, a cópia pode estar danificada. Salve as tarefas antes de tentar uma cópia antiga.</string>
+    <string name="sync_fix_network">O YATA não alcançou o servidor.\n\nConfira a internet e o endereço do servidor. Tente novamente quando estiver conectado. Se continuar falhando, confira se o servidor está disponível.</string>
+    <string name="sync_fix_other">O YATA não concluiu esta operação.\n\nConfira o erro exibido e abra a ajuda online abaixo. Salve as tarefas importantes antes de mudar as configurações. Não limpe os dados do aplicativo.</string>
 </resources>

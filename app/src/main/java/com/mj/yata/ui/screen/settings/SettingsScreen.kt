@@ -160,6 +160,7 @@ import androidx.compose.ui.graphics.toArgb
 import com.mj.yata.util.ProfilePhotoUtils
 import com.mj.yata.util.EstimateUtils
 import com.mj.yata.util.emptyLocalDataConfirmationRequired
+import com.mj.yata.util.syncFailureHelp
 import com.mj.yata.util.initialSyncConfirmationRequired
 import com.mj.yata.util.selfHostedSyncLockFailure
 import com.mj.yata.util.syncLockClearPrompt
@@ -414,6 +415,8 @@ fun SettingsScreen(
     var initialSyncMergeMessage by remember { mutableStateOf<String?>(null) }
     var confirmFirstSyncRestore by remember { mutableStateOf(false) }
     var emptyLocalSyncMessage by remember { mutableStateOf<String?>(null) }
+    var syncHelp by remember { mutableStateOf<com.mj.yata.util.SyncFailureHelp?>(null) }
+    syncHelp?.let { com.mj.yata.ui.widgets.SyncFailureHelpDialog(it) { syncHelp = null } }
     var demoModeFeedback by remember { mutableStateOf<Int?>(null) }
     var isLoadingSftpBackups by remember { mutableStateOf(false) }
     var sftpBackupList by remember { mutableStateOf<List<RestorePoint>>(emptyList()) }
@@ -2972,6 +2975,7 @@ fun SettingsScreen(
                                     } else if (emptyLocalFailure != null) {
                                         emptyLocalSyncMessage = emptyLocalFailure.message
                                     } else {
+                                        syncHelp = results.syncFailureHelp()
                                         scope.launch {
                                             reportBackupResults(results, snackbarHostState, context)
                                         }
@@ -3488,6 +3492,7 @@ fun SettingsScreen(
                         isBackingUp = true
                         viewModel.backupAllNow(allowInitialJoinMerge = true) { results ->
                             isBackingUp = false
+                            syncHelp = results.syncFailureHelp()
                             scope.launch {
                                 reportBackupResults(results, snackbarHostState, context)
                             }
@@ -3561,6 +3566,7 @@ fun SettingsScreen(
                             isBackingUp = true
                             viewModel.backupAllNow(allowEmptyLocalOverwrite = true) { results ->
                                 isBackingUp = false
+                                syncHelp = results.syncFailureHelp()
                                 scope.launch {
                                     reportBackupResults(results, snackbarHostState, context)
                                 }

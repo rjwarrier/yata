@@ -14,6 +14,35 @@ import java.net.URL
 class HttpGitHubApiTest {
 
     @Test
+    fun emptyRepositoryIsNotReportedAsConcurrentSyncConflict() = runTest {
+        var calls = 0
+        val api = HttpGitHubApi(
+            tokenProvider = { "token" },
+            connectionFactory = {
+                calls++
+                FakeConnection(status = 409, body = """{"message":"Git Repository is empty."}""")
+            },
+            retryDelay = {}
+        )
+        val error = runCatching { api.getRef("owner", "repo", "main") }.exceptionOrNull()
+        assertTrue(error is GitHubEmptyRepositoryException)
+        assertEquals(1, calls)
+    }
+
+    @Test
+    fun actualRefConflictStillUsesConcurrentSyncHandling() = runTest {
+        val api = HttpGitHubApi(
+            tokenProvider = { "token" },
+            connectionFactory = {
+                FakeConnection(status = 409, body = """{"message":"Reference update failed"}""")
+            },
+            retryDelay = {}
+        )
+        val error = runCatching { api.updateRef("owner", "repo", "main", "sha") }.exceptionOrNull()
+        assertTrue(error is GitHubConflictException)
+    }
+
+    @Test
     fun retriesTransientServerFailure() = runTest {
         val connections = ArrayDeque(
             listOf(

@@ -502,6 +502,8 @@ that the first task snapshot has synced; check the completed sync status and ano
 Follow the [complete sync setup guide](SYNC_SETUP.md) for repository/token setup, self-hosted
 servers, device transfer, restore points, conflict behavior and troubleshooting.
 For simple fixes to common errors, see the [sync FAQ](SYNC_FAQ.md).
+Sync help dialogs explain common connection and manual-sync failures. Read **How to fix**,
+then follow the steps before retrying. **Sync help online** opens the FAQ in your browser.
 
 ## Settings and languages
 

@@ -1714,4 +1714,14 @@
         <item quantity="other">Mabadiliko ya lebo: %1$d</item>
     </plurals>
     <string name="demo_mode_sync_disabled">Usawazishaji na nakala rudufu zimesitishwa katika hali ya maonyesho.</string>
+    <string name="sync_how_to_fix">Jinsi ya kurekebisha</string>
+    <string name="sync_faq">Msaada wa usawazishaji mtandaoni</string>
+    <string name="sync_fix_empty">Hifadhi ya GitHub ni tupu.\n\n1. Fungua hazina yako ya usawazishaji kwenye GitHub.\n2. Ongeza README.md na uhifadhi kwa Commit changes.\n3. Hakiki jina la tawi katika YATA, unganisha na usawazishe tena.</string>
+    <string name="sync_fix_access">YATA haiwezi kufikia hifadhi hii ya GitHub.\n\n1. Hakiki jina la hazina na tawi. Hazina lazima iwe ya faragha.\n2. Hakiki tokeni (ufunguo wa ufikiaji): ufikiaji wa hazina hii na Contents: Read and write. Badilisha ikiwa imeisha muda.\n3. Unganisha na ujaribu tena.</string>
+    <string name="sync_fix_rate">GitHub inaomba YATA isubiri.\n\nSubiri hadi muda ulioonyeshwa au ujaribu baadaye. Usibonyeze Sawazisha mara kwa mara. Kwa kawaida huhitaji tokeni mpya.</string>
+    <string name="sync_fix_conflict">Nakala ya GitHub ilibadilika wakati wa usawazishaji.\n\nAcha vifaa vingine vimalize, kisha sawazisha kifaa kimoja baada ya kingine. Kwa mara ya kwanza, hakikisha README.md imehifadhiwa.</string>
+    <string name="sync_fix_history">Historia iliyohifadhiwa ya GitHub imebadilika.\n\nHifadhi kwanza kazi muhimu za ndani katika faili ya chelezo. Hakiki aliyebadilisha tawi kabla ya kuunganisha tena au kurejesha. Kurejesha hubadilisha kazi za ndani. Usifute data ya programu.</string>
+    <string name="sync_fix_passphrase">Nakala haikuweza kufunguliwa au kaulisiri ya chelezo haipo.\n\nTumia kaulisiri ileile ya chelezo kwenye vifaa vyote, si nenosiri la GitHub wala tokeni. Ikiwa ni sahihi, nakala inaweza kuharibika. Hifadhi kazi kabla ya kujaribu nakala ya zamani.</string>
+    <string name="sync_fix_network">YATA haikuweza kufikia seva.\n\nHakiki intaneti na anwani ya seva. Jaribu tena ukiunganishwa. Ikiwa bado inashindwa, hakiki kama seva inapatikana.</string>
+    <string name="sync_fix_other">YATA haikuweza kukamilisha hatua hii.\n\nSoma hitilafu kwenye skrini na ufungue msaada mtandaoni hapa chini. Hifadhi kazi muhimu kabla ya kubadili mipangilio. Usifute data ya programu.</string>
 </resources>

@@ -1717,4 +1717,14 @@
         <item quantity="other">Taggändringar: %1$d</item>
     </plurals>
     <string name="demo_mode_sync_disabled">Synkronisering och säkerhetskopiering är pausade i demoläge.</string>
+    <string name="sync_how_to_fix">Så löser du det</string>
+    <string name="sync_faq">Synkhjälp på nätet</string>
+    <string name="sync_fix_empty">GitHub-lagringen är tom.\n\n1. Öppna ditt synkarkiv på GitHub.\n2. Lägg till README.md och spara med Commit changes.\n3. Kontrollera grenen i YATA, anslut och synka igen.</string>
+    <string name="sync_fix_access">YATA kan inte nå denna GitHub-lagring.\n\n1. Kontrollera arkivets namn och gren. Arkivet måste vara privat.\n2. Kontrollera token (åtkomstnyckeln): åtkomst till arkivet och Contents: Read and write. Byt ut den om den gått ut.\n3. Anslut och försök igen.</string>
+    <string name="sync_fix_rate">GitHub ber YATA att vänta.\n\nVänta till angiven tid eller försök senare. Tryck inte på Synka upprepade gånger. Vanligen behövs ingen ny token.</string>
+    <string name="sync_fix_conflict">GitHub-kopian ändrades under synkningen.\n\nLåt andra enheter bli klara och synka sedan en i taget. Kontrollera vid första synkningen att README.md har sparats.</string>
+    <string name="sync_fix_history">GitHubs sparade historik har ändrats.\n\nSäkerhetskopiera viktiga lokala uppgifter till en fil först. Ta reda på vem som ändrade grenen innan du ansluter igen eller återställer. Återställning ersätter lokala uppgifter. Rensa inte appdata.</string>
+    <string name="sync_fix_passphrase">Kopian kunde inte låsas upp eller backupfrasen saknas.\n\nAnvänd samma backupfras på alla enheter, inte GitHub-lösenordet eller token. Om frasen stämmer kan kopian vara skadad. Säkerhetskopiera uppgifter innan du provar en äldre kopia.</string>
+    <string name="sync_fix_network">YATA kunde inte nå servern.\n\nKontrollera internet och serveradressen. Försök igen när du är ansluten. Kontrollera att servern är tillgänglig om felet kvarstår.</string>
+    <string name="sync_fix_other">YATA kunde inte slutföra åtgärden.\n\nLäs felet på skärmen och öppna hjälpen på nätet nedan. Säkerhetskopiera viktiga uppgifter innan du ändrar inställningar. Rensa inte appdata.</string>
 </resources>

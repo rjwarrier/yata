@@ -1718,4 +1718,14 @@
         <item quantity="other">Tagwijzigingen: %1$d</item>
     </plurals>
     <string name="demo_mode_sync_disabled">Synchronisatie en back-ups zijn gepauzeerd in de demomodus.</string>
+    <string name="sync_how_to_fix">Zo los je het op</string>
+    <string name="sync_faq">Synchronisatiehulp online</string>
+    <string name="sync_fix_empty">De GitHub-opslag is leeg.\n\n1. Open je synchronisatierepository op GitHub.\n2. Voeg README.md toe en sla op met Commit changes.\n3. Controleer de branch in YATA, verbind opnieuw en synchroniseer.</string>
+    <string name="sync_fix_access">YATA heeft geen toegang tot deze GitHub-opslag.\n\n1. Controleer de repositorynaam en branch. Houd de repository privé.\n2. Controleer het token (toegangssleutel): toegang tot deze repository en Contents: Read and write. Vervang het als het verlopen is.\n3. Verbind en probeer opnieuw.</string>
+    <string name="sync_fix_rate">GitHub vraagt YATA te wachten.\n\nWacht tot de aangegeven tijd of probeer het later. Tik niet steeds op Synchroniseren. Een nieuw token is meestal niet nodig.</string>
+    <string name="sync_fix_conflict">De GitHub-kopie veranderde tijdens het synchroniseren.\n\nLaat andere apparaten eerst klaar zijn. Synchroniseer daarna één apparaat tegelijk. Controleer bij de eerste keer of README.md is opgeslagen.</string>
+    <string name="sync_fix_history">De opgeslagen GitHub-geschiedenis is veranderd.\n\nBewaar belangrijke lokale taken eerst in een back-upbestand. Controleer wie de branch veranderde voordat je opnieuw verbindt of herstelt. Herstellen vervangt lokale taken. Wis de appgegevens niet.</string>
+    <string name="sync_fix_passphrase">De kopie kan niet worden ontsleuteld of de back-upwachtzin ontbreekt.\n\nGebruik op elk apparaat dezelfde back-upwachtzin, niet je GitHub-wachtwoord of token. Klopt deze, dan kan de kopie beschadigd zijn. Maak een back-up voordat je een oudere kopie probeert.</string>
+    <string name="sync_fix_network">YATA kon de server niet bereiken.\n\nControleer internet en het serveradres. Probeer opnieuw zodra je verbinding hebt. Controleer bij blijvende problemen of de server beschikbaar is.</string>
+    <string name="sync_fix_other">YATA kon dit niet afronden.\n\nBekijk de foutmelding en open de online hulp hieronder. Maak een back-up van belangrijke taken voordat je instellingen wijzigt. Wis de appgegevens niet.</string>
 </resources>

@@ -17,6 +17,7 @@ class UnifiedBackupWorkerRetryTest {
     @Test
     fun permanentGitHubFailuresDoNotRetryScheduledBackup() {
         listOf(
+            com.mj.yata.data.github.GitHubEmptyRepositoryException(),
             GitHubAuthException(),
             GitHubPermissionException(),
             GitHubNotFoundException(),

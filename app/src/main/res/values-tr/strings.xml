@@ -1717,4 +1717,14 @@
         <item quantity="other">Etiket değişiklikleri: %1$d</item>
     </plurals>
     <string name="demo_mode_sync_disabled">Demo modunda eşitleme ve yedeklemeler duraklatılır.</string>
+    <string name="sync_how_to_fix">Nasıl düzeltilir</string>
+    <string name="sync_faq">Çevrimiçi eşitleme yardımı</string>
+    <string name="sync_fix_empty">GitHub deposu boş.\n\n1. GitHub eşitleme deponuzu açın.\n2. README.md ekleyip Commit changes ile kaydedin.\n3. YATA içindeki dal adını kontrol edin, yeniden bağlanıp eşitleyin.</string>
+    <string name="sync_fix_access">YATA bu GitHub deposuna erişemiyor.\n\n1. Depo ve dal adını kontrol edin. Depo özel olmalı.\n2. Belirteci (erişim anahtarı) kontrol edin: bu depoya erişim ve Contents: Read and write gerekir. Süresi dolmuşsa yenileyin.\n3. Bağlanıp yeniden deneyin.</string>
+    <string name="sync_fix_rate">GitHub YATA’dan beklemesini istiyor.\n\nGösterilen saate kadar bekleyin veya sonra deneyin. Eşitle düğmesine tekrar tekrar basmayın. Genellikle yeni belirteç gerekmez.</string>
+    <string name="sync_fix_conflict">GitHub kopyası eşitleme sırasında değişti.\n\nDiğer cihazların bitirmesini bekleyin, ardından tek tek eşitleyin. İlk eşitlemeyse README.md dosyasının kaydedildiğini kontrol edin.</string>
+    <string name="sync_fix_history">Kaydedilmiş GitHub geçmişi değişti.\n\nÖnce önemli yerel görevleri bir dosyaya yedekleyin. Yeniden bağlanmadan veya geri yüklemeden önce dalı kimin değiştirdiğini kontrol edin. Geri yükleme yerel görevleri değiştirir. Uygulama verilerini silmeyin.</string>
+    <string name="sync_fix_passphrase">Kopyanın kilidi açılamadı veya yedek parolası eksik.\n\nTüm cihazlarda aynı yedek parolasını kullanın; GitHub parolası veya belirteci değil. Doğruysa kopya bozuk olabilir. Eski kopyayı denemeden önce görevleri yedekleyin.</string>
+    <string name="sync_fix_network">YATA sunucuya ulaşamadı.\n\nİnterneti ve sunucu adresini kontrol edin. Bağlanınca yeniden deneyin. Sorun sürerse sunucunun çalıştığını kontrol edin.</string>
+    <string name="sync_fix_other">YATA bu işlemi tamamlayamadı.\n\nEkrandaki hatayı kontrol edip aşağıdan çevrimiçi yardımı açın. Ayarları değiştirmeden önce önemli görevleri yedekleyin. Uygulama verilerini silmeyin.</string>
 </resources>

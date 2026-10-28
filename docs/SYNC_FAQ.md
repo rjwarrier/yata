@@ -3,6 +3,10 @@
 Use this page when YATA cannot sync or your tasks do not appear on another device.
 It covers GitHub, SFTP and FTP. Start with the message shown in YATA's sync history.
 
+In builds with sync help dialogs, a failed connection or manual sync opens **How to fix**
+with steps for the problem. **Sync help online** opens this page. You can also open it from
+the Remote sync screen. If setup finds an empty GitHub repository, add a README and connect again.
+
 [Sync setup guide](SYNC_SETUP.md) · [User guide](USER_GUIDE.md) · [All documentation](README.md)
 
 ## Find your problem

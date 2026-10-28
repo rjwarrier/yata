@@ -22,6 +22,8 @@ test-only changes belong in the commit message, not here, unless they change beh
   documentation index, with locally stored demo screenshots and expanded README walkthroughs.
 
 ### Changed
+- Show simple “How to fix” dialogs for sync and connection failures, with an online FAQ.
+  Detect empty GitHub repositories during setup and explain how to add a README before syncing.
 - Prepare the app-sharing image off the UI thread, prevent duplicate preparation, improve
   attachment permissions, and make the image option accessible through its full toggle row.
 

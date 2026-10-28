@@ -3269,6 +3269,9 @@ data class WeekendRescheduleWarning(
                         }
                     }
                     remoteRepo.requirePrivateWriteAccess()
+                    // Check the branch before saving a connection that cannot complete first sync.
+                    // Empty repositories return a distinct error with README instructions.
+                    api.getRef(remoteRepo.owner, remoteRepo.name, remoteRepo.defaultBranch)
                     remoteBackupCredentialsStore.githubToken = tokenToUse
                     userPreferences.setGitHubConfiguration(
                         // The API's own owner login, not the possibly-stale one the user typed or

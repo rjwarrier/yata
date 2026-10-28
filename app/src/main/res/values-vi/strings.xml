@@ -1717,4 +1717,14 @@
         <item quantity="other">Thay đổi thẻ: %1$d</item>
     </plurals>
     <string name="demo_mode_sync_disabled">Đồng bộ và sao lưu được tạm dừng trong chế độ minh họa.</string>
+    <string name="sync_how_to_fix">Cách khắc phục</string>
+    <string name="sync_faq">Trợ giúp đồng bộ trực tuyến</string>
+    <string name="sync_fix_empty">Kho GitHub đang trống.\n\n1. Mở kho đồng bộ của bạn trên GitHub.\n2. Thêm README.md và lưu bằng Commit changes.\n3. Kiểm tra tên nhánh trong YATA, rồi kết nối và đồng bộ lại.</string>
+    <string name="sync_fix_access">YATA không thể truy cập kho GitHub này.\n\n1. Kiểm tra tên kho và nhánh. Kho phải ở chế độ riêng tư.\n2. Kiểm tra token (khóa truy cập): quyền vào kho này và Contents: Read and write. Thay nếu hết hạn.\n3. Kết nối và thử lại.</string>
+    <string name="sync_fix_rate">GitHub yêu cầu YATA chờ.\n\nĐợi đến thời gian hiển thị hoặc thử lại sau. Không nhấn Đồng bộ liên tục. Thường không cần token mới.</string>
+    <string name="sync_fix_conflict">Bản sao GitHub thay đổi trong khi đồng bộ.\n\nĐợi thiết bị khác hoàn tất, rồi đồng bộ từng thiết bị. Nếu là lần đầu, kiểm tra README.md đã được lưu.</string>
+    <string name="sync_fix_history">Lịch sử đã lưu trên GitHub đã thay đổi.\n\nTrước tiên sao lưu các tác vụ cục bộ quan trọng vào tệp. Kiểm tra ai đã đổi nhánh trước khi kết nối lại hoặc khôi phục. Khôi phục sẽ thay thế tác vụ cục bộ. Đừng xóa dữ liệu ứng dụng.</string>
+    <string name="sync_fix_passphrase">Không thể mở khóa bản sao hoặc thiếu mật khẩu sao lưu.\n\nDùng cùng mật khẩu sao lưu trên mọi thiết bị, không phải mật khẩu GitHub hay token. Nếu đúng, bản sao có thể bị hỏng. Sao lưu tác vụ trước khi thử bản cũ hơn.</string>
+    <string name="sync_fix_network">YATA không thể kết nối máy chủ.\n\nKiểm tra Internet và địa chỉ máy chủ. Thử lại khi có mạng. Nếu vẫn lỗi, kiểm tra máy chủ có hoạt động không.</string>
+    <string name="sync_fix_other">YATA không thể hoàn tất thao tác.\n\nXem lỗi trên màn hình và mở trợ giúp trực tuyến bên dưới. Sao lưu tác vụ quan trọng trước khi đổi cài đặt. Đừng xóa dữ liệu ứng dụng.</string>
 </resources>

@@ -1763,4 +1763,14 @@
         <item quantity="other">Cambios de etiquetas: %1$d</item>
     </plurals>
     <string name="demo_mode_sync_disabled">La sincronización y las copias de seguridad están pausadas en el modo de demostración.</string>
+    <string name="sync_how_to_fix">Cómo solucionarlo</string>
+    <string name="sync_faq">Ayuda de sincronización en línea</string>
+    <string name="sync_fix_empty">El repositorio de GitHub está vacío.\n\n1. Abre tu repositorio de sincronización en GitHub.\n2. Añade README.md y guarda con Commit changes.\n3. Comprueba la rama en YATA, conecta y sincroniza de nuevo.</string>
+    <string name="sync_fix_access">YATA no puede acceder a este repositorio GitHub.\n\n1. Comprueba el nombre y la rama. El repositorio debe ser privado.\n2. Revisa el token (clave de acceso): acceso al repositorio y Contents: Read and write. Sustitúyelo si ha caducado.\n3. Conecta y vuelve a intentarlo.</string>
+    <string name="sync_fix_rate">GitHub pide a YATA que espere.\n\nEspera hasta la hora indicada o inténtalo más tarde. No pulses Sincronizar repetidamente. Normalmente no hace falta un token nuevo.</string>
+    <string name="sync_fix_conflict">La copia de GitHub cambió durante la sincronización.\n\nDeja que terminen los otros dispositivos y sincroniza uno a uno. Si es la primera vez, comprueba que README.md esté guardado.</string>
+    <string name="sync_fix_history">El historial guardado de GitHub cambió.\n\nGuarda primero las tareas locales importantes en un archivo. Comprueba quién cambió la rama antes de reconectar o restaurar. Restaurar sustituye las tareas locales. No borres los datos de la aplicación.</string>
+    <string name="sync_fix_passphrase">No se pudo desbloquear la copia o falta la contraseña de copia de seguridad.\n\nUsa la misma en todos los dispositivos, no la contraseña de GitHub ni el token. Si es correcta, la copia podría estar dañada. Guarda tus tareas antes de probar una copia anterior.</string>
+    <string name="sync_fix_network">YATA no pudo contactar con el servidor.\n\nComprueba Internet y la dirección del servidor. Inténtalo cuando tengas conexión. Si sigue fallando, comprueba que el servidor esté disponible.</string>
+    <string name="sync_fix_other">YATA no pudo terminar esta operación.\n\nRevisa el error y abre la ayuda en línea de abajo. Guarda las tareas importantes antes de cambiar los ajustes. No borres los datos de la aplicación.</string>
 </resources>

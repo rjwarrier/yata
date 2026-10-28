@@ -141,6 +141,7 @@ class UnifiedBackupWorker(
 
 internal fun backupFailureShouldRetry(result: BackupRunResult): Boolean =
     when (result.error) {
+        is com.mj.yata.data.github.GitHubEmptyRepositoryException,
         is GitHubAuthException,
         is GitHubPermissionException,
         is GitHubPublicRepoException,

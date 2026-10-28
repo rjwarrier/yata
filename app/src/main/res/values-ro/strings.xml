@@ -1720,4 +1720,14 @@
         <item quantity="other">Modificări ale etichetelor: %1$d</item>
     </plurals>
     <string name="demo_mode_sync_disabled">Sincronizarea și copiile de siguranță sunt suspendate în modul demonstrativ.</string>
+    <string name="sync_how_to_fix">Cum rezolvi</string>
+    <string name="sync_faq">Ajutor pentru sincronizare online</string>
+    <string name="sync_fix_empty">Depozitul GitHub este gol.\n\n1. Deschide depozitul de sincronizare pe GitHub.\n2. Adaugă README.md și salvează cu Commit changes.\n3. Verifică ramura în YATA, reconectează și sincronizează.</string>
+    <string name="sync_fix_access">YATA nu poate accesa acest depozit GitHub.\n\n1. Verifică numele și ramura. Depozitul trebuie să fie privat.\n2. Verifică tokenul (cheia de acces): acces la depozit și Contents: Read and write. Înlocuiește-l dacă a expirat.\n3. Conectează și încearcă din nou.</string>
+    <string name="sync_fix_rate">GitHub cere YATA să aștepte.\n\nAșteaptă până la ora indicată sau încearcă mai târziu. Nu apăsa repetat Sincronizare. De obicei nu ai nevoie de un token nou.</string>
+    <string name="sync_fix_conflict">Copia GitHub s-a schimbat în timpul sincronizării.\n\nLasă celelalte dispozitive să termine, apoi sincronizează pe rând. La prima sincronizare, verifică dacă README.md este salvat.</string>
+    <string name="sync_fix_history">Istoricul salvat pe GitHub s-a schimbat.\n\nSalvează mai întâi sarcinile locale importante într-un fișier de rezervă. Verifică cine a schimbat ramura înainte de reconectare sau restaurare. Restaurarea înlocuiește sarcinile locale. Nu șterge datele aplicației.</string>
+    <string name="sync_fix_passphrase">Copia nu poate fi deblocată sau lipsește parola de rezervă.\n\nFolosește aceeași parolă de rezervă pe toate dispozitivele, nu parola GitHub sau tokenul. Dacă este corectă, copia poate fi deteriorată. Salvează sarcinile înainte de a încerca o copie mai veche.</string>
+    <string name="sync_fix_network">YATA nu poate contacta serverul.\n\nVerifică internetul și adresa serverului. Încearcă după conectare. Dacă eroarea continuă, verifică dacă serverul este disponibil.</string>
+    <string name="sync_fix_other">YATA nu a putut termina operația.\n\nVerifică eroarea afișată și deschide ajutorul online de mai jos. Salvează sarcinile importante înainte de a schimba setările. Nu șterge datele aplicației.</string>
 </resources>

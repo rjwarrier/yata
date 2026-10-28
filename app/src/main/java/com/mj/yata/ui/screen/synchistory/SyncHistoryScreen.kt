@@ -67,6 +67,9 @@ fun SyncHistoryScreen(
     var isLoading by remember { mutableStateOf(true) }
     var isLoadingMore by remember { mutableStateOf(false) }
     var loadError by remember { mutableStateOf<String?>(null) }
+    var syncHelp by remember { mutableStateOf<com.mj.yata.util.SyncFailureHelp?>(null) }
+    var loadHelp by remember { mutableStateOf(com.mj.yata.util.SyncFailureHelp.OTHER) }
+    syncHelp?.let { com.mj.yata.ui.widgets.SyncFailureHelpDialog(it) { syncHelp = null } }
     // How many restore points the next fetch asks for. GitHubSyncManager has no page cursor to
     // resume from - listRestorePoints(limit) always re-walks from the newest commit - so "load
     // more" means re-fetching everything up to a bigger limit and replacing the list, not
@@ -84,6 +87,7 @@ fun SyncHistoryScreen(
             result.fold(
                 onSuccess = { entries = it },
                 onFailure = { error ->
+                    loadHelp = com.mj.yata.util.SyncFailureHelp.from(error)
                     entries = emptyList()
                     loadError = error.message ?: context.getString(R.string.export_failed)
                 }
@@ -171,11 +175,16 @@ fun SyncHistoryScreen(
                 }
                 loadError != null -> {
                     Box(modifier = Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
-                        Text(
-                            text = loadError.orEmpty(),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.error
-                        )
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = loadError.orEmpty(),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                            TextButton(onClick = { syncHelp = loadHelp }) {
+                                Text(stringResource(R.string.sync_how_to_fix))
+                            }
+                        }
                     }
                 }
                 entries.isEmpty() -> {

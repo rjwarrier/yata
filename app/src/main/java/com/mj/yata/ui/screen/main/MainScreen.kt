@@ -7,6 +7,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.ui.platform.LocalContext
 import com.mj.yata.util.backupResultMessage
+import com.mj.yata.util.syncFailureHelp
 import com.mj.yata.util.emptyLocalDataConfirmationRequired
 import com.mj.yata.util.initialSyncConfirmationRequired
 import com.mj.yata.util.resolveParsedQuickAddEntities
@@ -141,6 +142,8 @@ fun MainScreen(
     var initialSyncMergeMessage by remember { mutableStateOf<String?>(null) }
     var confirmFirstSyncRestore by remember { mutableStateOf(false) }
     var emptyLocalSyncMessage by remember { mutableStateOf<String?>(null) }
+    var syncHelp by remember { mutableStateOf<com.mj.yata.util.SyncFailureHelp?>(null) }
+    syncHelp?.let { com.mj.yata.ui.widgets.SyncFailureHelpDialog(it) { syncHelp = null } }
     var isClearingSyncLock by remember { mutableStateOf(false) }
 
     fun runManualSync(allowInitialJoinMerge: Boolean = false, allowEmptyLocalOverwrite: Boolean = false) {
@@ -165,6 +168,7 @@ fun MainScreen(
             } else if (emptyLocalFailure != null && !allowEmptyLocalOverwrite) {
                 emptyLocalSyncMessage = emptyLocalFailure.message
             } else {
+                syncHelp = results.syncFailureHelp()
                 scope.launch {
                     snackbarHostState.showSnackbar(backupResultMessage(results, context).text)
                 }

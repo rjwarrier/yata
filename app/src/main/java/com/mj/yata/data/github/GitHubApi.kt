@@ -125,6 +125,9 @@ class GitHubAuthException(message: String = "GitHub token is invalid or expired"
 class GitHubRateLimitException(val resetAtEpochSeconds: Long?) : GitHubException("GitHub rate limit reached")
 class GitHubPermissionException(message: String = "GitHub token does not have write access to this repo") : GitHubException(message)
 class GitHubConflictException(message: String = "GitHub repository changed during sync") : GitHubException(message)
+class GitHubEmptyRepositoryException : GitHubException(
+    "GitHub repository is empty. Add and save a README on GitHub, then connect and sync again."
+)
 class GitHubHistoryRewrittenException(
     message: String =
         "GitHub branch history changed outside YATA. Restore a snapshot from GitHub history, or reconnect this repo after confirming the current snapshot is correct."
@@ -177,13 +180,8 @@ class HttpGitHubApi(
     }
 
     override suspend fun getRef(owner: String, repo: String, branch: String): GitHubRef =
-        try {
-            GitHubRef(requestJson("GET", "/repos/${pathSegment(owner)}/${pathSegment(repo)}/git/ref/heads/${pathWithSlashes(branch)}")
-                .getJSONObject("object").getString("sha"))
-        } catch (e: GitHubConflictException) {
-            // GitHub returns 409, not 404, when an otherwise valid repo has no commits yet.
-            throw GitHubNotFoundException("GitHub repository is empty")
-        }
+        GitHubRef(requestJson("GET", "/repos/${pathSegment(owner)}/${pathSegment(repo)}/git/ref/heads/${pathWithSlashes(branch)}")
+            .getJSONObject("object").getString("sha"))
 
     override suspend fun createRef(owner: String, repo: String, ref: String, sha: String): GitHubRef {
         val body = JSONObject().put("ref", ref).put("sha", sha)
@@ -425,6 +423,8 @@ class HttpGitHubApi(
             // other endpoint (e.g. an oversized/malformed blob or tree) is a validation failure
             // that retrying won't fix; treating it as a conflict burned all CAS retries and then
             // reported "repository kept changing during sync" for what was really a bad request.
+            status == 409 && githubErrorMessage(body)?.contains("repository is empty", ignoreCase = true) == true ->
+                GitHubEmptyRepositoryException()
             status == 409 -> GitHubConflictException()
             status == 422 && endpoint.contains("/git/refs/") -> GitHubConflictException()
             status == 422 -> GitHubTransportException("GitHub rejected the request as invalid", retryable = false)

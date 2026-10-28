@@ -1723,4 +1723,14 @@
         <item quantity="other">Změny štítků: %1$d</item>
     </plurals>
     <string name="demo_mode_sync_disabled">V ukázkovém režimu jsou synchronizace a zálohování pozastaveny.</string>
+    <string name="sync_how_to_fix">Jak problém vyřešit</string>
+    <string name="sync_faq">Nápověda k synchronizaci online</string>
+    <string name="sync_fix_empty">Úložiště GitHub je prázdné.\n\n1. Otevřete synchronizační repozitář na GitHubu.\n2. Přidejte README.md a uložte přes Commit changes.\n3. Zkontrolujte větev v YATA, znovu připojte a synchronizujte.</string>
+    <string name="sync_fix_access">YATA nemá přístup k tomuto úložišti GitHub.\n\n1. Zkontrolujte název repozitáře a větev. Repozitář musí být soukromý.\n2. Zkontrolujte token (přístupový klíč): přístup k repozitáři a Contents: Read and write. Prošlý token nahraďte.\n3. Znovu připojte a zkuste to.</string>
+    <string name="sync_fix_rate">GitHub žádá YATA o vyčkání.\n\nPočkejte do uvedeného času nebo to zkuste později. Neklepejte opakovaně na synchronizaci. Nový token obvykle není potřeba.</string>
+    <string name="sync_fix_conflict">Kopie na GitHubu se během synchronizace změnila.\n\nNechte ostatní zařízení dokončit práci a synchronizujte je postupně. Při první synchronizaci ověřte, že je README.md uložen.</string>
+    <string name="sync_fix_history">Uložená historie GitHubu se změnila.\n\nNejdříve zálohujte důležité místní úkoly do souboru. Před připojením nebo obnovou zjistěte, kdo změnil větev. Obnova nahradí místní úkoly. Nemažte data aplikace.</string>
+    <string name="sync_fix_passphrase">Kopii nelze odemknout nebo chybí záložní heslo.\n\nNa všech zařízeních používejte stejné záložní heslo, nikoli heslo GitHubu či token. Je-li správné, kopie může být poškozena. Před zkoušením starší kopie zálohujte úkoly.</string>
+    <string name="sync_fix_network">YATA se nemůže spojit se serverem.\n\nZkontrolujte internet a adresu serveru. Zkuste to znovu po připojení. Pokud chyba trvá, ověřte dostupnost serveru.</string>
+    <string name="sync_fix_other">YATA nemohla dokončit tuto operaci.\n\nPřečtěte si chybu na obrazovce a otevřete online nápovědu níže. Před změnou nastavení zálohujte důležité úkoly. Nemažte data aplikace.</string>
 </resources>

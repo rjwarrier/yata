@@ -42,6 +42,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
@@ -90,6 +91,7 @@ fun RemoteSyncScreen(
     val uiState by viewModel.settingsUiState.collectAsStateWithLifecycle()
     val demoModeEnabled by viewModel.demoModeEnabled.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val uriHandler = LocalUriHandler.current
     val scope = rememberCoroutineScope()
 
     val remoteBackupProtocol = uiState.remoteBackupProtocol
@@ -161,6 +163,16 @@ fun RemoteSyncScreen(
     // every test outcome goes straight to testResultMessage.
     var testResultOk by remember { mutableStateOf<Boolean?>(null) }
     var testResultMessage by remember { mutableStateOf<String?>(null) }
+    var connectionHelp by remember { mutableStateOf<com.mj.yata.util.SyncFailureHelp?>(null) }
+    var syncHelp by remember { mutableStateOf<com.mj.yata.util.SyncFailureHelp?>(null) }
+    syncHelp?.let { com.mj.yata.ui.widgets.SyncFailureHelpDialog(it) { syncHelp = null } }
+    LaunchedEffect(testResultMessage, testResultOk) {
+        if (testResultOk == false && !testResultMessage.isNullOrBlank()) {
+            syncHelp = connectionHelp ?: com.mj.yata.util.SyncFailureHelp.from(IllegalStateException(testResultMessage))
+        } else {
+            connectionHelp = null
+        }
+    }
     var pendingTrustFingerprint by remember { mutableStateOf<String?>(null) }
     var isHostKeyMismatch by remember { mutableStateOf(false) }
     val draftIsFtp = draftProtocol == RemoteBackupProtocol.FTP
@@ -476,6 +488,9 @@ fun RemoteSyncScreen(
                 Text(stringResource(R.string.demo_mode_sync_disabled), color = MaterialTheme.colorScheme.primary)
             }
             RemoteConfigHeader(protocol = draftProtocol)
+            TextButton(onClick = { uriHandler.openUri(com.mj.yata.ui.widgets.SYNC_FAQ_URL) }) {
+                Text(stringResource(R.string.sync_faq))
+            }
             RemoteProviderPicker(
                 selectedProtocol = draftProtocol,
                 onProtocolSelected = { newProtocol ->
@@ -879,6 +894,7 @@ fun RemoteSyncScreen(
                             testResultMessage = if (result.isSuccess) {
                                 "GitHub connected"
                             } else {
+                                connectionHelp = result.exceptionOrNull()?.let { com.mj.yata.util.SyncFailureHelp.from(it) }
                                 result.exceptionOrNull()?.message ?: context.getString(R.string.export_failed)
                             }
                         }
@@ -891,6 +907,7 @@ fun RemoteSyncScreen(
                                     testResultMessage = if (result.isSuccess) {
                                         context.getString(R.string.settings_sftp_connection_ok)
                                     } else {
+                                        connectionHelp = result.exceptionOrNull()?.let { com.mj.yata.util.SyncFailureHelp.from(it) }
                                         result.exceptionOrNull()?.message ?: context.getString(R.string.export_failed)
                                     }
                                 }
@@ -1035,6 +1052,12 @@ fun RemoteSyncScreen(
                             style = MaterialTheme.typography.bodySmall,
                             modifier = Modifier.weight(1f)
                         )
+                        if (testResultOk == false) {
+                            TextButton(onClick = {
+                                syncHelp = connectionHelp ?:
+                                    com.mj.yata.util.SyncFailureHelp.from(IllegalStateException(message))
+                            }) { Text(stringResource(R.string.sync_how_to_fix)) }
+                        }
                     }
                 }
             }
@@ -1153,6 +1176,7 @@ fun RemoteSyncScreen(
                                         )
                                     },
                                     onFailure = { error ->
+                                        connectionHelp = com.mj.yata.util.SyncFailureHelp.from(error)
                                         error.message ?: context.getString(R.string.export_failed)
                                     }
                                 )

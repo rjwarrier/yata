@@ -1717,4 +1717,14 @@
         <item quantity="other">Perubahan tag: %1$d</item>
     </plurals>
     <string name="demo_mode_sync_disabled">Sinkronisasi dan pencadangan dijeda dalam mode demo.</string>
+    <string name="sync_how_to_fix">Cara memperbaiki</string>
+    <string name="sync_faq">Bantuan sinkronisasi online</string>
+    <string name="sync_fix_empty">Penyimpanan GitHub masih kosong.\n\n1. Buka repositori sinkronisasi Anda di GitHub.\n2. Tambahkan README.md dan simpan dengan Commit changes.\n3. Periksa nama branch di YATA, lalu hubungkan dan sinkronkan lagi.</string>
+    <string name="sync_fix_access">YATA tidak dapat mengakses penyimpanan GitHub ini.\n\n1. Periksa nama repositori dan branch. Repositori harus privat.\n2. Periksa token (kunci akses): akses ke repositori ini dan Contents: Read and write. Ganti jika kedaluwarsa.\n3. Hubungkan dan coba lagi.</string>
+    <string name="sync_fix_rate">GitHub meminta YATA menunggu.\n\nTunggu sampai waktu yang ditampilkan atau coba nanti. Jangan mengetuk Sinkronkan berulang kali. Biasanya tidak perlu token baru.</string>
+    <string name="sync_fix_conflict">Salinan GitHub berubah saat sinkronisasi.\n\nTunggu perangkat lain selesai, lalu sinkronkan satu per satu. Saat sinkronisasi pertama, periksa apakah README.md sudah disimpan.</string>
+    <string name="sync_fix_history">Riwayat GitHub yang tersimpan berubah.\n\nCadangkan tugas lokal penting ke berkas terlebih dahulu. Periksa siapa yang mengubah branch sebelum menghubungkan ulang atau memulihkan. Pemulihan mengganti tugas lokal. Jangan hapus data aplikasi.</string>
+    <string name="sync_fix_passphrase">Salinan tidak dapat dibuka atau frasa sandi cadangan belum diisi.\n\nGunakan frasa sandi cadangan yang sama di semua perangkat, bukan kata sandi GitHub atau token. Jika benar, salinan mungkin rusak. Cadangkan tugas sebelum mencoba salinan lama.</string>
+    <string name="sync_fix_network">YATA tidak dapat menjangkau server.\n\nPeriksa internet dan alamat server. Coba lagi setelah terhubung. Jika masih gagal, periksa apakah server tersedia.</string>
+    <string name="sync_fix_other">YATA tidak dapat menyelesaikan operasi ini.\n\nPeriksa pesan kesalahan dan buka bantuan online di bawah. Cadangkan tugas penting sebelum mengubah pengaturan. Jangan hapus data aplikasi.</string>
 </resources>

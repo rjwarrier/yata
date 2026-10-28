@@ -1886,4 +1886,14 @@
         <item quantity="other">Tag changes: %1$d</item>
     </plurals>
     <string name="demo_mode_sync_disabled">Sync and backups are paused in demo mode.</string>
+    <string name="sync_how_to_fix">How to fix</string>
+    <string name="sync_faq">Sync help online</string>
+    <string name="sync_fix_empty">GitHub storage is empty.\n\n1. Open your sync repository on GitHub.\n2. Add a file named README.md and save it with Commit changes.\n3. Check the branch name in YATA, then connect and sync again.</string>
+    <string name="sync_fix_access">YATA cannot access this GitHub storage.\n\n1. Check the repository name and branch. Keep the repository private.\n2. Check your token (access key). It needs access to this repository and Contents: Read and write. Replace it if expired.\n3. Connect and try again.</string>
+    <string name="sync_fix_rate">GitHub is asking YATA to wait.\n\nWait until the retry time shown in the error, or try later. Avoid tapping Sync repeatedly. You usually do not need a new token.</string>
+    <string name="sync_fix_conflict">The GitHub copy changed while syncing.\n\nLet sync on other devices finish, then try one device at a time. If this is your first sync, check that the GitHub repository has a saved README.md.</string>
+    <string name="sync_fix_history">The saved GitHub history changed.\n\nSave a file backup of useful local tasks first. Check who changed the branch before reconnecting or restoring. A restore replaces local tasks. Do not clear app storage.</string>
+    <string name="sync_fix_passphrase">The saved copy could not be unlocked, or its backup passphrase is missing.\n\nUse the same backup passphrase on every device. This is not your GitHub password or token. If it is correct, the copy may be damaged. Back up useful tasks before trying an older copy.</string>
+    <string name="sync_fix_network">YATA could not reach the server.\n\nCheck your internet connection and server address. Try again when connected. If it still fails, check whether the server is available.</string>
+    <string name="sync_fix_other">YATA could not finish this operation.\n\nCheck the error shown on the screen and open Sync help online below. Keep a file backup of useful tasks before changing settings. Do not clear app storage to fix a sync error.</string>
 </resources>

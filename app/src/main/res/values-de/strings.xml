@@ -1874,4 +1874,14 @@
         <item quantity="other">Tag-Änderungen: %1$d</item>
     </plurals>
     <string name="demo_mode_sync_disabled">Synchronisierung und Sicherungen sind im Demomodus pausiert.</string>
+    <string name="sync_how_to_fix">So beheben Sie das Problem</string>
+    <string name="sync_faq">Sync-Hilfe online</string>
+    <string name="sync_fix_empty">Der GitHub-Speicher ist leer.\n\n1. Öffnen Sie Ihr Sync-Repository auf GitHub.\n2. Erstellen Sie README.md und speichern Sie mit Commit changes.\n3. Prüfen Sie den Branch in YATA und verbinden und synchronisieren Sie erneut.</string>
+    <string name="sync_fix_access">YATA kann nicht auf diesen GitHub-Speicher zugreifen.\n\n1. Prüfen Sie Repository und Branch. Das Repository muss privat sein.\n2. Prüfen Sie den Token (Zugriffsschlüssel): Zugriff auf dieses Repository und Contents: Read and write. Ersetzen Sie abgelaufene Token.\n3. Verbinden Sie sich erneut.</string>
+    <string name="sync_fix_rate">GitHub bittet YATA zu warten.\n\nWarten Sie bis zur angegebenen Zeit oder versuchen Sie es später. Tippen Sie nicht wiederholt auf Synchronisieren. Ein neuer Token ist meist nicht nötig.</string>
+    <string name="sync_fix_conflict">Die GitHub-Kopie wurde während der Synchronisierung geändert.\n\nWarten Sie, bis andere Geräte fertig sind. Synchronisieren Sie dann ein Gerät nach dem anderen. Beim ersten Mal prüfen Sie, ob README.md gespeichert ist.</string>
+    <string name="sync_fix_history">Der gespeicherte GitHub-Verlauf wurde geändert.\n\nSichern Sie zuerst wichtige lokale Aufgaben in einer Datei. Klären Sie die Branch-Änderung vor einer Neuverbindung oder Wiederherstellung. Eine Wiederherstellung ersetzt lokale Aufgaben. Löschen Sie nicht den App-Speicher.</string>
+    <string name="sync_fix_passphrase">Die Kopie konnte nicht entschlüsselt werden oder die Backup-Passphrase fehlt.\n\nNutzen Sie auf allen Geräten dieselbe Backup-Passphrase, nicht das GitHub-Passwort oder den Token. Ist sie korrekt, kann die Kopie beschädigt sein. Sichern Sie Aufgaben vor dem Versuch mit einer älteren Kopie.</string>
+    <string name="sync_fix_network">YATA konnte den Server nicht erreichen.\n\nPrüfen Sie Internetverbindung und Serveradresse. Versuchen Sie es mit Verbindung erneut. Prüfen Sie bei weiteren Fehlern die Verfügbarkeit des Servers.</string>
+    <string name="sync_fix_other">YATA konnte diesen Vorgang nicht abschließen.\n\nPrüfen Sie die Fehlermeldung und öffnen Sie unten die Online-Hilfe. Sichern Sie wichtige Aufgaben vor Änderungen in einer Datei. Löschen Sie nicht den App-Speicher.</string>
 </resources>
