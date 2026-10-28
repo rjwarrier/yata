@@ -67,6 +67,51 @@ class AnalyticsUtilsTest {
     private val bob = Person("bob", "Bob", "B", "accentB")
     private val ann = Person("ann", "Ann", "A", "accentC")
 
+    @Test
+    fun zeroOverdueStreakMatchesHistoricalDailyCounts() {
+        val dueDates = listOf(null, "invalid", today.minusDays(90).toString(),
+            today.minusDays(3).toString(), today.toString(), today.plusDays(2).toString())
+        val completionDates = listOf(null, today.minusDays(70), today.minusDays(2),
+            today, today.plusDays(2))
+        val fixtures = dueDates.flatMap { due ->
+            completionDates.flatMap { completed ->
+                listOf(false, true).map { done ->
+                    task("fixture", done = done, due = due, completedOn = completed)
+                }
+            }
+        }
+        fun expected(tasks: List<Task>): Int = (0L until 60L).takeWhile { offset ->
+            AnalyticsUtils.overdueCountOn(tasks, today.minusDays(offset)) == 0
+        }.size
+        for (fixture in fixtures) {
+            assertEquals("Single task: $fixture", expected(listOf(fixture)),
+                AnalyticsUtils.zeroOverdueStreak(listOf(fixture), today))
+        }
+        val random = kotlin.random.Random(42)
+        repeat(100) {
+            val tasks = List(20) { fixtures[random.nextInt(fixtures.size)] }
+            assertEquals(expected(tasks), AnalyticsUtils.zeroOverdueStreak(tasks, today))
+        }
+        assertEquals(60, AnalyticsUtils.zeroOverdueStreak(emptyList(), today))
+    }
+
+    @Test
+    fun workloadSharesCountTasksOncePerPersonAndKeepUnknownAssignmentsInTotal() {
+        val tasks = listOf(
+            task("shared", assignees = listOf(bob.id, bob.id, ann.id)),
+            task("bob", assignees = listOf(bob.id)),
+            task("unknown", assignees = listOf("missing-person")),
+            task("unassigned"),
+            task("done", done = true, assignees = listOf(ann.id))
+        )
+        val shares = AnalyticsUtils.workloadShare(tasks, listOf(me, bob, ann))
+        assertEquals(listOf(bob.id, ann.id), shares.map { it.person.id })
+        assertEquals(listOf(2, 1), shares.map { it.openCount })
+        assertEquals(2f / 3f, shares[0].share, 0.0001f)
+        assertEquals(1f / 3f, shares[1].share, 0.0001f)
+        assertTrue(AnalyticsUtils.workloadShare(emptyList(), listOf(bob)).isEmpty())
+    }
+
     // ── Period semantics ────────────────────────────────────────────────────────────────────
 
     @Test

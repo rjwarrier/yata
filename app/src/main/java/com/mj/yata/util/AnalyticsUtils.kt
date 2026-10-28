@@ -413,10 +413,10 @@ object AnalyticsUtils {
     fun dailyActivity(tasks: List<Task>, period: AnalyticsPeriod, today: LocalDate = LocalDate.now()): List<DayActivity> {
         if (period == AnalyticsPeriod.ALL) return emptyList()
         val start = periodStart(period, today)
-        val completedByDate = tasks.mapNotNull { task -> task.completedAt?.toLocalDate() }
+        val completedByDate = tasks.asSequence().mapNotNull { task -> task.completedAt?.toLocalDate() }
             .groupingBy { it }
             .eachCount()
-        val createdByDate = tasks.mapNotNull { task -> task.createdAt?.toLocalDate() }
+        val createdByDate = tasks.asSequence().mapNotNull { task -> task.createdAt?.toLocalDate() }
             .groupingBy { it }
             .eachCount()
 
@@ -500,14 +500,24 @@ object AnalyticsUtils {
         holidays: List<Holiday> = emptyList(),
         observeNonWorkingDays: Boolean = false
     ): Int {
-        var day = today
-        var streak = 0
-        while (streak < 60) {
-            if (overdueCountOn(tasks, day, weekendDays, holidays, observeNonWorkingDays) > 0) break
-            streak++
-            day = day.minusDays(1)
+        var streak = 60L
+        for (task in tasks) {
+            // An overdue interval ends the day before completion. Legacy done tasks without
+            // a completion timestamp cannot establish an interval (same as overdueCountOn).
+            val completedDay = task.completedAt?.toLocalDate()
+            if (completedDay == null && task.done) continue
+            val due = task.effectiveDue(weekendDays, holidays, observeNonWorkingDays)
+                ?.let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: continue
+            val lastOverdueDay = if (completedDay != null && !completedDay.isAfter(today)) {
+                completedDay.minusDays(1)
+            } else {
+                today
+            }
+            if (!lastOverdueDay.isAfter(due)) continue
+            streak = minOf(streak, ChronoUnit.DAYS.between(lastOverdueDay, today))
+            if (streak == 0L) return 0
         }
-        return streak
+        return streak.toInt()
     }
 
     /**
@@ -706,11 +716,19 @@ object AnalyticsUtils {
      * share of the total — surfaces workload imbalance across the team. People with zero open
      * tasks are omitted. */
     fun workloadShare(tasks: List<Task>, people: List<Person>): List<WorkloadShare> {
-        val openTasks = tasks.filter { !it.done }
-        val totalAssignedOpen = openTasks.count { it.assigneeIds.isNotEmpty() }
+        var totalAssignedOpen = 0
+        val openCounts = mutableMapOf<String, Int>()
+        for (task in tasks) {
+            if (task.done || task.assigneeIds.isEmpty()) continue
+            totalAssignedOpen++
+            // Each task counts once for a person even if imported IDs contain duplicates.
+            for (personId in task.assigneeIds.distinct()) {
+                openCounts[personId] = (openCounts[personId] ?: 0) + 1
+            }
+        }
         if (totalAssignedOpen == 0) return emptyList()
         return people.mapNotNull { person ->
-            val count = openTasks.count { person.id in it.assigneeIds }
+            val count = openCounts[person.id] ?: 0
             if (count == 0) return@mapNotNull null
             WorkloadShare(person, count, count.toFloat() / totalAssignedOpen)
         }.sortedByDescending { it.openCount }
@@ -802,8 +820,9 @@ object AnalyticsUtils {
 
     private fun List<Task>.groupByTag(projects: List<Project>): Map<String, List<Task>> {
         val map = mutableMapOf<String, MutableList<Task>>()
+        val projectsById = projects.associateBy { it.id }
         this.forEach { task ->
-            task.effectiveTagIds(projects).forEach { tid ->
+            task.effectiveTagIds(projectsById).forEach { tid ->
                 map.getOrPut(tid) { mutableListOf() }.add(task)
             }
         }
