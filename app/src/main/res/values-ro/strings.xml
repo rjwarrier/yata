@@ -1519,10 +1519,11 @@
     <string name="remote_sync_github_config_password_mismatch">Parolele nu coincid.</string>
     <string name="remote_sync_github_config_transfer_title">Transfer configurație</string>
     <string name="remote_sync_import_github_config">Importă configurația</string>
+    <string name="settings_about_play_store">Google Play</string>
     <string name="settings_about_github">Vezi codul sursă pe GitHub</string>
     <string name="settings_about_other_apps">Alte aplicații ale dezvoltatorilor</string>
     <string name="settings_about_share">Distribuie YATA</string>
-    <string name="settings_about_share_text">YATA este un manager de sarcini Material 3 Expressive pentru Android — aruncă o privire: https://github.com/rjwarrier/yata/releases</string>
+    <string name="settings_about_share_text">YATA este un manager de sarcini Material 3 Expressive pentru Android — aruncă o privire: https://play.google.com/store/apps/details?id=com.mj.yata</string>
     <string name="settings_about_website">Site-ul YATA</string>
     <string name="settings_about_support_dev">Susține dezvoltatorul</string>
     <string name="settings_custom">Personalizat</string>

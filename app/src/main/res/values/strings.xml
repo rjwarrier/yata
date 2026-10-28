@@ -207,11 +207,12 @@
     <string name="settings_about_credit">From the Labs of RJ | Vibe Coded</string>
     <string name="settings_about_made_in">Made in 🇮🇳</string>
     <string name="settings_about_other_apps">Other apps by developers</string>
+    <string name="settings_about_play_store">Google Play</string>
     <string name="settings_about_github">View source on GitHub</string>
     <string name="settings_about_website">Yata website</string>
     <string name="settings_about_support_dev">Support Dev</string>
     <string name="settings_about_share">Share YATA</string>
-    <string name="settings_about_share_text">YATA is a Material 3 Expressive task manager for Android — check it out: https://github.com/rjwarrier/yata/releases</string>
+    <string name="settings_about_share_text">YATA is a Material 3 Expressive task manager for Android — check it out: https://play.google.com/store/apps/details?id=com.mj.yata</string>
     <string name="share_app_title">Share YATA</string>
     <string name="share_app_default_message">YATA is a Material 3 Expressive task manager for Android — check it out!</string>
     <string name="share_app_include_image">Include image</string>

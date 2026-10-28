@@ -412,6 +412,13 @@ Use Data Management for app-wide file operations and a detail screen's overflow/
 for container-specific exports. Android's file picker chooses the destination; Android's share
 sheet chooses the receiving app. Review exported content before sharing it.
 
+### Share the YATA app
+
+Open **Share YATA** from About to edit the message and choose whether to attach the promotional
+image. The **Google Play** and **GitHub** switches select which download links are appended to
+the shared text; both are enabled by default. Turn either off to share only the other link,
+or turn both off to share just your message and optional image.
+
 ## Widgets and capture shortcuts
 
 Long-press a free area on your launcher, open its widget picker and find YATA. Six widget types

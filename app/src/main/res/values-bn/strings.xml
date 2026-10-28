@@ -1518,10 +1518,11 @@
     <string name="remote_sync_github_config_password_mismatch">পাসওয়ার্ড মিলছে না।</string>
     <string name="remote_sync_github_config_transfer_title">কনফিগ ট্রান্সফার</string>
     <string name="remote_sync_import_github_config">কনফিগ আমদানি করুন</string>
+    <string name="settings_about_play_store">Google Play</string>
     <string name="settings_about_github">GitHub-এ সোর্স দেখুন</string>
     <string name="settings_about_other_apps">ডেভেলপারদের অন্যান্য অ্যাপ</string>
     <string name="settings_about_share">YATA শেয়ার করুন</string>
-    <string name="settings_about_share_text">YATA হলো Android-এর জন্য একটি Material 3 Expressive টাস্ক ম্যানেজার — দেখুন: https://github.com/rjwarrier/yata/releases</string>
+    <string name="settings_about_share_text">YATA হলো Android-এর জন্য একটি Material 3 Expressive টাস্ক ম্যানেজার — দেখুন: https://play.google.com/store/apps/details?id=com.mj.yata</string>
     <string name="settings_about_website">YATA ওয়েবসাইট</string>
     <string name="settings_about_support_dev">ডেভেলপারকে সমর্থন করুন</string>
     <string name="settings_custom">কাস্টম</string>

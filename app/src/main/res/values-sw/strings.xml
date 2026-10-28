@@ -442,10 +442,11 @@
     <string name="remote_sync_activity_unknown_device">Haijabainishwa</string>
     <string name="remote_sync_github_recovery_title">Kurejesha</string>
     <string name="remote_sync_import_github_config">Leta mipangilio</string>
+    <string name="settings_about_play_store">Google Play</string>
     <string name="settings_about_github">Tazama chanzo kwenye GitHub</string>
     <string name="settings_about_other_apps">Programu nyingine za watengenezaji</string>
     <string name="settings_about_share">Shiriki YATA</string>
-    <string name="settings_about_share_text">YATA ni kidhibiti kazi cha Material 3 Expressive kwa Android — kiangalie: https://github.com/rjwarrier/yata/releases</string>
+    <string name="settings_about_share_text">YATA ni kidhibiti kazi cha Material 3 Expressive kwa Android — kiangalie: https://play.google.com/store/apps/details?id=com.mj.yata</string>
     <string name="settings_about_website">Tovuti ya Yata</string>
     <string name="settings_about_support_dev">Msaidie msanidi</string>
     <string name="settings_custom">Maalum</string>

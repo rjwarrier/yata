@@ -1675,10 +1675,11 @@
     <string name="remote_sync_github_config_password_mismatch">Passwörter stimmen nicht überein.</string>
     <string name="remote_sync_github_config_transfer_title">Konfigurationsübertragung</string>
     <string name="remote_sync_import_github_config">Konfiguration importieren</string>
+    <string name="settings_about_play_store">Google Play</string>
     <string name="settings_about_github">Quellcode auf GitHub ansehen</string>
     <string name="settings_about_other_apps">Weitere Apps der Entwickler</string>
     <string name="settings_about_share">YATA teilen</string>
-    <string name="settings_about_share_text">YATA ist ein Material 3 Expressive Aufgabenmanager für Android — schau es dir an: https://github.com/rjwarrier/yata/releases</string>
+    <string name="settings_about_share_text">YATA ist ein Material 3 Expressive Aufgabenmanager für Android — schau es dir an: https://play.google.com/store/apps/details?id=com.mj.yata</string>
     <string name="settings_about_website">YATA-Website</string>
     <string name="settings_about_support_dev">Entwickler unterstützen</string>
     <string name="settings_custom">Benutzerdefiniert</string>

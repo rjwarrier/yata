@@ -442,10 +442,11 @@
     <string name="remote_sync_activity_unknown_device">குறிப்பிடப்படாதது</string>
     <string name="remote_sync_github_recovery_title">மீட்பு</string>
     <string name="remote_sync_import_github_config">கட்டமைப்பை இறக்குமதி செய்</string>
+    <string name="settings_about_play_store">Google Play</string>
     <string name="settings_about_github">GitHub இல் மூலத்தைக் காண்க</string>
     <string name="settings_about_other_apps">டெவலப்பர்களின் பிற ஆப்ஸ்</string>
     <string name="settings_about_share">YATA ஐப் பகிர்</string>
-    <string name="settings_about_share_text">YATA என்பது Android க்கான Material 3 Expressive பணி மேலாளர் — இதைப் பாருங்கள்: https://github.com/rjwarrier/yata/releases</string>
+    <string name="settings_about_share_text">YATA என்பது Android க்கான Material 3 Expressive பணி மேலாளர் — இதைப் பாருங்கள்: https://play.google.com/store/apps/details?id=com.mj.yata</string>
     <string name="settings_about_website">Yata இணையதளம்</string>
     <string name="settings_about_support_dev">டெவலப்பரை ஆதரிக்கவும்</string>
     <string name="settings_custom">தனிப்பயன்</string>

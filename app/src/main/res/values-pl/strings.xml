@@ -1520,10 +1520,11 @@
     <string name="remote_sync_github_config_password_mismatch">Hasła się nie zgadzają.</string>
     <string name="remote_sync_github_config_transfer_title">Transfer konfiguracji</string>
     <string name="remote_sync_import_github_config">Importuj konfigurację</string>
+    <string name="settings_about_play_store">Google Play</string>
     <string name="settings_about_github">Zobacz kod źródłowy na GitHub</string>
     <string name="settings_about_other_apps">Inne aplikacje twórców</string>
     <string name="settings_about_share">Udostępnij YATA</string>
-    <string name="settings_about_share_text">YATA to menedżer zadań Material 3 Expressive na Androida — sprawdź: https://github.com/rjwarrier/yata/releases</string>
+    <string name="settings_about_share_text">YATA to menedżer zadań Material 3 Expressive na Androida — sprawdź: https://play.google.com/store/apps/details?id=com.mj.yata</string>
     <string name="settings_about_website">Strona YATA</string>
     <string name="settings_about_support_dev">Wesprzyj twórcę</string>
     <string name="settings_custom">Niestandardowy</string>

@@ -1518,10 +1518,11 @@
     <string name="remote_sync_github_config_password_mismatch">Mật khẩu không khớp.</string>
     <string name="remote_sync_github_config_transfer_title">Chuyển giao cấu hình</string>
     <string name="remote_sync_import_github_config">Nhập cấu hình</string>
+    <string name="settings_about_play_store">Google Play</string>
     <string name="settings_about_github">Xem mã nguồn trên GitHub</string>
     <string name="settings_about_other_apps">Ứng dụng khác của nhà phát triển</string>
     <string name="settings_about_share">Chia sẻ YATA</string>
-    <string name="settings_about_share_text">YATA là ứng dụng quản lý công việc Material 3 Expressive cho Android — hãy xem thử: https://github.com/rjwarrier/yata/releases</string>
+    <string name="settings_about_share_text">YATA là ứng dụng quản lý công việc Material 3 Expressive cho Android — hãy xem thử: https://play.google.com/store/apps/details?id=com.mj.yata</string>
     <string name="settings_about_website">Trang web YATA</string>
     <string name="settings_about_support_dev">Ủng hộ nhà phát triển</string>
     <string name="settings_custom">Tùy chỉnh</string>

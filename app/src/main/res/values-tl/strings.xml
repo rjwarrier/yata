@@ -442,10 +442,11 @@
     <string name="remote_sync_activity_unknown_device">Hindi natukoy</string>
     <string name="remote_sync_github_recovery_title">Pagbawi</string>
     <string name="remote_sync_import_github_config">I-import ang config</string>
+    <string name="settings_about_play_store">Google Play</string>
     <string name="settings_about_github">Tingnan ang source sa GitHub</string>
     <string name="settings_about_other_apps">Iba pang apps ng mga developer</string>
     <string name="settings_about_share">Ibahagi ang YATA</string>
-    <string name="settings_about_share_text">Ang YATA ay isang Material 3 Expressive na task manager para sa Android — tingnan mo: https://github.com/rjwarrier/yata/releases</string>
+    <string name="settings_about_share_text">Ang YATA ay isang Material 3 Expressive na task manager para sa Android — tingnan mo: https://play.google.com/store/apps/details?id=com.mj.yata</string>
     <string name="settings_about_website">Website ng Yata</string>
     <string name="settings_about_support_dev">Suportahan ang developer</string>
     <string name="settings_custom">Custom</string>

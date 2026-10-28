@@ -3255,7 +3255,7 @@ fun SettingsScreen(
         }
         item {
             AboutEntrance(delayMillis = 0) {
-                GitHubAndShareRow(onNavigateToShareApp = onNavigateToShareApp, modifier = Modifier.fillMaxWidth())
+                AppLinksAndShareCard(onNavigateToShareApp = onNavigateToShareApp, modifier = Modifier.fillMaxWidth())
             }
         }
         item {
@@ -4399,13 +4399,29 @@ private const val YATA_SUPPORT_URL = "https://www.buymeacoffee.com/ranjithj"
 private val BuyMeACoffeeYellow = Color(0xFFFFDD00)
 
 @Composable
-private fun GitHubAndShareRow(onNavigateToShareApp: () -> Unit, modifier: Modifier = Modifier) {
+private fun AppLinksAndShareCard(onNavigateToShareApp: () -> Unit, modifier: Modifier = Modifier) {
     val uriHandler = LocalUriHandler.current
     val shareTitle = stringResource(R.string.settings_about_share)
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        FilledTonalButton(
+            onClick = { uriHandler.openUri(YATA_PLAY_STORE_URL) },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.OpenInNew,
+                contentDescription = null,
+                modifier = Modifier.size(16.dp)
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+                text = stringResource(R.string.settings_about_play_store),
+                style = MaterialTheme.typography.labelLarge,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+        }
         Row(
             modifier = Modifier.height(IntrinsicSize.Max),
             horizontalArrangement = Arrangement.spacedBy(8.dp)

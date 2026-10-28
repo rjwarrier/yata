@@ -442,10 +442,11 @@
     <string name="remote_sync_activity_unknown_device">ఆపాదించబడలేదు</string>
     <string name="remote_sync_github_recovery_title">రికవరీ</string>
     <string name="remote_sync_import_github_config">కాన్ఫిగ్‌ను దిగుమతి చేయండి</string>
+    <string name="settings_about_play_store">Google Play</string>
     <string name="settings_about_github">GitHubలో సోర్స్‌ను చూడండి</string>
     <string name="settings_about_other_apps">డెవలపర్‌ల ఇతర యాప్‌లు</string>
     <string name="settings_about_share">YATAను షేర్ చేయండి</string>
-    <string name="settings_about_share_text">YATA అనేది Android కోసం Material 3 Expressive టాస్క్ మేనేజర్ — దీన్ని చూడండి: https://github.com/rjwarrier/yata/releases</string>
+    <string name="settings_about_share_text">YATA అనేది Android కోసం Material 3 Expressive టాస్క్ మేనేజర్ — దీన్ని చూడండి: https://play.google.com/store/apps/details?id=com.mj.yata</string>
     <string name="settings_about_website">Yata వెబ్‌సైట్</string>
     <string name="settings_about_support_dev">డెవలపర్‌కు మద్దతు ఇవ్వండి</string>
     <string name="settings_custom">అనుకూలం</string>

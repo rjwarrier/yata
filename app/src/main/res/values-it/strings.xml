@@ -1518,10 +1518,11 @@
     <string name="remote_sync_github_config_password_mismatch">Le password non corrispondono.</string>
     <string name="remote_sync_github_config_transfer_title">Trasferimento configurazione</string>
     <string name="remote_sync_import_github_config">Importa configurazione</string>
+    <string name="settings_about_play_store">Google Play</string>
     <string name="settings_about_github">Vedi il codice sorgente su GitHub</string>
     <string name="settings_about_other_apps">Altre app degli sviluppatori</string>
     <string name="settings_about_share">Condividi YATA</string>
-    <string name="settings_about_share_text">YATA è un gestore di attività Material 3 Expressive per Android — dai un\'occhiata: https://github.com/rjwarrier/yata/releases</string>
+    <string name="settings_about_share_text">YATA è un gestore di attività Material 3 Expressive per Android — dai un\'occhiata: https://play.google.com/store/apps/details?id=com.mj.yata</string>
     <string name="settings_about_website">Sito web di YATA</string>
     <string name="settings_about_support_dev">Sostieni lo sviluppatore</string>
     <string name="settings_custom">Personalizzato</string>

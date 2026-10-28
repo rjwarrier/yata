@@ -1520,10 +1520,11 @@
     <string name="remote_sync_github_config_password_mismatch">Hesla se neshodují.</string>
     <string name="remote_sync_github_config_transfer_title">Přenos konfigurace</string>
     <string name="remote_sync_import_github_config">Importovat konfiguraci</string>
+    <string name="settings_about_play_store">Google Play</string>
     <string name="settings_about_github">Zobrazit zdrojový kód na GitHubu</string>
     <string name="settings_about_other_apps">Další aplikace od vývojářů</string>
     <string name="settings_about_share">Sdílet YATA</string>
-    <string name="settings_about_share_text">YATA je správce úkolů Material 3 Expressive pro Android — podívej se: https://github.com/rjwarrier/yata/releases</string>
+    <string name="settings_about_share_text">YATA je správce úkolů Material 3 Expressive pro Android — podívej se: https://play.google.com/store/apps/details?id=com.mj.yata</string>
     <string name="settings_about_website">Web YATA</string>
     <string name="settings_about_support_dev">Podpořit vývojáře</string>
     <string name="settings_custom">Vlastní</string>

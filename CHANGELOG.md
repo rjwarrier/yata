@@ -16,8 +16,14 @@ test-only changes belong in the commit message, not here, unless they change beh
 ## [Unreleased]
 
 ### Added
+- Google Play link in About; Share YATA offers independently selectable Play Store and GitHub
+  links, both enabled by default, and an updated promotional image.
 - Illustrated user guide, feature reference, sync and backup setup, developer guide and
   documentation index, with locally stored demo screenshots and expanded README walkthroughs.
+
+### Changed
+- Prepare the app-sharing image off the UI thread, prevent duplicate preparation, improve
+  attachment permissions, and make the image option accessible through its full toggle row.
 
 ## [0.96.2] - 2026-10-27
 
