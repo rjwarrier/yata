@@ -1028,16 +1028,18 @@ fun PersonDetailScreen(
     }
 
     exportFormatPending?.let { format ->
+        // Export the full collection, independently of archive visibility on screen.
+        val exportCandidates = (assignedTasks + archivedPersonTasks).distinctBy { it.id }
         com.mj.yata.util.export.ExportOptionsDialog(
             entityName = person.name,
             format = format,
-            itemPreviews = assignedTasks.map { com.mj.yata.util.export.ExportItemPreview(it.done, it.completedAt) },
+            itemPreviews = exportCandidates.map { com.mj.yata.util.export.ExportItemPreview(it.done, it.completedAt) },
             onDismiss = { exportFormatPending = null },
             onConfirm = { options ->
                 val cutoffMillis = options.excludeCompletedOlderThanDays?.takeIf { it > 0 }?.let {
                     System.currentTimeMillis() - it.toLong() * 24 * 60 * 60 * 1000
                 }
-                val exportTasks = assignedTasks.filter { task ->
+                val exportTasks = exportCandidates.filter { task ->
                     if (!task.done) return@filter true
                     if (!options.includeCompleted) return@filter false
                     cutoffMillis == null || (task.completedAt != null && task.completedAt >= cutoffMillis)

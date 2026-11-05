@@ -15,6 +15,11 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ## [Unreleased]
 
+### Fixed
+
+- Include archived tasks in PDF and image exports from projects, lists, tags, and people,
+  subject to the selected completed-task and completion-date filters.
+
 ### Added
 - Google Play link in About; Share YATA offers independently selectable Play Store and GitHub
   links, both enabled by default, and an updated promotional image.
