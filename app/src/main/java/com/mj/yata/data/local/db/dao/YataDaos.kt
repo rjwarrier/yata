@@ -312,13 +312,12 @@ interface TaskDao {
     /** Used when a project (not just its own row) is deleted, in place of relying on the FK's
      * CASCADE — that hard-deletes the rows outright with no Trash/undo. This soft-deletes them
      * and clears projectId in the same statement, since the CASCADE would still hard-delete them
-     * a moment later otherwise once the project row itself is removed. Skips rows already in
-     * Trash so an earlier deletedAt timestamp isn't overwritten. */
-    @Query("UPDATE tasks SET deletedAt = :timestamp, projectId = NULL WHERE projectId = :projectId AND deletedAt IS NULL")
+     * a moment later otherwise once the project row itself is removed. Preserves existing Trash timestamps while detaching every affected row. */
+    @Query("UPDATE tasks SET deletedAt = COALESCE(deletedAt, :timestamp), projectId = NULL WHERE projectId = :projectId")
     suspend fun softDeleteByProjectId(projectId: String, timestamp: Long)
 
     /** List equivalent of [softDeleteByProjectId]. */
-    @Query("UPDATE tasks SET deletedAt = :timestamp, listId = NULL WHERE listId = :listId AND deletedAt IS NULL")
+    @Query("UPDATE tasks SET deletedAt = COALESCE(deletedAt, :timestamp), listId = NULL WHERE listId = :listId")
     suspend fun softDeleteByListId(listId: String, timestamp: Long)
 
     @Query("UPDATE tasks SET done = :done, completedAt = :completedAt WHERE id = :id")

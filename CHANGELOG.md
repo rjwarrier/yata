@@ -17,6 +17,9 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ### Fixed
 
+- Keep previously trashed tasks recoverable when deleting their project or list.
+- Retry failed scheduled backup destinations without another edit and continue polling remote changes.
+
 - Publish local backups with verifiable encryption and recover backups affected by older filename changes.
 - Preserve independent nested checklists when duplicating tasks or rolling projects forward.
 

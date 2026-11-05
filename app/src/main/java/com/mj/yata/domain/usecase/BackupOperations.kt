@@ -183,14 +183,13 @@ class BackupOperations @Inject constructor(
     private suspend fun runScheduledBackupIfNeededInternal(remoteSyncRunReason: String): List<BackupRunResult>? {
         val now = System.currentTimeMillis()
         val fingerprint = snapshotSyncEngine.localCanonicalHash()
-        val skip = AutoBackupGate.shouldSkip(
+        return runScheduledBackup(
             lastFingerprint = userPreferences.autoBackupLastFingerprintFlow.first(),
-            currentFingerprint = fingerprint
+            fingerprint = fingerprint,
+            pollRemote = userPreferences.sftpBackupEnabledFlow.first() && currentTransport().isConfigured(),
+            run = { backupAllConfigured(remoteSyncRunReason = remoteSyncRunReason) },
+            settle = { userPreferences.setAutoBackupSettledState(fingerprint, now) }
         )
-        if (skip) return null
-        val results = backupAllConfigured(remoteSyncRunReason = remoteSyncRunReason)
-        userPreferences.setAutoBackupSettledState(fingerprint, now)
-        return results
     }
 
     /**
@@ -578,4 +577,18 @@ class BackupOperations @Inject constructor(
 
     suspend fun inspectFtpBackup(filename: String): Result<BackupSummary> =
         ftpBackupManager.inspectBackup(filename)
+}
+
+/** One success cannot mark another destination's failure as settled. */
+internal suspend fun runScheduledBackup(
+    lastFingerprint: String?,
+    fingerprint: String,
+    pollRemote: Boolean,
+    run: suspend () -> List<BackupRunResult>,
+    settle: suspend () -> Unit
+): List<BackupRunResult>? {
+    if (!pollRemote && AutoBackupGate.shouldSkip(lastFingerprint, fingerprint)) return null
+    val results = run()
+    if (results.isNotEmpty() && results.all { it.isSuccess }) settle()
+    return results
 }
