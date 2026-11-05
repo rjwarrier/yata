@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project
 
 YATA ("Yet Another Task App", pronounced **"YAH-tuh"** — *ya* as in *yard*, *ta* as in *factory*) — a Material 3 Expressive task manager for Android, built with Jetpack Compose, Room, and Hilt. Gradle root project name is `TodoExpressive` (legacy); package/app id is `com.mj.yata`. Two modules:
-- `:app` — the phone app (`com.mj.yata`, minSdk 26, compileSdk/targetSdk 35).
+- `:app` — the phone app (`com.mj.yata`, minSdk 26, compileSdk/targetSdk 36).
 - `:baselineprofile` — a `com.android.test` module that records the ART baseline profile packaged with the app.
 
 ## Commands
@@ -155,7 +155,7 @@ Debug builds enable `isPseudoLocalesEnabled`, adding **en-XA** (accented/padded 
 
 **Debug signing:** `:app`'s `debug` signingConfig is overridden in `app/build.gradle.kts` to use `debug.keystore` at the repo root (alias/passwords are the standard `androiddebugkey`/`android`), so a debug build from any dev machine installs over the others without an uninstall. It is deliberately *not* `~/.android/debug.keystore` — that one is the machine-wide default every other Android project signs with, and replacing it there would force an uninstall on all of them instead. Gitignored via `*.keystore`, so a new machine needs the file copied across by hand; when it's absent the config is skipped and the build falls back to the default debug key rather than failing.
 
-**Toolchain gotcha:** Compose BOM is `2025.12.00` (material3 1.4.0 — the Expressive generation, compose-ui 1.10.0), managed in `gradle/libs.versions.toml`. `Modifier.animateItemPlacement` was removed in Foundation 1.7 — use `Modifier.animateItem(placementSpec = ...)`. App version is `0.96.2` (versionCode 31).
+**Toolchain gotcha:** Compose BOM is `2025.12.00` (material3 1.4.0 — the Expressive generation, compose-ui 1.10.0), managed in `gradle/libs.versions.toml`. `Modifier.animateItemPlacement` was removed in Foundation 1.7 — use `Modifier.animateItem(placementSpec = ...)`. App version is `0.96.5` (versionCode 33).
 
 **Unified backup format:** version 5 adds project groups and project membership. Versions 1–4 remain importable; older app builds reject version 5 rather than silently stripping group data. Missing/null tracked time canonicalizes to numeric zero across import/export/sync. `UnifiedDatabaseMigrationContract` runs against real historical schemas with foreign keys enabled and full Room validation, both under Robolectric and as a disposable-device instrumentation suite.
 

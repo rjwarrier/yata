@@ -148,7 +148,7 @@ the matching signed release over it. See the [full walkthrough](docs/USER_GUIDE.
 ## Requirements
 
 - Android 8.0 (API 26) or newer
-- To build: JDK 17 and the Android SDK (compileSdk 35), or a recent Android Studio
+- To build: JDK 17 and the Android SDK (compileSdk 36), or a recent Android Studio
 
 ## Importing Markdown checklists
 

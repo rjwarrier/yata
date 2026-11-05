@@ -15,6 +15,10 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ## [Unreleased]
 
+## [0.96.5] - 2026-11-05
+
+`versionCode 33`. Upgrades in place over 0.96.2.
+
 ### Fixed
 
 - Settle focus sessions before task completion or recurrence advancement and retain sessions after failed writes.
@@ -49,6 +53,14 @@ test-only changes belong in the commit message, not here, unless they change beh
   Detect empty GitHub repositories during setup and explain how to add a README before syncing.
 - Prepare the app-sharing image off the UI thread, prevent duplicate preparation, improve
   attachment permissions, and make the image option accessible through its full toggle row.
+- Target Android 16 (API 36) for Google Play compatibility. Version 0.96.5 (versionCode 33)
+  keeps support for Android 8.0 and later; existing app data upgrades in place.
+
+### Known issues
+- A focus session interrupted after its minutes are saved but before the timer is cleared can
+  be counted again when retried.
+- Skipped recurring occurrences are archived, but PDF/image exports can still count that
+  incomplete history as overdue.
 
 ## [0.96.2] - 2026-10-27
 
@@ -1391,7 +1403,8 @@ First signed release build.
 - Redesigned priority indicator (dots plus a coloured edge stripe).
 - Equal-width hero stat cards.
 
-[Unreleased]: https://github.com/rjwarrier/yata/compare/v0.96.2...HEAD
+[Unreleased]: https://github.com/rjwarrier/yata/compare/v0.96.5...HEAD
+[0.96.5]: https://github.com/rjwarrier/yata/compare/v0.96.2...v0.96.5
 [0.96.2]: https://github.com/rjwarrier/yata/compare/v0.95.1...v0.96.2
 [0.95.1]: https://github.com/rjwarrier/yata/compare/v0.95...v0.95.1
 [0.95]: https://github.com/rjwarrier/yata/compare/v0.94.5...v0.95

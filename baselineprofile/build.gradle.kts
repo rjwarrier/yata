@@ -6,13 +6,13 @@ plugins {
 
 android {
     namespace = "com.mj.yata.baselineprofile"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         // Baseline profile generation needs API 28+; the app itself still ships minSdk 26 and
         // benefits from the generated profile on every API level that supports ART profiles.
         minSdk = 28
-        targetSdk = 35
+        targetSdk = 36
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 

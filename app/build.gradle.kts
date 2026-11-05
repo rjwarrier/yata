@@ -24,14 +24,14 @@ val debugKeystoreFile = rootProject.file("debug.keystore")
 
 android {
     namespace = "com.mj.yata"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.mj.yata"
         minSdk = 26
-        targetSdk = 35
-        versionCode = 31
-        versionName = "0.96.2"
+        targetSdk = 36
+        versionCode = 33
+        versionName = "0.96.5"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
