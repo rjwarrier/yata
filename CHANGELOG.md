@@ -17,6 +17,9 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ### Fixed
 
+- Protect local edits and additions during the final sync merge/apply transaction.
+- Ensure monthly recurrence advances after dates are clamped to shorter months.
+
 - Keep previously trashed tasks recoverable when deleting their project or list.
 - Retry failed scheduled backup destinations without another edit and continue polling remote changes.
 

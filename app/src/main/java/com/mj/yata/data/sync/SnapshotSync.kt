@@ -899,53 +899,60 @@ class SnapshotSyncEngine @Inject constructor(
      * while the network transfer was in flight, merge that edit onto the canonical snapshot and
      * leave it pending for the next sync instead of wiping it.
      */
-    internal suspend fun commit(prepared: PreparedSnapshotSync): Int = withContext(Dispatchers.IO) {
-        val current = normalized(jsonExporter.exportToBytes())
-        val inFlightMerge = if (SnapshotMerger.equivalent(current, prepared.localAtStart)) {
-            null
-        } else {
-            SnapshotMerger.merge(
-                base = prepared.localAtStart,
-                local = current,
-                remote = prepared.canonical
-            )
-        }
-        val localTarget = inFlightMerge?.json ?: prepared.canonical
-        val conflictRecords = prepared.conflictRecords + inFlightMerge?.conflictRecords.orEmpty()
-        val contentChanges = !SnapshotMerger.equivalent(current, localTarget)
-        // recordsRemoved can be true even when contentChanges is false: current may already equal
-        // localTarget (nothing left to *write*) while the merge that produced it still deleted
-        // records this device is on record as having had — e.g. an already-empty local export
-        // merging against a populated baseline. That combination writes nothing but is exactly the
-        // shape of an unnoticed data loss, so it still earns a recovery backup.
-        if (contentChanges || prepared.recordsRemoved) {
-            recoveryBackupManager.saveCurrent("pre_sync_apply").getOrElse { e ->
-                throw IllegalStateException(
-                    "Could not create a recovery backup before applying sync; local data was not changed",
-                    e
+    internal suspend fun commit(
+        prepared: PreparedSnapshotSync,
+        beforeApply: suspend () -> Unit = {}
+    ): Int = withContext(Dispatchers.IO) {
+        val committedConflicts = jsonExporter.withSyncTransaction {
+            val current = normalized(jsonExporter.exportToBytes())
+            val inFlightMerge = if (SnapshotMerger.equivalent(current, prepared.localAtStart)) {
+                null
+            } else {
+                SnapshotMerger.merge(
+                    base = prepared.localAtStart,
+                    local = current,
+                    remote = prepared.canonical
                 )
             }
-            if (conflictRecords.isNotEmpty()) {
-                writeConflictArtifact(prepared.scopeKey, conflictRecords)
+            val localTarget = inFlightMerge?.json ?: prepared.canonical
+            val conflictRecords = prepared.conflictRecords + inFlightMerge?.conflictRecords.orEmpty()
+            val contentChanges = !SnapshotMerger.equivalent(current, localTarget)
+            // recordsRemoved can be true even when contentChanges is false: current may already equal
+            // localTarget (nothing left to *write*) while the merge that produced it still deleted
+            // records this device is on record as having had — e.g. an already-empty local export
+            // merging against a populated baseline. That combination writes nothing but is exactly the
+            // shape of an unnoticed data loss, so it still earns a recovery backup.
+            if (contentChanges || prepared.recordsRemoved) {
+                recoveryBackupManager.saveCurrent("pre_sync_apply").getOrElse { e ->
+                    throw IllegalStateException(
+                        "Could not create a recovery backup before applying sync; local data was not changed",
+                        e
+                    )
+                }
+                if (conflictRecords.isNotEmpty()) {
+                    writeConflictArtifact(prepared.scopeKey, conflictRecords)
+                }
             }
-        }
-        if (contentChanges) {
-            check(jsonExporter.replaceBytesForSync(localTarget.toString(2).toByteArray(Charsets.UTF_8))) {
-                "The server snapshot was published, but applying it locally failed; sync again to retry"
+            beforeApply()
+            if (contentChanges) {
+                check(jsonExporter.replaceBytesForSync(localTarget.toString(2).toByteArray(Charsets.UTF_8))) {
+                    "The server snapshot was published, but applying it locally failed; sync again to retry"
+                }
+                val applied = normalized(jsonExporter.exportToBytes())
+                SnapshotMerger.differenceSummary(applied, localTarget)?.let { difference ->
+                    throw IllegalStateException(
+                        "The server snapshot was published, but local verification failed at $difference; sync again to retry"
+                    )
+                }
             }
-            val applied = normalized(jsonExporter.exportToBytes())
-            SnapshotMerger.differenceSummary(applied, localTarget)?.let { difference ->
-                throw IllegalStateException(
-                    "The server snapshot was published, but local verification failed at $difference; sync again to retry"
-                )
+            val totalConflicts = prepared.conflicts + (inFlightMerge?.conflicts ?: 0)
+            if (totalConflicts > 0) {
+                Log.i(TAG, "Resolved $totalConflicts concurrent sync conflict(s) using the server copy")
             }
+            totalConflicts
         }
         writeBaseline(prepared.scopeKey, prepared.canonical)
-        val totalConflicts = prepared.conflicts + (inFlightMerge?.conflicts ?: 0)
-        if (totalConflicts > 0) {
-            Log.i(TAG, "Resolved $totalConflicts concurrent sync conflict(s) using the server copy")
-        }
-        totalConflicts
+        committedConflicts
     }
 
     /** Lets transports reject a damaged head and continue to an older recovery candidate. */

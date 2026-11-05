@@ -8,6 +8,23 @@ import org.junit.Test
 
 class RecurrenceEvaluatorTest {
 
+    @Test fun monthlyClampedDatesAlwaysAdvanceIncludingLeapYearsAndIntervals() {
+        for (year in listOf(2024, 2025, 2026)) {
+            for (day in 29..31) {
+                for (interval in listOf(1, 2, 3)) {
+                    val rule = Recurrence("monthly", interval, bymonthday = day)
+                    var date = java.time.LocalDate.of(year, 1, day)
+                    repeat(24) {
+                        val next = java.time.LocalDate.parse(RecurrenceEvaluator.calculateNextOccurrence(rule, date.toString()))
+                        assertTrue("$rule: $date -> $next", next.isAfter(date))
+                        assertEquals(date.withDayOfMonth(1).plusMonths(interval.toLong()), next.withDayOfMonth(1))
+                        date = next
+                    }
+                }
+            }
+        }
+    }
+
     @Test
     fun testDailyRecurrence() {
         val r = Recurrence("daily", 2, null, null, RecurrenceEnds.Never)

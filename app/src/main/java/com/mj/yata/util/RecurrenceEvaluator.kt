@@ -139,9 +139,9 @@ object RecurrenceEvaluator {
                     }
                 } else if (r.bymonthday != null) {
                     val day = r.bymonthday.coerceIn(1, 31)
-                    if (baseDate.dayOfMonth < day) {
-                        val maxDays = baseDate.lengthOfMonth()
-                        baseDate.withDayOfMonth(day.coerceAtMost(maxDays))
+                    val candidate = baseDate.withDayOfMonth(day.coerceAtMost(baseDate.lengthOfMonth()))
+                    if (candidate.isAfter(baseDate)) {
+                        candidate
                     } else {
                         val nextMonth = baseDate.plusMonths(interval.toLong())
                         val maxDays = nextMonth.lengthOfMonth()

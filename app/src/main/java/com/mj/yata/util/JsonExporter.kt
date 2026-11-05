@@ -616,6 +616,9 @@ class JsonExporter @Inject constructor(
      * rolls every entity mutation back. DataStore and profile-photo files are restored from the
      * pre-apply snapshot if that transaction fails.
      */
+    /** Serialize the final sync snapshot/merge/apply with every Room writer, including DAO writes. */
+    internal suspend fun <T> withSyncTransaction(block: suspend () -> T): T = db.withTransaction { block() }
+
     suspend fun replaceBytesForSync(bytes: ByteArray): Boolean = try {
         userPreferences.withRealData { replaceBytesForSyncInternal(bytes) }
     } catch (_: com.mj.yata.data.demo.DemoModeDataAccessException) {
