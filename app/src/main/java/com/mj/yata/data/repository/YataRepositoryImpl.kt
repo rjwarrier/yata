@@ -267,6 +267,7 @@ class YataRepositoryImpl @Inject constructor(
                 )
                 val historicalTaskId = UUID.randomUUID().toString()
 
+                val historySubtaskIds = subtaskEntities.associate { it.id to UUID.randomUUID().toString() }
                 db.withTransaction {
                     // 1. Keep the current instance completed but as a one-off in history.
                     val completedHistoryTask = taskEntity.copy(
@@ -282,11 +283,15 @@ class YataRepositoryImpl @Inject constructor(
                     db.taskDao().insertTaskPersonCrossRefs(assigneeIds.map { TaskPersonCrossRef(historicalTaskId, it) })
                     db.taskDao().insertTaskTagCrossRefs(tagIds.map { TaskTagCrossRef(historicalTaskId, it) })
                     db.subtaskDao().upsertAll(
-                        subtaskEntities.map { it.copy(id = UUID.randomUUID().toString(), taskId = historicalTaskId, parentSubtaskId = null) }
+                        subtaskEntities.map { it.copy(
+                            id = historySubtaskIds.getValue(it.id), taskId = historicalTaskId,
+                            parentSubtaskId = it.parentSubtaskId?.let(historySubtaskIds::get)
+                        ) }
                     )
 
                     // 2. Advance the original task to the next occurrence
                     db.taskDao().insert(updatedTask)
+                    db.subtaskDao().upsertAll(subtaskEntities.map { it.copy(done = false) })
                 }
                 syncReminder(updatedTask)
                 if (notify) widgetUpdater.notifyTasksChanged()
@@ -331,20 +336,27 @@ class YataRepositoryImpl @Inject constructor(
         )
         val historicalTaskId = UUID.randomUUID().toString()
 
+        val historySubtaskIds = subtaskEntities.associate { it.id to UUID.randomUUID().toString() }
         db.withTransaction {
-            // Keep a record of the skipped instance (not done, one-off).
+            // Skipped history is archived and incomplete: recoverable, never actionable or overdue.
             val skippedHistoryTask = taskEntity.copy(
                 id = historicalTaskId,
                 done = false,
+                completedAt = null,
+                archived = true,
                 recurrenceJson = null
             )
             db.taskDao().insert(skippedHistoryTask)
             db.taskDao().insertTaskPersonCrossRefs(assigneeIds.map { TaskPersonCrossRef(historicalTaskId, it) })
             db.taskDao().insertTaskTagCrossRefs(tagIds.map { TaskTagCrossRef(historicalTaskId, it) })
             db.subtaskDao().upsertAll(
-                subtaskEntities.map { it.copy(id = UUID.randomUUID().toString(), taskId = historicalTaskId, parentSubtaskId = null) }
+                subtaskEntities.map { it.copy(
+                    id = historySubtaskIds.getValue(it.id), taskId = historicalTaskId,
+                    parentSubtaskId = it.parentSubtaskId?.let(historySubtaskIds::get)
+                ) }
             )
             db.taskDao().insert(updatedTask)
+            db.subtaskDao().upsertAll(subtaskEntities.map { it.copy(done = false) })
         }
         syncReminder(updatedTask)
         widgetUpdater.notifyTasksChanged()

@@ -17,6 +17,9 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ### Fixed
 
+- Archive skipped recurring-task history so it does not remain actionable or overdue.
+- Preserve nested recurring checklist history and reset checklist completion for each next occurrence.
+
 - Protect local edits and additions during the final sync merge/apply transaction.
 - Ensure monthly recurrence advances after dates are clamped to shorter months.
 
