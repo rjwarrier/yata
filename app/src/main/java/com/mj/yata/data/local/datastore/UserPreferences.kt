@@ -71,6 +71,7 @@ class UserPreferences @Inject constructor(
     private val demoDataSafetyGate: com.mj.yata.data.demo.DemoDataSafetyGate = com.mj.yata.data.demo.DemoDataSafetyGate()
 ) : TaskListPreferences {
 
+    internal val focusTimerMutex = kotlinx.coroutines.sync.Mutex()
     private val dataStore = context.dataStore
 
     /**
@@ -1006,6 +1007,7 @@ class UserPreferences @Inject constructor(
                 prefs[FOCUS_TIMER_STARTED_AT] = timer.startedAt
             }
         }
+        if (timer == null) com.mj.yata.notification.NotificationHelper.cancelFocusTimer(context)
     }
 
     /** Saves [template], replacing any template with the same name (case-insensitively). */

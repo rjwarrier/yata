@@ -17,6 +17,9 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ### Fixed
 
+- Settle focus sessions before task completion or recurrence advancement and retain sessions after failed writes.
+- Refresh search date filters when the app date changes at midnight.
+
 - Store task times independently of language and read legacy localized times after language changes.
 - Reconcile existing reminder alarms after quiet-hours or default-time settings change.
 

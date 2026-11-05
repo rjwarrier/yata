@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.sync.withLock
 import java.time.LocalDate
 import java.time.ZoneId
 import java.util.UUID
@@ -220,7 +221,21 @@ class YataRepositoryImpl @Inject constructor(
         if (notify) widgetUpdater.notifyTasksChanged()
     }
 
-    override suspend fun toggleTaskDone(id: String, notify: Boolean) = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+    override suspend fun toggleTaskDone(id: String, notify: Boolean) = withContext(Dispatchers.IO) {
+        userPreferences.focusTimerMutex.withLock {
+            val task = db.taskDao().getByIdDirect(id)
+            if (task != null && !task.done) settleTaskFocusTimer(id)
+            toggleTaskDoneInternal(id, notify)
+        }
+    }
+
+    private suspend fun settleTaskFocusTimer(id: String) {
+        com.mj.yata.domain.usecase.settleFocusTimer(userPreferences, id) { timer, minutes ->
+            if (minutes > 0) db.taskDao().addTrackedMinutes(timer.taskId, minutes)
+        }
+    }
+
+    private suspend fun toggleTaskDoneInternal(id: String, notify: Boolean) = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
         val taskEntity = db.taskDao().getByIdDirect(id) ?: return@withContext
         val wasDone = taskEntity.done
         val isNowDone = !wasDone
@@ -310,7 +325,15 @@ class YataRepositoryImpl @Inject constructor(
     }
 
     /** Advances a recurring task to its next occurrence without marking the skipped one done. */
-    override suspend fun skipTaskOccurrence(id: String) = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+    override suspend fun skipTaskOccurrence(id: String) = withContext(Dispatchers.IO) {
+        userPreferences.focusTimerMutex.withLock {
+            val task = db.taskDao().getByIdDirect(id)
+            if (task?.recurrenceJson != null && task.dueDate != null) settleTaskFocusTimer(id)
+            skipTaskOccurrenceInternal(id)
+        }
+    }
+
+    private suspend fun skipTaskOccurrenceInternal(id: String) = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
         val taskEntity = db.taskDao().getByIdDirect(id) ?: return@withContext
         val recurrence = deserializeRecurrence(taskEntity.recurrenceJson)
         if (recurrence == null || taskEntity.dueDate == null) return@withContext

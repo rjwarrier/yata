@@ -497,11 +497,12 @@ fun SearchScreen(
     // live tasks went through a SQL FTS query (prefix-token match, no project-inherited tags),
     // archived/trash went through this substring match, so the same query could find a task in
     // one bucket and miss its otherwise-identical archived copy. One matcher, one behavior.
-    val filteredTasks = remember(tasks, archivedTasks, deletedTasks, debouncedQuery, activeFilters.toList(), activeEntities, archivedProjectIds, myId, includeArchived, includeTrash, peopleById, tagsById, projectsById, weekendDays, holidays, observeNonWorkingDays) {
+    val searchToday = com.mj.yata.util.AppClock.today
+    val filteredTasks = remember(searchToday, tasks, archivedTasks, deletedTasks, debouncedQuery, activeFilters.toList(), activeEntities, archivedProjectIds, myId, includeArchived, includeTrash, peopleById, tagsById, projectsById, weekendDays, holidays, observeNonWorkingDays) {
         if (debouncedQuery.isBlank() && activeFilters.isEmpty() && activeEntities.isEmpty && !includeArchived && !includeTrash) {
             emptyList()
         } else {
-            val today = LocalDate.now()
+            val today = searchToday
             val terms = searchTermsOf(debouncedQuery)
             val activeSource = if (debouncedQuery.isBlank()) {
                 tasks

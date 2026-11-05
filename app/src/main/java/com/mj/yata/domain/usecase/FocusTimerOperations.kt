@@ -10,6 +10,7 @@ import com.mj.yata.notification.NotificationHelper
 import com.mj.yata.widget.resolveNotificationAccentColor
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -27,25 +28,23 @@ class FocusTimerOperations @Inject constructor(
 
     /** Starts the timer on [task]. Only one runs at a time, so a timer already running on another
      * task is stopped and its time logged first. */
-    suspend fun start(task: Task) {
-        stop()
+    suspend fun start(task: Task) = userPreferences.focusTimerMutex.withLock {
+        stopLocked()
         val timer = FocusTimer(task.id, System.currentTimeMillis())
         userPreferences.setFocusTimer(timer)
         NotificationHelper.showFocusTimer(context, timer, task.title, resolveNotificationAccentColor(context))
     }
 
-    /** Stops the running timer, if any, and logs its minutes. The timer is cleared before the
-     * write, so a failed write loses one session rather than leaving a timer that would log the
-     * same time twice. A task archived or trashed while its timer ran isn't live any more, and the
-     * session is dropped. */
-    suspend fun stop() {
-        val timer = userPreferences.focusTimerFlow.first() ?: return
-        userPreferences.setFocusTimer(null)
-        NotificationHelper.cancelFocusTimer(context)
-        val minutes = focusSessionMinutes(timer.startedAt, System.currentTimeMillis())
-        if (minutes == 0) return
-        val task = repository.getTasksByIds(listOf(timer.taskId)).firstOrNull() ?: return
-        repository.upsertTask(task.copy(trackedMinutes = task.trackedMinutes + minutes), resyncReminder = false)
+    /** Serialize competing actions; retain the running session if logging fails. */
+    suspend fun stop() = userPreferences.focusTimerMutex.withLock { stopLocked() }
+
+    private suspend fun stopLocked() {
+        settleFocusTimer(userPreferences) { timer, minutes ->
+            val task = repository.getTasksByIds(listOf(timer.taskId)).firstOrNull()
+            if (task != null && minutes > 0) {
+                repository.upsertTask(task.copy(trackedMinutes = task.trackedMinutes + minutes), resyncReminder = false)
+            }
+        }
     }
 
     /** Re-posts the notification for a timer still running from before the process died. Called on
@@ -55,4 +54,16 @@ class FocusTimerOperations @Inject constructor(
         val task = repository.getTasksByIds(listOf(timer.taskId)).firstOrNull() ?: return
         NotificationHelper.showFocusTimer(context, timer, task.title, resolveNotificationAccentColor(context))
     }
+}
+
+/** Called under preferences.focusTimerMutex so logging and clearing cannot race another stop. */
+internal suspend fun settleFocusTimer(
+    preferences: UserPreferences,
+    taskId: String? = null,
+    log: suspend (FocusTimer, Int) -> Unit
+) {
+    val timer = preferences.focusTimerFlow.first() ?: return
+    if (taskId != null && timer.taskId != taskId) return
+    log(timer, focusSessionMinutes(timer.startedAt, System.currentTimeMillis()))
+    preferences.setFocusTimer(null)
 }

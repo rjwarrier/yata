@@ -320,6 +320,9 @@ interface TaskDao {
     @Query("UPDATE tasks SET deletedAt = COALESCE(deletedAt, :timestamp), listId = NULL WHERE listId = :listId")
     suspend fun softDeleteByListId(listId: String, timestamp: Long)
 
+    @Query("UPDATE tasks SET trackedMinutes = trackedMinutes + :minutes WHERE id = :id")
+    suspend fun addTrackedMinutes(id: String, minutes: Int)
+
     @Query("UPDATE tasks SET done = :done, completedAt = :completedAt WHERE id = :id")
     suspend fun updateDone(id: String, done: Boolean, completedAt: Long?)
 
