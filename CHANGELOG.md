@@ -17,6 +17,9 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ### Fixed
 
+- Store task times independently of language and read legacy localized times after language changes.
+- Reconcile existing reminder alarms after quiet-hours or default-time settings change.
+
 - Archive skipped recurring-task history so it does not remain actionable or overdue.
 - Preserve nested recurring checklist history and reset checklist completion for each next occurrence.
 

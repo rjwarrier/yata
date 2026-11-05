@@ -62,6 +62,7 @@ class MainViewModel @Inject constructor(
     private val repository: YataRepository,
     private val userPreferences: UserPreferences,
     private val taskOperations: TaskOperations,
+    private val reminderSettingsOperations: com.mj.yata.domain.usecase.ReminderSettingsOperations,
     private val focusTimerOperations: com.mj.yata.domain.usecase.FocusTimerOperations,
     private val backupOperations: BackupOperations,
     private val errorBus: AppErrorBus,
@@ -1244,15 +1245,15 @@ data class WeekendRescheduleWarning(
     }
 
     fun setQuietHoursEnabled(enabled: Boolean) {
-        safeLaunch { userPreferences.setQuietHoursEnabled(enabled) }
+        safeLaunch { reminderSettingsOperations.setQuietHoursEnabled(enabled) }
     }
 
     fun setQuietHoursStart(hour: Int, minute: Int) {
-        safeLaunch { userPreferences.setQuietHoursStart(hour, minute) }
+        safeLaunch { reminderSettingsOperations.setQuietHoursStart(hour, minute) }
     }
 
     fun setQuietHoursEnd(hour: Int, minute: Int) {
-        safeLaunch { userPreferences.setQuietHoursEnd(hour, minute) }
+        safeLaunch { reminderSettingsOperations.setQuietHoursEnd(hour, minute) }
     }
 
     fun setAutoArchiveDays(days: Int) {
@@ -2917,7 +2918,7 @@ data class WeekendRescheduleWarning(
 
     fun setDefaultReminderTime(hour: Int, minute: Int) {
         safeLaunch {
-            userPreferences.setDefaultReminderTime(hour, minute)
+            reminderSettingsOperations.setDefaultReminderTime(hour, minute)
         }
     }
 

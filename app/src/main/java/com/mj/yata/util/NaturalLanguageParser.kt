@@ -89,7 +89,7 @@ object NaturalLanguageParser {
     // Deliberately fixed at 12-hour, and not routed through the user's clock preference: what this
     // produces is written to `Task.time`, which is the storage format (see
     // TaskScheduleUtils.storageTimeFormatter). The preference is applied when the time is shown.
-    private val timeFormatter = DateTimeFormatter.ofPattern("h:mm a", Locale.getDefault())
+    private val timeFormatter = DateTimeFormatter.ofPattern("h:mm a", Locale.US)
     @Volatile private var customDateAliases: Map<String, DateAliasTarget> = emptyMap()
 
     private val weekdayNames = mapOf(

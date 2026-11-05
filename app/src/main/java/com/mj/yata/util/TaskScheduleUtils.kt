@@ -16,39 +16,18 @@ import kotlin.math.abs
 object TaskScheduleUtils {
     private val isoDateFormatter = DateTimeFormatter.ISO_LOCAL_DATE
 
-    /**
-     * The format times are *stored* in. `Task.time` is a display-shaped string in the database, so
-     * this has to stay fixed no matter what the user's clock preference is: every task written
-     * before the preference existed is in this form, and the 24-hour setting must never rewrite
-     * them. [displayTime] converts on the way to the screen instead.
-     */
-    private val storageTimeFormatter = DateTimeFormatter.ofPattern("h:mm a", Locale.getDefault())
+    /** Stable English storage; display alone follows the user's locale and clock preference. */
+    private val storageTimeFormatter = DateTimeFormatter.ofPattern("h:mm a", Locale.US)
+    private val storageTimeParserFallback = DateTimeFormatterBuilder()
+        .parseCaseInsensitive().appendPattern("h:mm a").toFormatter(Locale.US)
 
-    /**
-     * Parse-only companions to [storageTimeFormatter], both case-insensitive.
-     *
-     * `Task.time` is written by two paths that disagree about case: [formatTime] emits whatever
-     * the default locale produces (on en-IN that is lowercase "3:00 pm"), while the natural
-     * language parser's own writer uppercases the result ("3:00 PM"). A case-sensitive parse
-     * therefore rejected roughly half the rows on any locale whose AM/PM marker isn't already
-     * uppercase — silently, because [displayTime] falls back to echoing the raw stored text, so
-     * the times still *looked* right while everything that needed the parsed value (reminder
-     * offset checks, and now the due countdown) quietly took its "no time set" branch.
-     *
-     * [FALLBACK] additionally pins Locale.US so the canonical English "3:00 PM" a backup, shared
-     * task link, or NL parse can carry still parses on a device whose locale renders AM/PM
-     * differently. Both are parse-only; formatting still goes through [storageTimeFormatter], so
-     * nothing about what gets *written* changes here.
-     */
-    private val storageTimeParser: DateTimeFormatter = DateTimeFormatterBuilder()
-        .parseCaseInsensitive()
-        .appendPattern("h:mm a")
-        .toFormatter(Locale.getDefault())
-
-    private val storageTimeParserFallback: DateTimeFormatter = DateTimeFormatterBuilder()
-        .parseCaseInsensitive()
-        .appendPattern("h:mm a")
-        .toFormatter(Locale.US)
+    // Older releases stored localized AM/PM markers. Keep them readable after a language
+    // change or cross-language sync; build one parser per distinct marker pair, only on demand.
+    private val legacyTimeParsers by lazy {
+        Locale.getAvailableLocales()
+            .distinctBy { java.text.DateFormatSymbols(it).amPmStrings.toList() }
+            .map { DateTimeFormatterBuilder().parseCaseInsensitive().appendPattern("h:mm a").toFormatter(it) }
+    }
 
     private val SPACE_SEPARATORS = Regex("""\p{Zs}""")
 
@@ -180,7 +159,7 @@ object TaskScheduleUtils {
      * preference existed has to keep parsing after it's switched to 24-hour.
      *
      * The 12-hour attempts are case-insensitive and fall back to a US-locale marker — see
-     * [storageTimeParser] for the two-writers-disagree-on-case problem that requires.
+     * [legacyTimeParsers] for the two-writers-disagree-on-case problem that requires.
      */
     fun parseTime(timeString: String?): LocalTime? {
         if (timeString.isNullOrBlank()) return null
@@ -199,7 +178,12 @@ object TaskScheduleUtils {
                     // Not ISO — fall through to the 12-hour attempts below.
                 }
             }
-            for (formatter in listOf(storageTimeParser, storageTimeParserFallback)) {
+            try {
+                return LocalTime.parse(candidate, storageTimeParserFallback)
+            } catch (_: DateTimeParseException) {
+                // Only load legacy locale parsers for a non-canonical stored value.
+            }
+            for (formatter in legacyTimeParsers) {
                 try {
                     return LocalTime.parse(candidate, formatter)
                 } catch (_: DateTimeParseException) {
