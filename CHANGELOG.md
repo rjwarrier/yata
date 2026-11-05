@@ -17,6 +17,9 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ### Fixed
 
+- Publish local backups with verifiable encryption and recover backups affected by older filename changes.
+- Preserve independent nested checklists when duplicating tasks or rolling projects forward.
+
 - Include archived tasks in PDF and image exports from projects, lists, tags, and people,
   subject to the selected completed-task and completion-date filters.
 

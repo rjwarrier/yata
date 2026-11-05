@@ -131,6 +131,38 @@ class UnifiedBackupRoundTripTest {
         }
     }
 
+    @Test fun duplicationAndBothRolloversKeepOriginalNestedChecklistOwnership() = runBlocking {
+        store().use { target ->
+            target.repository.upsertProject(Project("project", "Project", "accentA", "work"))
+            val original = Task(
+                id = "original", title = "Checklist", listId = null, projectId = "project", section = "",
+                due = "2020-01-01", time = null, reminder = null, priority = "none", flag = false, done = false,
+                assigneeIds = emptyList(), tagIds = emptyList(), recurrence = null, seriesId = "old-series",
+                subtasks = listOf(
+                    com.mj.yata.domain.model.Subtask("parent", "Parent", true),
+                    com.mj.yata.domain.model.Subtask("child", "Child", false, "parent", sortOrder = 1)
+                ), notes = null
+            )
+            target.repository.upsertTask(original)
+            val operations = com.mj.yata.domain.usecase.TaskOperations(target.repository, target.preferences)
+            operations.duplicate(original.id)
+            operations.bulkDuplicate(listOf(original.id))
+            operations.rolloverProjectTasks("project")
+            operations.rolloverOverdueProjectTasks("project")
+            val tasks = target.repository.getTasks().first()
+            assertEquals(original.subtasks, tasks.single { it.id == original.id }.subtasks)
+            assertTrue(tasks.size > 3)
+            assertEquals(tasks.size * 2, tasks.flatMap { it.subtasks }.map { it.id }.toSet().size)
+            tasks.filter { it.id != original.id }.forEach { copy ->
+                assertEquals(null, copy.seriesId)
+                assertEquals(copy.subtasks[0].id, copy.subtasks[1].parentSubtaskId)
+            }
+            val copy = tasks.first { it.id != original.id }
+            target.repository.upsertTask(copy.copy(subtasks = emptyList()))
+            assertEquals(original.subtasks, target.repository.getTasks().first().single { it.id == original.id }.subtasks)
+        }
+    }
+
     @Test fun backupImportAndRepeatedSyncPreserveGroupsAndTrackedTime() = runBlocking {
         store().use { source ->
             source.repository.upsertPerson(Person("me", "You", "Y", "accentA", isMe = true))

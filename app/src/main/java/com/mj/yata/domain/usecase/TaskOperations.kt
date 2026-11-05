@@ -240,7 +240,9 @@ class TaskOperations @Inject constructor(
             done = false,
             completedAt = null,
             createdAt = null,
-            trackedMinutes = 0
+            trackedMinutes = 0,
+            seriesId = null,
+            subtasks = copySubtasksWithFreshIds(task.subtasks)
         )
     }
 
@@ -373,4 +375,10 @@ internal fun scheduleRestorations(changes: List<Rescheduled>, currentById: Map<S
 fun duplicateTaskTitle(title: String): String {
     val base = title.trim()
     return if (base.isEmpty()) "Duplicate" else "$base Duplicate"
+}
+
+/** Subtask IDs are global database keys; copying must never reuse ownership or parent IDs. */
+internal fun copySubtasksWithFreshIds(subtasks: List<com.mj.yata.domain.model.Subtask>): List<com.mj.yata.domain.model.Subtask> {
+    val ids = subtasks.associate { it.id to ("st_" + UUID.randomUUID().toString()) }
+    return subtasks.map { it.copy(id = ids.getValue(it.id), parentSubtaskId = it.parentSubtaskId?.let(ids::get)) }
 }

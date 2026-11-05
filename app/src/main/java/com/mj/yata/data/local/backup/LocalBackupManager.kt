@@ -17,6 +17,7 @@ import java.nio.file.StandardCopyOption
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -78,6 +79,9 @@ class LocalBackupManager @Inject constructor(
             if (newest != null && localBackupFingerprint(newest.name) == fingerprint) {
                 // Nothing changed since the newest backup, which still matches the data exactly.
                 // Writing another copy would only push an older, different one out sooner.
+                // Old releases authenticated the temporary filename. Verify/recover before
+                // accepting an unchanged backup as healthy.
+                readBackup(newest)
                 userPreferences.setLocalBackupLastAt(System.currentTimeMillis())
                 return@withContext Result.success(Unit)
             }
@@ -89,22 +93,14 @@ class LocalBackupManager @Inject constructor(
                 SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date()) +
                 "_" + fingerprint + FILENAME_SUFFIX
             val file = File(backupDir(), filename)
-            val tempFile = File(backupDir(), "$filename.tmp")
-            if (file.exists()) file.delete()
-            if (tempFile.exists()) tempFile.delete()
-
-            val encryptedFile = EncryptedFile.Builder(
-                context, tempFile, masterKey, EncryptedFile.FileEncryptionScheme.AES256_GCM_HKDF_4KB
-            ).build()
-            encryptedFile.openFileOutput().use {
-                it.write(bytes)
-                it.fd.sync()
-            }
-            val verified = EncryptedFile.Builder(
-                context, tempFile, masterKey, EncryptedFile.FileEncryptionScheme.AES256_GCM_HKDF_4KB
-            ).build().openFileInput().use { it.readBytes() }
-            check(verified.contentEquals(bytes)) { "Local backup verification failed" }
-            moveIntoPlace(tempFile, file)
+            publishLocalBackup(file, { target ->
+                EncryptedFile.Builder(
+                    context, target, masterKey, EncryptedFile.FileEncryptionScheme.AES256_GCM_HKDF_4KB
+                ).build().openFileOutput().use {
+                    it.write(bytes)
+                    it.fd.sync()
+                }
+            }, { target -> decrypt(target) }, bytes)
 
             userPreferences.setLocalBackupLastAt(System.currentTimeMillis())
             pruneOldBackups()
@@ -126,10 +122,7 @@ class LocalBackupManager @Inject constructor(
                 ?.maxByOrNull { it.name }
                 ?: return@withContext recoveryBackupManager.restoreLatest()
 
-            val encryptedFile = EncryptedFile.Builder(
-                context, latest, masterKey, EncryptedFile.FileEncryptionScheme.AES256_GCM_HKDF_4KB
-            ).build()
-            val bytes = encryptedFile.openFileInput().use { it.readBytes() }
+            val bytes = readBackup(latest)
             jsonExporter.dryRunRestoreBytes(bytes)
 
             recoveryBackupManager.saveCurrent("pre_local_restore").getOrElse { e ->
@@ -157,16 +150,53 @@ class LocalBackupManager @Inject constructor(
         files.filterNot { it.name in keep }.forEach { it.delete() }
     }
 
-    private fun moveIntoPlace(tempFile: File, finalFile: File) {
+    private fun decrypt(file: File): ByteArray = EncryptedFile.Builder(
+        context, file, masterKey, EncryptedFile.FileEncryptionScheme.AES256_GCM_HKDF_4KB
+    ).build().openFileInput().use { it.readBytes() }
+
+    private fun readBackup(file: File): ByteArray = readLocalBackup(file, ::decrypt)
+}
+
+/** Stage in a private directory with the FINAL basename: EncryptedFile authenticates that name. */
+internal fun publishLocalBackup(
+    file: File,
+    write: (File) -> Unit,
+    read: (File) -> ByteArray,
+    expected: ByteArray
+) {
+    val staging = File(file.parentFile, ".staging_${UUID.randomUUID()}")
+    check(staging.mkdirs()) { "Could not create backup staging directory" }
+    try {
+        val temp = File(staging, file.name)
+        write(temp)
+        check(read(temp).contentEquals(expected)) { "Local backup verification failed" }
         try {
-            Files.move(
-                tempFile.toPath(),
-                finalFile.toPath(),
-                StandardCopyOption.ATOMIC_MOVE,
-                StandardCopyOption.REPLACE_EXISTING
-            )
+            Files.move(temp.toPath(), file.toPath(), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
         } catch (_: AtomicMoveNotSupportedException) {
-            Files.move(tempFile.toPath(), finalFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
+            Files.move(temp.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING)
+        }
+        check(read(file).contentEquals(expected)) { "Published local backup verification failed" }
+    } finally {
+        staging.deleteRecursively()
+    }
+}
+
+/** Recover backups written by older releases using filename.tmp as authenticated data. */
+internal fun readLocalBackup(file: File, read: (File) -> ByteArray): ByteArray {
+    try {
+        return read(file)
+    } catch (original: Exception) {
+        val recovery = File(file.parentFile, ".recovery_${UUID.randomUUID()}")
+        check(recovery.mkdirs()) { "Could not create backup recovery directory" }
+        try {
+            val legacy = File(recovery, file.name + ".tmp")
+            file.copyTo(legacy)
+            return read(legacy)
+        } catch (fallback: Exception) {
+            original.addSuppressed(fallback)
+            throw original
+        } finally {
+            recovery.deleteRecursively()
         }
     }
 }
