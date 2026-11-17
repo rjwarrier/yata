@@ -859,7 +859,7 @@ class TaskTransferLinkTest {
         // belongs to whoever set it. Forced onto the compressed path with a non-Latin title so
         // this pins the v4 payload rather than whichever encoding happened to win.
         val repo = FakeYataRepository()
-        val original = task(title = "மின்சார கட்டணம் செலுத்து")
+        val original = task(title = "மின்சார கட்டணம் செலுத்து").copy(receivedDate = "2026-08-01")
         val link = buildTaskTransferLink(
             title = original.title, tasks = listOf(original), listsById = emptyMap(),
             projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
@@ -872,6 +872,7 @@ class TaskTransferLinkTest {
         val imported = repo.tasksFlow.value.single()
         assertEquals("2026-08-20", imported.due)
         assertEquals("2026-08-18", imported.startDate)
+        assertEquals("2026-08-01", imported.receivedDate)
         assertEquals("2:00 PM", imported.time)
         assertEquals(30, imported.estimateMinutes)
         // Deliberately not carried.
@@ -885,7 +886,7 @@ class TaskTransferLinkTest {
     @Test
     fun scheduleFieldsAlsoSurviveThePlaintextForm() = runTest {
         val repo = FakeYataRepository()
-        val original = task(title = "Pay bill")
+        val original = task(title = "Pay bill").copy(receivedDate = "2026-08-01")
         val link = buildTaskTransferLink(
             title = original.title, tasks = listOf(original), listsById = emptyMap(),
             projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
@@ -898,6 +899,7 @@ class TaskTransferLinkTest {
         val imported = repo.tasksFlow.value.single()
         assertEquals("2026-08-20", imported.due)
         assertEquals("2026-08-18", imported.startDate)
+        assertEquals("2026-08-01", imported.receivedDate)
         assertEquals("2:00 PM", imported.time)
         assertEquals(30, imported.estimateMinutes)
         assertNull(imported.reminder)

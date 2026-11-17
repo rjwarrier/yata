@@ -297,7 +297,8 @@ data class NewTaskDraft(
     val notes: String?,
     val subtasks: List<Subtask>,
     val flag: Boolean,
-    val estimateMinutes: Int?
+    val estimateMinutes: Int?,
+    val receivedDate: String? = null
 )
 
 /** Review an existing draft without switching a pasted title into bulk task creation. */
@@ -364,6 +365,7 @@ fun com.mj.yata.util.export.SharedTaskDraft.resolveAgainstLocalData(
         recurrence = recurrence,
         due = due,
         startDate = startDate,
+        receivedDate = receivedDate,
         time = time,
         reminder = null,
         section = "",
@@ -563,6 +565,9 @@ fun NewTaskSheet(
         }
     }
     var selectedDueDate by rememberSaveable { mutableStateOf<String?>(initialDueDate) }
+    var selectedReceivedDate by rememberSaveable { mutableStateOf(initialDraft?.receivedDate ?: if (editorOptions == null) LocalDate.now().toString() else null) }
+    var showReceivedDatePicker by remember { mutableStateOf(false) }
+    var receivedDateManuallySet by rememberSaveable { mutableStateOf(initialDraft?.receivedDate != null || editorOptions != null) }
     var selectedStartDate by rememberSaveable { mutableStateOf(initialDraft?.startDate) }
     var selectedTime by rememberSaveable { mutableStateOf(initialDraft?.time) }
     // Shared drafts omit reminders; local import-review drafts keep their approved reminder.
@@ -794,6 +799,7 @@ fun NewTaskSheet(
     LaunchedEffect(quickAdd, quickAddDismissed, isBulkTasks, effectiveIgnoredQuickAddFields) {
         if (!quickAddDismissed && !isBulkTasks) {
             if ("due" !in effectiveIgnoredQuickAddFields && !dueManuallySet && quickAdd.due != null) selectedDueDate = quickAdd.due
+            if ("received" !in effectiveIgnoredQuickAddFields && !receivedDateManuallySet) selectedReceivedDate = quickAdd.receivedDate ?: LocalDate.now().toString()
             if ("start" !in effectiveIgnoredQuickAddFields && !startDateManuallySet && quickAdd.startDate != null) selectedStartDate = quickAdd.startDate
             if ("time" !in effectiveIgnoredQuickAddFields && !timeManuallySet && quickAdd.time != null) selectedTime = quickAdd.time
             if ("recurrence" !in effectiveIgnoredQuickAddFields && !recurrenceManuallySet && quickAdd.recurrence != null) selectedRecurrence = quickAdd.recurrence
@@ -858,6 +864,7 @@ fun NewTaskSheet(
         val parsedTitle = parsed.title
         title = TextFieldValue(parsedTitle, TextRange(parsedTitle.length))
         if (parsed.due != null) { selectedDueDate = parsed.due; dueManuallySet = true }
+        if (parsed.receivedDate != null) { selectedReceivedDate = parsed.receivedDate; receivedDateManuallySet = true }
         if (parsed.startDate != null) { selectedStartDate = parsed.startDate; startDateManuallySet = true }
         if (parsed.time != null) { selectedTime = parsed.time; timeManuallySet = true }
         if (parsed.recurrence != null) { selectedRecurrence = parsed.recurrence; recurrenceManuallySet = true }
@@ -923,6 +930,8 @@ fun NewTaskSheet(
         subtasks.clear()
         newSubtaskTitle = ""
         selectedStartDate = null
+        selectedReceivedDate = LocalDate.now().toString()
+        receivedDateManuallySet = false
         dueManuallySet = initialDueDateOverride != null
         startDateManuallySet = false
         startDateDaysBeforeDue = null
@@ -972,6 +981,7 @@ fun NewTaskSheet(
                         // Per-line like the due date: "review draft starts monday" on one line
                         // shouldn't defer the other lines in the same bulk paste.
                         startDate = parsed.startDate,
+                        receivedDate = com.mj.yata.util.receivedDateForCreation(selectedReceivedDate, receivedDateManuallySet, parsed.receivedDate),
                         time = parsed.time,
                         reminder = parsed.reminder ?: selectedReminder,
                         section = selectedSection,
@@ -996,6 +1006,10 @@ fun NewTaskSheet(
                     recurrence = selectedRecurrence,
                     due = selectedDueDate,
                     startDate = selectedStartDate,
+                    receivedDate = com.mj.yata.util.receivedDateForCreation(
+                        selectedReceivedDate, receivedDateManuallySet,
+                        quickAdd.receivedDate.takeIf { quickAddMatched && "received" !in effectiveIgnoredQuickAddFields }
+                    ),
                     time = selectedTime,
                     reminder = selectedReminder,
                     section = selectedSection,
@@ -1546,6 +1560,14 @@ fun NewTaskSheet(
                             ignoredQuickAddFields = ignoredQuickAddFields + "due"
                         })
                     },
+                    quickAdd.receivedDate?.takeIf { "received" !in effectiveIgnoredQuickAddFields }?.let {
+                        DetectedQuickAddChip(stringResource(R.string.smart_add_received, TaskScheduleUtils.formatDueDate(it)),
+                            { showReceivedDatePicker = true }, {
+                                selectedReceivedDate = LocalDate.now().toString()
+                                receivedDateManuallySet = true
+                                ignoredQuickAddFields = ignoredQuickAddFields + "received"
+                            })
+                    },
                     quickAdd.startDate?.takeIf { "start" !in effectiveIgnoredQuickAddFields }?.let {
                         DetectedQuickAddChip(
                             stringResource(R.string.smart_add_starts, TaskScheduleUtils.formatDueDate(it)),
@@ -1816,6 +1838,16 @@ fun NewTaskSheet(
                         onClick = { activePanel = if (activePanel == "Repeat") null else "Repeat" },
                         tint = MaterialTheme.colorScheme.tertiary,
                         leading = { Icon(Icons.Default.Repeat, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(14.dp)) },
+                        showCheck = false
+                    )
+                    YataSelectChip(
+                        label = selectedReceivedDate?.let {
+                            "${stringResource(R.string.task_date_received)}: ${TaskScheduleUtils.formatDueDate(it)}"
+                        } ?: stringResource(R.string.task_date_received),
+                        selected = selectedReceivedDate != null,
+                        onClick = { showReceivedDatePicker = true },
+                        tint = MaterialTheme.colorScheme.secondary,
+                        leading = { Icon(Icons.Default.EventAvailable, contentDescription = null, modifier = Modifier.size(15.dp)) },
                         showCheck = false
                     )
                     // Start date stays with schedule settings, but trails the common due/time/
@@ -2210,6 +2242,19 @@ fun NewTaskSheet(
                 setDueDate(it)
                 showDatePicker = false
             }
+        )
+    }
+
+    if (showReceivedDatePicker) {
+        YataDatePickerDialog(
+            initialDate = selectedReceivedDate,
+            onDismiss = { showReceivedDatePicker = false },
+            // New tasks default to their creation day when unset. Clear is useful when
+            // editing a draft, where an intentionally missing value must stay visible.
+            onClear = if (editorOptions != null) ({
+                selectedReceivedDate = null; receivedDateManuallySet = true; showReceivedDatePicker = false
+            }) else null,
+            onConfirm = { selectedReceivedDate = it; receivedDateManuallySet = true; showReceivedDatePicker = false }
         )
     }
 

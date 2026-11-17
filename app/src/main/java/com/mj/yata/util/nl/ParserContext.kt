@@ -51,4 +51,5 @@ internal class ParserContext(
         claims.expandedSpans(raw, prepositionRegex)
 
     fun stripOnlyRanges(): List<IntRange> = claims.stripOnlyRanges()
+    fun protectedRanges(): List<IntRange> = claims.protectedRanges()
 }

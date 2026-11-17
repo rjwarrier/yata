@@ -18,9 +18,11 @@ import androidx.compose.ui.res.stringResource
 import com.mj.yata.R
 import com.mj.yata.util.TaskSortMode
 
+@Composable
 private fun TaskSortMode.label() = when (this) {
     TaskSortMode.MANUAL -> "Manual order"
     TaskSortMode.DUE_DATE -> "Due date"
+    TaskSortMode.RECEIVED_DATE -> stringResource(R.string.task_date_received)
     TaskSortMode.PRIORITY -> "Priority"
     TaskSortMode.ALPHABETICAL -> "Alphabetical"
 }

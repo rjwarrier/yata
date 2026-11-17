@@ -36,7 +36,7 @@ fun MarkdownDocument.prepareSmartImport(
     val manualDestination = projectId != null || listId != null
     val ignored = buildSet {
         if (manualDestination) { add("project"); add("list") }
-        if (!useDates) addAll(listOf("due", "start", "time", "recurrence", "reminder"))
+        if (!useDates) addAll(listOf("due", "start", "received", "time", "recurrence", "reminder"))
     }
     val headingProjects = TreeMap<String, Project>(String.CASE_INSENSITIVE_ORDER).apply {
         context.projects.activeProjects().forEach { putIfAbsent(it.name, it) }
@@ -100,6 +100,7 @@ internal fun emptyMarkdownQuickAdd(title: String = "") = ParsedQuickAdd(
 internal fun ParsedQuickAdd.withMarkdownDefaults(defaults: ParsedQuickAdd): ParsedQuickAdd = copy(
     due = due ?: defaults.due,
     startDate = startDate ?: defaults.startDate,
+    receivedDate = receivedDate ?: defaults.receivedDate,
     time = time ?: defaults.time,
     recurrence = recurrence ?: defaults.recurrence,
     reminder = reminder ?: defaults.reminder,

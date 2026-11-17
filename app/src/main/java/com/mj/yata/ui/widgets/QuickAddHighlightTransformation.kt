@@ -52,6 +52,7 @@ fun rememberQuickAddHighlightTransformation(
 
 private fun quickAddHighlightColor(type: QuickAddHighlightType, fallbackColor: Color): Color = when (type) {
     QuickAddHighlightType.DueDate -> Color(0xFF2563EB)
+    QuickAddHighlightType.ReceivedDate -> Color(0xFF0891B2)
     QuickAddHighlightType.StartDate -> Color(0xFF0891B2)
     QuickAddHighlightType.Time -> Color(0xFF7C3AED)
     QuickAddHighlightType.Recurrence -> Color(0xFF0F766E)

@@ -19,6 +19,7 @@ import com.mj.yata.util.nl.PriorityFlagRules
 import com.mj.yata.util.nl.RecurrenceRuleConfig
 import com.mj.yata.util.nl.RecurrenceRules
 import com.mj.yata.util.nl.ReminderRules
+import com.mj.yata.util.nl.ReceivedDateRules
 import com.mj.yata.util.nl.StartDateRules
 import com.mj.yata.util.nl.TimeRules
 import com.mj.yata.util.nl.WEEK_UNIT
@@ -36,6 +37,7 @@ import java.util.Locale
 enum class QuickAddHighlightType {
     DueDate,
     StartDate,
+    ReceivedDate,
     Time,
     Recurrence,
     Reminder,
@@ -67,7 +69,8 @@ data class ParsedQuickAdd(
     val tagNames: List<String> = emptyList(),
     val assigneeNames: List<String> = emptyList(),
     val highlightRanges: List<IntRange>, // recognized spans in the *original* raw string, for underlining
-    val highlightSpans: List<QuickAddHighlightSpan> = highlightRanges.map { QuickAddHighlightSpan(it, QuickAddHighlightType.Other) }
+    val highlightSpans: List<QuickAddHighlightSpan> = highlightRanges.map { QuickAddHighlightSpan(it, QuickAddHighlightType.Other) },
+    val receivedDate: String? = null
 )
 
 /**
@@ -234,7 +237,7 @@ object NaturalLanguageParser {
     private val recurrenceUntilRegex = Regex(
         "\\b(?:until|untill|till|til|thru|through|up\\s+to|ending|hasta|terminando|termina)\\s+" +
             "((?:\\d|next\\b|this\\b|tomorrow\\b|today\\b|the\\b|in\\b|end\\b|próximo\\b|proximo\\b|próxima\\b|proxima\\b|este\\b|esta\\b|mañana\\b|manana\\b|hoy\\b|el\\b|en\\b|fin\\b|mon|tue|wed|thu|fri|sat|sun|lun|mar|mié|mie|jue|vie|sáb|sab|dom|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|ene|abr|ago|dic)[A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9,/\\-\\s]*?)" +
-            "(?=\\s+(?:at|a\\s+las?|às?|as|à|every|each|cada|todo|toda|chaque|assign|asign|atrib|rappel|lemb|@|#|!|p[1-3]|for\\b|por\\b|pour\\b|in\\s+(?:list|project)|en\\s+(?:lista|proyecto|liste|projet)|em\\s+(?:lista|projeto))|$)",
+            "(?=;|,\\s*(?:${ReceivedDateRules.KEYWORD_ALT})|\\s+(?:at|a\\s+las?|às?|as|à|every|each|cada|todo|toda|chaque|assign|asign|atrib|rappel|lemb|@|#|!|p[1-3]|for\\b|por\\b|pour\\b|in\\s+(?:list|project)|en\\s+(?:lista|proyecto|liste|projet)|em\\s+(?:lista|projeto)|(?:${ReceivedDateRules.KEYWORD_ALT}))|$)",
         RegexOption.IGNORE_CASE
     )
     private val recurrenceTimesRegex = Regex(
@@ -459,7 +462,7 @@ object NaturalLanguageParser {
     private val startDateRegex = Regex(
         "\\b($START_DATE_KEYWORD_ALT)\\s+" +
             "((?:\\d|next\\b|this\\b|tomorrow\\b|today\\b|the\\b|in\\b|próximo\\b|proximo\\b|próxima\\b|proxima\\b|prochain\\b|prochaine\\b|este\\b|esta\\b|ce\\b|cet\\b|cette\\b|mañana\\b|manana\\b|amanhã\\b|amanha\\b|demain\\b|hoy\\b|hoje\\b|aujourd|el\\b|em\\b|en\\b|dans\\b|le\\b|lun|mar|mié|mie|jue|vie|sáb|sab|dom|seg|ter|qua|qui|sex|lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche|mon|tue|wed|thu|fri|sat|sun|ene|feb|mar|abr|apr|mai|may|jun|jul|ago|aug|sep|oct|nov|dic|dec|jan)[A-Za-zÁÉÍÓÚÜÑáéíóúüñÃÕÇãõçÀÂÊÎÔÛÄËÏÖÜàâêîôûäëïöü0-9,/\\-\\s]*?)" +
-            "(?=\\s+(?:due|vence|échéance|at|a\\s+las?|às?|à|every|cada|todo|toda|chaque|assign|asign|atrib|@|#|!|p[1-3]|for\\b|por\\b|pour\\b|in\\s+(?:list|project)|em\\s+(?:lista|projeto)|en\\s+(?:liste|projet|lista|proyecto)|(?:$START_DATE_KEYWORD_ALT))|$)",
+            "(?=;|,\\s*(?:${ReceivedDateRules.KEYWORD_ALT})|\\s+(?:due|vence|échéance|at|a\\s+las?|às?|à|every|cada|todo|toda|chaque|assign|asign|atrib|@|#|!|p[1-3]|for\\b|por\\b|pour\\b|in\\s+(?:list|project)|em\\s+(?:lista|projeto)|en\\s+(?:liste|projet|lista|proyecto)|(?:$START_DATE_KEYWORD_ALT)|(?:${ReceivedDateRules.KEYWORD_ALT})|date\\s+received)|$)",
         RegexOption.IGNORE_CASE
     )
     private val fromNowRegex = Regex("\\b(a|an|um|uma|un|una|une|$NUMBER_COUNT)\\s+($DAY_UNIT|$WEEK_UNIT|$MONTH_UNIT|$QUARTER_UNIT|$YEAR_UNIT)\\s+(?:from\\s+(?:now|today)|a\\s+partir\\s+de\\s+(?:agora|hoje|ahora|hoy)|à\\s+partir\\s+d['’]?aujourd['’]?hui)\\b", RegexOption.IGNORE_CASE)
@@ -904,16 +907,11 @@ object NaturalLanguageParser {
      * A backslash marks the next token as literal text, so a word the parser would otherwise
      * consume stays in the title: "buy milk \\tomorrow", "Meet \\Sunday Adekunle".
      *
-     * Two alternatives, in order. The first covers an escaped *trigger symbol* and the token it
-     * introduces (\\#tag, \\@name, \\+project, \\=list) — these used to be unescapable, because
-     * the pattern demanded a word character straight after the backslash and none of #@+= is one.
-     * The escape simply did not match, the entity rules claimed the mention as usual, and the
-     * stray backslash was left sitting in the finished title.
-     *
-     * The second covers a plain word, Unicode-aware rather than ASCII \w so a non-Latin name can
-     * be escaped too, and allowing "-" so a hyphenated word escapes whole.
+     * Protect the whole non-whitespace token, including entity prefixes, dots, colons and slashes.
+     * Otherwise escaping AM/PM or 3:30pm only protects the first fragment and later time rules
+     * can still consume the remaining PM. The backslash itself is removed when saving the title.
      */
-    private val escapeRegex = Regex("""\\([#@+=]\S*|[\p{L}\p{N}_-]+)""")
+    private val escapeRegex = Regex("""\\(\S+)""")
     private val highlightPrepositionRegex =
         Regex("(?:^|\\s)(for|on|at|by|from|to|in|scheduled\\s+for|remind\\s+me\\s+for|remind\\s+me\\s+on|para|el|a\\s+las?|às?|à|programad[ao]\\s+para|recu[eé]rdame\\s+para|recu[eé]rdame\\s+el)\\s*$", RegexOption.IGNORE_CASE)
 
@@ -1125,6 +1123,9 @@ object NaturalLanguageParser {
             }
         }
 
+        // Receipt dates claim their spans before scheduling rules can treat them as deadlines.
+        val receivedDate = ReceivedDateRules.apply(parserContext, boundedParseNested, weekdayNames, monthNames)
+
         // 1. Recurrence. Checked first so "every sunday" is claimed whole before due-date rules.
         val recurrenceResult = RecurrenceRules.apply(
             context = parserContext,
@@ -1199,11 +1200,13 @@ object NaturalLanguageParser {
         val sortedStrip = (sortedNormalizedHighlightSpans.map { it.range } + parserContext.stripOnlyRanges())
             .map { normalizedInput.toRawRange(it) }
             .sortedBy { it.first }
-        val title = cleanNaturalLanguageTitle(normalizedInput.raw, sortedStrip)
+        val protectedTitleRanges = parserContext.protectedRanges().map { normalizedInput.toRawRange(it) }
+        val title = cleanNaturalLanguageTitle(normalizedInput.raw, sortedStrip, protectedTitleRanges)
 
         val result = ParseState(
             due = due,
             startDate = startDate,
+            receivedDate = receivedDate,
             time = time,
             recurrence = recurrence,
             reminder = reminder,

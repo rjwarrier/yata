@@ -15,6 +15,24 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ## [Unreleased]
 
+### Added
+
+- Recognize common received-date typos and shorthand such as “recievd”, “rcvd dt”, “DOR:”, “ystrdy”, “lst Fri”, “biz days ago”, and “mths back”, while retaining receipt-context guards.
+
+- Date Received on tasks defaults to the creation date, can be changed with the date picker or natural-language phrases such as “received yesterday”, “rcvd on 12 Nov”, and “got on last Friday”, and supports oldest-first sorting (unset dates appear last).
+- More received-date phrases, including “receipt date”, “was received on”, “came through on”, “picked up on”, “Friday last week”, “business days ago” (Monday–Friday), and “end of last month”.
+
+### Fixed
+
+- Saving an unchanged title from the rename dialog no longer reinterprets existing literal words such as “PM” as task metadata.
+
+- Preserve escaped AM/PM and other literal text when saving task titles, including whole tokens such as “\AM/PM”, “\P.M.”, and “\3:30pm”.
+
+- Isolate received-date recognition from entity names, negated/conditional wording, clocks, and ambiguous future plans. Preserve start dates, recurrence endings, reminders, and entity references when receipt metadata is added.
+
+- Keep received-date defaults independent between bulk task rows and refresh the creation-day default when saving after midnight. Manual date selections take priority.
+- Preserve explicit future received dates and short years; resolve yearless leap days to the most recent valid date.
+
 ## [0.96.5] - 2026-11-05
 
 `versionCode 33`. Upgrades in place over 0.96.2.

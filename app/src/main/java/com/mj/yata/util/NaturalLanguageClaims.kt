@@ -57,4 +57,6 @@ internal class ClaimTracker {
         }
 
     fun stripOnlyRanges(): List<IntRange> = stripOnly.toList()
+
+    fun protectedRanges(): List<IntRange> = escapedRanges.toList()
 }

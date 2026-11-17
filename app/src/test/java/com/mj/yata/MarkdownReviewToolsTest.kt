@@ -13,6 +13,19 @@ class MarkdownReviewToolsTest {
     private fun previews(text: String) = MarkdownTaskParser.parse(text, LocalDate.of(2026, 10, 27), LocalTime.of(9, 0), true)
         .prepareSmartImport(context, null, "list", true)
 
+    @Test fun `receipt dates survive import review editing merge and undo`() {
+        val row = previews("- Review received yesterday").single().task
+        assertEquals("2026-10-26", row.receivedDate)
+        val edited = row.copy(receivedDate = "2026-10-20")
+        val review = MarkdownImportReview().withTaskEdit(0, row, edited)
+        assertTrue("received" in review.edits.getValue(0).fields)
+        val before = row.copy(receivedDate = "2026-10-01")
+        val (after, changes) = markdownChangedFields(before, edited)
+        assertEquals("2026-10-20", after.receivedDate)
+        assertTrue(MarkdownUpdateField.RECEIVED in changes)
+        assertEquals(before.receivedDate, undoMarkdownUpdate(before, after, after).receivedDate)
+    }
+
     @Test fun `mapping memory round trips Unicode punctuation and normalized names`() {
         val mappings = mapOf("#School: office" to "id:α/1", "@മാല" to "person-2", "+हिंदी" to "project")
         val restored = MarkdownReferenceCodec.decode(MarkdownReferenceCodec.encode(mappings))

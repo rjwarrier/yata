@@ -34,12 +34,12 @@ internal object EntityRules {
         Regex("^\\s*(?:\"([^\"]+)\"|'([^']+)'|([$ENTITY_NAME_CHARS]+?))\\s*$")
 
     private val projectEntityRegex = Regex(
-        "(?<![\\p{L}\\p{N}_])(?:\\+|plus\\s+project\\b|in\\s+project\\b|for\\s+project\\b|under\\s+project\\b|project\\b|en\\s+proyecto\\b|para\\s+proyecto\\b|bajo\\s+proyecto\\b|proyecto\\b|em\\s+projeto\\b|para\\s+projeto\\b|projeto\\b|dans\\s+projet\\b|pour\\s+projet\\b|projet\\b)\\s*(\"[^\"]+\"|'[^']+'|[$ENTITY_NAME_CHARS]+?)(?=$|\\s+(?:$ENTITY_WORD_BOUNDARY))",
+        "(?<![\\p{L}\\p{N}_])(?:\\+|plus\\s+project\\b|in\\s+project\\b|for\\s+project\\b|under\\s+project\\b|project\\b|en\\s+proyecto\\b|para\\s+proyecto\\b|bajo\\s+proyecto\\b|proyecto\\b|em\\s+projeto\\b|para\\s+projeto\\b|projeto\\b|dans\\s+projet\\b|pour\\s+projet\\b|projet\\b)\\s*(\"[^\"]+\"|'[^']+'|[$ENTITY_NAME_CHARS]+?)(?=$|[;,]|\\s+(?:$ENTITY_WORD_BOUNDARY))",
         RegexOption.IGNORE_CASE
     )
 
     private val listEntityRegex = Regex(
-        "(?<![\\p{L}\\p{N}_])(?:=|equals\\s+list\\b|in\\s+list\\b|for\\s+list\\b|under\\s+list\\b|list\\b|en\\s+lista\\b|para\\s+lista\\b|bajo\\s+lista\\b|lista\\b|em\\s+lista\\b|dans\\s+liste\\b|pour\\s+liste\\b|liste\\b)\\s*(\"[^\"]+\"|'[^']+'|[$ENTITY_NAME_CHARS]+?)(?=$|\\s+(?:$ENTITY_WORD_BOUNDARY))",
+        "(?<![\\p{L}\\p{N}_])(?:=|equals\\s+list\\b|in\\s+list\\b|for\\s+list\\b|under\\s+list\\b|list\\b|en\\s+lista\\b|para\\s+lista\\b|bajo\\s+lista\\b|lista\\b|em\\s+lista\\b|dans\\s+liste\\b|pour\\s+liste\\b|liste\\b)\\s*(\"[^\"]+\"|'[^']+'|[$ENTITY_NAME_CHARS]+?)(?=$|[;,]|\\s+(?:$ENTITY_WORD_BOUNDARY))",
         RegexOption.IGNORE_CASE
     )
 
@@ -49,9 +49,24 @@ internal object EntityRules {
     )
 
     private val assigneeEntityRegex = Regex(
-        "(?<![\\p{L}\\p{N}_])(?:assign(?:ed)?\\s+to\\s+|give(?:n)?\\s+to\\s+|delegate(?:d)?\\s+to\\s+|send\\s+to\\s+|assign\\s+|asignad[ao]\\s+a\\s+|asignar\\s+a\\s+|delegad[ao]\\s+a\\s+|delegar\\s+a\\s+|enviar\\s+a\\s+|atribu[iÃ­]d[ao]\\s+a\\s+|atribuir\\s+a\\s+|delegar\\s+para\\s+|enviar\\s+para\\s+|assignÃ©\\s+Ã \\s+|assign\\u00e9\\s+\\u00e0\\s+|assigne\\s+a\\s+|assigner\\s+Ã \\s+|assigner\\s+\\u00e0\\s+|assigner\\s+a\\s+|dÃ©lÃ©guÃ©\\s+Ã \\s+|d\\u00e9l\\u00e9gu\\u00e9\\s+\\u00e0\\s+|delegue\\s+a\\s+|dÃ©lÃ©guer\\s+Ã \\s+|d\\u00e9l\\u00e9guer\\s+\\u00e0\\s+|deleguer\\s+a\\s+|envoyer\\s+Ã \\s+|envoyer\\s+\\u00e0\\s+|envoyer\\s+a\\s+|at\\s+sign\\s+|@)(\"[^\"]+\"|'[^']+'|[$ENTITY_NAME_CHARS]+?)(?=$|\\s+(?:$ENTITY_WORD_BOUNDARY))",
+        "(?<![\\p{L}\\p{N}_])(?:assign(?:ed)?\\s+to\\s+|give(?:n)?\\s+to\\s+|delegate(?:d)?\\s+to\\s+|send\\s+to\\s+|assign\\s+|asignad[ao]\\s+a\\s+|asignar\\s+a\\s+|delegad[ao]\\s+a\\s+|delegar\\s+a\\s+|enviar\\s+a\\s+|atribu[iÃ­]d[ao]\\s+a\\s+|atribuir\\s+a\\s+|delegar\\s+para\\s+|enviar\\s+para\\s+|assignÃ©\\s+Ã \\s+|assign\\u00e9\\s+\\u00e0\\s+|assigne\\s+a\\s+|assigner\\s+Ã \\s+|assigner\\s+\\u00e0\\s+|assigner\\s+a\\s+|dÃ©lÃ©guÃ©\\s+Ã \\s+|d\\u00e9l\\u00e9gu\\u00e9\\s+\\u00e0\\s+|delegue\\s+a\\s+|dÃ©lÃ©guer\\s+Ã \\s+|d\\u00e9l\\u00e9guer\\s+\\u00e0\\s+|deleguer\\s+a\\s+|envoyer\\s+Ã \\s+|envoyer\\s+\\u00e0\\s+|envoyer\\s+a\\s+|at\\s+sign\\s+|@)(\"[^\"]+\"|'[^']+'|[$ENTITY_NAME_CHARS]+?)(?=$|[;,]|\\s+(?:$ENTITY_WORD_BOUNDARY))",
         RegexOption.IGNORE_CASE
     )
+
+    /** Read-only guards for receipt recognition. Reserve quoted names and the first name token,
+     * allowing "project Work received yesterday" while protecting "project Received tomorrow".
+     * This never claims text or changes the existing entity/date rule ordering. */
+    fun receiptNameRanges(context: ParserContext): List<IntRange> = buildList {
+        for (regex in listOf(projectEntityRegex, listEntityRegex, tagEntityRegex, assigneeEntityRegex)) {
+            for (match in regex.findAll(context.raw)) {
+                val group = match.groups[1] ?: continue
+                val value = group.value
+                val length = if (value.startsWith('"') || value.startsWith('\'')) value.length
+                    else value.indexOfFirst { it.isWhitespace() }.takeIf { it >= 0 } ?: value.length
+                if (length > 0) add(group.range.first until (group.range.first + length))
+            }
+        }
+    }
 
     fun apply(context: ParserContext): EntityParseResult {
         var projectName: String? = null

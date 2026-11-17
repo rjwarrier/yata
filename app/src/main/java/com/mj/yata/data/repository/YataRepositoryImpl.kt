@@ -134,6 +134,10 @@ class YataRepositoryImpl @Inject constructor(
                 val existing = writeSnapshots[task.id]
                 val entity = task.toEntity().let {
                     it.copy(
+                        receivedDate = it.receivedDate ?: if (existing == null && preserveExistingCreatedAt) {
+                            java.time.Instant.ofEpochMilli(it.createdAt ?: now)
+                                .atZone(java.time.ZoneId.systemDefault()).toLocalDate().toString()
+                        } else null,
                         createdAt = if (preserveExistingCreatedAt) {
                             existing?.createdAt ?: it.createdAt ?: now
                         } else {

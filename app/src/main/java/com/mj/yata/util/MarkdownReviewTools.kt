@@ -77,7 +77,7 @@ fun markdownImportSummary(previews: List<MarkdownTaskPreview>, selected: Set<Int
     return MarkdownImportSummary(created, updates.size - unchanged.size, skipped, unresolved.size)
 }
 
-enum class MarkdownUpdateField { TITLE, PROJECT, LIST, DUE, START, TIME, REMINDER, RECURRENCE, PRIORITY, FLAG, DONE, PEOPLE, TAGS, NOTES, SUBTASKS, ESTIMATE }
+enum class MarkdownUpdateField { TITLE, PROJECT, LIST, DUE, START, RECEIVED, TIME, REMINDER, RECURRENCE, PRIORITY, FLAG, DONE, PEOPLE, TAGS, NOTES, SUBTASKS, ESTIMATE }
 
 fun markdownChangedFields(before: Task, incoming: Task): Pair<Task, Set<MarkdownUpdateField>> {
     val after = mergeMarkdownTask(before, incoming)
@@ -87,6 +87,7 @@ fun markdownChangedFields(before: Task, incoming: Task): Pair<Task, Set<Markdown
         if (before.listId != after.listId) add(MarkdownUpdateField.LIST)
         if (before.due != after.due) add(MarkdownUpdateField.DUE)
         if (before.startDate != after.startDate) add(MarkdownUpdateField.START)
+        if (before.receivedDate != after.receivedDate) add(MarkdownUpdateField.RECEIVED)
         if (before.time != after.time) add(MarkdownUpdateField.TIME)
         if (before.reminder != after.reminder) add(MarkdownUpdateField.REMINDER)
         if (before.recurrence != after.recurrence) add(MarkdownUpdateField.RECURRENCE)

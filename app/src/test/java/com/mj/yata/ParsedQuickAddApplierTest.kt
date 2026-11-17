@@ -30,12 +30,12 @@ class ParsedQuickAddApplierTest {
     @Test fun allFieldsApplyInOneCopyAndBatchLookupMatchesTheRegularPath() {
         val base = task()
         val parsed = NaturalLanguageParser.parse("Review").copy(
-            due = "2026-11-01", startDate = "2026-10-28", time = "3:00 PM",
+            due = "2026-11-01", startDate = "2026-10-28", receivedDate = "2026-10-01", time = "3:00 PM",
             reminder = "15 min before", recurrence = Recurrence("weekly", 1), priority = "high", flag = true,
             projectName = "Work", tagNames = listOf("Urgent"), assigneeNames = listOf("Alan")
         )
         val expected = base.copy(
-            due = parsed.due, startDate = parsed.startDate, time = parsed.time, reminder = parsed.reminder,
+            due = parsed.due, startDate = parsed.startDate, receivedDate = parsed.receivedDate, time = parsed.time, reminder = parsed.reminder,
             recurrence = parsed.recurrence, priority = "high", flag = true, listId = null, projectId = "project_work",
             tagIds = listOf("existing", "tag_urgent"), assigneeIds = listOf("owner", "p_alan")
         )
@@ -44,7 +44,7 @@ class ParsedQuickAddApplierTest {
             tags = tags, projectsEnabled = true, tagsEnabled = true, peopleEnabled = true))
         assertEquals(expected, base.withParsedQuickAdd(parsed, lists = lists, projects = projects, people = people,
             tags = tags, projectsEnabled = true, tagsEnabled = true, peopleEnabled = true, entityLookup = lookup))
-        val ignored = setOf("due", "start", "time", "reminder", "recurrence", "priority", "flag", "project", "list", "tags", "people")
+        val ignored = setOf("due", "start", "received", "time", "reminder", "recurrence", "priority", "flag", "project", "list", "tags", "people")
         assertEquals(base, base.withParsedQuickAdd(parsed, ignored, lists, projects, people, tags, true, true, true, lookup))
     }
 

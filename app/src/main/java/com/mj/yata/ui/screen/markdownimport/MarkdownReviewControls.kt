@@ -152,7 +152,7 @@ internal fun MarkdownPreviewEditor(
     }
     val draft = remember(task) { NewTaskDraft(task.title, task.listId, task.priority, task.assigneeIds, task.tagIds,
         task.recurrence, task.due, task.startDate, task.time, task.reminder, task.section, task.projectId,
-        task.notes, task.subtasks, task.flag, task.estimateMinutes) }
+        task.notes, task.subtasks, task.flag, task.estimateMinutes, receivedDate = task.receivedDate) }
     Dialog(onDismissRequest = { if (pending == 0) onDismiss() },
         properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
         Surface(Modifier.fillMaxSize()) {
@@ -172,7 +172,7 @@ internal fun MarkdownPreviewEditor(
                             onSave(task.copy(title = edited.title, listId = edited.listId, projectId = edited.projectId,
                                 priority = edited.priority, assigneeIds = edited.assigneeIds.mapNotNull { (aliases[it] ?: it).takeIf(String::isNotBlank) }.distinct(),
                                 tagIds = edited.tagIds.mapNotNull { (aliases[it] ?: it).takeIf(String::isNotBlank) }.distinct(), recurrence = edited.recurrence,
-                                due = edited.due, startDate = edited.startDate, time = edited.time, reminder = edited.reminder,
+                                due = edited.due, startDate = edited.startDate, receivedDate = edited.receivedDate, time = edited.time, reminder = edited.reminder,
                                 section = edited.section, notes = edited.notes, subtasks = edited.subtasks, flag = edited.flag,
                                 estimateMinutes = edited.estimateMinutes))
                         }

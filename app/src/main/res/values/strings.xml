@@ -1896,4 +1896,7 @@
     <string name="sync_fix_passphrase">The saved copy could not be unlocked, or its backup passphrase is missing.\n\nUse the same backup passphrase on every device. This is not your GitHub password or token. If it is correct, the copy may be damaged. Back up useful tasks before trying an older copy.</string>
     <string name="sync_fix_network">YATA could not reach the server.\n\nCheck your internet connection and server address. Try again when connected. If it still fails, check whether the server is available.</string>
     <string name="sync_fix_other">YATA could not finish this operation.\n\nCheck the error shown on the screen and open Sync help online below. Keep a file backup of useful tasks before changing settings. Do not clear app storage to fix a sync error.</string>
+    <string name="task_date_received">Date Received</string>
+    <string name="task_date_received_none">No received date</string>
+    <string name="smart_add_received">Received %1$s</string>
 </resources>

@@ -198,7 +198,9 @@ data class Task(
     val postponementCount: Int = 0,
     // Whole minutes logged with the focus timer, compared against [estimateMinutes] on Analytics.
     // A recurring task's live row starts each occurrence at 0; completed instances keep theirs.
-    val trackedMinutes: Int = 0
+    val trackedMinutes: Int = 0,
+    // Date the work was received, independent of scheduling and task creation.
+    val receivedDate: String? = null // "YYYY-MM-DD"
 )
 
 /**

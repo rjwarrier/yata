@@ -8,6 +8,7 @@ import java.time.LocalDate
 internal data class ParseState(
     val due: LocalDate?,
     val startDate: LocalDate?,
+    val receivedDate: LocalDate?,
     val time: String?,
     val recurrence: Recurrence?,
     val reminder: String?,
@@ -27,6 +28,7 @@ internal data class ParseState(
             title = title,
             due = due?.toString(),
             startDate = startDate?.toString(),
+            receivedDate = receivedDate?.toString(),
             time = time,
             recurrence = recurrence,
             reminder = reminder,

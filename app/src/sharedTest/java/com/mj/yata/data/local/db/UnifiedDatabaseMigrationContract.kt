@@ -18,6 +18,7 @@ abstract class UnifiedDatabaseMigrationContract {
     protected abstract fun fixture(name: String): String
 
     @Test fun common32FollowsRegisteredMigrationChain() = verifyUpgrade("common-32", false, null)
+    @Test fun unified36AddsReceivedDate() = verifyUpgrade("unified-36", true, 42)
     @Test fun common33Upgrades() = verifyUpgrade("common-33", false, null)
     @Test fun master34PreservesTrackedTime() = verifyUpgrade("master-34", false, 42)
     @Test fun groups34PreservesGroups() = verifyUpgrade("groups-34", true, null)
@@ -32,7 +33,7 @@ abstract class UnifiedDatabaseMigrationContract {
         try {
             Room.databaseBuilder(context, AppDatabase::class.java, name).build().closeAfter { room ->
                 val db = room.openHelper.writableDatabase
-                assertEquals(36, db.version)
+                assertEquals(37, db.version)
                 assertTrue(hasColumn(db, "projects", "groupId"))
                 assertTrue(hasColumn(db, "tasks", "trackedMinutes"))
             }
@@ -89,6 +90,7 @@ abstract class UnifiedDatabaseMigrationContract {
                     put("id", "task"); put("title", "Keep me searchable")
                     put("projectId", "project"); put("listId", "list")
                     put("ownerId", "me")
+                    if (name == "unified-36") put("createdAt", 1793520000000L)
                     if (hasColumn(db, "tasks", "postponementCount")) put("postponementCount", 3)
                     if (hasColumn(db, "tasks", "trackedMinutes")) put("trackedMinutes", tracked)
                 })
@@ -117,7 +119,19 @@ abstract class UnifiedDatabaseMigrationContract {
                 .addMigrations(*AppDatabase.MIGRATIONS)
                 .build().closeAfter { room ->
                     val db = room.openHelper.writableDatabase // Runs migration AND Room schema validation.
-                    assertEquals(36, db.version)
+                    assertEquals(37, db.version)
+                    db.query("SELECT receivedDate FROM tasks WHERE id='task'").use {
+                        assertTrue(it.moveToFirst())
+                        if (name == "unified-36") {
+                            assertEquals(java.time.Instant.ofEpochMilli(1793520000000L)
+                                .atZone(java.time.ZoneId.systemDefault()).toLocalDate().toString(), it.getString(0))
+                        } else assertTrue(it.isNull(0))
+                    }
+                    db.execSQL("UPDATE tasks SET receivedDate='2026-11-01' WHERE id='task'")
+                    db.query("SELECT receivedDate FROM tasks WHERE id='task'").use {
+                        assertTrue(it.moveToFirst())
+                        assertEquals("2026-11-01", it.getString(0))
+                    }
                     db.query("SELECT trackedMinutes, postponementCount, projectId, ownerId FROM tasks WHERE id='task'").use {
                         assertTrue(it.moveToFirst())
                         assertEquals(tracked ?: 0, it.getInt(0))

@@ -225,6 +225,7 @@ fun TaskDetailScreen(
     // Subtask input state
     var newSubtaskTitle by remember { mutableStateOf("") }
     var showDatePicker by remember { mutableStateOf(false) }
+    var showReceivedDatePicker by remember { mutableStateOf(false) }
     var showStartDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
     var showReminderTimePicker by remember { mutableStateOf(false) }
@@ -786,6 +787,11 @@ fun TaskDetailScreen(
                                     restoreSmartField("due") { current, baseline -> current.copy(due = baseline?.due) }
                                 })
                             },
+                            quickAdd.receivedDate?.takeIf { "received" !in effectiveIgnoredTitleQuickAddFields }?.let {
+                                DetectedQuickAddChip(stringResource(R.string.smart_add_received, TaskScheduleUtils.formatDueDate(it)), { showReceivedDatePicker = true }, {
+                                    restoreSmartField("received") { current, baseline -> current.copy(receivedDate = baseline?.receivedDate) }
+                                })
+                            },
                             quickAdd.startDate?.takeIf { "start" !in effectiveIgnoredTitleQuickAddFields }?.let {
                                 DetectedQuickAddChip(stringResource(R.string.smart_add_starts, TaskScheduleUtils.formatDueDate(it)), { activeSheet = DetailSheetType.ScheduleEditor }, {
                                     restoreSmartField("start") { current, baseline -> current.copy(startDate = baseline?.startDate) }
@@ -987,6 +993,17 @@ fun TaskDetailScreen(
                             }
                         },
                         onClick = { activeSheet = DetailSheetType.ScheduleEditor }
+                    )
+
+                    MetaRowItem(
+                        icon = Icons.Default.EventAvailable,
+                        label = stringResource(R.string.task_date_received),
+                        value = task.receivedDate?.let { com.mj.yata.util.TaskScheduleUtils.formatDueDate(it) }
+                            ?: stringResource(R.string.task_date_received_none),
+                        accentColor = if (task.receivedDate != null) MaterialTheme.colorScheme.secondary else null,
+                        defaultValue = task.receivedDate == null,
+                        modifier = itemModifier,
+                        onClick = { showReceivedDatePicker = true }
                     )
 
                     // Only shown once a start date exists. An always-present "No start date" row
@@ -2067,6 +2084,21 @@ fun TaskDetailScreen(
             onConfirm = {
                 viewModel.upsertTask(task.copy(due = it), skipRescheduleWarning = true)
                 showDatePicker = false
+            }
+        )
+    }
+
+    if (showReceivedDatePicker) {
+        YataDatePickerDialog(
+            initialDate = task.receivedDate,
+            onDismiss = { showReceivedDatePicker = false },
+            onClear = {
+                viewModel.upsertTask(task.copy(receivedDate = null))
+                showReceivedDatePicker = false
+            },
+            onConfirm = {
+                viewModel.upsertTask(task.copy(receivedDate = it))
+                showReceivedDatePicker = false
             }
         )
     }

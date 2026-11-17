@@ -1419,6 +1419,7 @@ fun MainScreen(
                         recurrence = parsed.recurrence,
                         due = parsed.due ?: resolved.projectDue ?: defaultDueDate.resolve(),
                         startDate = parsed.startDate,
+                        receivedDate = parsed.receivedDate,
                         time = parsed.time,
                         reminder = parsed.reminder,
                         section = "",

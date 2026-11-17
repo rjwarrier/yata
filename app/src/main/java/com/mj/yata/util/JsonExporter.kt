@@ -407,6 +407,7 @@ class JsonExporter @Inject constructor(
             o.put("section", t.section)
             o.put("due", t.due ?: JSONObject.NULL)
             o.put("startDate", t.startDate ?: JSONObject.NULL)
+            o.put("receivedDate", t.receivedDate ?: JSONObject.NULL)
             o.put("time", t.time ?: JSONObject.NULL)
             o.put("reminder", t.reminder ?: JSONObject.NULL)
             o.put("priority", t.priority)
@@ -874,6 +875,7 @@ class JsonExporter @Inject constructor(
             row.requireOptionalString("projectId")
             row.requireOptionalString("due")
             row.requireOptionalString("startDate")
+            row.requireOptionalString("receivedDate")
             row.requireOptionalString("time")
             row.requireOptionalString("reminder")
             row.requireOptionalString("notes")
@@ -1183,6 +1185,7 @@ class JsonExporter @Inject constructor(
             row.requireOptionalString("priority")
             row.requireOptionalString("due")
             row.requireOptionalString("startDate")
+            row.requireOptionalString("receivedDate")
             row.requireOptionalString("time")
             row.requireOptionalString("reminder")
             row.requireOptionalString("notes")
@@ -1604,6 +1607,7 @@ class JsonExporter @Inject constructor(
                                 // Absent in any backup written before start dates existed, which
                                 // reads as null — "available now", the behaviour those tasks had.
                                 startDate = if (o.isNull("startDate")) null else o.optString("startDate", null),
+                                receivedDate = if (o.isNull("receivedDate")) null else o.optString("receivedDate", null),
                                 time = if (o.isNull("time")) null else o.optString("time"),
                                 reminder = if (o.isNull("reminder")) null else o.optString("reminder"),
                                 priority = o.getString("priority"),

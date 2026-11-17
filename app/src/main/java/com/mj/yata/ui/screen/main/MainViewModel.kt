@@ -1939,6 +1939,7 @@ data class WeekendRescheduleWarning(
         notes = draft.notes,
         due = draft.due,
         startDate = draft.startDate,
+        receivedDate = draft.receivedDate,
         time = draft.time,
         reminder = draft.reminder,
         section = draft.section,
@@ -1964,7 +1965,8 @@ data class WeekendRescheduleWarning(
         projectId: String? = null,
         subtasks: List<Subtask> = emptyList(),
         flag: Boolean = false,
-        estimateMinutes: Int? = null
+        estimateMinutes: Int? = null,
+        receivedDate: String? = null
     ) {
         safeLaunch {
             val newTask = Task(
@@ -1975,6 +1977,7 @@ data class WeekendRescheduleWarning(
                 section = section,
                 due = due,
                 startDate = startDate,
+                receivedDate = receivedDate,
                 time = time,
                 reminder = reminder,
                 priority = priority,
@@ -2023,6 +2026,9 @@ data class WeekendRescheduleWarning(
         if (trimmed.isBlank()) return
         safeLaunch {
             val task = tasks.value.find { it.id == id } ?: return@safeLaunch
+            // A saved title may contain literals whose escape markers were removed on creation.
+            // Saving the unchanged dialog must not reinterpret those words as fresh metadata.
+            if (trimmed == task.title.trim()) return@safeLaunch
             val parsed = NaturalLanguageParser.parse(trimmed)
             val parsedTitle = parsed.title.ifBlank { trimmed }
             val updated = task.copy(title = parsedTitle).withParsedQuickAdd(

@@ -163,6 +163,49 @@ class UnifiedBackupRoundTripTest {
         }
     }
 
+    @Test fun escapedTitleTextSurvivesSavingEditingAndBackupRestore() = runBlocking {
+        val parsed = com.mj.yata.util.NaturalLanguageParser.parse("Review \\AM/PM tomorrow at 3pm", java.time.LocalDate.of(2026, 11, 17))
+        assertEquals("Review AM/PM", parsed.title)
+        store().use { source ->
+            source.repository.upsertTask(Task(
+                id = "literal", title = parsed.title, listId = null, projectId = null, section = "",
+                due = parsed.due, time = parsed.time, reminder = null, priority = "none", flag = false, done = false,
+                assigneeIds = emptyList(), tagIds = emptyList(), recurrence = null, subtasks = emptyList(), notes = null
+            ))
+            val saved = source.repository.getTasks().first().single()
+            assertEquals("Review AM/PM", saved.title)
+            source.repository.upsertTask(saved.copy(notes = "Updated notes"))
+            store().use { target ->
+                assertTrue(target.exporter.importBytes(source.exporter.exportToBytes()))
+                val restored = target.repository.getTasks().first().single()
+                assertEquals("Review AM/PM", restored.title)
+                assertEquals("3:00 PM", restored.time)
+            }
+        }
+    }
+
+    @Test fun newTasksDefaultToCreationDateWhileEditsKeepOverridesAndClears() = runBlocking {
+        store().use { target ->
+            val original = Task(
+                id = "receipt", title = "Receipt", listId = null, projectId = null, section = "",
+                due = null, time = null, reminder = null, priority = "none", flag = false, done = false,
+                assigneeIds = emptyList(), tagIds = emptyList(), recurrence = null,
+                subtasks = emptyList(), notes = null, createdAt = 1793520000000L
+            )
+            target.repository.upsertTask(original)
+            var saved = target.repository.getTasks().first().single()
+            assertEquals(java.time.Instant.ofEpochMilli(original.createdAt!!)
+                .atZone(java.time.ZoneId.systemDefault()).toLocalDate().toString(), saved.receivedDate)
+            target.repository.upsertTask(saved.copy(receivedDate = "2026-10-10"))
+            saved = target.repository.getTasks().first().single()
+            assertEquals("2026-10-10", saved.receivedDate)
+            target.repository.upsertTask(saved.copy(title = "Edited"))
+            assertEquals("2026-10-10", target.repository.getTasks().first().single().receivedDate)
+            target.repository.upsertTask(saved.copy(receivedDate = null))
+            assertEquals(null, target.repository.getTasks().first().single().receivedDate)
+        }
+    }
+
     @Test fun backupImportAndRepeatedSyncPreserveGroupsAndTrackedTime() = runBlocking {
         store().use { source ->
             source.repository.upsertPerson(Person("me", "You", "Y", "accentA", isMe = true))
@@ -172,7 +215,7 @@ class UnifiedBackupRoundTripTest {
                 id = "task", title = "Tracked", listId = null, projectId = "project", section = "",
                 due = null, time = null, reminder = null, priority = "none", flag = false, done = false,
                 assigneeIds = listOf("me"), tagIds = emptyList(), recurrence = null,
-                subtasks = emptyList(), notes = null, trackedMinutes = 42
+                subtasks = emptyList(), notes = null, trackedMinutes = 42, receivedDate = "2026-10-10"
             ))
             val bytes = source.exporter.exportToBytes()
             val original = SnapshotMerger.normalizeForSync(JSONObject(String(bytes)))
@@ -182,6 +225,7 @@ class UnifiedBackupRoundTripTest {
                 assertEquals("Work", target.repository.getProjectGroups().first().single().name)
                 assertEquals("group", target.repository.getProjects().first().single().groupId)
                 assertEquals(42, target.repository.getTasks().first().single().trackedMinutes)
+                assertEquals("2026-10-10", target.repository.getTasks().first().single().receivedDate)
                 repeat(2) {
                     assertTrue(target.exporter.replaceBytesForSync(original.toString().toByteArray()))
                     val restored = SnapshotMerger.normalizeForSync(JSONObject(String(target.exporter.exportToBytes())))

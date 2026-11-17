@@ -75,5 +75,7 @@ data class TaskEntity(
     // Counts due-date pushes to a later date; see Task.postponementCount.
     val postponementCount: Int = 0,
     // Focus-timer minutes logged against this task; see Task.trackedMinutes.
-    val trackedMinutes: Int = 0
+    val trackedMinutes: Int = 0,
+    // Date the work was received, independent of scheduling and task creation.
+    val receivedDate: String? = null // "YYYY-MM-DD"
 )

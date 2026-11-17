@@ -1,5 +1,6 @@
 package com.mj.yata.ui.widgets
 
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DatePicker
@@ -22,6 +23,7 @@ import com.mj.yata.util.TaskScheduleUtils
 fun YataDatePickerDialog(
     initialDate: String?,
     onDismiss: () -> Unit,
+    onClear: (() -> Unit)? = null,
     onConfirm: (String) -> Unit
 ) {
     val datePickerState = rememberDatePickerState(
@@ -41,8 +43,13 @@ fun YataDatePickerDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.action_cancel))
+            Row {
+                if (onClear != null) {
+                    TextButton(onClick = onClear) { Text(stringResource(R.string.action_clear)) }
+                }
+                TextButton(onClick = onDismiss) {
+                    Text(stringResource(R.string.action_cancel))
+                }
             }
         }
     ) {

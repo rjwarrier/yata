@@ -242,6 +242,7 @@ class QuickAddDialogActivity : ComponentActivity() {
                                 // widget-created task out of Today, which is the opposite of what
                                 // a quick-add is for.
                                 startDate = parsedTyped.startDate ?: parsedShared?.startDate,
+                                receivedDate = parsedTyped.receivedDate ?: parsedShared?.receivedDate,
                                 time = parsedTyped.time ?: parsedShared?.time,
                                 reminder = parsedTyped.reminder ?: parsedShared?.reminder,
                                 priority = parsedTyped.priority ?: "none",

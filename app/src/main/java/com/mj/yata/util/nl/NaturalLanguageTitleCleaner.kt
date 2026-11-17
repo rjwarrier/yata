@@ -14,7 +14,7 @@ private val FILLER_CONNECTOR_WORDS = setOf("from", "to", "at", "in", "on", "by",
  * between a claimed project mention and a claimed date. A gap containing anything else (even one
  * extra word) is left alone; this only removes a word that has nothing to connect to anymore, not
  * one still doing a job in the sentence. */
-private fun bridgeFillerGaps(raw: String, ranges: List<IntRange>): List<IntRange> {
+private fun bridgeFillerGaps(raw: String, ranges: List<IntRange>, protectedRanges: List<IntRange>): List<IntRange> {
     val sorted = ranges.sortedBy { it.first }
     if (sorted.size < 2) return sorted
     val bridged = mutableListOf<IntRange>()
@@ -22,7 +22,9 @@ private fun bridgeFillerGaps(raw: String, ranges: List<IntRange>): List<IntRange
         val previous = bridged.lastOrNull()
         if (previous != null && range.first > previous.last + 1) {
             val gap = raw.substring(previous.last + 1, range.first).trim()
-            if (gap.lowercase() in FILLER_CONNECTOR_WORDS) {
+            if (gap.lowercase() in FILLER_CONNECTOR_WORDS && protectedRanges.none {
+                    it.first < range.first && it.last > previous.last
+                }) {
                 bridged[bridged.lastIndex] = previous.first..range.last
                 continue
             }
@@ -32,26 +34,31 @@ private fun bridgeFillerGaps(raw: String, ranges: List<IntRange>): List<IntRange
     return bridged
 }
 
-internal fun cleanNaturalLanguageTitle(raw: String, stripRanges: List<IntRange>): String {
-    val bridgedRanges = bridgeFillerGaps(raw, stripRanges)
-    val titleRaw = buildString {
-        var cursor = 0
-        for (range in bridgedRanges.sortedBy { it.first }) {
-            if (range.first > cursor) append(raw, cursor, range.first)
-            cursor = (range.last + 1).coerceAtLeast(cursor)
-        }
-        if (cursor < raw.length) append(raw, cursor, raw.length)
+/** Strip recognized metadata and its escape markers, preserving protected literal characters.
+ * AM/PM belongs to a time only when a time rule claimed it; cleanup must not infer new metadata. */
+internal fun cleanNaturalLanguageTitle(
+    raw: String,
+    stripRanges: List<IntRange>,
+    protectedRanges: List<IntRange> = emptyList()
+): String {
+    val bridgedRanges = bridgeFillerGaps(raw, stripRanges, protectedRanges)
+    val retained = mutableListOf<Int>()
+    var cursor = 0
+    for (range in bridgedRanges.sortedBy { it.first }) {
+        if (range.first > cursor) retained.addAll(cursor until range.first)
+        cursor = (range.last + 1).coerceAtLeast(cursor)
+    }
+    if (cursor < raw.length) retained.addAll(cursor until raw.length)
+
+    fun removable(index: Int): Boolean = raw[index].isWhitespace() ||
+        (raw[index] in ".,;:_-/\\" && protectedRanges.none { index in it })
+    var first = 0
+    var last = retained.lastIndex
+    while (first <= last && removable(retained[first])) first++
+    while (last >= first && removable(retained[last])) last--
+    val title = buildString {
+        for (position in first..last) append(raw[retained[position]])
     }.replace(Regex("\\s{2,}"), " ").trim()
 
-    var titleClean = titleRaw
-    repeat(3) {
-        titleClean = titleClean
-            .replace(Regex("\\b(a\\.?\\s*m\\.?|p\\.?\\s*m\\.?)\\b", RegexOption.IGNORE_CASE), "")
-            .replace(Regex("[.,;:_\\-/\\\\]+$"), "")
-            .replace(Regex("^\\s*[.,;:_\\-/\\\\]+"), "")
-            .replace(Regex("\\s{2,}"), " ")
-            .trim()
-    }
-
-    return if (titleClean.isNotBlank()) titleClean else raw.replace(Regex("[.,;:_\\-/\\\\]+$"), "").trim()
+    return if (title.isNotBlank()) title else raw.replace(Regex("[.,;:_\\-/\\\\]+$"), "").trim()
 }

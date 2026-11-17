@@ -690,6 +690,7 @@ private fun MarkdownUpdateChanges(before: Task, incoming: Task, labels: Markdown
             MarkdownUpdateField.LIST -> R.string.entity_list
             MarkdownUpdateField.DUE -> R.string.task_detail_due_date
             MarkdownUpdateField.START -> R.string.task_start_date
+            MarkdownUpdateField.RECEIVED -> R.string.task_date_received
             MarkdownUpdateField.TIME -> R.string.new_task_time
             MarkdownUpdateField.REMINDER -> R.string.task_detail_reminder
             MarkdownUpdateField.RECURRENCE -> R.string.new_task_repeat
@@ -716,6 +717,7 @@ private fun markdownChangeValue(field: MarkdownUpdateField, task: Task, labels: 
         MarkdownUpdateField.LIST -> labels.lists[task.listId]
         MarkdownUpdateField.DUE -> task.due
         MarkdownUpdateField.START -> task.startDate
+        MarkdownUpdateField.RECEIVED -> task.receivedDate
         MarkdownUpdateField.TIME -> task.time
         MarkdownUpdateField.REMINDER -> task.reminder
         MarkdownUpdateField.RECURRENCE -> task.recurrence?.let { RecurrenceEvaluator.recurrenceSummary(it) }

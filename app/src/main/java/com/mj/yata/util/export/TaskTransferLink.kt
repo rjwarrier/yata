@@ -259,6 +259,7 @@ private fun buildPlaintextTransferLink(
         }
         task.due?.takeIf { it.isNotBlank() }?.let { builder.appendQueryParameter("d$index", it) }
         task.time?.takeIf { it.isNotBlank() }?.let { builder.appendQueryParameter("h$index", it) }
+        task.receivedDate?.takeIf { it.isNotBlank() }?.let { builder.appendQueryParameter("rd$index", it) }
         task.startDate?.takeIf { it.isNotBlank() }?.let { builder.appendQueryParameter("g$index", it) }
         task.estimateMinutes?.takeIf { it > 0 }?.let { builder.appendQueryParameter("m$index", it.toString()) }
         task.subtasks.forEach { builder.appendQueryParameter("b$index", it.title) }
@@ -374,6 +375,7 @@ private fun Task.toTransferRow(
         .put(startDate.orEmpty())
         .put(estimateMinutes ?: 0)
         .put(recurrence?.toTransferRow() ?: JSONArray())
+        .put(receivedDate.orEmpty())
     return row.trimTrailingTaskDefaults()
 }
 
@@ -442,7 +444,7 @@ private fun JSONArray?.toRecurrenceOrNull(): Recurrence? {
 private fun JSONArray.trimTrailingTaskDefaults(): JSONArray {
     // Positions: 0 title(required), 1 priority(0), 2 flag(false), 3 notes(""), 4 listIdx(-1),
     // 5 projIdx(-1), 6 tagIdx([]), 7 personIdx([]), 8 subs([]),
-    // 9 due(""), 10 time(""), 11 startDate(""), 12 estimateMinutes(0), 13 recurrence([]).
+    // 9 due(""), 10 time(""), 11 startDate(""), 12 estimateMinutes(0), 13 recurrence([]), 14 receivedDate("").
     //
     // The v4 fields are appended rather than slotted in by likelihood-of-being-set, which would
     // truncate more often. A task with only a due date therefore still pays for placeholder
@@ -453,7 +455,7 @@ private fun JSONArray.trimTrailingTaskDefaults(): JSONArray {
         val isDefault = when (last) {
             1 -> optInt(1) == 0
             2 -> !optBoolean(2)
-            3, 9, 10, 11 -> optString(last).isEmpty()
+            3, 9, 10, 11, 14 -> optString(last).isEmpty()
             4, 5 -> optInt(last) == -1
             6, 7, 8, 13 -> optJSONArray(last)?.length() == 0
             12 -> optInt(12) == 0
@@ -554,7 +556,8 @@ data class SharedTaskDraft(
     val list: SharedEntityRef? = null,
     val project: SharedEntityRef? = null,
     val tags: List<SharedEntityRef> = emptyList(),
-    val assigneeNames: List<String> = emptyList()
+    val assigneeNames: List<String> = emptyList(),
+    val receivedDate: String? = null
 )
 
 data class ParsedTransfer(
@@ -650,6 +653,7 @@ private fun parsePlaintext(params: Uri): List<SharedTaskDraft> {
             ],
             flag = params.getQueryParameter("f$index") == "1",
             due = params.getQueryParameter("d$index")?.takeIf { it.isNotBlank() },
+            receivedDate = params.getQueryParameter("rd$index")?.takeIf { it.isNotBlank() },
             startDate = params.getQueryParameter("g$index")?.takeIf { it.isNotBlank() },
             time = params.getQueryParameter("h$index")?.takeIf { it.isNotBlank() },
             estimateMinutes = params.getQueryParameter("m$index")?.toIntOrNull()?.takeIf { it > 0 },
@@ -702,6 +706,7 @@ private fun parseCompressed(encoded: String, copyStructure: Boolean): List<Share
             flag = row.optBoolean(2, false),
             // v4 fields; a v2/v3 row stops short of these and they read as absent.
             due = row.optString(9).takeIf { it.isNotBlank() },
+            receivedDate = row.optString(14).takeIf { it.isNotBlank() },
             startDate = row.optString(11).takeIf { it.isNotBlank() },
             time = row.optString(10).takeIf { it.isNotBlank() },
             estimateMinutes = row.optInt(12, 0).takeIf { it > 0 },
@@ -819,6 +824,7 @@ class TaskTransferImporter @Inject constructor(
                 section = "",
                 due = draft.due,
                 startDate = draft.startDate,
+                receivedDate = draft.receivedDate,
                 time = draft.time,
                 reminder = null,
                 priority = draft.priority,

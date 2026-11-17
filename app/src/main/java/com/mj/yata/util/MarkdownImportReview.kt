@@ -99,6 +99,7 @@ fun MarkdownImportReview.withTaskEdit(index: Int, before: Task, edited: Task): M
         if (before.section != edited.section) add("section")
         if (before.due != edited.due) add("due")
         if (before.startDate != edited.startDate) add("start")
+        if (before.receivedDate != edited.receivedDate) add("received")
         if (before.time != edited.time) add("time")
         if (before.reminder != edited.reminder) add("reminder")
         if (before.recurrence != edited.recurrence) add("recurrence")
@@ -124,6 +125,7 @@ private fun applyMarkdownEdit(base: Task, edit: MarkdownTaskEdit): Task {
         section = if ("section" in fields) value.section else base.section,
         due = if ("due" in fields) value.due else base.due,
         startDate = if ("start" in fields) value.startDate else base.startDate,
+        receivedDate = if ("received" in fields) value.receivedDate else base.receivedDate,
         time = if ("time" in fields) value.time else base.time,
         recurrence = if ("recurrence" in fields) value.recurrence else base.recurrence,
         reminder = if ("reminder" in fields) value.reminder else base.reminder,
@@ -216,7 +218,7 @@ fun mergeMarkdownTask(existing: Task, imported: Task): Task {
         }
     return existing.copy(
         title = imported.title, projectId = imported.projectId, listId = imported.listId,
-        due = imported.due, startDate = imported.startDate, time = imported.time,
+        due = imported.due, startDate = imported.startDate, receivedDate = imported.receivedDate ?: existing.receivedDate, time = imported.time,
         recurrence = imported.recurrence, reminder = imported.reminder,
         priority = imported.priority, flag = imported.flag, done = existing.done || imported.done,
         completedAt = if (existing.done) existing.completedAt else if (imported.done) imported.completedAt else existing.completedAt,
@@ -235,6 +237,7 @@ fun undoMarkdownUpdate(before: Task, after: Task, current: Task): Task {
         listId = restore(before.listId, after.listId, current.listId),
         due = restore(before.due, after.due, current.due),
         startDate = restore(before.startDate, after.startDate, current.startDate),
+        receivedDate = restore(before.receivedDate, after.receivedDate, current.receivedDate),
         time = restore(before.time, after.time, current.time),
         recurrence = restore(before.recurrence, after.recurrence, current.recurrence),
         reminder = restore(before.reminder, after.reminder, current.reminder),
