@@ -163,6 +163,50 @@ class UnifiedBackupRoundTripTest {
         }
     }
 
+    @Test fun projectReceiptPreferenceControlsCreationAndSurvivesRestoreAndLegacySync() = runBlocking {
+        store().use { source ->
+            source.repository.upsertPerson(Person("me", "You", "Y", "accentA", isMe = true))
+            val project = Project("off", "Off", "accentA", "work", receivedDateEnabled = false)
+            source.repository.upsertProject(project)
+            fun task(id: String, projectId: String? = "off", received: String? = null) = Task(
+                id = id, title = id, listId = null, projectId = projectId, section = "",
+                due = null, time = null, reminder = null, priority = "none", flag = false, done = false,
+                assigneeIds = emptyList(), tagIds = emptyList(), recurrence = null,
+                subtasks = emptyList(), notes = null, receivedDate = received
+            )
+            source.repository.upsertTask(task("disabled"))
+            source.repository.upsertTask(task("stale-ui", received = "2026-10-10"))
+            source.repository.upsertTask(task("general", projectId = null))
+            assertTrue(source.repository.getTasks().first().filter { it.projectId == "off" }.all { it.receivedDate == null })
+            assertTrue(source.repository.getTasks().first().single { it.id == "general" }.receivedDate != null)
+            source.repository.upsertProject(project.copy(receivedDateEnabled = true))
+            source.repository.upsertTask(task("enabled"))
+            val existing = source.repository.getTasks().first().single { it.id == "enabled" }
+            assertTrue(existing.receivedDate != null)
+            source.repository.upsertProject(project)
+            source.repository.upsertTask(existing.copy(notes = "Keep historical receipt"))
+            assertEquals(existing.receivedDate, source.repository.getTasks().first().single { it.id == "enabled" }.receivedDate)
+            val bytes = source.exporter.exportToBytes()
+            store().use { target ->
+                assertTrue(target.exporter.importBytes(bytes))
+                assertFalse(target.repository.getProjects().first().single().receivedDateEnabled)
+                assertEquals(existing.receivedDate, target.repository.getTasks().first().single { it.id == "enabled" }.receivedDate)
+                val engine = SnapshotSyncEngine(context, target.exporter, RecoveryBackupManager(context, target.exporter))
+                val legacy = JSONObject(String(bytes))
+                legacy.getJSONArray("projects").getJSONObject(0).remove("receivedDateEnabled")
+                engine.commitRestoredBaseline("receipt-pref-test", bytes)
+                repeat(2) {
+                    val prepared = engine.prepare(legacy.toString().toByteArray(), "receipt-pref-test")
+                    assertFalse(prepared.canonical.getJSONArray("projects").getJSONObject(0).getBoolean("receivedDateEnabled"))
+                    engine.commit(prepared)
+                    assertFalse(target.repository.getProjects().first().single().receivedDateEnabled)
+                }
+                assertTrue(target.exporter.importBytes(legacy.toString().toByteArray()))
+                assertFalse(target.repository.getProjects().first().single().receivedDateEnabled)
+            }
+        }
+    }
+
     @Test fun escapedTitleTextSurvivesSavingEditingAndBackupRestore() = runBlocking {
         val parsed = com.mj.yata.util.NaturalLanguageParser.parse("Review \\AM/PM tomorrow at 3pm", java.time.LocalDate.of(2026, 11, 17))
         assertEquals("Review AM/PM", parsed.title)

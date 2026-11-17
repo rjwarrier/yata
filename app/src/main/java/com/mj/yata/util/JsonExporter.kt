@@ -331,6 +331,7 @@ class JsonExporter @Inject constructor(
                 o.put("due", pr.due ?: JSONObject.NULL)
                 o.put("starred", pr.starred)
                 o.put("defaultReminder", pr.defaultReminder ?: JSONObject.NULL)
+                o.put("receivedDateEnabled", pr.receivedDateEnabled)
                 o.put("description", pr.description ?: JSONObject.NULL)
                 o.put("excludeFromToday", pr.excludeFromToday)
                 o.put("sortOrder", pr.sortOrder)
@@ -842,6 +843,7 @@ class JsonExporter @Inject constructor(
             row.requiredString("icon", "projects[$id]")
             row.requireOptionalString("due")
             row.requireOptionalString("defaultReminder")
+            row.requireOptionalBoolean("receivedDateEnabled")
             row.requireOptionalString("description")
             row.requireOptionalBoolean("starred")
             row.requireOptionalBoolean("excludeFromToday")
@@ -1158,6 +1160,7 @@ class JsonExporter @Inject constructor(
             row.requireOptionalString("icon")
             row.requireOptionalString("due")
             row.requireOptionalString("defaultReminder")
+            row.requireOptionalBoolean("receivedDateEnabled")
             row.requireOptionalString("description")
             row.requireOptionalBoolean("starred")
             row.requireOptionalBoolean("excludeFromToday")
@@ -1446,6 +1449,8 @@ class JsonExporter @Inject constructor(
                                 starred = o.optBoolean("starred", false),
                                 commonTagIds = commonTagIds,
                                 defaultReminder = if (o.isNull("defaultReminder")) null else o.optString("defaultReminder", null),
+                                receivedDateEnabled = if (o.has("receivedDateEnabled")) o.optBoolean("receivedDateEnabled", true)
+                                    else repository.getProjectById(o.getString("id")).first()?.receivedDateEnabled ?: true,
                                 description = if (o.isNull("description")) null else o.getString("description"),
                                 excludeFromToday = o.optBoolean("excludeFromToday", false),
                                 sortOrder = o.optInt("sortOrder", 0),

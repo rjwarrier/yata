@@ -17,6 +17,8 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ### Added
 
+- A per-project Date Received switch hides the field for that project's tasks and stops automatic received-date defaults; general tasks keep the field. Existing values are retained.
+
 - Recognize common received-date typos and shorthand such as “recievd”, “rcvd dt”, “DOR:”, “ystrdy”, “lst Fri”, “biz days ago”, and “mths back”, while retaining receipt-context guards.
 
 - Date Received on tasks defaults to the creation date, can be changed with the date picker or natural-language phrases such as “received yesterday”, “rcvd on 12 Nov”, and “got on last Friday”, and supports oldest-first sorting (unset dates appear last).

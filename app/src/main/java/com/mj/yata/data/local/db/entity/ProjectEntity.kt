@@ -1,5 +1,6 @@
 package com.mj.yata.data.local.db.entity
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
@@ -34,5 +35,6 @@ data class ProjectEntity(
     // commonTagIds these are free-typed display text, not IDs, so a comma could legitimately
     // appear in a name.
     val sectionNames: String = "",
-    val groupId: String? = null
+    val groupId: String? = null,
+    @ColumnInfo(defaultValue = "1") val receivedDateEnabled: Boolean = true
 )

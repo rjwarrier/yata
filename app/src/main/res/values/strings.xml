@@ -1899,4 +1899,5 @@
     <string name="task_date_received">Date Received</string>
     <string name="task_date_received_none">No received date</string>
     <string name="smart_add_received">Received %1$s</string>
+    <string name="project_received_date_summary">Show Date Received when adding or editing tasks in this project</string>
 </resources>

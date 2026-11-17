@@ -184,12 +184,13 @@ fun ProjectEditorSheet(
     initialDefaultReminder: String? = null,
     initialDescription: String? = null,
     initialExcludeFromToday: Boolean = false,
+    initialReceivedDateEnabled: Boolean = true,
     initialGroupId: String? = null,
     tags: List<com.mj.yata.domain.model.Tag> = emptyList(),
     groups: List<com.mj.yata.domain.model.ProjectGroup> = emptyList(),
     /** Names of the other projects, for the case-insensitive collision check — see [nameCollides]. */
     existingNames: List<String> = emptyList(),
-    onSave: (String, String, String, String?, List<String>, String?, String?, Boolean, String?) -> Unit,
+    onSave: (String, String, String, String?, List<String>, String?, String?, Boolean, String?, Boolean) -> Unit,
     onCreateGroup: (id: String, name: String, color: String) -> Unit = { _, _, _ -> },
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
@@ -205,6 +206,7 @@ fun ProjectEditorSheet(
     var defaultReminder by remember { mutableStateOf(initialDefaultReminder) }
     var description by remember { mutableStateOf(initialDescription ?: "") }
     var excludeFromToday by remember { mutableStateOf(initialExcludeFromToday) }
+    var receivedDateEnabled by remember { mutableStateOf(initialReceivedDateEnabled) }
     var selectedGroupId by remember { mutableStateOf(initialGroupId) }
     val selectedTagIds = remember { mutableStateListOf<String>().apply { addAll(initialCommonTagIds) } }
     var reminderExpanded by remember { mutableStateOf(initialDefaultReminder != null) }
@@ -309,6 +311,20 @@ fun ProjectEditorSheet(
                 },
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                 modifier = Modifier.clickable { excludeFromToday = !excludeFromToday }
+            )
+        }
+
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = MaterialTheme.colorScheme.surfaceContainerLow,
+            shape = RoundedCornerShape(20.dp)
+        ) {
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.task_date_received)) },
+                supportingContent = { Text(stringResource(R.string.project_received_date_summary)) },
+                trailingContent = { Switch(checked = receivedDateEnabled, onCheckedChange = { receivedDateEnabled = it }) },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                modifier = Modifier.clickable { receivedDateEnabled = !receivedDateEnabled }
             )
         }
 
@@ -487,7 +503,7 @@ fun ProjectEditorSheet(
             }
             Spacer(modifier = Modifier.width(8.dp))
             Button(
-                onClick = { if (name.isNotBlank() && !nameTaken) onSave(name, selectedColor, selectedIcon, dueDate, selectedTagIds.toList(), defaultReminder, description.trim().ifBlank { null }, excludeFromToday, selectedGroupId) },
+                onClick = { if (name.isNotBlank() && !nameTaken) onSave(name, selectedColor, selectedIcon, dueDate, selectedTagIds.toList(), defaultReminder, description.trim().ifBlank { null }, excludeFromToday, selectedGroupId, receivedDateEnabled) },
                 enabled = name.isNotBlank() && !nameTaken
             ) {
                 Text(buttonText)

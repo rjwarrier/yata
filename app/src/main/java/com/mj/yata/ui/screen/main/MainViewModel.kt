@@ -1,5 +1,6 @@
 package com.mj.yata.ui.screen.main
 
+import com.mj.yata.domain.model.receivedDateEnabledFor
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -1977,7 +1978,7 @@ data class WeekendRescheduleWarning(
                 section = section,
                 due = due,
                 startDate = startDate,
-                receivedDate = receivedDate,
+                receivedDate = receivedDate.takeIf { projects.value.receivedDateEnabledFor(projectId) },
                 time = time,
                 reminder = reminder,
                 priority = priority,
@@ -2218,7 +2219,7 @@ data class WeekendRescheduleWarning(
         }
     }
 
-    fun addProject(name: String, color: String, icon: String = "layers", due: String? = null, commonTagIds: List<String> = emptyList(), defaultReminder: String? = null, description: String? = null, excludeFromToday: Boolean = false, groupId: String? = null) {
+    fun addProject(name: String, color: String, icon: String = "layers", due: String? = null, commonTagIds: List<String> = emptyList(), defaultReminder: String? = null, description: String? = null, excludeFromToday: Boolean = false, groupId: String? = null, receivedDateEnabled: Boolean = true) {
         safeLaunch {
             val pid = "pr_" + UUID.randomUUID().toString()
             val project = Project(
@@ -2231,7 +2232,8 @@ data class WeekendRescheduleWarning(
                 defaultReminder = defaultReminder,
                 description = description,
                 excludeFromToday = excludeFromToday,
-                groupId = groupId
+                groupId = groupId,
+                receivedDateEnabled = receivedDateEnabled
             )
             repository.upsertProject(project)
         }

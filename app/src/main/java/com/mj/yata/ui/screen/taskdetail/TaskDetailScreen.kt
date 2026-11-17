@@ -275,6 +275,7 @@ fun TaskDetailScreen(
     val tagsById = remember(tags) { tags.associateBy { it.id } }
     val taskList = remember(task, listsById) { listsById[task.listId] }
     val project = remember(task, projectsById) { projectsById[task.projectId] }
+    val receivedDateEnabled = project?.receivedDateEnabled != false
     val taskAssignees = remember(task, peopleById) { task.assigneeIds.mapNotNull { pid -> peopleById[pid] } }
     val ownTagIds = task.tagIds
     val inheritedTagIds = remember(task, projectsById) { task.inheritedTagIds(projectsById) }
@@ -787,7 +788,7 @@ fun TaskDetailScreen(
                                     restoreSmartField("due") { current, baseline -> current.copy(due = baseline?.due) }
                                 })
                             },
-                            quickAdd.receivedDate?.takeIf { "received" !in effectiveIgnoredTitleQuickAddFields }?.let {
+                            quickAdd.receivedDate?.takeIf { receivedDateEnabled && "received" !in effectiveIgnoredTitleQuickAddFields }?.let {
                                 DetectedQuickAddChip(stringResource(R.string.smart_add_received, TaskScheduleUtils.formatDueDate(it)), { showReceivedDatePicker = true }, {
                                     restoreSmartField("received") { current, baseline -> current.copy(receivedDate = baseline?.receivedDate) }
                                 })
@@ -995,16 +996,19 @@ fun TaskDetailScreen(
                         onClick = { activeSheet = DetailSheetType.ScheduleEditor }
                     )
 
-                    MetaRowItem(
-                        icon = Icons.Default.EventAvailable,
-                        label = stringResource(R.string.task_date_received),
-                        value = task.receivedDate?.let { com.mj.yata.util.TaskScheduleUtils.formatDueDate(it) }
-                            ?: stringResource(R.string.task_date_received_none),
-                        accentColor = if (task.receivedDate != null) MaterialTheme.colorScheme.secondary else null,
-                        defaultValue = task.receivedDate == null,
-                        modifier = itemModifier,
-                        onClick = { showReceivedDatePicker = true }
-                    )
+                    if (receivedDateEnabled) {
+                        MetaRowItem(
+                            icon = Icons.Default.EventAvailable,
+                            label = stringResource(R.string.task_date_received),
+                            value = task.receivedDate?.let { com.mj.yata.util.TaskScheduleUtils.formatDueDate(it) }
+                                ?: stringResource(R.string.task_date_received_none),
+                            accentColor = if (task.receivedDate != null) MaterialTheme.colorScheme.secondary else null,
+                            defaultValue = task.receivedDate == null,
+                            modifier = itemModifier,
+                            onClick = { showReceivedDatePicker = true }
+                        )
+
+                    }
 
                     // Only shown once a start date exists. An always-present "No start date" row
                     // would put a field most tasks never use above Reminder and Repeat, which
@@ -2088,7 +2092,7 @@ fun TaskDetailScreen(
         )
     }
 
-    if (showReceivedDatePicker) {
+    if (showReceivedDatePicker && receivedDateEnabled) {
         YataDatePickerDialog(
             initialDate = task.receivedDate,
             onDismiss = { showReceivedDatePicker = false },

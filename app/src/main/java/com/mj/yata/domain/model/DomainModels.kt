@@ -42,8 +42,13 @@ data class Project(
     // than being hidden. Empty means the project isn't using sections — ProjectDetailScreen then
     // renders its old flat Pending/Completed list unchanged.
     val sectionNames: List<String> = emptyList(),
-    val groupId: String? = null
+    val groupId: String? = null,
+    val receivedDateEnabled: Boolean = true
 )
+
+/** General tasks retain Date Received; a project can opt out without deleting historical values. */
+fun List<Project>.receivedDateEnabledFor(projectId: String?): Boolean =
+    firstOrNull { it.id == projectId }?.receivedDateEnabled != false
 
 data class ProjectGroup(
     val id: String,

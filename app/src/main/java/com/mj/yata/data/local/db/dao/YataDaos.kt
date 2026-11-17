@@ -47,6 +47,9 @@ interface ProjectDao {
     @Query("SELECT id FROM projects WHERE id IN (:ids)")
     suspend fun getExistingIds(ids: List<String>): List<String>
 
+    @Query("SELECT id FROM projects WHERE id IN (:ids) AND receivedDateEnabled = 0")
+    suspend fun getReceivedDateDisabledIds(ids: List<String>): List<String>
+
     @Upsert
     suspend fun insert(project: ProjectEntity)
 

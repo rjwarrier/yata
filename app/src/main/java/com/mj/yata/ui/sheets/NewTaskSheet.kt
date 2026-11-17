@@ -1,5 +1,6 @@
 package com.mj.yata.ui.sheets
 
+import com.mj.yata.domain.model.receivedDateEnabledFor
 import android.content.Intent
 import android.speech.RecognizerIntent
 import androidx.compose.animation.AnimatedVisibility
@@ -664,6 +665,7 @@ fun NewTaskSheet(
     val listName = list?.name ?: stringResource(R.string.entity_list)
     val listColor = list?.let { accents.getAccent(it.color) } ?: MaterialTheme.colorScheme.primary
     val project = projects.find { it.id == selectedProjectId }
+    val receivedDateEnabled = project?.receivedDateEnabled != false
     val projectColor = project?.let { accents.getAccent(it.color) } ?: MaterialTheme.colorScheme.primary
     val activeProjects = remember(projects, selectedProjectId) {
         projects.activeProjects(includeId = selectedProjectId)
@@ -981,7 +983,7 @@ fun NewTaskSheet(
                         // Per-line like the due date: "review draft starts monday" on one line
                         // shouldn't defer the other lines in the same bulk paste.
                         startDate = parsed.startDate,
-                        receivedDate = com.mj.yata.util.receivedDateForCreation(selectedReceivedDate, receivedDateManuallySet, parsed.receivedDate),
+                        receivedDate = if (projects.receivedDateEnabledFor(resolved.projectId)) com.mj.yata.util.receivedDateForCreation(selectedReceivedDate, receivedDateManuallySet, parsed.receivedDate) else null,
                         time = parsed.time,
                         reminder = parsed.reminder ?: selectedReminder,
                         section = selectedSection,
@@ -1006,10 +1008,10 @@ fun NewTaskSheet(
                     recurrence = selectedRecurrence,
                     due = selectedDueDate,
                     startDate = selectedStartDate,
-                    receivedDate = com.mj.yata.util.receivedDateForCreation(
+                    receivedDate = if (receivedDateEnabled) com.mj.yata.util.receivedDateForCreation(
                         selectedReceivedDate, receivedDateManuallySet,
                         quickAdd.receivedDate.takeIf { quickAddMatched && "received" !in effectiveIgnoredQuickAddFields }
-                    ),
+                    ) else initialDraft?.receivedDate,
                     time = selectedTime,
                     reminder = selectedReminder,
                     section = selectedSection,
@@ -1560,7 +1562,7 @@ fun NewTaskSheet(
                             ignoredQuickAddFields = ignoredQuickAddFields + "due"
                         })
                     },
-                    quickAdd.receivedDate?.takeIf { "received" !in effectiveIgnoredQuickAddFields }?.let {
+                    quickAdd.receivedDate?.takeIf { receivedDateEnabled && "received" !in effectiveIgnoredQuickAddFields }?.let {
                         DetectedQuickAddChip(stringResource(R.string.smart_add_received, TaskScheduleUtils.formatDueDate(it)),
                             { showReceivedDatePicker = true }, {
                                 selectedReceivedDate = LocalDate.now().toString()
@@ -1840,16 +1842,18 @@ fun NewTaskSheet(
                         leading = { Icon(Icons.Default.Repeat, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(14.dp)) },
                         showCheck = false
                     )
-                    YataSelectChip(
-                        label = selectedReceivedDate?.let {
-                            "${stringResource(R.string.task_date_received)}: ${TaskScheduleUtils.formatDueDate(it)}"
-                        } ?: stringResource(R.string.task_date_received),
-                        selected = selectedReceivedDate != null,
-                        onClick = { showReceivedDatePicker = true },
-                        tint = MaterialTheme.colorScheme.secondary,
-                        leading = { Icon(Icons.Default.EventAvailable, contentDescription = null, modifier = Modifier.size(15.dp)) },
-                        showCheck = false
-                    )
+                    if (receivedDateEnabled) {
+                        YataSelectChip(
+                            label = selectedReceivedDate?.let {
+                                "${stringResource(R.string.task_date_received)}: ${TaskScheduleUtils.formatDueDate(it)}"
+                            } ?: stringResource(R.string.task_date_received),
+                            selected = selectedReceivedDate != null,
+                            onClick = { showReceivedDatePicker = true },
+                            tint = MaterialTheme.colorScheme.secondary,
+                            leading = { Icon(Icons.Default.EventAvailable, contentDescription = null, modifier = Modifier.size(15.dp)) },
+                            showCheck = false
+                        )
+                    }
                     // Start date stays with schedule settings, but trails the common due/time/
                     // reminder/repeat actions so the first scan line is about when the task is due.
                     YataSelectChip(
@@ -2245,7 +2249,7 @@ fun NewTaskSheet(
         )
     }
 
-    if (showReceivedDatePicker) {
+    if (showReceivedDatePicker && receivedDateEnabled) {
         YataDatePickerDialog(
             initialDate = selectedReceivedDate,
             onDismiss = { showReceivedDatePicker = false },

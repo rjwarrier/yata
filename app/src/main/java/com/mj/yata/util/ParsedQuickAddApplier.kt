@@ -1,5 +1,6 @@
 package com.mj.yata.util
 
+import com.mj.yata.domain.model.receivedDateEnabledFor
 import com.mj.yata.domain.model.Person
 import com.mj.yata.domain.model.Project
 import com.mj.yata.domain.model.Tag
@@ -47,7 +48,7 @@ fun Task.withParsedQuickAdd(
     )
     return copy(
         due = if ("due" in ignoredFields) due else quickAdd.due ?: resolved.projectDue ?: due,
-        receivedDate = if ("received" in ignoredFields) receivedDate else quickAdd.receivedDate ?: receivedDate,
+        receivedDate = if ("received" in ignoredFields || !projects.receivedDateEnabledFor(resolved.projectId)) receivedDate else quickAdd.receivedDate ?: receivedDate,
         startDate = if ("start" in ignoredFields) startDate else quickAdd.startDate ?: startDate,
         time = if ("time" in ignoredFields) time else quickAdd.time ?: time,
         recurrence = if ("recurrence" in ignoredFields) recurrence else quickAdd.recurrence ?: recurrence,

@@ -89,11 +89,12 @@ class YataRepositoryImpl @Inject constructor(
     }
 
     override suspend fun upsertTask(task: Task, notify: Boolean, resyncReminder: Boolean) {
-        upsertTasks(
+        writeTasks(
             listOf(task),
             notify,
             resyncReminder,
-            preserveExistingCreatedAt = true
+            preserveExistingCreatedAt = true,
+            respectProjectReceivedDateSetting = true
         )
     }
 
@@ -104,6 +105,16 @@ class YataRepositoryImpl @Inject constructor(
         preserveExistingCreatedAt: Boolean,
         trackPostponements: Boolean,
         pendingTags: List<Tag>
+    ) = writeTasks(tasks, notify, resyncReminder, preserveExistingCreatedAt, trackPostponements, pendingTags)
+
+    private suspend fun writeTasks(
+        tasks: List<Task>,
+        notify: Boolean = true,
+        resyncReminder: Boolean = true,
+        preserveExistingCreatedAt: Boolean = true,
+        trackPostponements: Boolean = true,
+        pendingTags: List<Tag> = emptyList(),
+        respectProjectReceivedDateSetting: Boolean = false
     ) {
         if (tasks.isEmpty()) return
 
@@ -134,7 +145,8 @@ class YataRepositoryImpl @Inject constructor(
                 val existing = writeSnapshots[task.id]
                 val entity = task.toEntity().let {
                     it.copy(
-                        receivedDate = it.receivedDate ?: if (existing == null && preserveExistingCreatedAt) {
+                        receivedDate = if (existing == null && respectProjectReceivedDateSetting && task.projectId in references.receivedDateDisabledProjectIds) null
+                        else it.receivedDate ?: if (existing == null && preserveExistingCreatedAt && task.projectId !in references.receivedDateDisabledProjectIds) {
                             java.time.Instant.ofEpochMilli(it.createdAt ?: now)
                                 .atZone(java.time.ZoneId.systemDefault()).toLocalDate().toString()
                         } else null,
@@ -719,7 +731,8 @@ class YataRepositoryImpl @Inject constructor(
         val listIds: Set<String>,
         val projectIds: Set<String>,
         val personIds: Set<String>,
-        val tagIds: Set<String>
+        val tagIds: Set<String>,
+        val receivedDateDisabledProjectIds: Set<String>
     )
 
     private suspend fun existingReferences(tasks: List<Task>): ExistingReferences =
@@ -727,7 +740,8 @@ class YataRepositoryImpl @Inject constructor(
             listIds = chunkedIn(tasks.mapNotNullTo(HashSet()) { it.listId }) { db.listDao().getExistingIds(it) }.toSet(),
             projectIds = chunkedIn(tasks.mapNotNullTo(HashSet()) { it.projectId }) { db.projectDao().getExistingIds(it) }.toSet(),
             personIds = chunkedIn(tasks.flatMapTo(HashSet()) { it.assigneeIds }) { db.personDao().getExistingIds(it) }.toSet(),
-            tagIds = chunkedIn(tasks.flatMapTo(HashSet()) { it.tagIds }) { db.tagDao().getExistingIds(it) }.toSet()
+            tagIds = chunkedIn(tasks.flatMapTo(HashSet()) { it.tagIds }) { db.tagDao().getExistingIds(it) }.toSet(),
+            receivedDateDisabledProjectIds = chunkedIn(tasks.mapNotNullTo(HashSet()) { it.projectId }) { db.projectDao().getReceivedDateDisabledIds(it) }.toSet()
         )
 
     private fun sanitizeTaskForWrite(task: Task, references: ExistingReferences): Task {

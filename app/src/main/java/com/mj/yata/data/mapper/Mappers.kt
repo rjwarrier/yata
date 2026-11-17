@@ -124,7 +124,8 @@ fun ProjectEntity.toDomain() = Project(
     sortOrder = sortOrder,
     archived = archived,
     sectionNames = if (sectionNames.isEmpty()) emptyList() else sectionNames.split(SECTION_NAME_DELIMITER),
-    groupId = groupId
+    groupId = groupId,
+    receivedDateEnabled = receivedDateEnabled
 )
 fun Project.toEntity() = ProjectEntity(
     id = id,
@@ -140,7 +141,8 @@ fun Project.toEntity() = ProjectEntity(
     sortOrder = sortOrder,
     archived = archived,
     sectionNames = sectionNames.joinToString(SECTION_NAME_DELIMITER.toString()),
-    groupId = groupId
+    groupId = groupId,
+    receivedDateEnabled = receivedDateEnabled
 )
 
 fun ListEntity.toDomain() = YataList(id, name, color, icon, starred, excludeFromToday, sortOrder, archived)

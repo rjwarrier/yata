@@ -185,6 +185,7 @@ internal object SnapshotMerger {
         normalized.optJSONArray("projects")?.let { projects ->
             for (i in 0 until projects.length()) {
                 projects.optJSONObject(i)?.let { project ->
+                    if (!project.has("receivedDateEnabled")) project.put("receivedDateEnabled", true)
                     project.normalizeNullableFields(
                         "due",
                         "defaultReminder",
@@ -821,6 +822,25 @@ private fun peopleBeyondCurrentUser(snapshot: JSONObject): Int {
 
 private fun JSONArray?.orZero(): Int = this?.length() ?: 0
 
+/** Older clients cannot change this preference. Missing means keep the current local choice. */
+internal fun preserveMissingProjectReceivedDatePreference(source: JSONObject, local: JSONObject): JSONObject {
+    val copy = JSONObject(source.toString())
+    val localPreferences = mutableMapOf<String, Boolean>()
+    local.optJSONArray("projects")?.let { projects ->
+        for (i in 0 until projects.length()) {
+            val row = projects.getJSONObject(i)
+            localPreferences[row.getString("id")] = row.optBoolean("receivedDateEnabled", true)
+        }
+    }
+    copy.optJSONArray("projects")?.let { projects ->
+        for (i in 0 until projects.length()) {
+            val row = projects.getJSONObject(i)
+            if (!row.has("receivedDateEnabled")) row.put("receivedDateEnabled", localPreferences[row.getString("id")] ?: true)
+        }
+    }
+    return copy
+}
+
 /** Legacy clients cannot express project-group edits or deletions. Treat that metadata as
  * unchanged from the baseline (or local state on first join), while merging their other edits. */
 internal fun preserveGroupsMissingFromLegacySnapshot(source: JSONObject, fallback: JSONObject): JSONObject {
@@ -874,7 +894,7 @@ class SnapshotSyncEngine @Inject constructor(
                     "available, but it cannot be promoted safely; restore a chosen backup first"
             }
             val remote = remoteSource?.let {
-                SnapshotMerger.normalizeForSync(preserveGroupsMissingFromLegacySnapshot(it, base ?: local))
+                SnapshotMerger.normalizeForSync(preserveMissingProjectReceivedDatePreference(preserveGroupsMissingFromLegacySnapshot(it, base ?: local), local))
             }
             val result = SnapshotMerger.merge(base = base, local = local, remote = remote)
             PreparedSnapshotSync(
