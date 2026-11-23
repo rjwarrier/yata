@@ -559,6 +559,11 @@
     <string name="entity_editors_title_hint">Suggerimento titolo attività</string>
     <string name="entity_editors_title_hint_summary">Visualizzato come testo segnaposto nel campo del titolo quando si aggiunge un\'attività qui — un suggerimento su come formularlo, non un valore predefinito.</string>
     <string name="entity_editors_title_hint_placeholder">es. Tipo di lavoro : Nome cliente</string>
+    <string name="entity_editors_task_types">Tipi di attività</string>
+    <string name="entity_editors_task_types_summary">Suggeriti mentre scrivi il titolo di un\'attività qui. Tocca uno per iniziare il titolo con esso.</string>
+    <string name="entity_editors_task_types_placeholder">es. ITR, Tax Audit, Stat Audit</string>
+    <string name="cd_task_type_add">Aggiungi tipo di attività</string>
+    <string name="cd_task_type_remove">Rimuovi %1$s</string>
     <string name="entity_editors_what_s_this_project_about">Di cosa tratta questo progetto?</string>
     <string name="export_options_no_limit">Nessun limite</string>
     <string name="help_about_help_about">Guida</string>

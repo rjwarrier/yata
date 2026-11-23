@@ -644,6 +644,11 @@
     <string name="entity_editors_title_hint">કાર્ય શીર્ષક સંકેત</string>
     <string name="entity_editors_title_hint_summary">અહીં કાર્ય ઉમેરતી વખતે શીર્ષક ફીલ્ડમાં પ્લેસહોલ્ડર ટેક્સ્ટ તરીકે દેખાય છે — તે કેવી રીતે લખવું તેની સલાહ છે, ડિફોલ્ટ મૂલ્ય નથી.</string>
     <string name="entity_editors_title_hint_placeholder">દા.ત. કામનો પ્રકાર : ક્લાયન્ટનું નામ</string>
+    <string name="entity_editors_task_types">કાર્યના પ્રકારો</string>
+    <string name="entity_editors_task_types_summary">અહીં કાર્યનું શીર્ષક લખતી વખતે સૂચવવામાં આવે છે. શીર્ષક તેનાથી શરૂ કરવા માટે એક પર ટૅપ કરો.</string>
+    <string name="entity_editors_task_types_placeholder">દા.ત. ITR, Tax Audit, Stat Audit</string>
+    <string name="cd_task_type_add">કાર્યનો પ્રકાર ઉમેરો</string>
+    <string name="cd_task_type_remove">%1$s દૂર કરો</string>
     <string name="entity_editors_what_s_this_project_about">આ પ્રોજેક્ટ શા વિશે છે?</string>
     <string name="export_options_no_limit">કોઈ મર્યાદા નથી</string>
     <string name="help_about_help_about">મદદ</string>

@@ -2219,7 +2219,7 @@ data class WeekendRescheduleWarning(
         }
     }
 
-    fun addProject(name: String, color: String, icon: String = "layers", due: String? = null, commonTagIds: List<String> = emptyList(), defaultReminder: String? = null, description: String? = null, excludeFromToday: Boolean = false, groupId: String? = null, receivedDateEnabled: Boolean = true, titleHint: String? = null) {
+    fun addProject(name: String, color: String, icon: String = "layers", due: String? = null, commonTagIds: List<String> = emptyList(), defaultReminder: String? = null, description: String? = null, excludeFromToday: Boolean = false, groupId: String? = null, receivedDateEnabled: Boolean = true, titleHint: String? = null, taskTypes: List<String> = emptyList()) {
         safeLaunch {
             val pid = "pr_" + UUID.randomUUID().toString()
             val project = Project(
@@ -2234,7 +2234,8 @@ data class WeekendRescheduleWarning(
                 excludeFromToday = excludeFromToday,
                 groupId = groupId,
                 receivedDateEnabled = receivedDateEnabled,
-                titleHint = titleHint
+                titleHint = titleHint,
+                taskTypes = taskTypes
             )
             repository.upsertProject(project)
         }
@@ -2644,7 +2645,7 @@ data class WeekendRescheduleWarning(
         }
     }
 
-    fun addList(name: String, color: String, icon: String, excludeFromToday: Boolean = false, titleHint: String? = null) {
+    fun addList(name: String, color: String, icon: String, excludeFromToday: Boolean = false, titleHint: String? = null, taskTypes: List<String> = emptyList()) {
         safeLaunch {
             val yataList = YataList(
                 id = "l_" + UUID.randomUUID().toString(),
@@ -2652,7 +2653,8 @@ data class WeekendRescheduleWarning(
                 color = color,
                 icon = icon,
                 excludeFromToday = excludeFromToday,
-                titleHint = titleHint
+                titleHint = titleHint,
+                taskTypes = taskTypes
             )
             repository.upsertList(yataList)
         }

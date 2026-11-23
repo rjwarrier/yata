@@ -644,6 +644,11 @@
     <string name="entity_editors_title_hint">ਟਾਸਕ ਟਾਈਟਲ ਸੰਕੇਤ</string>
     <string name="entity_editors_title_hint_summary">ਇੱਥੇ ਟਾਸਕ ਜੋੜਦੇ ਸਮੇਂ ਟਾਈਟਲ ਖੇਤਰ ਵਿੱਚ ਪਲੇਸਹੋਲਡਰ ਟੈਕਸਟ ਵਜੋਂ ਦਿਖਾਇਆ ਜਾਂਦਾ ਹੈ — ਇਹ ਕਿਵੇਂ ਲਿਖਣਾ ਹੈ ਇਸ ਦਾ ਸੁਝਾਅ ਹੈ, ਡਿਫੌਲਟ ਮੁੱਲ ਨਹੀਂ।</string>
     <string name="entity_editors_title_hint_placeholder">ਜਿਵੇਂ. ਕੰਮ ਦੀ ਕਿਸਮ : ਕਲਾਇੰਟ ਦਾ ਨਾਮ</string>
+    <string name="entity_editors_task_types">ਟਾਸਕ ਦੀਆਂ ਕਿਸਮਾਂ</string>
+    <string name="entity_editors_task_types_summary">ਇੱਥੇ ਟਾਸਕ ਦਾ ਟਾਈਟਲ ਲਿਖਦੇ ਸਮੇਂ ਸੁਝਾਈਆਂ ਜਾਂਦੀਆਂ ਹਨ। ਟਾਈਟਲ ਉਸ ਨਾਲ ਸ਼ੁਰੂ ਕਰਨ ਲਈ ਕਿਸੇ ਇੱਕ ਉੱਤੇ ਟੈਪ ਕਰੋ।</string>
+    <string name="entity_editors_task_types_placeholder">ਜਿਵੇਂ ITR, Tax Audit, Stat Audit</string>
+    <string name="cd_task_type_add">ਟਾਸਕ ਦੀ ਕਿਸਮ ਜੋੜੋ</string>
+    <string name="cd_task_type_remove">%1$s ਹਟਾਓ</string>
     <string name="entity_editors_what_s_this_project_about">ਇਹ ਪ੍ਰੋਜੈਕਟ ਕਿਸ ਬਾਰੇ ਹੈ?</string>
     <string name="export_options_no_limit">ਕੋਈ ਸੀਮਾ ਨਹੀਂ</string>
     <string name="help_about_help_about">ਮਦਦ</string>

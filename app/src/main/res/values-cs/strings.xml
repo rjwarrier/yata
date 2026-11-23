@@ -559,6 +559,11 @@
     <string name="entity_editors_title_hint">Nápověda názvu úkolu</string>
     <string name="entity_editors_title_hint_summary">Zobrazuje se jako zástupný text v poli názvu úkolu při vytváření úkolu zde — je to tip, jak název formulovat, ne výchozí hodnota.</string>
     <string name="entity_editors_title_hint_placeholder">např. Typ práce : Jméno klienta</string>
+    <string name="entity_editors_task_types">Typy úkolů</string>
+    <string name="entity_editors_task_types_summary">Nabízejí se při psaní názvu úkolu zde. Klepnutím na jeden jím název začnete.</string>
+    <string name="entity_editors_task_types_placeholder">např. ITR, Tax Audit, Stat Audit</string>
+    <string name="cd_task_type_add">Přidat typ úkolu</string>
+    <string name="cd_task_type_remove">Odebrat %1$s</string>
     <string name="entity_editors_what_s_this_project_about">O čem tento projekt je?</string>
     <string name="export_options_no_limit">Bez omezení</string>
     <string name="help_about_help_about">Nápověda</string>

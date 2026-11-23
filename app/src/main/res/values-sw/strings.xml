@@ -644,6 +644,11 @@
     <string name="entity_editors_title_hint">Kidokezo cha kichwa cha kazi</string>
     <string name="entity_editors_title_hint_summary">Huonyeshwa kama maandishi ya nafasi-mbadala kwenye uga wa kichwa wakati wa kuongeza kazi hapa — ni kidokezo cha jinsi ya kuandika, si thamani chaguo-msingi.</string>
     <string name="entity_editors_title_hint_placeholder">mf. Aina ya kazi : Jina la mteja</string>
+    <string name="entity_editors_task_types">Aina za kazi</string>
+    <string name="entity_editors_task_types_summary">Zinapendekezwa unapoandika kichwa cha kazi hapa. Gusa moja ili kuanza kichwa nayo.</string>
+    <string name="entity_editors_task_types_placeholder">mf. ITR, Tax Audit, Stat Audit</string>
+    <string name="cd_task_type_add">Ongeza aina ya kazi</string>
+    <string name="cd_task_type_remove">Ondoa %1$s</string>
     <string name="entity_editors_what_s_this_project_about">Mradi huu unahusu nini?</string>
     <string name="export_options_no_limit">Hakuna kikomo</string>
     <string name="help_about_help_about">Msaada</string>

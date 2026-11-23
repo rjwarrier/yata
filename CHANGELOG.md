@@ -17,6 +17,8 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ### Added
 
+- Each Project and List can keep a set of "Task types" (for example ITR, Tax Audit, Stat Audit, Project Report). While adding a task there, matching types appear as chips under the title as you type — all of them on an empty title — and tapping one starts the title with it, using the separator from the title hint (so "Work Type : Client Name" turns ITR into "ITR : ").
+
 - Each Project and List can set a "Task title hint" in its editor — shown as placeholder text in the task title field while adding a task there, as a tip for how to phrase it (e.g. "Work Type : Client Name"); it disappears once typing starts and reappears when the field is cleared, and falls back to the usual shortcuts hint when none is configured.
 
 - A per-project Date Received switch hides the field for that project's tasks and stops automatic received-date defaults; general tasks keep the field. Existing values are retained.

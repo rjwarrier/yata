@@ -559,6 +559,11 @@
     <string name="entity_editors_title_hint">Indiciu titlu sarcină</string>
     <string name="entity_editors_title_hint_summary">Afișat ca text substituent în câmpul de titlu la adăugarea unei sarcini aici — o sugestie despre cum să-l formulezi, nu o valoare implicită.</string>
     <string name="entity_editors_title_hint_placeholder">ex. Tip de lucru : Numele clientului</string>
+    <string name="entity_editors_task_types">Tipuri de sarcini</string>
+    <string name="entity_editors_task_types_summary">Sugerate pe măsură ce scrii titlul unei sarcini aici. Atinge unul pentru a începe titlul cu el.</string>
+    <string name="entity_editors_task_types_placeholder">ex. ITR, Tax Audit, Stat Audit</string>
+    <string name="cd_task_type_add">Adaugă tip de sarcină</string>
+    <string name="cd_task_type_remove">Elimină %1$s</string>
     <string name="entity_editors_what_s_this_project_about">Despre ce este acest proiect?</string>
     <string name="export_options_no_limit">Fără limită</string>
     <string name="help_about_help_about">Ajutor</string>

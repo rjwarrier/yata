@@ -644,6 +644,11 @@
     <string name="entity_editors_title_hint">టాస్క్ టైటిల్ సూచన</string>
     <string name="entity_editors_title_hint_summary">ఇక్కడ టాస్క్‌ని జోడించేటప్పుడు టైటిల్ ఫీల్డ్‌లో ప్లేస్‌హోల్డర్ టెక్స్ట్‌గా చూపబడుతుంది — ఇది ఎలా రాయాలో సూచన, డిఫాల్ట్ విలువ కాదు.</string>
     <string name="entity_editors_title_hint_placeholder">ఉదా. పని రకం : క్లయింట్ పేరు</string>
+    <string name="entity_editors_task_types">టాస్క్ రకాలు</string>
+    <string name="entity_editors_task_types_summary">ఇక్కడ టాస్క్ టైటిల్ టైప్ చేస్తున్నప్పుడు సూచించబడతాయి. టైటిల్‌ను దానితో ప్రారంభించడానికి ఒకదానిపై నొక్కండి.</string>
+    <string name="entity_editors_task_types_placeholder">ఉదా. ITR, Tax Audit, Stat Audit</string>
+    <string name="cd_task_type_add">టాస్క్ రకాన్ని జోడించు</string>
+    <string name="cd_task_type_remove">%1$s ను తీసివేయి</string>
     <string name="entity_editors_what_s_this_project_about">ఈ ప్రాజెక్ట్ దేని గురించి?</string>
     <string name="export_options_no_limit">పరిమితి లేదు</string>
     <string name="help_about_help_about">సహాయం</string>

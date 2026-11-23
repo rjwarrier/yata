@@ -644,6 +644,11 @@
     <string name="entity_editors_title_hint">कार्य शीर्षक इशारा</string>
     <string name="entity_editors_title_hint_summary">येथे कार्य जोडताना शीर्षक फील्डमध्ये प्लेसहोल्डर मजकूर म्हणून दर्शविले जाते — हे कसे लिहावे याबद्दलची सूचना आहे, डीफॉल्ट मूल्य नाही.</string>
     <string name="entity_editors_title_hint_placeholder">उदा. कामाचा प्रकार : क्लायंटचे नाव</string>
+    <string name="entity_editors_task_types">कार्याचे प्रकार</string>
+    <string name="entity_editors_task_types_summary">येथे कार्याचे शीर्षक टाइप करताना सुचवले जातात. शीर्षक त्याने सुरू करण्यासाठी एकावर टॅप करा.</string>
+    <string name="entity_editors_task_types_placeholder">उदा. ITR, Tax Audit, Stat Audit</string>
+    <string name="cd_task_type_add">कार्याचा प्रकार जोडा</string>
+    <string name="cd_task_type_remove">%1$s काढा</string>
     <string name="entity_editors_what_s_this_project_about">हा प्रकल्प कशाबद्दल आहे?</string>
     <string name="export_options_no_limit">मर्यादा नाही</string>
     <string name="help_about_help_about">मदत</string>

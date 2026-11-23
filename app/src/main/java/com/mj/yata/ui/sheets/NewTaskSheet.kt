@@ -34,6 +34,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
@@ -77,6 +78,7 @@ import androidx.compose.material3.InputChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.InputChip
+import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
@@ -139,6 +141,8 @@ import com.mj.yata.domain.model.YataList
 import com.mj.yata.domain.model.activeLists
 import com.mj.yata.domain.model.activePeople
 import com.mj.yata.domain.model.activeProjects
+import com.mj.yata.domain.model.taskTypeSeparator
+import com.mj.yata.domain.model.taskTypeSuggestions
 import com.mj.yata.ui.theme.LocalYataAccents
 import com.mj.yata.ui.widgets.MentionSuggestions
 import com.mj.yata.ui.widgets.PriorityBars
@@ -1321,6 +1325,35 @@ fun NewTaskSheet(
                             contentDescription = stringResource(R.string.cd_add_task_by_voice),
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(22.dp)
+                        )
+                    }
+                }
+            }
+
+            // A project's types win over a list's, as with the title hint. The separator comes from
+            // that same entity's hint, so "Work Type : Client Name" turns a tap on ITR into "ITR : ".
+            val typeSource = project?.takeIf { it.taskTypes.isNotEmpty() }?.let { it.taskTypes to it.titleHint }
+                ?: list?.let { it.taskTypes to it.titleHint }
+            val typeSeparator = taskTypeSeparator(typeSource?.second)
+            val typeSuggestions = remember(typeSource, title.text) {
+                typeSource?.let { taskTypeSuggestions(it.first, title.text, typeSeparator) }.orEmpty()
+            }
+            if (typeSuggestions.isNotEmpty() && mention == null) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
+                        .testTag("new_task_type_suggestions")
+                ) {
+                    typeSuggestions.forEach { type ->
+                        SuggestionChip(
+                            onClick = {
+                                val filled = type + typeSeparator
+                                title = TextFieldValue(filled, TextRange(filled.length))
+                                focusRequester.requestFocus()
+                            },
+                            label = { Text(type) }
                         )
                     }
                 }

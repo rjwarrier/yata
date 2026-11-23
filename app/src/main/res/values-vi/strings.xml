@@ -559,6 +559,11 @@
     <string name="entity_editors_title_hint">Gợi ý tiêu đề công việc</string>
     <string name="entity_editors_title_hint_summary">Hiển thị dưới dạng văn bản giữ chỗ trong trường tiêu đề khi thêm công việc ở đây — đây là gợi ý cách diễn đạt, không phải giá trị mặc định.</string>
     <string name="entity_editors_title_hint_placeholder">ví dụ: Loại công việc : Tên khách hàng</string>
+    <string name="entity_editors_task_types">Loại công việc</string>
+    <string name="entity_editors_task_types_summary">Được gợi ý khi bạn nhập tiêu đề công việc ở đây. Chạm vào một loại để bắt đầu tiêu đề bằng loại đó.</string>
+    <string name="entity_editors_task_types_placeholder">ví dụ: ITR, Tax Audit, Stat Audit</string>
+    <string name="cd_task_type_add">Thêm loại công việc</string>
+    <string name="cd_task_type_remove">Xóa %1$s</string>
     <string name="entity_editors_what_s_this_project_about">Dự án này nói về điều gì?</string>
     <string name="export_options_no_limit">Không giới hạn</string>
     <string name="help_about_help_about">Trợ giúp</string>

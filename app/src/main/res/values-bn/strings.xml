@@ -559,6 +559,11 @@
     <string name="entity_editors_title_hint">টাস্ক শিরোনামের হিন্ট</string>
     <string name="entity_editors_title_hint_summary">একটি টাস্ক যুক্ত করার সময় টাস্কের শিরোনাম ফিল্ডে প্লেসহোল্ডার টেক্সট হিসেবে দেখানো হয় — এটি কীভাবে লিখতে হবে তার একটি পরামর্শ, কোনো ডিফল্ট মান নয়।</string>
     <string name="entity_editors_title_hint_placeholder">যেমন, কাজের ধরন : ক্লায়েন্টের নাম</string>
+    <string name="entity_editors_task_types">টাস্কের ধরন</string>
+    <string name="entity_editors_task_types_summary">এখানে টাস্কের শিরোনাম লেখার সময় প্রস্তাবিত হয়। শিরোনামটি এটি দিয়ে শুরু করতে একটিতে ট্যাপ করুন।</string>
+    <string name="entity_editors_task_types_placeholder">যেমন ITR, Tax Audit, Stat Audit</string>
+    <string name="cd_task_type_add">টাস্কের ধরন যোগ করুন</string>
+    <string name="cd_task_type_remove">%1$s সরান</string>
     <string name="entity_editors_what_s_this_project_about">এই প্রজেক্টটি কী নিয়ে?</string>
     <string name="export_options_no_limit">কোনো সীমা নেই</string>
     <string name="help_about_help_about">সহায়তা</string>

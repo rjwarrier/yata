@@ -559,6 +559,11 @@
     <string name="entity_editors_title_hint">Petunjuk judul tugas</string>
     <string name="entity_editors_title_hint_summary">Ditampilkan sebagai teks placeholder di kolom judul tugas saat menambahkan tugas di sini — saran cara menulisnya, bukan nilai default.</string>
     <string name="entity_editors_title_hint_placeholder">cth. Jenis Pekerjaan : Nama Klien</string>
+    <string name="entity_editors_task_types">Jenis tugas</string>
+    <string name="entity_editors_task_types_summary">Disarankan saat Anda mengetik judul tugas di sini. Ketuk salah satu untuk memulai judul dengannya.</string>
+    <string name="entity_editors_task_types_placeholder">cth. ITR, Tax Audit, Stat Audit</string>
+    <string name="cd_task_type_add">Tambah jenis tugas</string>
+    <string name="cd_task_type_remove">Hapus %1$s</string>
     <string name="entity_editors_what_s_this_project_about">Proyek ini tentang apa?</string>
     <string name="export_options_no_limit">Tanpa batas</string>
     <string name="help_about_help_about">Bantuan</string>

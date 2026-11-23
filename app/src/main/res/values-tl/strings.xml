@@ -644,6 +644,11 @@
     <string name="entity_editors_title_hint">Pahiwatig sa pamagat ng gawain</string>
     <string name="entity_editors_title_hint_summary">Ipinapakita bilang placeholder text sa field ng pamagat kapag nagdaragdag ng gawain dito — isang tip kung paano ito isulat, hindi default na halaga.</string>
     <string name="entity_editors_title_hint_placeholder">hal. Uri ng Trabaho : Pangalan ng Kliyente</string>
+    <string name="entity_editors_task_types">Mga uri ng gawain</string>
+    <string name="entity_editors_task_types_summary">Iminumungkahi habang nagta-type ka ng pamagat ng gawain dito. I-tap ang isa para simulan ang pamagat dito.</string>
+    <string name="entity_editors_task_types_placeholder">hal. ITR, Tax Audit, Stat Audit</string>
+    <string name="cd_task_type_add">Magdagdag ng uri ng gawain</string>
+    <string name="cd_task_type_remove">Alisin ang %1$s</string>
     <string name="entity_editors_what_s_this_project_about">Ano ang tungkol sa proyektong ito?</string>
     <string name="export_options_no_limit">Walang limitasyon</string>
     <string name="help_about_help_about">Tulong</string>

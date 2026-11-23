@@ -334,6 +334,7 @@ class JsonExporter @Inject constructor(
                 o.put("receivedDateEnabled", pr.receivedDateEnabled)
                 o.put("description", pr.description ?: JSONObject.NULL)
                 o.put("titleHint", pr.titleHint ?: JSONObject.NULL)
+                o.put("taskTypes", JSONArray(pr.taskTypes))
                 o.put("excludeFromToday", pr.excludeFromToday)
                 o.put("sortOrder", pr.sortOrder)
                 o.put("archived", pr.archived)
@@ -360,6 +361,7 @@ class JsonExporter @Inject constructor(
                 o.put("sortOrder", l.sortOrder)
                 o.put("archived", l.archived)
                 o.put("titleHint", l.titleHint ?: JSONObject.NULL)
+                o.put("taskTypes", JSONArray(l.taskTypes))
                 listsArr.put(o)
             }
             root.put("lists", listsArr)
@@ -848,6 +850,7 @@ class JsonExporter @Inject constructor(
             row.requireOptionalBoolean("receivedDateEnabled")
             row.requireOptionalString("description")
             row.requireOptionalString("titleHint")
+            row.requireOptionalStringArray("taskTypes")
             row.requireOptionalBoolean("starred")
             row.requireOptionalBoolean("excludeFromToday")
             row.requireOptionalNumber("sortOrder")
@@ -866,6 +869,7 @@ class JsonExporter @Inject constructor(
             row.requiredString("color", "lists[$id]")
             row.requiredString("icon", "lists[$id]")
             row.requireOptionalString("titleHint")
+            row.requireOptionalStringArray("taskTypes")
             row.requireOptionalBoolean("starred")
             row.requireOptionalBoolean("excludeFromToday")
             row.requireOptionalNumber("sortOrder")
@@ -1033,6 +1037,11 @@ class JsonExporter @Inject constructor(
     private fun JSONObject.nullableString(key: String): String? =
         if (isNull(key)) null else getString(key)
 
+    private fun JSONObject.taskTypesOrEmpty(): List<String> =
+        optJSONArray("taskTypes")?.let { types ->
+            com.mj.yata.domain.model.normalizeTaskTypes((0 until types.length()).map { types.getString(it) })
+        }.orEmpty()
+
     /**
      * Counts what a backup holds without importing it. Lives here rather than in the backup
      * managers because this class owns the payload's shape — the key names below are the same
@@ -1167,6 +1176,7 @@ class JsonExporter @Inject constructor(
             row.requireOptionalBoolean("receivedDateEnabled")
             row.requireOptionalString("description")
             row.requireOptionalString("titleHint")
+            row.requireOptionalStringArray("taskTypes")
             row.requireOptionalBoolean("starred")
             row.requireOptionalBoolean("excludeFromToday")
             row.requireOptionalBoolean("archived")
@@ -1181,6 +1191,7 @@ class JsonExporter @Inject constructor(
             row.requireOptionalString("color")
             row.requireOptionalString("icon")
             row.requireOptionalString("titleHint")
+            row.requireOptionalStringArray("taskTypes")
             row.requireOptionalBoolean("starred")
             row.requireOptionalBoolean("excludeFromToday")
             row.requireOptionalBoolean("archived")
@@ -1462,6 +1473,8 @@ class JsonExporter @Inject constructor(
                                 // rather than erasing it. Explicit null still clears it.
                                 titleHint = if (!o.has("titleHint")) repository.getProjectById(o.getString("id")).first()?.titleHint
                                     else if (o.isNull("titleHint")) null else o.getString("titleHint"),
+                                taskTypes = if (!o.has("taskTypes")) repository.getProjectById(o.getString("id")).first()?.taskTypes.orEmpty()
+                                    else o.taskTypesOrEmpty(),
                                 excludeFromToday = o.optBoolean("excludeFromToday", false),
                                 sortOrder = o.optInt("sortOrder", 0),
                                 archived = o.optBoolean("archived", false),
@@ -1495,7 +1508,9 @@ class JsonExporter @Inject constructor(
                                 sortOrder = o.optInt("sortOrder", 0),
                                 archived = o.optBoolean("archived", false),
                                 titleHint = if (!o.has("titleHint")) repository.getListById(o.getString("id")).first()?.titleHint
-                                    else if (o.isNull("titleHint")) null else o.getString("titleHint")
+                                    else if (o.isNull("titleHint")) null else o.getString("titleHint"),
+                                taskTypes = if (!o.has("taskTypes")) repository.getListById(o.getString("id")).first()?.taskTypes.orEmpty()
+                                    else o.taskTypesOrEmpty()
                             )
                         )
                     }

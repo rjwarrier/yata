@@ -796,6 +796,11 @@
     <string name="entity_editors_title_hint">Sugerencia de título de tarea</string>
     <string name="entity_editors_title_hint_summary">Se muestra como texto de marcador de posición en el campo de título al añadir una tarea aquí: es una sugerencia sobre cómo redactarlo, no un valor predeterminado.</string>
     <string name="entity_editors_title_hint_placeholder">p. ej. Tipo de trabajo : Nombre del cliente</string>
+    <string name="entity_editors_task_types">Tipos de tarea</string>
+    <string name="entity_editors_task_types_summary">Se sugieren al escribir el título de una tarea aquí. Toca uno para empezar el título con él.</string>
+    <string name="entity_editors_task_types_placeholder">p. ej. ITR, Tax Audit, Stat Audit</string>
+    <string name="cd_task_type_add">Añadir tipo de tarea</string>
+    <string name="cd_task_type_remove">Quitar %1$s</string>
     <string name="entity_editors_what_s_this_project_about">¿De qué trata este proyecto?</string>
     <string name="export_options_no_limit">Sin límite</string>
     <string name="help_about_help_about">Ayuda y acerca de</string>

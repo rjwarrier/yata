@@ -5,9 +5,12 @@ import org.json.JSONObject
 import com.mj.yata.domain.model.*
 import com.mj.yata.data.local.db.entity.*
 
-/** Joins Project.sectionNames — a Record Separator rather than a comma since these are
- * free-typed names, not IDs, and a comma could legitimately appear in one. */
+/** Joins Project.sectionNames and project/list taskTypes — a Record Separator rather than a
+ * comma since these are free-typed names, not IDs, and a comma could legitimately appear in one. */
 private const val SECTION_NAME_DELIMITER = '\u001E'
+
+private fun String.splitNames(): List<String> = if (isEmpty()) emptyList() else split(SECTION_NAME_DELIMITER)
+private fun List<String>.joinNames(): String = joinToString(SECTION_NAME_DELIMITER.toString())
 
 fun serializeRecurrence(r: Recurrence?): String? {
     if (r == null) return null
@@ -123,10 +126,11 @@ fun ProjectEntity.toDomain() = Project(
     excludeFromToday = excludeFromToday,
     sortOrder = sortOrder,
     archived = archived,
-    sectionNames = if (sectionNames.isEmpty()) emptyList() else sectionNames.split(SECTION_NAME_DELIMITER),
+    sectionNames = sectionNames.splitNames(),
     groupId = groupId,
     receivedDateEnabled = receivedDateEnabled,
-    titleHint = titleHint
+    titleHint = titleHint,
+    taskTypes = taskTypes.splitNames()
 )
 fun Project.toEntity() = ProjectEntity(
     id = id,
@@ -141,14 +145,15 @@ fun Project.toEntity() = ProjectEntity(
     excludeFromToday = excludeFromToday,
     sortOrder = sortOrder,
     archived = archived,
-    sectionNames = sectionNames.joinToString(SECTION_NAME_DELIMITER.toString()),
+    sectionNames = sectionNames.joinNames(),
     groupId = groupId,
     receivedDateEnabled = receivedDateEnabled,
-    titleHint = titleHint
+    titleHint = titleHint,
+    taskTypes = taskTypes.joinNames()
 )
 
-fun ListEntity.toDomain() = YataList(id, name, color, icon, starred, excludeFromToday, sortOrder, archived, titleHint)
-fun YataList.toEntity() = ListEntity(id, name, color, icon, starred, excludeFromToday, sortOrder, archived, titleHint)
+fun ListEntity.toDomain() = YataList(id, name, color, icon, starred, excludeFromToday, sortOrder, archived, titleHint, taskTypes.splitNames())
+fun YataList.toEntity() = ListEntity(id, name, color, icon, starred, excludeFromToday, sortOrder, archived, titleHint, taskTypes.joinNames())
 
 fun TagEntity.toDomain() = Tag(id, name, color, groupId, starred, hideCompletedByDefault, description)
 fun Tag.toEntity() = TagEntity(id, name, color, groupId, starred, hideCompletedByDefault, description)

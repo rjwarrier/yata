@@ -663,6 +663,11 @@
     <string name="entity_editors_title_hint">टास्क टाइटल संकेत</string>
     <string name="entity_editors_title_hint_summary">यहाँ टास्क जोड़ते समय टाइटल फ़ील्ड में प्लेसहोल्डर टेक्स्ट के रूप में दिखाया जाता है — यह कैसे लिखें इसका सुझाव है, डिफ़ॉल्ट मान नहीं।</string>
     <string name="entity_editors_title_hint_placeholder">उदा. कार्य प्रकार : क्लाइंट का नाम</string>
+    <string name="entity_editors_task_types">टास्क के प्रकार</string>
+    <string name="entity_editors_task_types_summary">यहाँ टास्क का टाइटल लिखते समय सुझाए जाते हैं। टाइटल को उससे शुरू करने के लिए किसी एक पर टैप करें।</string>
+    <string name="entity_editors_task_types_placeholder">उदा. ITR, Tax Audit, Stat Audit</string>
+    <string name="cd_task_type_add">टास्क का प्रकार जोड़ें</string>
+    <string name="cd_task_type_remove">%1$s हटाएँ</string>
     <string name="entity_editors_what_s_this_project_about">यह परियोजना किस बारे में है?</string>
     <string name="export_options_no_limit">कोई सीमा नहीं</string>
     <string name="help_about_help_about">मदद</string>

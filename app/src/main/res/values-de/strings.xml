@@ -746,6 +746,11 @@
     <string name="entity_editors_title_hint">Titel-Hinweis für Aufgaben</string>
     <string name="entity_editors_title_hint_summary">Wird als Platzhaltertext im Titelfeld angezeigt, wenn hier eine Aufgabe erstellt wird — ein Hinweis zur Formulierung, kein Standardwert.</string>
     <string name="entity_editors_title_hint_placeholder">z. B. Arbeitstyp : Kundenname</string>
+    <string name="entity_editors_task_types">Aufgabentypen</string>
+    <string name="entity_editors_task_types_summary">Werden beim Eingeben eines Aufgabentitels hier vorgeschlagen. Tippe auf einen, um den Titel damit zu beginnen.</string>
+    <string name="entity_editors_task_types_placeholder">z. B. ITR, Tax Audit, Stat Audit</string>
+    <string name="cd_task_type_add">Aufgabentyp hinzufügen</string>
+    <string name="cd_task_type_remove">%1$s entfernen</string>
     <string name="entity_editors_what_s_this_project_about">Worum geht es in diesem Projekt?</string>
     <string name="export_options_no_limit">Kein Limit</string>
     <string name="help_about_help_about">Hilfe</string>

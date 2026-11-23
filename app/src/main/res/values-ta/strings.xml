@@ -644,6 +644,11 @@
     <string name="entity_editors_title_hint">பணி தலைப்பு குறிப்பு</string>
     <string name="entity_editors_title_hint_summary">இங்கே ஒரு பணியைச் சேர்க்கும்போது தலைப்பு புலத்தில் இடப்பிடுப்பான் உரையாகக் காட்டப்படும் — இது எவ்வாறு எழுத வேண்டும் என்பதற்கான குறிப்பு, இயல்புமதிப்பு அல்ல.</string>
     <string name="entity_editors_title_hint_placeholder">எ.கா. பணி வகை : வாடிக்கையாளர் பெயர்</string>
+    <string name="entity_editors_task_types">பணி வகைகள்</string>
+    <string name="entity_editors_task_types_summary">இங்கே பணியின் தலைப்பைத் தட்டச்சு செய்யும்போது பரிந்துரைக்கப்படும். தலைப்பை அதனுடன் தொடங்க ஒன்றைத் தட்டவும்.</string>
+    <string name="entity_editors_task_types_placeholder">எ.கா. ITR, Tax Audit, Stat Audit</string>
+    <string name="cd_task_type_add">பணி வகையைச் சேர்</string>
+    <string name="cd_task_type_remove">%1$s ஐ அகற்று</string>
     <string name="entity_editors_what_s_this_project_about">இந்த திட்டம் எதைப் பற்றியது?</string>
     <string name="export_options_no_limit">வரம்பு இல்லை</string>
     <string name="help_about_help_about">உதவி</string>

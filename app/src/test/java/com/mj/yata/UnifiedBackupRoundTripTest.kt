@@ -207,43 +207,54 @@ class UnifiedBackupRoundTripTest {
         }
     }
 
-    @Test fun titleHintsSurviveRestoreAndLegacySnapshotsWithoutTheField() = runBlocking {
+    @Test fun titleHintsAndTaskTypesSurviveRestoreAndLegacySnapshotsWithoutTheFields() = runBlocking {
         val projectHint = "Work Type : Client Name"
         val listHint = "Store : Item"
+        val projectTypes = listOf("ITR", "Tax Audit", "Stat Audit", "Other")
+        val listTypes = listOf("Groceries", "Pharmacy")
         store().use { source ->
             source.repository.upsertPerson(Person("me", "You", "Y", "accentA", isMe = true))
-            source.repository.upsertProject(Project("work", "Work", "accentA", "work", titleHint = projectHint))
-            source.repository.upsertList(com.mj.yata.domain.model.YataList("shop", "Shopping", "accentB", "shopping", titleHint = listHint))
+            source.repository.upsertProject(Project("work", "Work", "accentA", "work", titleHint = projectHint, taskTypes = projectTypes))
+            source.repository.upsertList(com.mj.yata.domain.model.YataList("shop", "Shopping", "accentB", "shopping", titleHint = listHint, taskTypes = listTypes))
             val bytes = source.exporter.exportToBytes()
             store().use { target ->
+                suspend fun assertKept() {
+                    val project = target.repository.getProjects().first().single()
+                    val list = target.repository.getLists().first().single()
+                    assertEquals(projectHint, project.titleHint)
+                    assertEquals(listHint, list.titleHint)
+                    assertEquals(projectTypes, project.taskTypes)
+                    assertEquals(listTypes, list.taskTypes)
+                }
                 assertTrue(target.exporter.importBytes(bytes))
-                assertEquals(projectHint, target.repository.getProjects().first().single().titleHint)
-                assertEquals(listHint, target.repository.getLists().first().single().titleHint)
+                assertKept()
 
-                // A device on an older build republishes without the key; that must not read as "cleared".
+                // A device on an older build republishes without the keys; that must not read as "cleared".
                 val legacy = JSONObject(String(bytes))
-                legacy.getJSONArray("projects").getJSONObject(0).remove("titleHint")
-                legacy.getJSONArray("lists").getJSONObject(0).remove("titleHint")
+                for (collection in listOf("projects", "lists")) {
+                    legacy.getJSONArray(collection).getJSONObject(0).apply { remove("titleHint"); remove("taskTypes") }
+                }
                 val engine = SnapshotSyncEngine(context, target.exporter, RecoveryBackupManager(context, target.exporter))
                 engine.commitRestoredBaseline("title-hint-test", bytes)
                 repeat(2) {
                     val prepared = engine.prepare(legacy.toString().toByteArray(), "title-hint-test")
                     assertEquals(projectHint, prepared.canonical.getJSONArray("projects").getJSONObject(0).getString("titleHint"))
                     assertEquals(listHint, prepared.canonical.getJSONArray("lists").getJSONObject(0).getString("titleHint"))
+                    assertEquals(projectTypes.size, prepared.canonical.getJSONArray("projects").getJSONObject(0).getJSONArray("taskTypes").length())
                     engine.commit(prepared)
-                    assertEquals(projectHint, target.repository.getProjects().first().single().titleHint)
-                    assertEquals(listHint, target.repository.getLists().first().single().titleHint)
+                    assertKept()
                 }
 
                 assertTrue(target.exporter.importBytes(legacy.toString().toByteArray()))
-                assertEquals(projectHint, target.repository.getProjects().first().single().titleHint)
-                assertEquals(listHint, target.repository.getLists().first().single().titleHint)
+                assertKept()
 
-                // An explicit null from a current client still clears it.
+                // An explicit null / empty array from a current client still clears them.
                 val cleared = JSONObject(String(bytes))
                 cleared.getJSONArray("projects").getJSONObject(0).put("titleHint", JSONObject.NULL)
+                cleared.getJSONArray("lists").getJSONObject(0).put("taskTypes", JSONArray())
                 assertTrue(target.exporter.importBytes(cleared.toString().toByteArray()))
                 assertEquals(null, target.repository.getProjects().first().single().titleHint)
+                assertTrue(target.repository.getLists().first().single().taskTypes.isEmpty())
             }
         }
     }

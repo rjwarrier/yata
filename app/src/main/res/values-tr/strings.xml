@@ -559,6 +559,11 @@
     <string name="entity_editors_title_hint">Görev başlığı ipucu</string>
     <string name="entity_editors_title_hint_summary">Buraya bir görev eklerken başlık alanında yer tutucu metin olarak gösterilir — nasıl yazılacağına dair bir öneridir, varsayılan bir değer değildir.</string>
     <string name="entity_editors_title_hint_placeholder">örn. İş Türü : Müşteri Adı</string>
+    <string name="entity_editors_task_types">Görev türleri</string>
+    <string name="entity_editors_task_types_summary">Burada görev başlığı yazarken önerilir. Başlığı onunla başlatmak için birine dokunun.</string>
+    <string name="entity_editors_task_types_placeholder">örn. ITR, Tax Audit, Stat Audit</string>
+    <string name="cd_task_type_add">Görev türü ekle</string>
+    <string name="cd_task_type_remove">%1$s kaldır</string>
     <string name="entity_editors_what_s_this_project_about">Bu proje ne hakkında?</string>
     <string name="export_options_no_limit">Sınır yok</string>
     <string name="help_about_help_about">Yardım</string>

@@ -663,6 +663,11 @@
     <string name="entity_editors_title_hint">Taaktitel-hint</string>
     <string name="entity_editors_title_hint_summary">Wordt getoond als placeholdertekst in het titelveld bij het toevoegen van een taak hier — een tip voor de formulering, geen standaardwaarde.</string>
     <string name="entity_editors_title_hint_placeholder">bijv. Soort werk : Klantnaam</string>
+    <string name="entity_editors_task_types">Taaktypen</string>
+    <string name="entity_editors_task_types_summary">Worden voorgesteld terwijl je hier een taaktitel typt. Tik op een type om de titel ermee te beginnen.</string>
+    <string name="entity_editors_task_types_placeholder">bijv. ITR, Tax Audit, Stat Audit</string>
+    <string name="cd_task_type_add">Taaktype toevoegen</string>
+    <string name="cd_task_type_remove">%1$s verwijderen</string>
     <string name="entity_editors_what_s_this_project_about">Waar gaat dit project over?</string>
     <string name="export_options_no_limit">Geen limiet</string>
     <string name="help_about_help_about">Help</string>

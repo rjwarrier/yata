@@ -644,6 +644,11 @@
     <string name="entity_editors_title_hint">ടാസ്ക് ടൈറ്റിൽ സൂചന</string>
     <string name="entity_editors_title_hint_summary">ഇവിടെ ഒരു ടാസ്ക് ചേർക്കുമ്പോൾ ടൈറ്റിൽ ഫീൽഡിൽ പ്ലെയ്സ്‌ഹോൾഡർ ടെക്സ്റ്റായി കാണിക്കുന്നു — ഇത് എങ്ങനെ എഴുതണമെന്നതിനുള്ള നിർദ്ദേശമാണ്, ഡിഫോൾട്ട് മൂല്യമല്ല.</string>
     <string name="entity_editors_title_hint_placeholder">ഉദാ. ജോലി തരം : ക്ലയന്റ് പേര്</string>
+    <string name="entity_editors_task_types">ടാസ്ക് തരങ്ങൾ</string>
+    <string name="entity_editors_task_types_summary">ഇവിടെ ടാസ്ക് ടൈറ്റിൽ ടൈപ്പ് ചെയ്യുമ്പോൾ നിർദ്ദേശിക്കപ്പെടും. ടൈറ്റിൽ അതിൽ ആരംഭിക്കാൻ ഒന്നിൽ ടാപ്പ് ചെയ്യുക.</string>
+    <string name="entity_editors_task_types_placeholder">ഉദാ. ITR, Tax Audit, Stat Audit</string>
+    <string name="cd_task_type_add">ടാസ്ക് തരം ചേർക്കുക</string>
+    <string name="cd_task_type_remove">%1$s നീക്കം ചെയ്യുക</string>
     <string name="entity_editors_what_s_this_project_about">ഈ പ്രോജക്റ്റ് എന്തിനെ കുറിച്ചാണ്?</string>
     <string name="export_options_no_limit">പരിധിയില്ല</string>
     <string name="help_about_help_about">സഹായം</string>

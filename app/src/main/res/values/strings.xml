@@ -829,6 +829,11 @@
     <string name="entity_editors_title_hint">Task title hint</string>
     <string name="entity_editors_title_hint_summary">Shown as placeholder text in the task title field when adding a task here — a tip for how to phrase it, not a default value.</string>
     <string name="entity_editors_title_hint_placeholder">e.g. Work Type : Client Name</string>
+    <string name="entity_editors_task_types">Task types</string>
+    <string name="entity_editors_task_types_summary">Suggested as you type a task title here. Tap one to start the title with it.</string>
+    <string name="entity_editors_task_types_placeholder">e.g. ITR, Tax Audit, Stat Audit</string>
+    <string name="cd_task_type_add">Add task type</string>
+    <string name="cd_task_type_remove">Remove %1$s</string>
     <string name="entity_editors_what_s_this_project_about">What\'s this project about?</string>
     <string name="export_options_no_limit">No limit</string>
     <string name="help_about_help_about">Help</string>

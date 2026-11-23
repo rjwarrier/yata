@@ -12,10 +12,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowDropUp
+import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Event
@@ -34,12 +37,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 import com.mj.yata.R
+import com.mj.yata.domain.model.normalizeTaskTypes
 import com.mj.yata.ui.widgets.ColorPicker
 import com.mj.yata.ui.widgets.YataDatePickerDialog
 import com.mj.yata.util.TaskScheduleUtils
@@ -187,11 +192,12 @@ fun ProjectEditorSheet(
     initialReceivedDateEnabled: Boolean = true,
     initialGroupId: String? = null,
     initialTitleHint: String? = null,
+    initialTaskTypes: List<String> = emptyList(),
     tags: List<com.mj.yata.domain.model.Tag> = emptyList(),
     groups: List<com.mj.yata.domain.model.ProjectGroup> = emptyList(),
     /** Names of the other projects, for the case-insensitive collision check — see [nameCollides]. */
     existingNames: List<String> = emptyList(),
-    onSave: (String, String, String, String?, List<String>, String?, String?, Boolean, String?, Boolean, String?) -> Unit,
+    onSave: (String, String, String, String?, List<String>, String?, String?, Boolean, String?, Boolean, String?, List<String>) -> Unit,
     onCreateGroup: (id: String, name: String, color: String) -> Unit = { _, _, _ -> },
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
@@ -210,6 +216,9 @@ fun ProjectEditorSheet(
     var receivedDateEnabled by remember { mutableStateOf(initialReceivedDateEnabled) }
     var selectedGroupId by remember { mutableStateOf(initialGroupId) }
     var titleHint by remember { mutableStateOf(initialTitleHint ?: "") }
+    var taskTypes by remember { mutableStateOf(initialTaskTypes) }
+    var pendingTaskType by remember { mutableStateOf("") }
+    var taskTypesExpanded by remember { mutableStateOf(initialTaskTypes.isNotEmpty()) }
     val selectedTagIds = remember { mutableStateListOf<String>().apply { addAll(initialCommonTagIds) } }
     var reminderExpanded by remember { mutableStateOf(initialDefaultReminder != null) }
     var tagsExpanded by remember { mutableStateOf(initialCommonTagIds.isNotEmpty()) }
@@ -311,6 +320,15 @@ fun ProjectEditorSheet(
             shape = com.mj.yata.ui.widgets.YataCompactFieldShape,
             colors = com.mj.yata.ui.widgets.yataFieldColors(),
             modifier = Modifier.fillMaxWidth()
+        )
+
+        TaskTypesSection(
+            types = taskTypes,
+            onTypesChange = { taskTypes = it },
+            pending = pendingTaskType,
+            onPendingChange = { pendingTaskType = it },
+            expanded = taskTypesExpanded,
+            onToggle = { taskTypesExpanded = !taskTypesExpanded }
         )
 
         Surface(
@@ -518,7 +536,7 @@ fun ProjectEditorSheet(
             }
             Spacer(modifier = Modifier.width(8.dp))
             Button(
-                onClick = { if (name.isNotBlank() && !nameTaken) onSave(name, selectedColor, selectedIcon, dueDate, selectedTagIds.toList(), defaultReminder, description.trim().ifBlank { null }, excludeFromToday, selectedGroupId, receivedDateEnabled, titleHint.trim().ifBlank { null }) },
+                onClick = { if (name.isNotBlank() && !nameTaken) onSave(name, selectedColor, selectedIcon, dueDate, selectedTagIds.toList(), defaultReminder, description.trim().ifBlank { null }, excludeFromToday, selectedGroupId, receivedDateEnabled, titleHint.trim().ifBlank { null }, taskTypesToSave(taskTypes, pendingTaskType)) },
                 enabled = name.isNotBlank() && !nameTaken
             ) {
                 Text(buttonText)
@@ -535,6 +553,81 @@ fun ProjectEditorSheet(
                 showDatePicker = false
             }
         )
+    }
+}
+
+/** The editor's types plus whatever is still typed in the input — Save applies both, so a type
+ * typed but never confirmed with the add button isn't silently dropped. */
+private fun taskTypesToSave(types: List<String>, pending: String): List<String> =
+    normalizeTaskTypes(types + pending.split(','))
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun TaskTypesSection(
+    types: List<String>,
+    onTypesChange: (List<String>) -> Unit,
+    pending: String,
+    onPendingChange: (String) -> Unit,
+    expanded: Boolean,
+    onToggle: () -> Unit
+) {
+    fun commitPending() {
+        onTypesChange(taskTypesToSave(types, pending))
+        onPendingChange("")
+    }
+    ProjectEditorSection(
+        title = stringResource(R.string.entity_editors_task_types),
+        summary = types.takeIf { it.isNotEmpty() }?.joinToString(limit = 3, truncated = "+${types.size - 3}")
+            ?: stringResource(R.string.settings_none),
+        leadingIcon = { Icon(Icons.Default.Category, contentDescription = null) },
+        expanded = expanded,
+        onToggle = onToggle
+    ) {
+        Text(
+            text = stringResource(R.string.entity_editors_task_types_summary),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        if (types.isNotEmpty()) {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                types.forEach { type ->
+                    InputChip(
+                        selected = false,
+                        onClick = { onTypesChange(types - type) },
+                        label = { Text(type) },
+                        trailingIcon = {
+                            Icon(
+                                Icons.Default.Close,
+                                contentDescription = stringResource(R.string.cd_task_type_remove, type),
+                                modifier = Modifier.size(InputChipDefaults.IconSize)
+                            )
+                        }
+                    )
+                }
+            }
+        }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            TextField(
+                value = pending,
+                onValueChange = onPendingChange,
+                placeholder = { Text(stringResource(R.string.entity_editors_task_types_placeholder)) },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { commitPending() }),
+                shape = com.mj.yata.ui.widgets.YataCompactFieldShape,
+                colors = com.mj.yata.ui.widgets.yataFieldColors(),
+                modifier = Modifier.weight(1f)
+            )
+            IconButton(onClick = { commitPending() }, enabled = pending.isNotBlank()) {
+                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_task_type_add))
+            }
+        }
     }
 }
 
@@ -1161,7 +1254,8 @@ fun ListEditorSheet(
     initialIcon: String = "folder",
     initialExcludeFromToday: Boolean = false,
     initialTitleHint: String? = null,
-    onSave: (String, String, String, Boolean, String?) -> Unit,
+    initialTaskTypes: List<String> = emptyList(),
+    onSave: (String, String, String, Boolean, String?, List<String>) -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
     /** Names of the other lists, for the case-insensitive collision check — see [nameCollides]. */
@@ -1176,6 +1270,9 @@ fun ListEditorSheet(
     var excludeFromToday by remember { mutableStateOf(initialExcludeFromToday) }
     var titleHint by remember { mutableStateOf(initialTitleHint ?: "") }
     val titleHintLimit = 60
+    var taskTypes by remember { mutableStateOf(initialTaskTypes) }
+    var pendingTaskType by remember { mutableStateOf("") }
+    var taskTypesExpanded by remember { mutableStateOf(initialTaskTypes.isNotEmpty()) }
     var appearanceExpanded by remember { mutableStateOf(false) }
 
     Column(
@@ -1279,6 +1376,15 @@ fun ListEditorSheet(
             modifier = Modifier.fillMaxWidth()
         )
 
+        TaskTypesSection(
+            types = taskTypes,
+            onTypesChange = { taskTypes = it },
+            pending = pendingTaskType,
+            onPendingChange = { pendingTaskType = it },
+            expanded = taskTypesExpanded,
+            onToggle = { taskTypesExpanded = !taskTypesExpanded }
+        )
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.End,
@@ -1289,7 +1395,7 @@ fun ListEditorSheet(
             }
             Spacer(modifier = Modifier.width(8.dp))
             Button(
-                onClick = { if (name.isNotBlank() && !nameTaken) onSave(name, selectedColor, selectedIcon, excludeFromToday, titleHint.trim().ifBlank { null }) },
+                onClick = { if (name.isNotBlank() && !nameTaken) onSave(name, selectedColor, selectedIcon, excludeFromToday, titleHint.trim().ifBlank { null }, taskTypesToSave(taskTypes, pendingTaskType)) },
                 enabled = name.isNotBlank() && !nameTaken
             ) {
                 Text(buttonText)

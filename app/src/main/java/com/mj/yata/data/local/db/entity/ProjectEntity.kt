@@ -37,5 +37,7 @@ data class ProjectEntity(
     val sectionNames: String = "",
     val groupId: String? = null,
     @ColumnInfo(defaultValue = "1") val receivedDateEnabled: Boolean = true,
-    val titleHint: String? = null
+    val titleHint: String? = null,
+    // U+001E-joined, like sectionNames: free-typed text that may contain commas.
+    val taskTypes: String = ""
 )

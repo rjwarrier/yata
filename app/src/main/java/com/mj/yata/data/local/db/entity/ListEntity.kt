@@ -13,5 +13,6 @@ data class ListEntity(
     val excludeFromToday: Boolean = false,
     val sortOrder: Int = 0,
     val archived: Boolean = false,
-    val titleHint: String? = null
+    val titleHint: String? = null,
+    val taskTypes: String = ""
 )

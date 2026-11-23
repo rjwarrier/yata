@@ -47,7 +47,9 @@ data class Project(
     // Shown as non-editable placeholder text in NewTaskSheet's title field when adding a task
     // here and the title is blank (e.g. "Work Type : Client Name") — a per-project hint for how
     // to phrase a title, not a default value. Max 60 chars, enforced in ProjectEditorSheet.
-    val titleHint: String? = null
+    val titleHint: String? = null,
+    // Offered as chips under NewTaskSheet's title field while adding a task here; see TaskTypes.kt.
+    val taskTypes: List<String> = emptyList()
 )
 
 /** General tasks retain Date Received; a project can opt out without deleting historical values. */
@@ -78,8 +80,9 @@ data class YataList(
     val excludeFromToday: Boolean = false, // tasks here never show in Today, regardless of due date
     val sortOrder: Int = 0, // manual drag-and-drop order in the nav drawer's Lists section
     val archived: Boolean = false, // true = kept for history, hidden from active list surfaces
-    // See [Project.titleHint] — same placeholder-hint behaviour, scoped to this list instead.
-    val titleHint: String? = null
+    // See [Project.titleHint] / [Project.taskTypes] — same behaviour, scoped to this list instead.
+    val titleHint: String? = null,
+    val taskTypes: List<String> = emptyList()
 )
 
 fun List<YataList>.activeLists(includeId: String? = null): List<YataList> =

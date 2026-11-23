@@ -186,6 +186,7 @@ internal object SnapshotMerger {
             for (i in 0 until projects.length()) {
                 projects.optJSONObject(i)?.let { project ->
                     if (!project.has("receivedDateEnabled")) project.put("receivedDateEnabled", true)
+                    if (!project.has("taskTypes")) project.put("taskTypes", JSONArray())
                     project.normalizeNullableFields(
                         "due",
                         "defaultReminder",
@@ -198,7 +199,10 @@ internal object SnapshotMerger {
         }
         normalized.optJSONArray("lists")?.let { lists ->
             for (i in 0 until lists.length()) {
-                lists.optJSONObject(i)?.normalizeNullableFields("titleHint")
+                lists.optJSONObject(i)?.let { list ->
+                    list.normalizeNullableFields("titleHint")
+                    if (!list.has("taskTypes")) list.put("taskTypes", JSONArray())
+                }
             }
         }
         // Tags gained "description" in 6cea2b7 and always carry "groupId" (JsonExporter.kt) —
@@ -847,22 +851,27 @@ internal fun preserveMissingProjectReceivedDatePreference(source: JSONObject, lo
     return copy
 }
 
-/** Clients older than title hints drop the field on import and republish without it. Missing
- * means keep the local hint, not "cleared" — otherwise one old device erases hints on every sync. */
-internal fun preserveMissingTitleHints(source: JSONObject, local: JSONObject): JSONObject {
+/** Clients older than title hints / task types drop those fields on import and republish without
+ * them. Missing means keep the local value, not "cleared" — otherwise one old device erases them
+ * on every sync. */
+internal fun preserveMissingCaptureFields(source: JSONObject, local: JSONObject): JSONObject {
     val copy = JSONObject(source.toString())
     for (collection in listOf("projects", "lists")) {
-        val localHints = mutableMapOf<String, Any>()
+        val localRows = mutableMapOf<String, JSONObject>()
         local.optJSONArray(collection)?.let { rows ->
             for (i in 0 until rows.length()) {
                 val row = rows.getJSONObject(i)
-                localHints[row.getString("id")] = row.opt("titleHint") ?: JSONObject.NULL
+                localRows[row.getString("id")] = row
             }
         }
         copy.optJSONArray(collection)?.let { rows ->
             for (i in 0 until rows.length()) {
                 val row = rows.getJSONObject(i)
-                if (!row.has("titleHint")) row.put("titleHint", localHints[row.getString("id")] ?: JSONObject.NULL)
+                val localRow = localRows[row.getString("id")]
+                if (!row.has("titleHint")) row.put("titleHint", localRow?.opt("titleHint") ?: JSONObject.NULL)
+                if (!row.has("taskTypes")) {
+                    row.put("taskTypes", JSONArray(localRow?.optJSONArray("taskTypes")?.toString() ?: "[]"))
+                }
             }
         }
     }
@@ -922,7 +931,7 @@ class SnapshotSyncEngine @Inject constructor(
                     "available, but it cannot be promoted safely; restore a chosen backup first"
             }
             val remote = remoteSource?.let {
-                SnapshotMerger.normalizeForSync(preserveMissingTitleHints(preserveMissingProjectReceivedDatePreference(preserveGroupsMissingFromLegacySnapshot(it, base ?: local), local), local))
+                SnapshotMerger.normalizeForSync(preserveMissingCaptureFields(preserveMissingProjectReceivedDatePreference(preserveGroupsMissingFromLegacySnapshot(it, base ?: local), local), local))
             }
             val result = SnapshotMerger.merge(base = base, local = local, remote = remote)
             PreparedSnapshotSync(

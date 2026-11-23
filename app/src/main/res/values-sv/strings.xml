@@ -559,6 +559,11 @@
     <string name="entity_editors_title_hint">Tips för uppgiftstitel</string>
     <string name="entity_editors_title_hint_summary">Visas som platshållartext i titelfältet när en uppgift läggs till här — ett tips om hur den kan formuleras, inte ett standardvärde.</string>
     <string name="entity_editors_title_hint_placeholder">t.ex. Arbetstyp : Kundnamn</string>
+    <string name="entity_editors_task_types">Uppgiftstyper</string>
+    <string name="entity_editors_task_types_summary">Föreslås medan du skriver en uppgiftstitel här. Tryck på en för att börja titeln med den.</string>
+    <string name="entity_editors_task_types_placeholder">t.ex. ITR, Tax Audit, Stat Audit</string>
+    <string name="cd_task_type_add">Lägg till uppgiftstyp</string>
+    <string name="cd_task_type_remove">Ta bort %1$s</string>
     <string name="entity_editors_what_s_this_project_about">Vad handlar det här projektet om?</string>
     <string name="export_options_no_limit">Ingen gräns</string>
     <string name="help_about_help_about">Hjälp</string>
