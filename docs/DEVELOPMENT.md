@@ -11,7 +11,8 @@ and agent-specific working guidance.
 | --- | --- |
 | Runtime support | Android 8.0+, minSdk 26 |
 | Compile / target SDK | 36 / 36 |
-| Build JDK | 17 |
+| Gradle daemon JDK | JetBrains JDK 21, selected by `gradle/gradle-daemon-jvm.properties` |
+| Java / Kotlin bytecode target | 17 |
 | Kotlin | 2.0.21 |
 | Android Gradle plugin | 8.13.0, via the wrapper-managed build |
 | Compose BOM | 2025.12.00 |
@@ -44,6 +45,29 @@ On Windows, run from PowerShell:
 
 Configure the SDK through Android Studio or an untracked `local.properties` with `sdk.dir`.
 The debug APK is written to `app/build/outputs/apk/debug/app-debug.apk`.
+
+### Windows sandbox build failures
+
+If Gradle fails before compilation with `Unable to establish loopback connection` and a
+`sun.nio.ch.UnixDomainSockets` / `PipeImpl` stack trace, retry from an ordinary PowerShell
+terminal outside the agent sandbox:
+
+```powershell
+.\gradlew.bat :app:compileDebugKotlin --console=plain
+.\gradlew.bat :app:assembleDebug --console=plain
+```
+
+When building through Codex, request approved execution outside the sandbox for the Gradle
+command. This also allows access to the wrapper/cache under the user's `.gradle` directory;
+an `Access is denied` error on a wrapper `.lck` file is a separate sandbox permission failure.
+An approved build completed using this project's JDK 21 daemon configuration. If the socket
+error persists under approved execution, use the external terminal; the matching
+[Windows Codex issue report](https://github.com/openai/codex/issues/40902) describes that case.
+
+Changing only `JAVA_HOME` does not change the daemon JDK selected by this project's daemon
+criteria file. `--no-daemon` can still start a single-use daemon and is not a reliable fix for
+this socket error. Do not change application code or disable Windows security to address it.
+Use `.\gradlew.bat --version` to check the launcher JVM and daemon JVM separately.
 
 ### Signing and installation
 
