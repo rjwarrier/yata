@@ -17,6 +17,8 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ### Added
 
+- Each Project and List can set a "Task title hint" in its editor — shown as placeholder text in the task title field while adding a task there, as a tip for how to phrase it (e.g. "Work Type : Client Name"); it disappears once typing starts and reappears when the field is cleared, and falls back to the usual shortcuts hint when none is configured.
+
 - A per-project Date Received switch hides the field for that project's tasks and stops automatic received-date defaults; general tasks keep the field. Existing values are retained.
 
 - Recognize common received-date typos and shorthand such as “recievd”, “rcvd dt”, “DOR:”, “ystrdy”, “lst Fri”, “biz days ago”, and “mths back”, while retaining receipt-context guards.

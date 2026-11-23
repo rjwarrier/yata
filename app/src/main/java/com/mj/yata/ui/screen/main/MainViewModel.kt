@@ -2219,7 +2219,7 @@ data class WeekendRescheduleWarning(
         }
     }
 
-    fun addProject(name: String, color: String, icon: String = "layers", due: String? = null, commonTagIds: List<String> = emptyList(), defaultReminder: String? = null, description: String? = null, excludeFromToday: Boolean = false, groupId: String? = null, receivedDateEnabled: Boolean = true) {
+    fun addProject(name: String, color: String, icon: String = "layers", due: String? = null, commonTagIds: List<String> = emptyList(), defaultReminder: String? = null, description: String? = null, excludeFromToday: Boolean = false, groupId: String? = null, receivedDateEnabled: Boolean = true, titleHint: String? = null) {
         safeLaunch {
             val pid = "pr_" + UUID.randomUUID().toString()
             val project = Project(
@@ -2233,7 +2233,8 @@ data class WeekendRescheduleWarning(
                 description = description,
                 excludeFromToday = excludeFromToday,
                 groupId = groupId,
-                receivedDateEnabled = receivedDateEnabled
+                receivedDateEnabled = receivedDateEnabled,
+                titleHint = titleHint
             )
             repository.upsertProject(project)
         }
@@ -2643,14 +2644,15 @@ data class WeekendRescheduleWarning(
         }
     }
 
-    fun addList(name: String, color: String, icon: String, excludeFromToday: Boolean = false) {
+    fun addList(name: String, color: String, icon: String, excludeFromToday: Boolean = false, titleHint: String? = null) {
         safeLaunch {
             val yataList = YataList(
                 id = "l_" + UUID.randomUUID().toString(),
                 name = name,
                 color = color,
                 icon = icon,
-                excludeFromToday = excludeFromToday
+                excludeFromToday = excludeFromToday,
+                titleHint = titleHint
             )
             repository.upsertList(yataList)
         }

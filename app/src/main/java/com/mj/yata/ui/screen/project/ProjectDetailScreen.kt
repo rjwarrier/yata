@@ -1134,10 +1134,11 @@ fun ProjectDetailScreen(
                 initialExcludeFromToday = project.excludeFromToday,
                 initialReceivedDateEnabled = project.receivedDateEnabled,
                 initialGroupId = project.groupId,
+                initialTitleHint = project.titleHint,
                 tags = tags,
                 groups = projectGroups,
-                onSave = { newName, newColor, newIcon, newDue, newCommonTagIds, newDefaultReminder, newDescription, newExcludeFromToday, newGroupId, newReceivedDateEnabled ->
-                    viewModel.upsertProject(project.copy(name = newName, color = newColor, icon = newIcon, due = newDue, commonTagIds = newCommonTagIds, defaultReminder = newDefaultReminder, description = newDescription, excludeFromToday = newExcludeFromToday, groupId = newGroupId, receivedDateEnabled = newReceivedDateEnabled))
+                onSave = { newName, newColor, newIcon, newDue, newCommonTagIds, newDefaultReminder, newDescription, newExcludeFromToday, newGroupId, newReceivedDateEnabled, newTitleHint ->
+                    viewModel.upsertProject(project.copy(name = newName, color = newColor, icon = newIcon, due = newDue, commonTagIds = newCommonTagIds, defaultReminder = newDefaultReminder, description = newDescription, excludeFromToday = newExcludeFromToday, groupId = newGroupId, receivedDateEnabled = newReceivedDateEnabled, titleHint = newTitleHint))
                     isEditSheetOpen = false
                 },
                 onCreateGroup = { id, name, color ->

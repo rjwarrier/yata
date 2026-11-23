@@ -826,6 +826,9 @@
     <string name="entity_editors_separate_multiple_names_with_commas_to_add">Separate multiple names with commas to add several at once.</string>
     <string name="entity_editors_separate_multiple_tags_with_commas_to_crea">Separate multiple tags with commas to create several at once.</string>
     <string name="entity_editors_tag_label">Tag label</string>
+    <string name="entity_editors_title_hint">Task title hint</string>
+    <string name="entity_editors_title_hint_summary">Shown as placeholder text in the task title field when adding a task here — a tip for how to phrase it, not a default value.</string>
+    <string name="entity_editors_title_hint_placeholder">e.g. Work Type : Client Name</string>
     <string name="entity_editors_what_s_this_project_about">What\'s this project about?</string>
     <string name="export_options_no_limit">No limit</string>
     <string name="help_about_help_about">Help</string>

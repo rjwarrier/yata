@@ -1275,8 +1275,15 @@ fun NewTaskSheet(
                             // it is — this is a hint listing four shortcuts, not a preview of what
                             // you are about to type, and at matching size it filled the field and
                             // wrapped onto a second line.
+                            //
+                            // A project/list can configure its own hint (e.g. "Work Type : Client
+                            // Name") to replace the generic shortcuts hint while that project/list
+                            // is selected — project wins when both happen to be set, since only one
+                            // of the two is ever actually selected at a time in practice.
                             Text(
-                                text = stringResource(R.string.new_task_title_hint),
+                                text = project?.titleHint?.takeIf { it.isNotBlank() }
+                                    ?: list?.titleHint?.takeIf { it.isNotBlank() }
+                                    ?: stringResource(R.string.new_task_title_hint),
                                 style = TextStyle(
                                     fontFamily = MaterialTheme.typography.displaySmall.fontFamily,
                                     fontWeight = FontWeight.Medium,

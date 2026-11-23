@@ -641,6 +641,9 @@
     <string name="entity_editors_separate_multiple_names_with_commas_to_add">ਇੱਕੋ ਸਮੇਂ ਕਈ ਜੋੜਨ ਲਈ ਨਾਮਾਂ ਨੂੰ ਕੌਮੇ ਨਾਲ ਵੱਖ ਕਰੋ।</string>
     <string name="entity_editors_separate_multiple_tags_with_commas_to_crea">ਇੱਕੋ ਸਮੇਂ ਕਈ ਬਣਾਉਣ ਲਈ ਟੈਗਾਂ ਨੂੰ ਕੌਮੇ ਨਾਲ ਵੱਖ ਕਰੋ।</string>
     <string name="entity_editors_tag_label">ਟੈਗ ਲੇਬਲ</string>
+    <string name="entity_editors_title_hint">ਟਾਸਕ ਟਾਈਟਲ ਸੰਕੇਤ</string>
+    <string name="entity_editors_title_hint_summary">ਇੱਥੇ ਟਾਸਕ ਜੋੜਦੇ ਸਮੇਂ ਟਾਈਟਲ ਖੇਤਰ ਵਿੱਚ ਪਲੇਸਹੋਲਡਰ ਟੈਕਸਟ ਵਜੋਂ ਦਿਖਾਇਆ ਜਾਂਦਾ ਹੈ — ਇਹ ਕਿਵੇਂ ਲਿਖਣਾ ਹੈ ਇਸ ਦਾ ਸੁਝਾਅ ਹੈ, ਡਿਫੌਲਟ ਮੁੱਲ ਨਹੀਂ।</string>
+    <string name="entity_editors_title_hint_placeholder">ਜਿਵੇਂ. ਕੰਮ ਦੀ ਕਿਸਮ : ਕਲਾਇੰਟ ਦਾ ਨਾਮ</string>
     <string name="entity_editors_what_s_this_project_about">ਇਹ ਪ੍ਰੋਜੈਕਟ ਕਿਸ ਬਾਰੇ ਹੈ?</string>
     <string name="export_options_no_limit">ਕੋਈ ਸੀਮਾ ਨਹੀਂ</string>
     <string name="help_about_help_about">ਮਦਦ</string>

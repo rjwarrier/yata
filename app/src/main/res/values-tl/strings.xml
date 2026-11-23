@@ -641,6 +641,9 @@
     <string name="entity_editors_separate_multiple_names_with_commas_to_add">Paghiwalayin ng kuwit ang maraming pangalan para magdagdag ng ilan nang sabay-sabay.</string>
     <string name="entity_editors_separate_multiple_tags_with_commas_to_crea">Paghiwalayin ng kuwit ang maraming tag para gumawa ng ilan nang sabay-sabay.</string>
     <string name="entity_editors_tag_label">Label ng tag</string>
+    <string name="entity_editors_title_hint">Pahiwatig sa pamagat ng gawain</string>
+    <string name="entity_editors_title_hint_summary">Ipinapakita bilang placeholder text sa field ng pamagat kapag nagdaragdag ng gawain dito — isang tip kung paano ito isulat, hindi default na halaga.</string>
+    <string name="entity_editors_title_hint_placeholder">hal. Uri ng Trabaho : Pangalan ng Kliyente</string>
     <string name="entity_editors_what_s_this_project_about">Ano ang tungkol sa proyektong ito?</string>
     <string name="export_options_no_limit">Walang limitasyon</string>
     <string name="help_about_help_about">Tulong</string>

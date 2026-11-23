@@ -641,6 +641,9 @@
     <string name="entity_editors_separate_multiple_names_with_commas_to_add">ఒకేసారి అనేకం జోడించడానికి బహుళ పేర్లను కామాలతో వేరు చేయండి.</string>
     <string name="entity_editors_separate_multiple_tags_with_commas_to_crea">ఒకేసారి అనేకం సృష్టించడానికి బహుళ ట్యాగ్‌లను కామాలతో వేరు చేయండి.</string>
     <string name="entity_editors_tag_label">ట్యాగ్ లేబుల్</string>
+    <string name="entity_editors_title_hint">టాస్క్ టైటిల్ సూచన</string>
+    <string name="entity_editors_title_hint_summary">ఇక్కడ టాస్క్‌ని జోడించేటప్పుడు టైటిల్ ఫీల్డ్‌లో ప్లేస్‌హోల్డర్ టెక్స్ట్‌గా చూపబడుతుంది — ఇది ఎలా రాయాలో సూచన, డిఫాల్ట్ విలువ కాదు.</string>
+    <string name="entity_editors_title_hint_placeholder">ఉదా. పని రకం : క్లయింట్ పేరు</string>
     <string name="entity_editors_what_s_this_project_about">ఈ ప్రాజెక్ట్ దేని గురించి?</string>
     <string name="export_options_no_limit">పరిమితి లేదు</string>
     <string name="help_about_help_about">సహాయం</string>

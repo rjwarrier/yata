@@ -36,5 +36,6 @@ data class ProjectEntity(
     // appear in a name.
     val sectionNames: String = "",
     val groupId: String? = null,
-    @ColumnInfo(defaultValue = "1") val receivedDateEnabled: Boolean = true
+    @ColumnInfo(defaultValue = "1") val receivedDateEnabled: Boolean = true,
+    val titleHint: String? = null
 )

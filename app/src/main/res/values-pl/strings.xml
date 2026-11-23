@@ -556,6 +556,9 @@
     <string name="entity_editors_separate_multiple_names_with_commas_to_add">Oddziel wiele nazwisk przecinkami, aby dodać kilka naraz.</string>
     <string name="entity_editors_separate_multiple_tags_with_commas_to_crea">Oddziel wiele tagów przecinkami, aby utworzyć kilka naraz.</string>
     <string name="entity_editors_tag_label">Etykieta tagu</string>
+    <string name="entity_editors_title_hint">Wskazówka tytułu zadania</string>
+    <string name="entity_editors_title_hint_summary">Wyświetlana jako tekst zastępczy w polu tytułu podczas dodawania zadania tutaj — to wskazówka, jak go sformułować, a nie wartość domyślna.</string>
+    <string name="entity_editors_title_hint_placeholder">np. Typ pracy : Nazwa klienta</string>
     <string name="entity_editors_what_s_this_project_about">O czym jest ten projekt?</string>
     <string name="export_options_no_limit">Brak limitu</string>
     <string name="help_about_help_about">Pomoc</string>

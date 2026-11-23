@@ -641,6 +641,9 @@
     <string name="entity_editors_separate_multiple_names_with_commas_to_add">एकाच वेळी अनेक नावे जोडण्यासाठी स्वल्पविरामाने वेगळी करा.</string>
     <string name="entity_editors_separate_multiple_tags_with_commas_to_crea">एकाच वेळी अनेक टॅग्ज तयार करण्यासाठी स्वल्पविरामाने वेगळे करा.</string>
     <string name="entity_editors_tag_label">टॅग लेबल</string>
+    <string name="entity_editors_title_hint">कार्य शीर्षक इशारा</string>
+    <string name="entity_editors_title_hint_summary">येथे कार्य जोडताना शीर्षक फील्डमध्ये प्लेसहोल्डर मजकूर म्हणून दर्शविले जाते — हे कसे लिहावे याबद्दलची सूचना आहे, डीफॉल्ट मूल्य नाही.</string>
+    <string name="entity_editors_title_hint_placeholder">उदा. कामाचा प्रकार : क्लायंटचे नाव</string>
     <string name="entity_editors_what_s_this_project_about">हा प्रकल्प कशाबद्दल आहे?</string>
     <string name="export_options_no_limit">मर्यादा नाही</string>
     <string name="help_about_help_about">मदत</string>

@@ -641,6 +641,9 @@
     <string name="entity_editors_separate_multiple_names_with_commas_to_add">ஒரே நேரத்தில் பலவற்றைச் சேர்க்க பல பெயர்களை கமாவால் பிரிக்கவும்.</string>
     <string name="entity_editors_separate_multiple_tags_with_commas_to_crea">ஒரே நேரத்தில் பலவற்றை உருவாக்க பல குறிச்சொற்களை கமாவால் பிரிக்கவும்.</string>
     <string name="entity_editors_tag_label">குறிச்சொல் லேபிள்</string>
+    <string name="entity_editors_title_hint">பணி தலைப்பு குறிப்பு</string>
+    <string name="entity_editors_title_hint_summary">இங்கே ஒரு பணியைச் சேர்க்கும்போது தலைப்பு புலத்தில் இடப்பிடுப்பான் உரையாகக் காட்டப்படும் — இது எவ்வாறு எழுத வேண்டும் என்பதற்கான குறிப்பு, இயல்புமதிப்பு அல்ல.</string>
+    <string name="entity_editors_title_hint_placeholder">எ.கா. பணி வகை : வாடிக்கையாளர் பெயர்</string>
     <string name="entity_editors_what_s_this_project_about">இந்த திட்டம் எதைப் பற்றியது?</string>
     <string name="export_options_no_limit">வரம்பு இல்லை</string>
     <string name="help_about_help_about">உதவி</string>

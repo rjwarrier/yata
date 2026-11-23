@@ -1346,8 +1346,8 @@ fun MainScreen(
                         tags = tags,
                         groups = projectGroups,
                         existingNames = projects.map { it.name },
-                        onSave = { name, color, icon, due, commonTagIds, defaultReminder, description, excludeFromToday, groupId, receivedDateEnabled ->
-                            viewModel.addProject(name, color, icon, due, commonTagIds, defaultReminder, description, excludeFromToday, groupId, receivedDateEnabled)
+                        onSave = { name, color, icon, due, commonTagIds, defaultReminder, description, excludeFromToday, groupId, receivedDateEnabled, titleHint ->
+                            viewModel.addProject(name, color, icon, due, commonTagIds, defaultReminder, description, excludeFromToday, groupId, receivedDateEnabled, titleHint)
                             activeSheet = MainSheetType.None
                         },
                         onCreateGroup = { id, name, color ->
@@ -1625,8 +1625,8 @@ fun MainScreen(
         ) {
             ListEditorSheet(
                 existingNames = lists.map { it.name },
-                onSave = { name, color, icon, excludeFromToday ->
-                    viewModel.addList(name, color, icon = icon, excludeFromToday = excludeFromToday)
+                onSave = { name, color, icon, excludeFromToday, titleHint ->
+                    viewModel.addList(name, color, icon = icon, excludeFromToday = excludeFromToday, titleHint = titleHint)
                     isNewListSheetOpen = false
                 },
                 onDismiss = { isNewListSheetOpen = false }

@@ -641,6 +641,9 @@
     <string name="entity_editors_separate_multiple_names_with_commas_to_add">ഒന്നിലധികം പേരുകൾ ഒരുമിച്ച് ചേർക്കാൻ കോമയിട്ട് വേർതിരിക്കുക.</string>
     <string name="entity_editors_separate_multiple_tags_with_commas_to_crea">ഒന്നിലധികം ടാഗുകൾ ഒരുമിച്ച് സൃഷ്ടിക്കാൻ കോമയിട്ട് വേർതിരിക്കുക.</string>
     <string name="entity_editors_tag_label">ടാഗ് ലേബൽ</string>
+    <string name="entity_editors_title_hint">ടാസ്ക് ടൈറ്റിൽ സൂചന</string>
+    <string name="entity_editors_title_hint_summary">ഇവിടെ ഒരു ടാസ്ക് ചേർക്കുമ്പോൾ ടൈറ്റിൽ ഫീൽഡിൽ പ്ലെയ്സ്‌ഹോൾഡർ ടെക്സ്റ്റായി കാണിക്കുന്നു — ഇത് എങ്ങനെ എഴുതണമെന്നതിനുള്ള നിർദ്ദേശമാണ്, ഡിഫോൾട്ട് മൂല്യമല്ല.</string>
+    <string name="entity_editors_title_hint_placeholder">ഉദാ. ജോലി തരം : ക്ലയന്റ് പേര്</string>
     <string name="entity_editors_what_s_this_project_about">ഈ പ്രോജക്റ്റ് എന്തിനെ കുറിച്ചാണ്?</string>
     <string name="export_options_no_limit">പരിധിയില്ല</string>
     <string name="help_about_help_about">സഹായം</string>

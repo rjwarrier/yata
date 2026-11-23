@@ -660,6 +660,9 @@
     <string name="entity_editors_separate_multiple_names_with_commas_to_add">Scheid meerdere namen met komma\'s om er meteen meerdere toe te voegen.</string>
     <string name="entity_editors_separate_multiple_tags_with_commas_to_crea">Scheid meerdere tags met komma\'s om er meteen meerdere aan te maken.</string>
     <string name="entity_editors_tag_label">Tag-label</string>
+    <string name="entity_editors_title_hint">Taaktitel-hint</string>
+    <string name="entity_editors_title_hint_summary">Wordt getoond als placeholdertekst in het titelveld bij het toevoegen van een taak hier — een tip voor de formulering, geen standaardwaarde.</string>
+    <string name="entity_editors_title_hint_placeholder">bijv. Soort werk : Klantnaam</string>
     <string name="entity_editors_what_s_this_project_about">Waar gaat dit project over?</string>
     <string name="export_options_no_limit">Geen limiet</string>
     <string name="help_about_help_about">Help</string>

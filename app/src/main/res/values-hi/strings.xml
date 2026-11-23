@@ -660,6 +660,9 @@
     <string name="entity_editors_separate_multiple_names_with_commas_to_add">एक साथ कई नाम जोड़ने के लिए उन्हें अल्पविराम से अलग करें।</string>
     <string name="entity_editors_separate_multiple_tags_with_commas_to_crea">एक साथ कई टैग बनाने के लिए उन्हें अल्पविराम से अलग करें।</string>
     <string name="entity_editors_tag_label">टैग लेबल</string>
+    <string name="entity_editors_title_hint">टास्क टाइटल संकेत</string>
+    <string name="entity_editors_title_hint_summary">यहाँ टास्क जोड़ते समय टाइटल फ़ील्ड में प्लेसहोल्डर टेक्स्ट के रूप में दिखाया जाता है — यह कैसे लिखें इसका सुझाव है, डिफ़ॉल्ट मान नहीं।</string>
+    <string name="entity_editors_title_hint_placeholder">उदा. कार्य प्रकार : क्लाइंट का नाम</string>
     <string name="entity_editors_what_s_this_project_about">यह परियोजना किस बारे में है?</string>
     <string name="export_options_no_limit">कोई सीमा नहीं</string>
     <string name="help_about_help_about">मदद</string>

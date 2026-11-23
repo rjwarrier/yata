@@ -556,6 +556,9 @@
     <string name="entity_editors_separate_multiple_names_with_commas_to_add">Separera flera namn med komma för att lägga till flera samtidigt.</string>
     <string name="entity_editors_separate_multiple_tags_with_commas_to_crea">Separera flera taggar med komma för att skapa flera samtidigt.</string>
     <string name="entity_editors_tag_label">Taggetikett</string>
+    <string name="entity_editors_title_hint">Tips för uppgiftstitel</string>
+    <string name="entity_editors_title_hint_summary">Visas som platshållartext i titelfältet när en uppgift läggs till här — ett tips om hur den kan formuleras, inte ett standardvärde.</string>
+    <string name="entity_editors_title_hint_placeholder">t.ex. Arbetstyp : Kundnamn</string>
     <string name="entity_editors_what_s_this_project_about">Vad handlar det här projektet om?</string>
     <string name="export_options_no_limit">Ingen gräns</string>
     <string name="help_about_help_about">Hjälp</string>

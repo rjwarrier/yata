@@ -482,6 +482,9 @@
     <string name="entity_editors_separate_multiple_names_with_commas_to_add">Separe vários nomes com vírgulas para adicionar vários de uma vez.</string>
     <string name="entity_editors_separate_multiple_tags_with_commas_to_crea">Separe várias tags com vírgulas para criar várias de uma vez.</string>
     <string name="entity_editors_tag_label">Etiqueta de etiqueta</string>
+    <string name="entity_editors_title_hint">Dica de título da tarefa</string>
+    <string name="entity_editors_title_hint_summary">Exibida como texto de espaço reservado no campo de título ao adicionar uma tarefa aqui — uma sugestão de como formulá-lo, não um valor padrão.</string>
+    <string name="entity_editors_title_hint_placeholder">ex. Tipo de trabalho : Nome do cliente</string>
     <string name="entity_editors_what_s_this_project_about">Sobre o que é \' este projeto?</string>
     <string name="export_options_no_limit">Sem limite</string>
     <string name="help_about_help_about">Ajuda e Sobre</string>

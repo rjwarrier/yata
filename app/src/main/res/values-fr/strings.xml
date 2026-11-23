@@ -482,6 +482,9 @@
     <string name="entity_editors_separate_multiple_names_with_commas_to_add">Séparez plusieurs noms par des virgules pour en ajouter plusieurs à la fois.</string>
     <string name="entity_editors_separate_multiple_tags_with_commas_to_crea">Séparez plusieurs balises par des virgules pour en créer plusieurs à la fois.</string>
     <string name="entity_editors_tag_label">Étiquette d\'étiquette</string>
+    <string name="entity_editors_title_hint">Indice de titre de tâche</string>
+    <string name="entity_editors_title_hint_summary">Affiché comme texte d\'espace réservé dans le champ de titre lors de l\'ajout d\'une tâche ici — une suggestion de formulation, pas une valeur par défaut.</string>
+    <string name="entity_editors_title_hint_placeholder">ex. Type de travail : Nom du client</string>
     <string name="entity_editors_what_s_this_project_about">De quoi parle ce projet ?</string>
     <string name="export_options_no_limit">Aucune limite</string>
     <string name="help_about_help_about">Aide et à propos</string>

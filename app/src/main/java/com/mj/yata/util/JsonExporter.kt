@@ -333,6 +333,7 @@ class JsonExporter @Inject constructor(
                 o.put("defaultReminder", pr.defaultReminder ?: JSONObject.NULL)
                 o.put("receivedDateEnabled", pr.receivedDateEnabled)
                 o.put("description", pr.description ?: JSONObject.NULL)
+                o.put("titleHint", pr.titleHint ?: JSONObject.NULL)
                 o.put("excludeFromToday", pr.excludeFromToday)
                 o.put("sortOrder", pr.sortOrder)
                 o.put("archived", pr.archived)
@@ -358,6 +359,7 @@ class JsonExporter @Inject constructor(
                 o.put("excludeFromToday", l.excludeFromToday)
                 o.put("sortOrder", l.sortOrder)
                 o.put("archived", l.archived)
+                o.put("titleHint", l.titleHint ?: JSONObject.NULL)
                 listsArr.put(o)
             }
             root.put("lists", listsArr)
@@ -845,6 +847,7 @@ class JsonExporter @Inject constructor(
             row.requireOptionalString("defaultReminder")
             row.requireOptionalBoolean("receivedDateEnabled")
             row.requireOptionalString("description")
+            row.requireOptionalString("titleHint")
             row.requireOptionalBoolean("starred")
             row.requireOptionalBoolean("excludeFromToday")
             row.requireOptionalNumber("sortOrder")
@@ -862,6 +865,7 @@ class JsonExporter @Inject constructor(
             row.requiredString("name", "lists[$id]")
             row.requiredString("color", "lists[$id]")
             row.requiredString("icon", "lists[$id]")
+            row.requireOptionalString("titleHint")
             row.requireOptionalBoolean("starred")
             row.requireOptionalBoolean("excludeFromToday")
             row.requireOptionalNumber("sortOrder")
@@ -1162,6 +1166,7 @@ class JsonExporter @Inject constructor(
             row.requireOptionalString("defaultReminder")
             row.requireOptionalBoolean("receivedDateEnabled")
             row.requireOptionalString("description")
+            row.requireOptionalString("titleHint")
             row.requireOptionalBoolean("starred")
             row.requireOptionalBoolean("excludeFromToday")
             row.requireOptionalBoolean("archived")
@@ -1175,6 +1180,7 @@ class JsonExporter @Inject constructor(
             row.requiredString("name", "lists[$id]")
             row.requireOptionalString("color")
             row.requireOptionalString("icon")
+            row.requireOptionalString("titleHint")
             row.requireOptionalBoolean("starred")
             row.requireOptionalBoolean("excludeFromToday")
             row.requireOptionalBoolean("archived")
@@ -1452,6 +1458,10 @@ class JsonExporter @Inject constructor(
                                 receivedDateEnabled = if (o.has("receivedDateEnabled")) o.optBoolean("receivedDateEnabled", true)
                                     else repository.getProjectById(o.getString("id")).first()?.receivedDateEnabled ?: true,
                                 description = if (o.isNull("description")) null else o.getString("description"),
+                                // Absent in backups from before title hints: keep the local hint
+                                // rather than erasing it. Explicit null still clears it.
+                                titleHint = if (!o.has("titleHint")) repository.getProjectById(o.getString("id")).first()?.titleHint
+                                    else if (o.isNull("titleHint")) null else o.getString("titleHint"),
                                 excludeFromToday = o.optBoolean("excludeFromToday", false),
                                 sortOrder = o.optInt("sortOrder", 0),
                                 archived = o.optBoolean("archived", false),
@@ -1483,7 +1493,9 @@ class JsonExporter @Inject constructor(
                                 starred = o.optBoolean("starred", false),
                                 excludeFromToday = o.optBoolean("excludeFromToday", false),
                                 sortOrder = o.optInt("sortOrder", 0),
-                                archived = o.optBoolean("archived", false)
+                                archived = o.optBoolean("archived", false),
+                                titleHint = if (!o.has("titleHint")) repository.getListById(o.getString("id")).first()?.titleHint
+                                    else if (o.isNull("titleHint")) null else o.getString("titleHint")
                             )
                         )
                     }

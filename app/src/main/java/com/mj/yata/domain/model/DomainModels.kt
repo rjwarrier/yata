@@ -43,7 +43,11 @@ data class Project(
     // renders its old flat Pending/Completed list unchanged.
     val sectionNames: List<String> = emptyList(),
     val groupId: String? = null,
-    val receivedDateEnabled: Boolean = true
+    val receivedDateEnabled: Boolean = true,
+    // Shown as non-editable placeholder text in NewTaskSheet's title field when adding a task
+    // here and the title is blank (e.g. "Work Type : Client Name") — a per-project hint for how
+    // to phrase a title, not a default value. Max 60 chars, enforced in ProjectEditorSheet.
+    val titleHint: String? = null
 )
 
 /** General tasks retain Date Received; a project can opt out without deleting historical values. */
@@ -73,7 +77,9 @@ data class YataList(
     val starred: Boolean = false,
     val excludeFromToday: Boolean = false, // tasks here never show in Today, regardless of due date
     val sortOrder: Int = 0, // manual drag-and-drop order in the nav drawer's Lists section
-    val archived: Boolean = false // true = kept for history, hidden from active list surfaces
+    val archived: Boolean = false, // true = kept for history, hidden from active list surfaces
+    // See [Project.titleHint] — same placeholder-hint behaviour, scoped to this list instead.
+    val titleHint: String? = null
 )
 
 fun List<YataList>.activeLists(includeId: String? = null): List<YataList> =

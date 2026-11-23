@@ -793,6 +793,9 @@
     <string name="entity_editors_separate_multiple_names_with_commas_to_add">Separa varios nombres con comas para añadir varios a la vez.</string>
     <string name="entity_editors_separate_multiple_tags_with_commas_to_crea">Separa varias etiquetas con comas para crear varias a la vez.</string>
     <string name="entity_editors_tag_label">Nombre de etiqueta</string>
+    <string name="entity_editors_title_hint">Sugerencia de título de tarea</string>
+    <string name="entity_editors_title_hint_summary">Se muestra como texto de marcador de posición en el campo de título al añadir una tarea aquí: es una sugerencia sobre cómo redactarlo, no un valor predeterminado.</string>
+    <string name="entity_editors_title_hint_placeholder">p. ej. Tipo de trabajo : Nombre del cliente</string>
     <string name="entity_editors_what_s_this_project_about">¿De qué trata este proyecto?</string>
     <string name="export_options_no_limit">Sin límite</string>
     <string name="help_about_help_about">Ayuda y acerca de</string>

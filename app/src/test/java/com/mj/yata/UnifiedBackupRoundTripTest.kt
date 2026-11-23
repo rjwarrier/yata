@@ -207,6 +207,47 @@ class UnifiedBackupRoundTripTest {
         }
     }
 
+    @Test fun titleHintsSurviveRestoreAndLegacySnapshotsWithoutTheField() = runBlocking {
+        val projectHint = "Work Type : Client Name"
+        val listHint = "Store : Item"
+        store().use { source ->
+            source.repository.upsertPerson(Person("me", "You", "Y", "accentA", isMe = true))
+            source.repository.upsertProject(Project("work", "Work", "accentA", "work", titleHint = projectHint))
+            source.repository.upsertList(com.mj.yata.domain.model.YataList("shop", "Shopping", "accentB", "shopping", titleHint = listHint))
+            val bytes = source.exporter.exportToBytes()
+            store().use { target ->
+                assertTrue(target.exporter.importBytes(bytes))
+                assertEquals(projectHint, target.repository.getProjects().first().single().titleHint)
+                assertEquals(listHint, target.repository.getLists().first().single().titleHint)
+
+                // A device on an older build republishes without the key; that must not read as "cleared".
+                val legacy = JSONObject(String(bytes))
+                legacy.getJSONArray("projects").getJSONObject(0).remove("titleHint")
+                legacy.getJSONArray("lists").getJSONObject(0).remove("titleHint")
+                val engine = SnapshotSyncEngine(context, target.exporter, RecoveryBackupManager(context, target.exporter))
+                engine.commitRestoredBaseline("title-hint-test", bytes)
+                repeat(2) {
+                    val prepared = engine.prepare(legacy.toString().toByteArray(), "title-hint-test")
+                    assertEquals(projectHint, prepared.canonical.getJSONArray("projects").getJSONObject(0).getString("titleHint"))
+                    assertEquals(listHint, prepared.canonical.getJSONArray("lists").getJSONObject(0).getString("titleHint"))
+                    engine.commit(prepared)
+                    assertEquals(projectHint, target.repository.getProjects().first().single().titleHint)
+                    assertEquals(listHint, target.repository.getLists().first().single().titleHint)
+                }
+
+                assertTrue(target.exporter.importBytes(legacy.toString().toByteArray()))
+                assertEquals(projectHint, target.repository.getProjects().first().single().titleHint)
+                assertEquals(listHint, target.repository.getLists().first().single().titleHint)
+
+                // An explicit null from a current client still clears it.
+                val cleared = JSONObject(String(bytes))
+                cleared.getJSONArray("projects").getJSONObject(0).put("titleHint", JSONObject.NULL)
+                assertTrue(target.exporter.importBytes(cleared.toString().toByteArray()))
+                assertEquals(null, target.repository.getProjects().first().single().titleHint)
+            }
+        }
+    }
+
     @Test fun escapedTitleTextSurvivesSavingEditingAndBackupRestore() = runBlocking {
         val parsed = com.mj.yata.util.NaturalLanguageParser.parse("Review \\AM/PM tomorrow at 3pm", java.time.LocalDate.of(2026, 11, 17))
         assertEquals("Review AM/PM", parsed.title)

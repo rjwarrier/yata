@@ -186,11 +186,12 @@ fun ProjectEditorSheet(
     initialExcludeFromToday: Boolean = false,
     initialReceivedDateEnabled: Boolean = true,
     initialGroupId: String? = null,
+    initialTitleHint: String? = null,
     tags: List<com.mj.yata.domain.model.Tag> = emptyList(),
     groups: List<com.mj.yata.domain.model.ProjectGroup> = emptyList(),
     /** Names of the other projects, for the case-insensitive collision check — see [nameCollides]. */
     existingNames: List<String> = emptyList(),
-    onSave: (String, String, String, String?, List<String>, String?, String?, Boolean, String?, Boolean) -> Unit,
+    onSave: (String, String, String, String?, List<String>, String?, String?, Boolean, String?, Boolean, String?) -> Unit,
     onCreateGroup: (id: String, name: String, color: String) -> Unit = { _, _, _ -> },
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
@@ -208,12 +209,14 @@ fun ProjectEditorSheet(
     var excludeFromToday by remember { mutableStateOf(initialExcludeFromToday) }
     var receivedDateEnabled by remember { mutableStateOf(initialReceivedDateEnabled) }
     var selectedGroupId by remember { mutableStateOf(initialGroupId) }
+    var titleHint by remember { mutableStateOf(initialTitleHint ?: "") }
     val selectedTagIds = remember { mutableStateListOf<String>().apply { addAll(initialCommonTagIds) } }
     var reminderExpanded by remember { mutableStateOf(initialDefaultReminder != null) }
     var tagsExpanded by remember { mutableStateOf(initialCommonTagIds.isNotEmpty()) }
     var appearanceExpanded by remember { mutableStateOf(false) }
     var groupExpanded by remember { mutableStateOf(initialGroupId != null) }
     val descriptionLimit = 100
+    val titleHintLimit = 60
 
     val entranceScale = remember { androidx.compose.animation.core.Animatable(0.92f) }
     val entranceAlpha = remember { androidx.compose.animation.core.Animatable(0f) }
@@ -294,6 +297,18 @@ fun ProjectEditorSheet(
             minLines = 2,
             maxLines = 6,
             shape = com.mj.yata.ui.widgets.YataFieldShape,
+            colors = com.mj.yata.ui.widgets.yataFieldColors(),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        TextField(
+            value = titleHint,
+            onValueChange = { if (it.length <= titleHintLimit) titleHint = it },
+            label = { Text(stringResource(R.string.entity_editors_title_hint)) },
+            placeholder = { Text(stringResource(R.string.entity_editors_title_hint_placeholder)) },
+            supportingText = { Text(stringResource(R.string.entity_editors_title_hint_summary)) },
+            singleLine = true,
+            shape = com.mj.yata.ui.widgets.YataCompactFieldShape,
             colors = com.mj.yata.ui.widgets.yataFieldColors(),
             modifier = Modifier.fillMaxWidth()
         )
@@ -503,7 +518,7 @@ fun ProjectEditorSheet(
             }
             Spacer(modifier = Modifier.width(8.dp))
             Button(
-                onClick = { if (name.isNotBlank() && !nameTaken) onSave(name, selectedColor, selectedIcon, dueDate, selectedTagIds.toList(), defaultReminder, description.trim().ifBlank { null }, excludeFromToday, selectedGroupId, receivedDateEnabled) },
+                onClick = { if (name.isNotBlank() && !nameTaken) onSave(name, selectedColor, selectedIcon, dueDate, selectedTagIds.toList(), defaultReminder, description.trim().ifBlank { null }, excludeFromToday, selectedGroupId, receivedDateEnabled, titleHint.trim().ifBlank { null }) },
                 enabled = name.isNotBlank() && !nameTaken
             ) {
                 Text(buttonText)
@@ -1145,7 +1160,8 @@ fun ListEditorSheet(
     initialColor: String = "accentA",
     initialIcon: String = "folder",
     initialExcludeFromToday: Boolean = false,
-    onSave: (String, String, String, Boolean) -> Unit,
+    initialTitleHint: String? = null,
+    onSave: (String, String, String, Boolean, String?) -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
     /** Names of the other lists, for the case-insensitive collision check — see [nameCollides]. */
@@ -1158,6 +1174,8 @@ fun ListEditorSheet(
     var selectedColor by remember { mutableStateOf(initialColor) }
     var selectedIcon by remember { mutableStateOf(initialIcon) }
     var excludeFromToday by remember { mutableStateOf(initialExcludeFromToday) }
+    var titleHint by remember { mutableStateOf(initialTitleHint ?: "") }
+    val titleHintLimit = 60
     var appearanceExpanded by remember { mutableStateOf(false) }
 
     Column(
@@ -1249,6 +1267,18 @@ fun ListEditorSheet(
             )
         }
 
+        TextField(
+            value = titleHint,
+            onValueChange = { if (it.length <= titleHintLimit) titleHint = it },
+            label = { Text(stringResource(R.string.entity_editors_title_hint)) },
+            placeholder = { Text(stringResource(R.string.entity_editors_title_hint_placeholder)) },
+            supportingText = { Text(stringResource(R.string.entity_editors_title_hint_summary)) },
+            singleLine = true,
+            shape = com.mj.yata.ui.widgets.YataCompactFieldShape,
+            colors = com.mj.yata.ui.widgets.yataFieldColors(),
+            modifier = Modifier.fillMaxWidth()
+        )
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.End,
@@ -1259,7 +1289,7 @@ fun ListEditorSheet(
             }
             Spacer(modifier = Modifier.width(8.dp))
             Button(
-                onClick = { if (name.isNotBlank() && !nameTaken) onSave(name, selectedColor, selectedIcon, excludeFromToday) },
+                onClick = { if (name.isNotBlank() && !nameTaken) onSave(name, selectedColor, selectedIcon, excludeFromToday, titleHint.trim().ifBlank { null }) },
                 enabled = name.isNotBlank() && !nameTaken
             ) {
                 Text(buttonText)

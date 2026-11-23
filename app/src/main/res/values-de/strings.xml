@@ -743,6 +743,9 @@
     <string name="entity_editors_separate_multiple_names_with_commas_to_add">Mehrere Namen durch Kommas trennen, um mehrere auf einmal hinzuzufügen.</string>
     <string name="entity_editors_separate_multiple_tags_with_commas_to_crea">Mehrere Tags durch Kommas trennen, um mehrere auf einmal zu erstellen.</string>
     <string name="entity_editors_tag_label">Tag-Bezeichnung</string>
+    <string name="entity_editors_title_hint">Titel-Hinweis für Aufgaben</string>
+    <string name="entity_editors_title_hint_summary">Wird als Platzhaltertext im Titelfeld angezeigt, wenn hier eine Aufgabe erstellt wird — ein Hinweis zur Formulierung, kein Standardwert.</string>
+    <string name="entity_editors_title_hint_placeholder">z. B. Arbeitstyp : Kundenname</string>
     <string name="entity_editors_what_s_this_project_about">Worum geht es in diesem Projekt?</string>
     <string name="export_options_no_limit">Kein Limit</string>
     <string name="help_about_help_about">Hilfe</string>

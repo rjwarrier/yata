@@ -25,7 +25,7 @@ import org.json.JSONArray
         SubtaskEntity::class,
         TaskCommentEntity::class
     ],
-    version = 38,
+    version = 39,
     // Exported to app/schemas — gives migration tests real historical schemas to open, and lets
     // purely-additive future changes use Room auto-migrations instead of hand-written ones.
     exportSchema = true
@@ -413,6 +413,13 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_38_39 = object : Migration(38, 39) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE projects ADD COLUMN titleHint TEXT DEFAULT NULL")
+                db.execSQL("ALTER TABLE lists ADD COLUMN titleHint TEXT DEFAULT NULL")
+            }
+        }
+
         /** One registry shared by production and migration regression tests. */
         val MIGRATIONS = arrayOf(
             MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8,
@@ -422,6 +429,7 @@ abstract class AppDatabase : RoomDatabase() {
             MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27, MIGRATION_27_28,
             MIGRATION_28_29, MIGRATION_29_30, MIGRATION_30_31, MIGRATION_31_32, MIGRATION_32_33,
             MIGRATION_33_36, MIGRATION_34_36, MIGRATION_35_36, MIGRATION_36_37, MIGRATION_37_38,
+            MIGRATION_38_39,
         )
 
     }

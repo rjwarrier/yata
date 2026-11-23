@@ -641,6 +641,9 @@
     <string name="entity_editors_separate_multiple_names_with_commas_to_add">ಒಂದೇ ಬಾರಿಗೆ ಹಲವಾರು ಸೇರಿಸಲು ಹೆಸರುಗಳನ್ನು ಅಲ್ಪವಿರಾಮದಿಂದ ಬೇರ್ಪಡಿಸಿ.</string>
     <string name="entity_editors_separate_multiple_tags_with_commas_to_crea">ಒಂದೇ ಬಾರಿಗೆ ಹಲವಾರು ರಚಿಸಲು ಟ್ಯಾಗ್‌ಗಳನ್ನು ಅಲ್ಪವಿರಾಮದಿಂದ ಬೇರ್ಪಡಿಸಿ.</string>
     <string name="entity_editors_tag_label">ಟ್ಯಾಗ್ ಲೇಬಲ್</string>
+    <string name="entity_editors_title_hint">ಕಾರ್ಯ ಶೀರ್ಷಿಕೆ ಸುಳಿವು</string>
+    <string name="entity_editors_title_hint_summary">ಇಲ್ಲಿ ಕಾರ್ಯ ಸೇರಿಸುವಾಗ ಶೀರ್ಷಿಕೆ ಕ್ಷೇತ್ರದಲ್ಲಿ ಪ್ಲೇಸ್‌ಹೋಲ್ಡರ್ ಪಠ್ಯವಾಗಿ ತೋರಿಸಲಾಗುತ್ತದೆ — ಇದು ಹೇಗೆ ಬರೆಯಬೇಕು ಎಂಬ ಸಲಹೆ, ಡಿಫಾಲ್ಟ್ ಮೌಲ್ಯವಲ್ಲ.</string>
+    <string name="entity_editors_title_hint_placeholder">ಉದಾ. ಕೆಲಸದ ಪ್ರಕಾರ : ಕ್ಲೈಂಟ್ ಹೆಸರು</string>
     <string name="entity_editors_what_s_this_project_about">ಈ ಪ್ರಾಜೆಕ್ಟ್ ಯಾವುದರ ಬಗ್ಗೆ?</string>
     <string name="export_options_no_limit">ಮಿತಿ ಇಲ್ಲ</string>
     <string name="help_about_help_about">ಸಹಾಯ</string>

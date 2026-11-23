@@ -641,6 +641,9 @@
     <string name="entity_editors_separate_multiple_names_with_commas_to_add">એકસાથે અનેક ઉમેરવા અલ્પવિરામથી બહુવિધ નામ અલગ કરો.</string>
     <string name="entity_editors_separate_multiple_tags_with_commas_to_crea">એકસાથે અનેક બનાવવા અલ્પવિરામથી બહુવિધ ટૅગ્સ અલગ કરો.</string>
     <string name="entity_editors_tag_label">ટૅગ લેબલ</string>
+    <string name="entity_editors_title_hint">કાર્ય શીર્ષક સંકેત</string>
+    <string name="entity_editors_title_hint_summary">અહીં કાર્ય ઉમેરતી વખતે શીર્ષક ફીલ્ડમાં પ્લેસહોલ્ડર ટેક્સ્ટ તરીકે દેખાય છે — તે કેવી રીતે લખવું તેની સલાહ છે, ડિફોલ્ટ મૂલ્ય નથી.</string>
+    <string name="entity_editors_title_hint_placeholder">દા.ત. કામનો પ્રકાર : ક્લાયન્ટનું નામ</string>
     <string name="entity_editors_what_s_this_project_about">આ પ્રોજેક્ટ શા વિશે છે?</string>
     <string name="export_options_no_limit">કોઈ મર્યાદા નથી</string>
     <string name="help_about_help_about">મદદ</string>

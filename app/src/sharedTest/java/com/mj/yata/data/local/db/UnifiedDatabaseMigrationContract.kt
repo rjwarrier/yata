@@ -20,6 +20,7 @@ abstract class UnifiedDatabaseMigrationContract {
     @Test fun common32FollowsRegisteredMigrationChain() = verifyUpgrade("common-32", false, null)
     @Test fun unified36AddsReceivedDate() = verifyUpgrade("unified-36", true, 42)
     @Test fun received37AddsProjectPreference() = verifyUpgrade("received-37", true, 42)
+    @Test fun received38AddsTitleHints() = verifyUpgrade("received-38", true, 42)
     @Test fun common33Upgrades() = verifyUpgrade("common-33", false, null)
     @Test fun master34PreservesTrackedTime() = verifyUpgrade("master-34", false, 42)
     @Test fun groups34PreservesGroups() = verifyUpgrade("groups-34", true, null)
@@ -34,9 +35,11 @@ abstract class UnifiedDatabaseMigrationContract {
         try {
             Room.databaseBuilder(context, AppDatabase::class.java, name).build().closeAfter { room ->
                 val db = room.openHelper.writableDatabase
-                assertEquals(38, db.version)
+                assertEquals(39, db.version)
                 assertTrue(hasColumn(db, "projects", "groupId"))
                 assertTrue(hasColumn(db, "tasks", "trackedMinutes"))
+                assertTrue(hasColumn(db, "projects", "titleHint"))
+                assertTrue(hasColumn(db, "lists", "titleHint"))
             }
         } finally {
             context.deleteDatabase(name)
@@ -120,7 +123,19 @@ abstract class UnifiedDatabaseMigrationContract {
                 .addMigrations(*AppDatabase.MIGRATIONS)
                 .build().closeAfter { room ->
                     val db = room.openHelper.writableDatabase // Runs migration AND Room schema validation.
-                    assertEquals(38, db.version)
+                    assertEquals(39, db.version)
+                    for (table in listOf("projects", "lists")) {
+                        val id = if (table == "projects") "project" else "list"
+                        db.query("SELECT titleHint FROM `$table` WHERE id='$id'").use {
+                            assertTrue(it.moveToFirst())
+                            assertTrue(it.isNull(0))
+                        }
+                        db.execSQL("UPDATE `$table` SET titleHint='Work Type : Client Name' WHERE id='$id'")
+                        db.query("SELECT titleHint FROM `$table` WHERE id='$id'").use {
+                            assertTrue(it.moveToFirst())
+                            assertEquals("Work Type : Client Name", it.getString(0))
+                        }
+                    }
                     db.query("SELECT receivedDateEnabled FROM projects WHERE id='project'").use {
                         assertTrue(it.moveToFirst())
                         assertEquals(1, it.getInt(0))

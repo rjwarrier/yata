@@ -556,6 +556,9 @@
     <string name="entity_editors_separate_multiple_names_with_commas_to_add">Separă mai multe nume prin virgulă pentru a adăuga mai multe deodată.</string>
     <string name="entity_editors_separate_multiple_tags_with_commas_to_crea">Separă mai multe etichete prin virgulă pentru a crea mai multe deodată.</string>
     <string name="entity_editors_tag_label">Eticheta</string>
+    <string name="entity_editors_title_hint">Indiciu titlu sarcină</string>
+    <string name="entity_editors_title_hint_summary">Afișat ca text substituent în câmpul de titlu la adăugarea unei sarcini aici — o sugestie despre cum să-l formulezi, nu o valoare implicită.</string>
+    <string name="entity_editors_title_hint_placeholder">ex. Tip de lucru : Numele clientului</string>
     <string name="entity_editors_what_s_this_project_about">Despre ce este acest proiect?</string>
     <string name="export_options_no_limit">Fără limită</string>
     <string name="help_about_help_about">Ajutor</string>

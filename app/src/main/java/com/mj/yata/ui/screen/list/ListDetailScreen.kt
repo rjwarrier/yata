@@ -904,8 +904,9 @@ fun ListDetailScreen(
                 initialColor = list.color,
                 initialIcon = list.icon,
                 initialExcludeFromToday = list.excludeFromToday,
-                onSave = { newName, newColor, newIcon, newExcludeFromToday ->
-                    viewModel.upsertList(list.copy(name = newName, color = newColor, icon = newIcon, excludeFromToday = newExcludeFromToday))
+                initialTitleHint = list.titleHint,
+                onSave = { newName, newColor, newIcon, newExcludeFromToday, newTitleHint ->
+                    viewModel.upsertList(list.copy(name = newName, color = newColor, icon = newIcon, excludeFromToday = newExcludeFromToday, titleHint = newTitleHint))
                     isEditSheetOpen = false
                 },
                 onDismiss = { isEditSheetOpen = false }

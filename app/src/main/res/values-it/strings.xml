@@ -556,6 +556,9 @@
     <string name="entity_editors_separate_multiple_names_with_commas_to_add">Separa più nomi con una virgola per aggiungerne diversi in una volta.</string>
     <string name="entity_editors_separate_multiple_tags_with_commas_to_crea">Separa più tag con una virgola per crearne diversi in una volta.</string>
     <string name="entity_editors_tag_label">Etichetta tag</string>
+    <string name="entity_editors_title_hint">Suggerimento titolo attività</string>
+    <string name="entity_editors_title_hint_summary">Visualizzato come testo segnaposto nel campo del titolo quando si aggiunge un\'attività qui — un suggerimento su come formularlo, non un valore predefinito.</string>
+    <string name="entity_editors_title_hint_placeholder">es. Tipo di lavoro : Nome cliente</string>
     <string name="entity_editors_what_s_this_project_about">Di cosa tratta questo progetto?</string>
     <string name="export_options_no_limit">Nessun limite</string>
     <string name="help_about_help_about">Guida</string>
