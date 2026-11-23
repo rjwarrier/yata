@@ -1733,4 +1733,8 @@
     <string name="sync_fix_passphrase">Nie można odblokować kopii lub brakuje hasła kopii zapasowej.\n\nUżywaj tego samego hasła kopii na każdym urządzeniu, nie hasła GitHub ani tokenu. Jeśli jest poprawne, kopia może być uszkodzona. Zabezpiecz zadania przed próbą starszej kopii.</string>
     <string name="sync_fix_network">YATA nie może połączyć się z serwerem.\n\nSprawdź internet i adres serwera. Spróbuj ponownie po połączeniu. Jeśli błąd trwa, sprawdź dostępność serwera.</string>
     <string name="sync_fix_other">YATA nie mogła ukończyć tej operacji.\n\nSprawdź wyświetlony błąd i otwórz pomoc online poniżej. Przed zmianą ustawień zapisz ważne zadania w kopii zapasowej. Nie czyść danych aplikacji.</string>
+    <string name="task_date_received">Data otrzymania</string>
+    <string name="task_date_received_none">Brak daty otrzymania</string>
+    <string name="smart_add_received">Otrzymano %1$s</string>
+    <string name="project_received_date_summary">Pokazuj datę otrzymania podczas dodawania lub edytowania zadań w tym projekcie</string>
 </resources>

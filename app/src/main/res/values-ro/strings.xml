@@ -1730,4 +1730,8 @@
     <string name="sync_fix_passphrase">Copia nu poate fi deblocată sau lipsește parola de rezervă.\n\nFolosește aceeași parolă de rezervă pe toate dispozitivele, nu parola GitHub sau tokenul. Dacă este corectă, copia poate fi deteriorată. Salvează sarcinile înainte de a încerca o copie mai veche.</string>
     <string name="sync_fix_network">YATA nu poate contacta serverul.\n\nVerifică internetul și adresa serverului. Încearcă după conectare. Dacă eroarea continuă, verifică dacă serverul este disponibil.</string>
     <string name="sync_fix_other">YATA nu a putut termina operația.\n\nVerifică eroarea afișată și deschide ajutorul online de mai jos. Salvează sarcinile importante înainte de a schimba setările. Nu șterge datele aplicației.</string>
+    <string name="task_date_received">Data primirii</string>
+    <string name="task_date_received_none">Fără dată de primire</string>
+    <string name="smart_add_received">Primit %1$s</string>
+    <string name="project_received_date_summary">Afișează data primirii la adăugarea sau editarea sarcinilor din acest proiect</string>
 </resources>

@@ -1733,4 +1733,8 @@
     <string name="sync_fix_passphrase">Kopii nelze odemknout nebo chybí záložní heslo.\n\nNa všech zařízeních používejte stejné záložní heslo, nikoli heslo GitHubu či token. Je-li správné, kopie může být poškozena. Před zkoušením starší kopie zálohujte úkoly.</string>
     <string name="sync_fix_network">YATA se nemůže spojit se serverem.\n\nZkontrolujte internet a adresu serveru. Zkuste to znovu po připojení. Pokud chyba trvá, ověřte dostupnost serveru.</string>
     <string name="sync_fix_other">YATA nemohla dokončit tuto operaci.\n\nPřečtěte si chybu na obrazovce a otevřete online nápovědu níže. Před změnou nastavení zálohujte důležité úkoly. Nemažte data aplikace.</string>
+    <string name="task_date_received">Datum přijetí</string>
+    <string name="task_date_received_none">Bez data přijetí</string>
+    <string name="smart_add_received">Přijato %1$s</string>
+    <string name="project_received_date_summary">Zobrazit datum přijetí při přidávání nebo úpravě úkolů v tomto projektu</string>
 </resources>

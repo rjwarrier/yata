@@ -1729,4 +1729,8 @@
     <string name="sync_fix_passphrase">Não foi possível desbloquear a cópia, ou falta a senha de backup.\n\nUse a mesma senha de backup em todos os dispositivos, não a senha do GitHub nem o token. Se estiver correta, a cópia pode estar danificada. Salve as tarefas antes de tentar uma cópia antiga.</string>
     <string name="sync_fix_network">O YATA não alcançou o servidor.\n\nConfira a internet e o endereço do servidor. Tente novamente quando estiver conectado. Se continuar falhando, confira se o servidor está disponível.</string>
     <string name="sync_fix_other">O YATA não concluiu esta operação.\n\nConfira o erro exibido e abra a ajuda online abaixo. Salve as tarefas importantes antes de mudar as configurações. Não limpe os dados do aplicativo.</string>
+    <string name="task_date_received">Data de recebimento</string>
+    <string name="task_date_received_none">Sem data de recebimento</string>
+    <string name="smart_add_received">Recebido %1$s</string>
+    <string name="project_received_date_summary">Mostrar a data de recebimento ao adicionar ou editar tarefas neste projeto</string>
 </resources>

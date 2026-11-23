@@ -1727,4 +1727,8 @@
     <string name="sync_fix_passphrase">La copia non può essere sbloccata o manca la passphrase di backup.\n\nUsa la stessa passphrase su tutti i dispositivi, non la password GitHub o il token. Se è corretta, la copia potrebbe essere danneggiata. Salva le attività prima di provare una copia precedente.</string>
     <string name="sync_fix_network">YATA non raggiunge il server.\n\nControlla Internet e l’indirizzo del server. Riprova quando sei connesso. Se il problema continua, verifica che il server sia disponibile.</string>
     <string name="sync_fix_other">YATA non ha completato l’operazione.\n\nControlla l’errore sullo schermo e apri l’aiuto online qui sotto. Salva le attività importanti prima di cambiare le impostazioni. Non cancellare i dati dell’app.</string>
+    <string name="task_date_received">Data di ricezione</string>
+    <string name="task_date_received_none">Nessuna data di ricezione</string>
+    <string name="smart_add_received">Ricevuto %1$s</string>
+    <string name="project_received_date_summary">Mostra la data di ricezione quando aggiungi o modifichi attività in questo progetto</string>
 </resources>

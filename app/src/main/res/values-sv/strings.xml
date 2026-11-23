@@ -1727,4 +1727,8 @@
     <string name="sync_fix_passphrase">Kopian kunde inte låsas upp eller backupfrasen saknas.\n\nAnvänd samma backupfras på alla enheter, inte GitHub-lösenordet eller token. Om frasen stämmer kan kopian vara skadad. Säkerhetskopiera uppgifter innan du provar en äldre kopia.</string>
     <string name="sync_fix_network">YATA kunde inte nå servern.\n\nKontrollera internet och serveradressen. Försök igen när du är ansluten. Kontrollera att servern är tillgänglig om felet kvarstår.</string>
     <string name="sync_fix_other">YATA kunde inte slutföra åtgärden.\n\nLäs felet på skärmen och öppna hjälpen på nätet nedan. Säkerhetskopiera viktiga uppgifter innan du ändrar inställningar. Rensa inte appdata.</string>
+    <string name="task_date_received">Mottagningsdatum</string>
+    <string name="task_date_received_none">Inget mottagningsdatum</string>
+    <string name="smart_add_received">Mottaget %1$s</string>
+    <string name="project_received_date_summary">Visa mottagningsdatum när uppgifter läggs till eller redigeras i det här projektet</string>
 </resources>

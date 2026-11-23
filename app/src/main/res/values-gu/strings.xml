@@ -1724,4 +1724,8 @@
     <string name="sync_fix_passphrase">નકલ ખૂલી નહીં અથવા બૅકઅપ પાસફ્રેઝ નથી.\n\nબધાં ઉપકરણો પર એક જ બૅકઅપ પાસફ્રેઝ રાખો, GitHub પાસવર્ડ કે ટોકન નહીં. સાચો હોય તો નકલ ખરાબ હોઈ શકે. જૂની નકલ અજમાવતાં પહેલાં કાર્યોનો બૅકઅપ લો.</string>
     <string name="sync_fix_network">YATA સર્વર સુધી પહોંચી શક્યું નહીં.\n\nઇન્ટરનેટ અને સર્વરનું સરનામું તપાસો. જોડાણ મળે ત્યારે ફરી પ્રયાસ કરો. સમસ્યા રહે તો સર્વર ઉપલબ્ધ છે તે તપાસો.</string>
     <string name="sync_fix_other">YATA આ કાર્ય પૂરું કરી શક્યું નહીં.\n\nદેખાતી ભૂલ તપાસો અને નીચે ઑનલાઇન મદદ ખોલો. સેટિંગ બદલતાં પહેલાં જરૂરી કાર્યોનો ફાઇલ બૅકઅપ લો. ઍપનો ડેટા ન ભૂંસો.</string>
+    <string name="task_date_received">પ્રાપ્તિ તારીખ</string>
+    <string name="task_date_received_none">કોઈ પ્રાપ્તિ તારીખ નથી</string>
+    <string name="smart_add_received">પ્રાપ્ત %1$s</string>
+    <string name="project_received_date_summary">આ પ્રોજેક્ટમાં કાર્યો ઉમેરતી અથવા સંપાદિત કરતી વખતે પ્રાપ્તિ તારીખ બતાવો</string>
 </resources>

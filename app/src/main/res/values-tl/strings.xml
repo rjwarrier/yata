@@ -1724,4 +1724,8 @@
     <string name="sync_fix_passphrase">Hindi mabuksan ang kopya o wala ang backup passphrase.\n\nGamitin ang parehong backup passphrase sa lahat ng device, hindi ang GitHub password o token. Kung tama ito, maaaring sira ang kopya. I-backup ang mga task bago subukan ang mas lumang kopya.</string>
     <string name="sync_fix_network">Hindi maabot ng YATA ang server.\n\nTingnan ang internet at address ng server. Subukang muli kapag nakakonekta. Kung ayaw pa rin, tingnan kung gumagana ang server.</string>
     <string name="sync_fix_other">Hindi natapos ng YATA ang operasyong ito.\n\nTingnan ang error sa screen at buksan ang online na tulong sa ibaba. I-backup ang mahahalagang task bago baguhin ang settings. Huwag burahin ang app data.</string>
+    <string name="task_date_received">Petsa ng Pagtanggap</string>
+    <string name="task_date_received_none">Walang petsa ng pagtanggap</string>
+    <string name="smart_add_received">Natanggap %1$s</string>
+    <string name="project_received_date_summary">Ipakita ang Petsa ng Pagtanggap kapag nagdaragdag o nag-e-edit ng mga gawain sa proyektong ito</string>
 </resources>

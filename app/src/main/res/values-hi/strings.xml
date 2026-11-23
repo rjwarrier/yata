@@ -1727,4 +1727,8 @@
     <string name="sync_fix_passphrase">कॉपी नहीं खुली या बैकअप पासफ़्रेज़ नहीं है।\n\nसभी डिवाइस पर वही बैकअप पासफ़्रेज़ रखें, GitHub पासवर्ड या टोकन नहीं। सही होने पर भी कॉपी खराब हो सकती है। पुरानी कॉपी आज़माने से पहले कार्यों का बैकअप लें।</string>
     <string name="sync_fix_network">YATA सर्वर तक नहीं पहुँच पाया।\n\nइंटरनेट और सर्वर का पता जाँचें। कनेक्शन मिलने पर फिर कोशिश करें। समस्या बनी रहे तो सर्वर उपलब्ध है या नहीं जाँचें।</string>
     <string name="sync_fix_other">YATA यह काम पूरा नहीं कर पाया।\n\nदिखाई गई त्रुटि जाँचें और नीचे ऑनलाइन सहायता खोलें। सेटिंग बदलने से पहले ज़रूरी कार्यों का फ़ाइल बैकअप लें। ऐप का डेटा न मिटाएँ।</string>
+    <string name="task_date_received">प्राप्ति तिथि</string>
+    <string name="task_date_received_none">कोई प्राप्ति तिथि नहीं</string>
+    <string name="smart_add_received">प्राप्त %1$s</string>
+    <string name="project_received_date_summary">इस प्रोजेक्ट में टास्क जोड़ते या संपादित करते समय प्राप्ति तिथि दिखाएँ</string>
 </resources>

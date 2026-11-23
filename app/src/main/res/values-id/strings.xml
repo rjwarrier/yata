@@ -1727,4 +1727,8 @@
     <string name="sync_fix_passphrase">Salinan tidak dapat dibuka atau frasa sandi cadangan belum diisi.\n\nGunakan frasa sandi cadangan yang sama di semua perangkat, bukan kata sandi GitHub atau token. Jika benar, salinan mungkin rusak. Cadangkan tugas sebelum mencoba salinan lama.</string>
     <string name="sync_fix_network">YATA tidak dapat menjangkau server.\n\nPeriksa internet dan alamat server. Coba lagi setelah terhubung. Jika masih gagal, periksa apakah server tersedia.</string>
     <string name="sync_fix_other">YATA tidak dapat menyelesaikan operasi ini.\n\nPeriksa pesan kesalahan dan buka bantuan online di bawah. Cadangkan tugas penting sebelum mengubah pengaturan. Jangan hapus data aplikasi.</string>
+    <string name="task_date_received">Tanggal Diterima</string>
+    <string name="task_date_received_none">Tidak ada tanggal diterima</string>
+    <string name="smart_add_received">Diterima %1$s</string>
+    <string name="project_received_date_summary">Tampilkan Tanggal Diterima saat menambah atau mengedit tugas di proyek ini</string>
 </resources>

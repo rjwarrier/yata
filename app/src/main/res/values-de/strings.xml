@@ -1884,4 +1884,8 @@
     <string name="sync_fix_passphrase">Die Kopie konnte nicht entschlüsselt werden oder die Backup-Passphrase fehlt.\n\nNutzen Sie auf allen Geräten dieselbe Backup-Passphrase, nicht das GitHub-Passwort oder den Token. Ist sie korrekt, kann die Kopie beschädigt sein. Sichern Sie Aufgaben vor dem Versuch mit einer älteren Kopie.</string>
     <string name="sync_fix_network">YATA konnte den Server nicht erreichen.\n\nPrüfen Sie Internetverbindung und Serveradresse. Versuchen Sie es mit Verbindung erneut. Prüfen Sie bei weiteren Fehlern die Verfügbarkeit des Servers.</string>
     <string name="sync_fix_other">YATA konnte diesen Vorgang nicht abschließen.\n\nPrüfen Sie die Fehlermeldung und öffnen Sie unten die Online-Hilfe. Sichern Sie wichtige Aufgaben vor Änderungen in einer Datei. Löschen Sie nicht den App-Speicher.</string>
+    <string name="task_date_received">Eingangsdatum</string>
+    <string name="task_date_received_none">Kein Eingangsdatum</string>
+    <string name="smart_add_received">Eingegangen %1$s</string>
+    <string name="project_received_date_summary">Eingangsdatum beim Hinzufügen oder Bearbeiten von Aufgaben in diesem Projekt anzeigen</string>
 </resources>

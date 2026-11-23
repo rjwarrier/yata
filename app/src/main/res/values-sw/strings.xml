@@ -1724,4 +1724,8 @@
     <string name="sync_fix_passphrase">Nakala haikuweza kufunguliwa au kaulisiri ya chelezo haipo.\n\nTumia kaulisiri ileile ya chelezo kwenye vifaa vyote, si nenosiri la GitHub wala tokeni. Ikiwa ni sahihi, nakala inaweza kuharibika. Hifadhi kazi kabla ya kujaribu nakala ya zamani.</string>
     <string name="sync_fix_network">YATA haikuweza kufikia seva.\n\nHakiki intaneti na anwani ya seva. Jaribu tena ukiunganishwa. Ikiwa bado inashindwa, hakiki kama seva inapatikana.</string>
     <string name="sync_fix_other">YATA haikuweza kukamilisha hatua hii.\n\nSoma hitilafu kwenye skrini na ufungue msaada mtandaoni hapa chini. Hifadhi kazi muhimu kabla ya kubadili mipangilio. Usifute data ya programu.</string>
+    <string name="task_date_received">Tarehe ya Kupokelewa</string>
+    <string name="task_date_received_none">Hakuna tarehe ya kupokelewa</string>
+    <string name="smart_add_received">Imepokelewa %1$s</string>
+    <string name="project_received_date_summary">Onyesha tarehe ya kupokelewa unapoongeza au kuhariri kazi katika mradi huu</string>
 </resources>

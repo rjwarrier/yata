@@ -1724,4 +1724,8 @@
     <string name="sync_fix_passphrase">ਕਾਪੀ ਨਹੀਂ ਖੁੱਲ੍ਹੀ ਜਾਂ ਬੈਕਅੱਪ ਪਾਸਫ੍ਰੇਜ਼ ਨਹੀਂ ਹੈ।\n\nਹਰ ਡਿਵਾਈਸ ਉੱਤੇ ਇੱਕੋ ਬੈਕਅੱਪ ਪਾਸਫ੍ਰੇਜ਼ ਵਰਤੋ, GitHub ਪਾਸਵਰਡ ਜਾਂ ਟੋਕਨ ਨਹੀਂ। ਸਹੀ ਹੋਣ ਤੇ ਕਾਪੀ ਖ਼ਰਾਬ ਹੋ ਸਕਦੀ ਹੈ। ਪੁਰਾਣੀ ਕਾਪੀ ਅਜ਼ਮਾਉਣ ਤੋਂ ਪਹਿਲਾਂ ਕੰਮਾਂ ਦਾ ਬੈਕਅੱਪ ਲਓ।</string>
     <string name="sync_fix_network">YATA ਸਰਵਰ ਤੱਕ ਨਹੀਂ ਪਹੁੰਚ ਸਕਿਆ।\n\nਇੰਟਰਨੈੱਟ ਅਤੇ ਸਰਵਰ ਪਤਾ ਜਾਂਚੋ। ਜੁੜਨ ਤੇ ਮੁੜ ਕੋਸ਼ਿਸ਼ ਕਰੋ। ਸਮੱਸਿਆ ਰਹੇ ਤਾਂ ਸਰਵਰ ਉਪਲਬਧ ਹੈ ਜਾਂ ਨਹੀਂ ਜਾਂਚੋ।</string>
     <string name="sync_fix_other">YATA ਇਹ ਕੰਮ ਪੂਰਾ ਨਹੀਂ ਕਰ ਸਕਿਆ।\n\nਦਿਖਾਈ ਗਲਤੀ ਜਾਂਚੋ ਅਤੇ ਹੇਠਾਂ ਔਨਲਾਈਨ ਮਦਦ ਖੋਲ੍ਹੋ। ਸੈਟਿੰਗ ਬਦਲਣ ਤੋਂ ਪਹਿਲਾਂ ਜ਼ਰੂਰੀ ਕੰਮਾਂ ਦਾ ਫਾਈਲ ਬੈਕਅੱਪ ਲਓ। ਐਪ ਡਾਟਾ ਨਾ ਮਿਟਾਓ।</string>
+    <string name="task_date_received">ਪ੍ਰਾਪਤੀ ਮਿਤੀ</string>
+    <string name="task_date_received_none">ਕੋਈ ਪ੍ਰਾਪਤੀ ਮਿਤੀ ਨਹੀਂ</string>
+    <string name="smart_add_received">ਪ੍ਰਾਪਤ %1$s</string>
+    <string name="project_received_date_summary">ਇਸ ਪ੍ਰੋਜੈਕਟ ਵਿੱਚ ਟਾਸਕ ਜੋੜਦੇ ਜਾਂ ਸੋਧਦੇ ਸਮੇਂ ਪ੍ਰਾਪਤੀ ਮਿਤੀ ਦਿਖਾਓ</string>
 </resources>

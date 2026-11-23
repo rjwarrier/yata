@@ -1728,4 +1728,8 @@
     <string name="sync_fix_passphrase">De kopie kan niet worden ontsleuteld of de back-upwachtzin ontbreekt.\n\nGebruik op elk apparaat dezelfde back-upwachtzin, niet je GitHub-wachtwoord of token. Klopt deze, dan kan de kopie beschadigd zijn. Maak een back-up voordat je een oudere kopie probeert.</string>
     <string name="sync_fix_network">YATA kon de server niet bereiken.\n\nControleer internet en het serveradres. Probeer opnieuw zodra je verbinding hebt. Controleer bij blijvende problemen of de server beschikbaar is.</string>
     <string name="sync_fix_other">YATA kon dit niet afronden.\n\nBekijk de foutmelding en open de online hulp hieronder. Maak een back-up van belangrijke taken voordat je instellingen wijzigt. Wis de appgegevens niet.</string>
+    <string name="task_date_received">Ontvangstdatum</string>
+    <string name="task_date_received_none">Geen ontvangstdatum</string>
+    <string name="smart_add_received">Ontvangen %1$s</string>
+    <string name="project_received_date_summary">Ontvangstdatum tonen bij het toevoegen of bewerken van taken in dit project</string>
 </resources>

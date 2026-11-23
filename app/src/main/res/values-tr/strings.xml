@@ -1727,4 +1727,8 @@
     <string name="sync_fix_passphrase">Kopyanın kilidi açılamadı veya yedek parolası eksik.\n\nTüm cihazlarda aynı yedek parolasını kullanın; GitHub parolası veya belirteci değil. Doğruysa kopya bozuk olabilir. Eski kopyayı denemeden önce görevleri yedekleyin.</string>
     <string name="sync_fix_network">YATA sunucuya ulaşamadı.\n\nİnterneti ve sunucu adresini kontrol edin. Bağlanınca yeniden deneyin. Sorun sürerse sunucunun çalıştığını kontrol edin.</string>
     <string name="sync_fix_other">YATA bu işlemi tamamlayamadı.\n\nEkrandaki hatayı kontrol edip aşağıdan çevrimiçi yardımı açın. Ayarları değiştirmeden önce önemli görevleri yedekleyin. Uygulama verilerini silmeyin.</string>
+    <string name="task_date_received">Alınma Tarihi</string>
+    <string name="task_date_received_none">Alınma tarihi yok</string>
+    <string name="smart_add_received">Alındı %1$s</string>
+    <string name="project_received_date_summary">Bu projede görev eklerken veya düzenlerken Alınma Tarihini göster</string>
 </resources>

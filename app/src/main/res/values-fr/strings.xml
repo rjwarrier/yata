@@ -1729,4 +1729,8 @@
     <string name="sync_fix_passphrase">La copie ne peut pas être déchiffrée ou la phrase secrète manque.\n\nUtilisez la même phrase secrète de sauvegarde partout, pas votre mot de passe GitHub ni votre jeton. Si elle est correcte, la copie peut être endommagée. Sauvegardez vos tâches avant d’essayer une ancienne copie.</string>
     <string name="sync_fix_network">YATA ne peut pas joindre le serveur.\n\nVérifiez Internet et l’adresse du serveur. Réessayez une fois connecté. Si le problème continue, vérifiez que le serveur est disponible.</string>
     <string name="sync_fix_other">YATA n’a pas pu terminer cette opération.\n\nConsultez l’erreur affichée et l’aide en ligne ci-dessous. Sauvegardez vos tâches avant de modifier les réglages. N’effacez pas les données de l’application.</string>
+    <string name="task_date_received">Date de réception</string>
+    <string name="task_date_received_none">Aucune date de réception</string>
+    <string name="smart_add_received">Reçu %1$s</string>
+    <string name="project_received_date_summary">Afficher la date de réception lors de l\'ajout ou de la modification de tâches dans ce projet</string>
 </resources>

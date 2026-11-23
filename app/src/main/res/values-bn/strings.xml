@@ -1727,4 +1727,8 @@
     <string name="sync_fix_passphrase">কপি খোলা যায়নি বা ব্যাকআপ পাসফ্রেজ নেই।\n\nসব ডিভাইসে একই ব্যাকআপ পাসফ্রেজ দিন, GitHub পাসওয়ার্ড বা টোকেন নয়। ঠিক হলেও কপি নষ্ট হতে পারে। পুরোনো কপি ব্যবহারের আগে কাজের ব্যাকআপ নিন।</string>
     <string name="sync_fix_network">YATA সার্ভারে পৌঁছাতে পারেনি।\n\nইন্টারনেট ও সার্ভারের ঠিকানা যাচাই করুন। সংযোগ হলে আবার চেষ্টা করুন। তবুও ব্যর্থ হলে সার্ভার চালু আছে কি না দেখুন।</string>
     <string name="sync_fix_other">YATA কাজটি শেষ করতে পারেনি।\n\nপর্দার ত্রুটি দেখুন এবং নিচের অনলাইন সহায়তা খুলুন। সেটিং বদলানোর আগে দরকারি কাজের ফাইল ব্যাকআপ নিন। অ্যাপের ডেটা মুছবেন না।</string>
+    <string name="task_date_received">প্রাপ্তির তারিখ</string>
+    <string name="task_date_received_none">প্রাপ্তির তারিখ নেই</string>
+    <string name="smart_add_received">প্রাপ্ত %1$s</string>
+    <string name="project_received_date_summary">এই প্রজেক্টে টাস্ক যোগ বা সম্পাদনা করার সময় প্রাপ্তির তারিখ দেখান</string>
 </resources>

@@ -1773,4 +1773,8 @@
     <string name="sync_fix_passphrase">No se pudo desbloquear la copia o falta la contraseña de copia de seguridad.\n\nUsa la misma en todos los dispositivos, no la contraseña de GitHub ni el token. Si es correcta, la copia podría estar dañada. Guarda tus tareas antes de probar una copia anterior.</string>
     <string name="sync_fix_network">YATA no pudo contactar con el servidor.\n\nComprueba Internet y la dirección del servidor. Inténtalo cuando tengas conexión. Si sigue fallando, comprueba que el servidor esté disponible.</string>
     <string name="sync_fix_other">YATA no pudo terminar esta operación.\n\nRevisa el error y abre la ayuda en línea de abajo. Guarda las tareas importantes antes de cambiar los ajustes. No borres los datos de la aplicación.</string>
+    <string name="task_date_received">Fecha de recepción</string>
+    <string name="task_date_received_none">Sin fecha de recepción</string>
+    <string name="smart_add_received">Recibido %1$s</string>
+    <string name="project_received_date_summary">Mostrar la fecha de recepción al añadir o editar tareas en este proyecto</string>
 </resources>
